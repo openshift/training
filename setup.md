@@ -12,9 +12,19 @@ For each VM:
 
         yum -y update
 
+    You may wish to restart at this point.
+
 1. install missing packages:
 
-        yum install wget vim-enhanced net-tools bind-utils tmux git golang
+        yum install wget vim-enhanced net-tools bind-utils tmux git golang \
+        docker
+
+We suggest running the Docker registry on the OpenShift Master, which is why we
+install Docker on all the systems.
+
+1. enable and start docker
+
+        systemctl enable docker; systemctl start docker
 
 1. (optional) install ruby/rubygems (for tmuxinator):
 
@@ -42,5 +52,7 @@ For each VM:
         ./build-go.sh
 
 Do we need to disable firewalld?
+
+You definitely need to restart at this point.
 
 # Running a Master
