@@ -1,4 +1,4 @@
-# OpenShift V3 Beta Documentation
+# OpenShift V3 Beta1 Documentation
 - Basic Installation via go binary.  No docker-ized framework components (ie
     OpenShift router, master, etcd, and other internal components of OpenShift)
     - Be able to add multiple nodes to the master. 
