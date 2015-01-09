@@ -45,21 +45,17 @@ install Docker on all the systems.
 1. Since OpenShift doesn't yet have networking overlay support in the box, we
     can use CoreOS'
     [Flannel]( http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking )
-    to handle persistent network overlay things.
+    to handle persistent network overlay things. You will want to configure
+    Flannel on subnets that will be externally routable - otherwise you won't be
+    able to reach any of your OpenShift apps anyway. We are using 10.0.0.0/8 as
+    our example.
 
     The first step is to build Flannel:
 
         cd; git clone https://github.com/coreos/flannel.git
-        cd flannel
+        cd ~/flannel
         docker run -v `pwd`:/opt/flannel -i -t google/golang /bin/bash \
         -c "cd /opt/flannel && ./build"
-
-1. Since we are going to use Flannel to connect Docker images
-on a 10.0.0.0/8 net, we want to configure Docker to trust any insecure registry
-that it finds there. The following will instruct the Docker daemon to trust
-*any* Docker registry on the subnet, rather than requiring a certificate.
-
-        sed -i -e 's/^OPTIONS.*/OPTIONS=--insecure-registry 10.0.0.0\/8 -H fd:\/\//' /etc/sysconfig/docker
 
 1. Enable Docker
 
@@ -89,7 +85,7 @@ OpenShift is still running.
     For example:
     
         ~/origin/_output/local/bin/linux/amd64/openshift start master \
-        --nodes=192.168.122.167
+        --nodes=192.168.133.3
 
 1. Now that OpenShift is running, we have a running etcd. So we can tell it about
 our Flannel network config:
@@ -117,10 +113,17 @@ particular Docker host:
         FLANNEL_SUBNET=10.14.96.1/20
         FLANNEL_MTU=1472
 
+1. Set Docker's interface's IP to our new bridge IP:
+
+        ifconfig docker0 10.14.96.1/20
+
 1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file with this new
 information. For exmple:
 
-        OPTIONS=--bip=10.14.96.1/20 --mtu=1472 =--insecure-registry 10.0.0.0/8 -H fd://
+        OPTIONS=--bip=10.14.96.1/20 --mtu=1472 --insecure-registry 10.0.0.0/8 -H fd://
+
+    The `--insecure-registry` option tells Docker to trust any registry on the
+    specified subnet, without requiring a certificate.
 
 1. Restart Docker
 
@@ -134,7 +137,7 @@ the master in order to get the configuration information.
 1. Run Flannel, specifying the IP address of the OpenShift master as the etcd
 server:
 
-        ~/flannel/bin/flanneld --etcd-endpoints="http://192.168.122.10:4001"
+        ~/flannel/bin/flanneld --etcd-endpoints="http://192.168.133.2:4001"
 
 1. Get the subnet assignment:
 
