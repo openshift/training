@@ -44,7 +44,7 @@ install Docker on all the systems.
 
 1. Since OpenShift doesn't yet have networking overlay support in the box, we
     can use CoreOS'
-    (Flannel)[http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking]
+    [Flannel]( http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking )
     to handle persistent network overlay things.
 
     The first step is to build Flannel:
