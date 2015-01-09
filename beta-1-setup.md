@@ -1,6 +1,10 @@
 # OpenShift Beta 1 Setup Information
+## Use a Terminal Window Manager
+We **strongly** recommend that you use some kind of terminal window manager
+(Screen, Tmux).
+
 ## Setting Up the Environment
-For **each** VM:
+### Each VM
 
 1. el7 minimal installation
 Do we need to disable firewalld?
@@ -42,6 +46,9 @@ install Docker on all the systems.
         cd ~/origin/hack
         ./build-go.sh
 
+TODO: No, this next thing isn't correct - you don't want the pods to be
+reachable.
+
 1. Since OpenShift doesn't yet have networking overlay support in the box, we
     can use CoreOS'
     [Flannel]( http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking )
@@ -63,16 +70,13 @@ install Docker on all the systems.
 
 1. Restart your system.
 
-## Use a Terminal Window Manager
-We **strongly** recommend that you use some kind of terminal window manager
-(Screen, Tmux).
-
-## Additional Master Setup Steps
+### Additional Master Setup Steps
 1. Grab a Docker registry for OpenShift to use to store images:
 
         docker pull openshift/docker-registry
 
-## Running a Master
+## Starting the OpenShift Services
+### Running a Master
 The Beta 1 setup assumes one master and two nodes. Running the master in a tmux
 or screen session will help enable you to do other things on the master while
 OpenShift is still running.
@@ -87,6 +91,7 @@ OpenShift is still running.
         ~/origin/_output/local/bin/linux/amd64/openshift start master \
         --nodes=192.168.133.3
 
+TODO: should be much smaller for beta1, assuming we still use this method
 1. Now that OpenShift is running, we have a running etcd. So we can tell it about
 our Flannel network config:
 
@@ -129,7 +134,7 @@ information. For exmple:
 
         systemctl restart docker
 
-## Running a node
+### Running a node
 On each VM that we will use as a node, we have to perform the same Docker set up
 with Flannel information.  Flannel on the node needs to communicate with etcd on
 the master in order to get the configuration information.
@@ -159,3 +164,6 @@ server:
 
         ~/origin/_output/local/bin/linux/amd64/openshift start node \
         --master=MASTER_IP
+
+### Starting the Router
+TODO
