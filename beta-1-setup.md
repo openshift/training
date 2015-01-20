@@ -29,11 +29,13 @@ We **strongly** recommend that you use some kind of terminal window manager
     We suggest running the Docker registry on the OpenShift Master, which is why we
     install Docker on all the systems.
 
-1. Set up your Go environment:
+1. Set up your Go environment and your paths:
+    TODO: add openshift path
 
         mkdir $HOME/go
         sed -i -e '/^PATH\=.*/i \export GOPATH=$HOME/go' \
-        -e "s/^PATH=.*/PATH=\$PATH:\$HOME\/bin:\$GOPATH\/bin\//" \
+        -e '/^PATH\=.*/i \export OSEPATH=~\/origin\/_output\/local\/bin\/linux\/amd64\/' \
+        -e "s/^PATH=.*/PATH=\$PATH:\$HOME\/bin:\$GOPATH\/bin\/:\$OSEPATH/" \
         ~/.bash_profile
         source ~/.bash_profile
 
@@ -70,7 +72,9 @@ We **strongly** recommend that you use some kind of terminal window manager
 
 1. Restart your system.
 
-### Additional Master Setup Steps
+### Grab Docker Images
+On all of your systems (for convenience):
+
 1. Grab a Docker registry for OpenShift to use to store images:
 
         docker pull openshift/docker-registry
@@ -88,14 +92,18 @@ OpenShift is still running.
 1. On the VM that you wish to be the OpenShift master, execute the following:
 
         ~/origin/_output/local/bin/linux/amd64/openshift start master \
-        --nodes=IP1,IP2,IP3...
+        --nodes=hostname1,hostname2,hostname3
 
     For example:
     
         ~/origin/_output/local/bin/linux/amd64/openshift start master \
-        --nodes=192.168.133.3
+        --nodes=ose3-node1.erikjacobs.com,ose3-node2.erikjacobs.com
 
-TODO: should be much smaller for beta1, assuming we still use this method
+    You must use hostnames and the hostnames that you use must match the output
+    of `hostname -f` on each of your nodes. By extension, you must at least have
+    all hostname/ip mappings in /etc/hosts files or forward DNS should work.
+
+TODO: flannel replaced by OVS stuff in beta1
 1. Now that OpenShift is running, we have a running etcd. So we can tell it about
 our Flannel network config:
 
@@ -183,7 +191,50 @@ server. For example:
 1. Now you can run OpenShift's node:
 
         ~/origin/_output/local/bin/linux/amd64/openshift start node \
-        --master=MASTER_IP
+        --master=MASTER_HOSTNAME
 
 ### Starting the Router
-TODO
+Earlier, we created the symbolic link for the `osc` program. There is a script
+that will configure and start a pod for the HAProxy router that leverages this
+command.
+
+On your **master** host, execute the following:
+
+    ~/origin/hack/install-router.sh mainrouter IP_OF_MASTER \
+    ~/origin/_output/local/bin/linux/amd64/osc
+
+This command will generate a JSON file for the command-line tool to ingest, and
+then will create a pod using this JSON file. Here are sample JSON contents:
+
+    {
+        "kind": "Pod",
+        "apiVersion": "v1beta1",
+        "id": "mainrouter",
+        "desiredState": {
+            "manifest": {
+                "version": "v1beta2",
+                "containers": [
+                    {
+                        "name": "origin-haproxy-router-mainrouter",
+                        "image": "openshift/origin-haproxy-router",
+                        "ports": [{
+                            "containerPort": 80,
+                            "hostPort": 80
+                        }],
+                        "command": ["--master=192.168.133.2:8080"],
+                        "imagePullPolicy": "PullIfNotPresent"
+                    }
+                ],
+                "restartPolicy": {
+                    "always": {}
+                }
+            }
+        }
+    }
+
+If this works, you should see the pod status change to "running" after a few
+moments:
+
+    # osc get pods
+    POD                 CONTAINER(S)                       IMAGE(S)                          HOST                         LABELS              STATUS
+    mainrouter          origin-haproxy-router-mainrouter   openshift/origin-haproxy-router   ose3-node2.erikjacobs.com/   <none>              Running
