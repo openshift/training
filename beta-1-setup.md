@@ -7,7 +7,7 @@ We **strongly** recommend that you use some kind of terminal window manager
 ### Each VM
 
 1. el7 minimal installation
-Do we need to disable firewalld?
+    firewalld disabled
 1. SELinux *permissive* or *disabled*
 1. subscribed/registered to red hat
 1. enable repos:
@@ -15,21 +15,21 @@ Do we need to disable firewalld?
         subscription-manager repos --enable=rhel-7-server-rpms \
         --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-optional-rpms
 
-1. update:
+1. Update:
 
         yum -y update
 
-    You may wish to restart at this point.
+    You may wish to restart systems at this point.
 
-1. install missing packages:
+1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git golang \
         docker
 
-We suggest running the Docker registry on the OpenShift Master, which is why we
-install Docker on all the systems.
+    We suggest running the Docker registry on the OpenShift Master, which is why we
+    install Docker on all the systems.
 
-1. set up your Go environment:
+1. Set up your Go environment:
 
         mkdir $HOME/go
         sed -i -e '/^PATH\=.*/i \export GOPATH=$HOME/go' \
@@ -37,24 +37,24 @@ install Docker on all the systems.
         ~/.bash_profile
         source ~/.bash_profile
 
-1. clone the origin git repository:
+1. Clone the origin git repository:
 
         cd; git clone https://github.com/openshift/origin.git
 
-1. build the openshift project:
+1. Build the openshift project:
 
         cd ~/origin/hack
         ./build-go.sh
 
-TODO: No, this next thing isn't correct - you don't want the pods to be
-reachable.
+1. Create an `osc` symlink:
+
+        ln -s ~/origin/_output/local/bin/linux/amd64/openshift \
+        ~/origin/_output/local/bin/linux/amd64/osc
 
 1. Since OpenShift doesn't yet have networking overlay support in the box, we
     can use CoreOS'
     [Flannel]( http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking )
-    to handle persistent network overlay things. You will want to configure
-    Flannel on subnets that will be externally routable - otherwise you won't be
-    able to reach any of your OpenShift apps anyway. We are using 10.0.0.0/8 as
+    to handle persistent network overlay things. We are using 10.0.0.0/8 as
     our example.
 
     The first step is to build Flannel:
@@ -74,6 +74,10 @@ reachable.
 1. Grab a Docker registry for OpenShift to use to store images:
 
         docker pull openshift/docker-registry
+
+1. Grab the OpenShift Origin haproxy router:
+
+        docker pull openshift/origin-haproxy-router
 
 ## Starting the OpenShift Services
 ### Running a Master
@@ -130,9 +134,25 @@ information. For exmple:
     The `--insecure-registry` option tells Docker to trust any registry on the
     specified subnet, without requiring a certificate.
 
-1. Restart Docker
+** firewall stuff is still in progress -- don't do this **
 
-        systemctl restart docker
+1. Add iptables port rules for flanneld and OpenShift by editing
+`/etc/sysconfig/iptables`. In between the following rules:
+
+        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+
+    Add these rules:
+
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 7890 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 8081 -j ACCEPT
+
+1. Restart iptables and docker:
+
+        systemctl restart iptables; systemctl restart docker;
 
 ### Running a node
 On each VM that we will use as a node, we have to perform the same Docker set up
@@ -140,7 +160,7 @@ with Flannel information.  Flannel on the node needs to communicate with etcd on
 the master in order to get the configuration information.
 
 1. Run Flannel, specifying the IP address of the OpenShift master as the etcd
-server:
+server. For example:
 
         ~/flannel/bin/flanneld --etcd-endpoints="http://192.168.133.2:4001"
 
