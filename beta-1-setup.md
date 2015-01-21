@@ -4,6 +4,16 @@ We **strongly** recommend that you use some kind of terminal window manager
 (Screen, Tmux).
 
 ## Setting Up the Environment
+### DNS
+You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
+address of the OpenShift router. For now, make sure you point this zone to one
+of the IP addresses of your node VMs and use a low TTL. We will adjust the IP
+later.
+
+For example:
+
+    *.cloudapps.erikjacobs.com. 300 IN  A 192.168.133.4
+
 ### Each VM
 
 Each of the virtual machines should have 4+ GB of memory and the following
@@ -108,6 +118,9 @@ The Beta 1 setup assumes one master and two nodes. Running the master in a tmux
 or screen session will help enable you to do other things on the master while
 OpenShift is still running.
 
+** NOTE: You will need a network overlay before 2 nodes can work, so, for now,
+just use one node **
+
 1. On the VM that you wish to be the OpenShift master, execute the following:
 
         ~/origin/_output/local/bin/linux/amd64/openshift start master \
@@ -175,6 +188,9 @@ moments:
     POD                 CONTAINER(S)                       IMAGE(S)                          HOST                         LABELS              STATUS
     mainrouter          origin-haproxy-router-mainrouter   openshift/origin-haproxy-router   ose3-node2.erikjacobs.com/   <none>              Running
 
+At this point you must update your DNS wildcard entry to point to the IP address
+of the host on which the router instance is running.
+
 ## Your First Application
 At this point you should essentially have a fully-functional V3 OpenShift
 environment. It is now time to create the classic "Hello World" application
@@ -212,12 +228,10 @@ You can see the contents of our pod definition by using `cat`:
       },
     }
 
-TODO: pod = group of containers on same host, sharing network namespace
-pause container sets up interface so that traffic can get to bound application
-
 In the simplest sense, a *pod* is an application or an instance of something. If
-you are familiar with OpenShift V2 terminology, it is similar to a *gear*. We
-will learn more about the terms as we explore OpenShift further.
+you are familiar with OpenShift V2 terminology, it is similar to a *gear*.
+Reality is more complex, and we will learn more about the terms as we explore
+OpenShift further.
 
 ### Run the Pod
 To define the pod from our JSON file, execute the following:
@@ -234,30 +248,22 @@ status:
 
     osc get pods
     # osc get pods
-    POD                 CONTAINER(S)                       IMAGE(S)
-    HOST                         LABELS                 STATUS
-    mainrouter          origin-haproxy-router-mainrouter  openshift/origin-haproxy-router   ose3-node2.erikjacobs.com/   <none> Running
-    hello-openshift     hello-openshift   openshift/hello-openshift ose3-node2.erikjacobs.com/ name=hello-openshift   Pending
+    POD                 CONTAINER(S)                       IMAGE(S)                              HOST                         LABELS                 STATUS
+    mainrouter          origin-haproxy-router-mainrouter   openshift/origin-haproxy-router       ose3-node2.erikjacobs.com/   <none>                 Running
+    hello-openshift     hello-openshift                    openshift/hello-openshift             ose3-node2.erikjacobs.com/   name=hello-openshift   Pending
 
 When you first issue `get pods`, you will likely see a pending status for the
 `hello-openshift` pod. This is because we did not pre-fetch its Docker image, so
 the node is pulling it from a registry. Later we will set up a local Docker
-registry for OpenShift to use.
+registry for OpenShift to use.  In our case, the hello-openshift application is
+running on `node2`. 
 
-In our case, the hello-openshift application is running on `node2`. On the node
-where your `hello-openshift` application is running once the pod status shows
-`Running`, look at the list of Docker containers to see the bound ports. We
-should see a Kubernetes `pause` container bound to 6061 on the host and bound to
-8080 on the container:
+On the node where your `hello-openshift` application is running once the pod
+status shows `Running`, look at the list of Docker containers to see the bound
+ports. We should see a Kubernetes `pause` container bound to 6061 on the host
+and bound to 8080 on the container.
 
-    CONTAINER ID        IMAGE                                    COMMAND
-    CREATED             STATUS              PORTS                    NAMES
-    142e1f263b3b        openshift/hello-openshift:latest         "/hello_openshift"
-    2 minutes ago       Up 2 minutes
-    k8s_hello-openshift.ef40aae8_hello-openshift.default.etcd_4071b202-a0ea-11e4-80cc-525400b33d1d_2811a558               
-    9478243ea9de        kubernetes/pause:go                      "/pause"
-    2 minutes ago       Up 2 minutes        0.0.0.0:6061->8080/tcp
-    k8s_net.f1ce8da9_hello-openshift.default.etcd_4071b202-a0ea-11e4-80cc-525400b33d1d_10cd9672
+    docker ps
 
 The `pause` container exists because of the way network namespacing works in
 Kubernetes. For the sake of simplicity, think of the `pause` container as
@@ -274,23 +280,226 @@ issue a curl to the app's port:
 Hooray!
 
 ## Services
+From the [Kubernetes
+documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/services.md):
 
-services are for "inside" kubernetes
+    A Kubernetes service is an abstraction which defines a logical set of pods and a
+    policy by which to access them - sometimes called a micro-service. The goal of
+    services is to provide a bridge for non-Kubernetes-native applications to access
+    backends without the need to write code that is specific to Kubernetes. A
+    service offers clients an IP and port pair which, when accessed, redirects to
+    the appropriate backends. The set of pods targetted is determined by a label
+    selector.
 
-routes allow traffic from edge to reach kubernetes service
+If you think back to the simple pod we created earlier, there was a "label":
 
+      "labels": {
+        "name": "hello-openshift"
+      },
 
-router watches routes resource on master
-osc create routes json
-creates new instance of "a route resource"
-openshift router is watching that resource
-router servicename field 
+Now, let's look at a *service* definition:
 
-route "serviceName" matches service id(name)
-service selector key/value pair associates with any pods that have matching
-  label key/value pair
+    {
+      "id": "hello-openshift",
+      "kind": "Service",
+      "apiVersion": "v1beta1",
+      "port": 27017,
+      "selector": {
+        "name": "hello-openshift"
+      }
+    }
 
-router watches endpoints of services and will proxy routes directly to service
-endpoints
+The *service* has a `selector` element. In this case, it is a key:value pair of
+`name:hello-openshift`. If you look at the output of `osc get pods` on your
+master, you see that the `hello-openshift` pod has a label:
 
+    name=hello-openshift
 
+The definition of the *service* tells Kubernetes that any pods with the label
+"name=hello-openshift" are associated, and should have traffic distributed
+amongst them. In other words, the service itself is the "connection to the
+network", so to speak, or the input point to reach all of the pods. Generally
+speaking, pod containers should not bind directly to ports on the host. We'll
+see more about this later.
+
+But, to really be useful, we want to make our application accessible via a FQDN,
+and that is where the router comes in.
+
+## Routing
+Routes allow FQDN-destined traffic to ultimately reach the Kubernetes service,
+and then the pods/containers.
+
+In a simplification of the process, the `openshift/origin-haproxy-router`
+container is a pre-configured instance of HAProxy as well as some of the
+OpenShift framework. The OpenShift instance running in this container watches a
+routes resource on the OpenShift master. This is why we specified the master's
+IP address when we installed the router.
+
+Here is an example route JSON definition:
+
+    {
+      "id": "hello-route",
+      "kind": "Route",
+      "apiVersion": "v1beta1",
+      "host": "hello-openshift.v3.rhcloud.com",
+      "serviceName": "hello-openshift"
+    }
+
+When the `osc` command is used to create this route, a new instance of a route
+*resource* is created inside OpenShift. The HAProxy/Router is watching for
+changes in route resources. When a new route is detected, an HAProxy pool is
+created.
+
+This HAProxy pool contains all pods that are in a service. Which service? The
+service that corresponds to the `serviceName` directive.
+
+Let's take a look at an entire Pod-Service-Route definition template and put all
+the pieces together.
+
+## The Complete Pod-Service-Route
+### Creating the Definition
+The following is a complete definition for a pod with a corresponding service
+with a corresponding route:
+
+    {
+      "metadata":{
+        "name":"hello-complete-definition"
+      },
+      "kind":"Config",
+      "apiVersion":"v1beta1",
+      "creationTimestamp":"2014-09-18T18:28:38-04:00",
+      "items":[
+        {
+          "id": "hello-openshift-pod",
+          "kind": "Pod",
+          "apiVersion":"v1beta2",
+          "labels": {
+            "name": "hello-openshift-label"
+          },
+          "desiredState": {
+            "manifest": {
+              "version": "v1beta1",
+              "id": "hello-openshift-manifest-id",
+              "containers": [{
+                "name": "hello-openshift-container",
+                "image": "openshift/hello-openshift",
+                "ports": [{
+                  "containerPort": 8080
+                }]
+              }]
+            }
+          },
+        },
+        {
+          "id": "hello-openshift-service",
+          "kind": "Service",
+          "apiVersion": "v1beta1",
+          "port": 27017,
+          "selector": {
+            "name": "hello-openshift-label"
+          }
+        },
+        {
+          "id": "hello-openshift-route",
+          "kind": "Route",
+          "apiVersion": "v1beta1",
+          "host": "hello-openshift.cloudapps.erikjacobs.com",
+          "serviceName": "hello-openshift-service"
+        }
+      ]
+    }
+
+In the JSON above:
+
+* There is a pod whose containers have the label `name=hello-openshift-label`
+* There is a service:
+  * with the id `hello-openshift-service`
+  * with the selector `name=hello-openshift-label`
+* There is a route:
+  * with the FQDN `hello-openshift.cloudapps.erikjacobs.com`
+  * with the `serviceName` directive `hello-openshift-service`
+
+If we work from the route down to the pod:
+
+* The route for `hello-openshift.cloudapps.erikjacobs.com` has an HAProxy pool
+* The pool is for any pods in the service whose ID is `hello-openshift-service`,
+    via the `serviceName` directive of the route.
+* The service `hello-openshift-service` includes every pod who has a label
+    `name=hello-openshift-label`
+* There is a single pod with a single container that has the label
+    `name=hello-openshift-label`
+
+Create the JSON file above on your **master** host in root's home directory. Or
+use wget to grab it:
+
+    wget \
+    https://raw.githubusercontent.com/openshift/training/master/test-complete.json
+
+Once you have this file, go ahead and use `osc` to apply it. You should see
+something like the following:
+
+    osc apply -f test-complete.json 
+    I0121 14:43:40.987895    2202 apply.go:65] Creation succeeded for Pod with name hello-openshift-pod
+    I0121 14:43:40.987911    2202 apply.go:65] Creation succeeded for Service with name hello-openshift-service
+    I0121 14:43:40.987914    2202 apply.go:65] Creation succeeded for Route with name
+
+You can verify this with other `osc` commands:
+
+    osc get pods
+    ...
+    hello-openshift-pod/172.17.0.2 ...
+
+    osc get services
+    ...
+    hello-openshift-service ...
+
+    osc get routes
+    ...
+    cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.erikjacobs.com ...
+
+### Verifying the Routing
+Verifying the routing is a little complicated, but not terribly so. First, find
+where the router is running using `osc get pods`:
+
+    osc get pods | grep router | awk '{print $4}'
+    ose3-node1.erikjacobs.com/
+
+We ultimately want the PID of the container running the router so that we can go
+"inside" it. On the node, issue the following to get the PID:
+
+    docker inspect `docker ps | grep haproxy-router | awk '{print $1}'` | grep \
+    Pid | awk '{print $2}' | cut -f1 -d,
+    2239
+
+The output will be a PID -- in this case, the PID is `2239`. We can use
+`nsenter` to jump inside that container:
+
+    nsenter -m -u -n -i -p -t 2239
+    [root@mainrouter /]#
+
+You are now in a bash session *inside* the container running the router.
+
+Since we are using HAProxy as the router, we can cat the `routes.json` file:
+
+    cat /var/lib/containers/router/routes.json
+
+If you see some content that looks like:
+
+    "hello-openshift-service": {
+      "Name": "hello-openshift-service",
+      "HostAliases": [
+        "hello-openshift.cloudapps.erikjacobs.com"
+      ],
+
+You know that "it" worked -- the router watcher detected the creation of the
+route in OpenShift and added the corresponding configuration to HAProxy.
+
+Go ahead and `exit` from the container, and then curl your fancy,
+publicly-accessible OpenShift application!
+
+    [root@mainrouter /]# exit
+    logout
+    # curl http://hello-openshift.cloudapps.erikjacobs.com
+    Hello OpenShift!
+
+Hooray!
