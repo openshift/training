@@ -57,22 +57,37 @@ Once you have prepared your VMs, you can do the following on **each** VM:
         ln -s ~/origin/_output/local/bin/linux/amd64/openshift \
         ~/origin/_output/local/bin/linux/amd64/osc
 
-1. Since OpenShift doesn't yet have networking overlay support in the box, we
-    can use CoreOS'
-    [Flannel]( http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking )
-    to handle persistent network overlay things. We are using 10.0.0.0/8 as
-    our example.
+1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file:
 
-    The first step is to build Flannel:
+        OPTIONS=--insecure-registry 192.0.0.0/8 -H fd://
 
-        cd; git clone https://github.com/coreos/flannel.git
-        cd ~/flannel
-        docker run -v `pwd`:/opt/flannel -i -t google/golang /bin/bash \
-        -c "cd /opt/flannel && ./build"
+    The `--insecure-registry` option tells Docker to trust any registry on the
+    specified subnet, without requiring a certificate. You would want to
+    exchange the subnet above with whatever subnet your OpenShift environment is
+    running on. Ultimately, we will be running a Docker registry on OpenShift,
+    which explains this setting.
 
 1. Enable Docker
 
         systemctl enable docker
+
+1. Add iptables port rules for OpenShift by editing `/etc/sysconfig/iptables`.
+The port range is wide open for now, but will be significantly closed in future
+releases. In between the following rules:
+
+        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+
+    Add these rules:
+
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 1024:65535 -j ACCEPT
+
+1. Restart iptables and docker, enable iptables:
+
+        systemctl restart iptables; systemctl restart docker; systemctl enable \
+        iptables
 
 1. Restart your system.
 
@@ -107,89 +122,9 @@ OpenShift is still running.
     of `hostname -f` on each of your nodes. By extension, you must at least have
     all hostname/ip mappings in /etc/hosts files or forward DNS should work.
 
-TODO: flannel replaced by OVS stuff in beta1
-1. Now that OpenShift is running, we have a running etcd. So we can tell it about
-our Flannel network config:
-
-        curl -L http://127.0.0.1:4001/v2/keys/coreos.com/network/config \
-        -XPUT -d value='{
-        "Network": "10.0.0.0/8",
-        "SubnetLen": 20,
-        "SubnetMin": "10.10.0.0",
-        "SubnetMax": "10.99.0.0",
-        "Backend": {"Type": "udp",
-        "Port": 7890}}'
-
-1. And we can now run Flannel:
-
-        ~/flannel/bin/flanneld
-
-1. With Flannel running, we need to ask it what subnet was assigned for this
-particular Docker host:
-
-        cat /run/flannel/subnet.env
-
-    You will see something like:
-
-        FLANNEL_SUBNET=10.14.96.1/20
-        FLANNEL_MTU=1472
-
-1. Set Docker's interface's IP to our new bridge IP:
-
-        ifconfig docker0 10.14.96.1/20
-
-1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file with this new
-information. For exmple:
-
-        OPTIONS=--bip=10.14.96.1/20 --mtu=1472 --insecure-registry 10.0.0.0/8 -H fd://
-
-    The `--insecure-registry` option tells Docker to trust any registry on the
-    specified subnet, without requiring a certificate.
-
-1. Add iptables port rules for flanneld and OpenShift by editing
-`/etc/sysconfig/iptables`. The port range is wide open for now, but will be
-significantly closed in future releases. In between the following rules:
-
-        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-
-    Add these rules:
-
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 1024:65535 -j ACCEPT
-
-1. Restart iptables and docker:
-
-        systemctl restart iptables; systemctl restart docker;
-
 ### Running a node
-On each VM that we will use as a node, we have to perform the same Docker set up
-with Flannel information.  Flannel on the node needs to communicate with etcd on
-the master in order to get the configuration information.
-
-1. Run Flannel, specifying the IP address of the OpenShift master as the etcd
-server. For example:
-
-        ~/flannel/bin/flanneld --etcd-endpoints="http://192.168.133.2:4001"
-
-1. Get the subnet assignment:
-
-        cat /run/flannel/subnet.env
-
-1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file. For example:
-
-        OPTIONS=--bip=10.11.0.1/20 --mtu=1472 --insecure-registry 10.0.0.0/8 -H fd://
-
-1. Set Docker's interface's IP to our new bridge IP:
-
-        ifconfig docker0 10.11.0.1/20
-
-1. Restart Docker
-
-        systemctl restart docker
-
-1. Now you can run OpenShift's node:
+Running a node is similar to running the master. Instead of specifying which
+nodes we will look for, we tell the OpenShift program to look for the master:
 
         ~/origin/_output/local/bin/linux/amd64/openshift start node \
         --master=MASTER_HOSTNAME
