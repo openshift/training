@@ -6,14 +6,19 @@ We **strongly** recommend that you use some kind of terminal window manager
 ## Setting Up the Environment
 ### Each VM
 
-1. el7 minimal installation
-    firewalld disabled
-1. SELinux *permissive* or *disabled*
-1. subscribed/registered to red hat
-1. enable repos:
+Each of the virtual machines should have 4+ GB of memory and the following
+configuration:
+
+* el7 minimal installation
+* firewalld disabled
+* SELinux *permissive* or *disabled*
+* subscribed/registered to red hat
+* enable repos:
 
         subscription-manager repos --enable=rhel-7-server-rpms \
         --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-optional-rpms
+
+Once you have prepared your VMs, you can do the following on **each** VM:
 
 1. Update:
 
@@ -30,7 +35,6 @@ We **strongly** recommend that you use some kind of terminal window manager
     install Docker on all the systems.
 
 1. Set up your Go environment and your paths:
-    TODO: add openshift path
 
         mkdir $HOME/go
         sed -i -e '/^PATH\=.*/i \export GOPATH=$HOME/go' \
@@ -142,21 +146,18 @@ information. For exmple:
     The `--insecure-registry` option tells Docker to trust any registry on the
     specified subnet, without requiring a certificate.
 
-** firewall stuff is still in progress -- don't do this **
-
 1. Add iptables port rules for flanneld and OpenShift by editing
-`/etc/sysconfig/iptables`. In between the following rules:
+`/etc/sysconfig/iptables`. The port range is wide open for now, but will be
+significantly closed in future releases. In between the following rules:
 
         -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
         -A INPUT -p icmp -j ACCEPT
 
     Add these rules:
 
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 7890 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 8081 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+        -A INPUT -p tcp -m state --state NEW -m tcp --dport 1024:65535 -j ACCEPT
 
 1. Restart iptables and docker:
 
@@ -235,6 +236,126 @@ then will create a pod using this JSON file. Here are sample JSON contents:
 If this works, you should see the pod status change to "running" after a few
 moments:
 
-    # osc get pods
+    osc get pods
     POD                 CONTAINER(S)                       IMAGE(S)                          HOST                         LABELS              STATUS
     mainrouter          origin-haproxy-router-mainrouter   openshift/origin-haproxy-router   ose3-node2.erikjacobs.com/   <none>              Running
+
+## Your First Application
+At this point you should essentially have a fully-functional V3 OpenShift
+environment. It is now time to create the classic "Hello World" application
+using some sample code. 
+
+### Grab the Definition JSON
+On your **master** node, go ahead and grab the JSON definition:
+
+    cd
+    wget https://raw.githubusercontent.com/openshift/origin/master/examples/hello-openshift/hello-pod.json
+
+You can see the contents of our pod definition by using `cat`:
+
+    cat hello-pod.json 
+    {
+      "id": "hello-openshift",
+      "kind": "Pod",
+      "apiVersion":"v1beta2",
+      "labels": {
+        "name": "hello-openshift"
+      },
+      "desiredState": {
+        "manifest": {
+          "version": "v1beta1",
+          "id": "hello-openshift",
+          "containers": [{
+            "name": "hello-openshift",
+            "image": "openshift/hello-openshift",
+            "ports": [{
+              "hostPort": 6061,
+              "containerPort": 8080
+            }]
+          }]
+        }
+      },
+    }
+
+TODO: pod = group of containers on same host, sharing network namespace
+pause container sets up interface so that traffic can get to bound application
+
+In the simplest sense, a *pod* is an application or an instance of something. If
+you are familiar with OpenShift V2 terminology, it is similar to a *gear*. We
+will learn more about the terms as we explore OpenShift further.
+
+### Run the Pod
+To define the pod from our JSON file, execute the following:
+
+    cd
+    osc create -f ./hello-pod.json
+
+You should see the ID of the pod returned to you:
+
+    hello-openshift
+
+Issue a `get pods` to see that it was, in fact, defined, and to check its
+status:
+
+    osc get pods
+    # osc get pods
+    POD                 CONTAINER(S)                       IMAGE(S)
+    HOST                         LABELS                 STATUS
+    mainrouter          origin-haproxy-router-mainrouter  openshift/origin-haproxy-router   ose3-node2.erikjacobs.com/   <none> Running
+    hello-openshift     hello-openshift   openshift/hello-openshift ose3-node2.erikjacobs.com/ name=hello-openshift   Pending
+
+When you first issue `get pods`, you will likely see a pending status for the
+`hello-openshift` pod. This is because we did not pre-fetch its Docker image, so
+the node is pulling it from a registry. Later we will set up a local Docker
+registry for OpenShift to use.
+
+In our case, the hello-openshift application is running on `node2`. On the node
+where your `hello-openshift` application is running once the pod status shows
+`Running`, look at the list of Docker containers to see the bound ports. We
+should see a Kubernetes `pause` container bound to 6061 on the host and bound to
+8080 on the container:
+
+    CONTAINER ID        IMAGE                                    COMMAND
+    CREATED             STATUS              PORTS                    NAMES
+    142e1f263b3b        openshift/hello-openshift:latest         "/hello_openshift"
+    2 minutes ago       Up 2 minutes
+    k8s_hello-openshift.ef40aae8_hello-openshift.default.etcd_4071b202-a0ea-11e4-80cc-525400b33d1d_2811a558               
+    9478243ea9de        kubernetes/pause:go                      "/pause"
+    2 minutes ago       Up 2 minutes        0.0.0.0:6061->8080/tcp
+    k8s_net.f1ce8da9_hello-openshift.default.etcd_4071b202-a0ea-11e4-80cc-525400b33d1d_10cd9672
+
+The `pause` container exists because of the way network namespacing works in
+Kubernetes. For the sake of simplicity, think of the `pause` container as
+nothing more than a way for the host OS to get an interface created for the
+corresponding pod to be able to receive traffic. Deeper understanding of
+networking in OpenShift is outside the scope of this material.
+
+To verify that the app is working, on the node running `hello-openshift` you can
+issue a curl to the app's port:
+
+    curl http://localhost:6061
+    Hello OpenShift!
+
+Hooray!
+
+## Services
+
+services are for "inside" kubernetes
+
+routes allow traffic from edge to reach kubernetes service
+
+
+router watches routes resource on master
+osc create routes json
+creates new instance of "a route resource"
+openshift router is watching that resource
+router servicename field 
+
+route "serviceName" matches service id(name)
+service selector key/value pair associates with any pods that have matching
+  label key/value pair
+
+router watches endpoints of services and will proxy routes directly to service
+endpoints
+
+
