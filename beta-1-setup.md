@@ -14,19 +14,28 @@ For example:
 
     *.cloudapps.erikjacobs.com. 300 IN  A 192.168.133.4
 
+### Github
+You will need a Github account for the STI examples, or some internal and
+accessible Git repository into which you can place application code.
+
 ### Each VM
 
 Each of the virtual machines should have 4+ GB of memory and the following
 configuration:
 
-* el7 minimal installation
-* firewalld disabled
-* SELinux *permissive* or *disabled*
-* subscribed/registered to red hat
-* enable repos:
+* RHEL 7.1 Beta
+* "Minimal" installation option
+* firewalld and NetworkManager **disabled**
+* SELinux **permissive** or **disabled**
+* Subscribed and registered to Red Hat
+* With these repositories:
 
         subscription-manager repos --enable=rhel-7-server-rpms \
-        --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-optional-rpms
+        --enable=rhel-7-server-extras-rpms \
+        --enable=rhel-7-server-optional-rpms \
+        --enable=rhel-7-server-openstack-5.0-rpms
+
+TODO: Needs openshift beta repo
 
 Once you have prepared your VMs, you can do the following on **each** VM:
 
@@ -39,16 +48,21 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git golang \
-        docker
+        docker openvswitch
 
     We suggest running the Docker registry on the OpenShift Master, which is why we
     install Docker on all the systems.
+
+1. Enable openvswitch:
+
+        systemctl enable openvswitch
 
 1. Set up your Go environment and your paths:
 
         mkdir $HOME/go
         sed -i -e '/^PATH\=.*/i \export GOPATH=$HOME/go' \
-        -e '/^PATH\=.*/i \export OSEPATH=~\/origin\/_output\/local\/bin\/linux\/amd64\/' \
+        -e '/^PATH\=.*/i \export OSEPATH=~\/origin\/_output\/local\/go\/bin\/' \
+        -e '/^PATH\=.*/i \export SDNPATH=~\/openshift-sdn\/_output\/local\/go\/bin\/' \
         -e "s/^PATH=.*/PATH=\$PATH:\$HOME\/bin:\$GOPATH\/bin\/:\$OSEPATH/" \
         ~/.bash_profile
         source ~/.bash_profile
@@ -99,17 +113,21 @@ releases. In between the following rules:
         systemctl restart iptables; systemctl restart docker; systemctl enable \
         iptables
 
+1. Install `openshift-sdn`:
+
+        git clone https://github.com/openshift/openshift-sdn
+        cd openshift-sdn
+        make clean        # optional
+        make              # build
+
 1. Restart your system.
 
 ### Grab Docker Images
-On all of your systems (for convenience):
-
-1. Grab a Docker registry for OpenShift to use to store images:
+On all of your nodes, grab the following docker images:
 
         docker pull openshift/docker-registry
-
-1. Grab the OpenShift Origin haproxy router:
-
+        docker pull openshift/origin-sti-builder
+        docker pull openshift/origin-deployer
         docker pull openshift/origin-haproxy-router
 
 ## Starting the OpenShift Services
@@ -118,8 +136,9 @@ The Beta 1 setup assumes one master and two nodes. Running the master in a tmux
 or screen session will help enable you to do other things on the master while
 OpenShift is still running.
 
-** NOTE: You will need a network overlay before 2 nodes can work, so, for now,
-just use one node **
+** workaround for SSL issues with router **
+
+--listen=http://0.0.0.0:8080
 
 1. On the VM that you wish to be the OpenShift master, execute the following:
 
@@ -134,6 +153,12 @@ just use one node **
     You must use hostnames and the hostnames that you use must match the output
     of `hostname -f` on each of your nodes. By extension, you must at least have
     all hostname/ip mappings in /etc/hosts files or forward DNS should work.
+
+### Setting Up the SDN
+Once your master is started, we need to start the SDN (which uses Open vSwitch)
+to begin creating our network overlay. Simply execute:
+
+    openshift-sdn
 
 ### Running a node
 Running a node is similar to running the master. Instead of specifying which
@@ -432,6 +457,7 @@ If we work from the route down to the pod:
 Create the JSON file above on your **master** host in root's home directory. Or
 use wget to grab it:
 
+    cd
     wget \
     https://raw.githubusercontent.com/openshift/training/master/test-complete.json
 
@@ -503,3 +529,55 @@ publicly-accessible OpenShift application!
     Hello OpenShift!
 
 Hooray!
+
+## Preparing for STI and Other Things
+We mentioned a few times that OpenShift would host its own Docker registry in
+order to pull images "locally". Let's take a moment to set that up.
+
+Go ahead and grab the following JSON file -- it contains a number of
+configurations to tell OpenShift to stand up the Docker registry image as a
+service within OpenShift:
+
+    cd
+    wget \
+    https://raw.githubusercontent.com/openshift/origin/master/examples/sample-app/docker-registry-config.json
+
+View the contents of the file if you like. When you are ready, go ahead and
+apply it with `osc` and you will see some output:
+
+    osc apply -f ~/docker-registry-config.json
+    I0122 10:23:28.599763    4537 apply.go:65] Creation succeeded for Service
+    with name docker-registry
+    E0122 10:23:28.599777    4537 apply.go:69] Config.item[1].create: invalid
+    value '<*>(0xc208209100)deploymentConfig "docker-registry" is invalid:
+    template.controllerTemplate.template.spec.containers[0].privileged:
+    forbidden 'true'': unable to create:
+    {"kind":"DeploymentConfig","apiVersion":"v1beta1","metadata":{"name":"docker-registry","creationTimestamp":null},"triggers":[{"type":"ConfigChange"}],"template":{"strategy":{"type":"Recreate"},"controllerTemplate":{"replicas":1,"replicaSelector":{"name":"registrypod"},"podTemplate":{"desiredState":{"manifest":{"version":"v1beta2","id":"","volumes":[{"name":"registry-storage","source":{"hostDir":{"path":"/tmp/openshift.local.registry"},"emptyDir":null,"persistentDisk":null,"gitRepo":null}}],"containers":[{"name":"registry-container","image":"openshift/docker-registry","command":["sh","-c","REGISTRY_URL=${DOCKER_REGISTRY_SERVICE_HOST}:${DOCKER_REGISTRY_SERVICE_PORT}
+    OPENSHIFT_URL=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/osapi/v1beta1
+    OPENSHIFT_INSECURE=true exec
+    docker-registry"],"ports":[{"containerPort":5000,"protocol":"TCP"}],"env":[{"name":"STORAGE_PATH","key":"STORAGE_PATH","value":"/tmp/openshift.local.registry"}],"volumeMounts":[{"name":"registry-storage","mountPath":"/tmp/openshift.local.registry","path":"/tmp/openshift.local.registry"}],"privileged":true,"imagePullPolicy":"PullIfNotPresent"}],"restartPolicy":{}}},"labels":{"name":"registrypod"}}}}}
+
+You can use `osc get pods` and `osc get services` to see what happened.
+
+Ultimately, you will have a Docker registry that is being hosted by OpenShift
+and that is running on one of your nodes.
+
+TODO: There should be some way once the network overlay is up to be able to
+reach the registry from somewhere.
+
+## STI - What Is It?
+STI stands for *source-to-image* and is the process where OpenShift will take
+your application source code and build a Docker image for it. In the real world,
+you would need to have a code repository (where OpenShift can introspect an
+appropriate Docker image to build and use to support the code) or a code
+repository + a Dockerfile (so that OpenShift can pull or build the Docker image
+for you).
+
+### A Simple STI Build
+We'll be using a pre-build/configured code repository. This repository is an
+extremely simple "Hello World" type application that looks very much like our
+previous example, except that it uses a Ruby/Sinatra application instead of a Go
+application.
+
+For this example, we will be using the following application's source code:
+

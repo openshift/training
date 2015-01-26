@@ -1,0 +1,133 @@
+{
+  "metadata":{
+    "name": "simple-ruby-template",
+  },
+  "kind": "Template",
+  "apiVersion": "v1beta1",
+  "description": "This example shows how to create a simple Ruby/Sinatra application in Openshift Origin v3",
+  "items": [
+    {
+      "id": "frontend",
+      "kind": "Service",
+      "apiVersion": "v1beta1",
+      "containerPort": 8080,
+      "selector": {
+        "name": "frontend"
+      }
+    },
+    {
+      "metadata":{
+        "name": "sinatra-ruby-sample",
+      },
+      "kind": "ImageRepository",
+      "apiVersion": "v1beta1",
+      "labels": {
+        "name": "sinatra-ruby-sample"
+      }
+    },
+    {
+      "metadata":{
+        "name": "ruby",
+      },
+      "kind": "ImageRepository",
+      "apiVersion": "v1beta1",
+      "labels": {
+        "name": "ruby"
+      }
+    },
+    {
+      "metadata":{
+        "name": "sinatra-ruby-build",
+      },
+      "kind": "BuildConfig",
+      "apiVersion": "v1beta1",
+      "triggers": [
+        {
+          "type": "imageChange",
+          "imageChange": {
+            "image": "ruby",
+            "from": { "name": "ruby"},
+            "tag":"2.0-onbuild"
+          }
+        }
+      ],
+      "parameters": {
+        "source" : {
+          "type" : "Git",
+          "git" : {
+            "uri": "git://github.com/thoraxe/simple-openshift-sinatra-sti.git"
+          }
+        },
+        "strategy": {
+          "type": "STI",
+          "stiStrategy": {
+            "image": "openshift/ruby-20-centos",
+            "scripts": "http://raw.githubusercontent.com/openshift/ruby-20-centos/master/.sti/bin"
+          }
+        },
+        "output": {
+          "to": {
+            "name": "sinatra-ruby-sample"
+          }
+        },
+      },
+      "labels": {
+        "name": "sinatra-ruby-build"
+      }
+    },
+    {
+      "metadata":{
+        "name": "frontend",
+      },
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1beta1",
+      "triggers": [
+        {
+          "type": "ImageChange",
+          "imageChangeParams": {
+            "automatic": true,
+            "containerNames": [
+              "ruby-sinatra-helloworld"
+            ],
+            "from": {
+              "name": "sinatra-ruby-sample"
+            },
+            "tag": "latest"
+          }
+        }
+      ],
+      "template": {
+        "strategy": {
+          "type":"Recreate"
+        },
+        "controllerTemplate": {
+          "replicas": 1,
+          "replicaSelector": {
+            "name": "frontend"
+          },
+          "podTemplate": {
+            "desiredState": {
+              "manifest": {
+                "version": "v1beta1",
+                "containers": [
+                  {
+                    "name": "ruby-sinatra-helloworld",
+                    "image": "sinatra-ruby-sample",
+                    "ports": [
+                      {
+                        "containerPort": 8080
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "labels": {
+              "name": "frontend"
+            }
+          }
+        }
+      }
+    },
+  ]
+}
