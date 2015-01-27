@@ -30,14 +30,23 @@ configuration:
 * Subscribed and registered to Red Hat
 * With these repositories:
 
-        subscription-manager repos --enable=rhel-7-server-rpms \
-        --enable=rhel-7-server-extras-rpms \
-        --enable=rhel-7-server-optional-rpms \
-        --enable=rhel-7-server-openstack-5.0-rpms
+        subscription-manager repos --disable="*"
+        subscription-manager repos \
+        --enable="rhel-7-server-beta-rpms" \
+        --enable="rhel-7-server-extras-rpms" \
+        --enable="rhel-7-server-optional-beta-rpms"
 
 TODO: Needs openshift beta repo
 
 Once you have prepared your VMs, you can do the following on **each** VM:
+
+1. Install deltarpm to make package updates a little faster:
+
+        yum -y install deltarpm
+
+1. Remove NetworkManager:
+
+        yum -y remove NetworkManager*
 
 1. Update:
 
@@ -45,10 +54,13 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
     You may wish to restart systems at this point.
 
+TODO: will need a repo for the openshift software and openvswitch
+http://download.eng.bos.redhat.com/brewroot/packages/openvswitch/2.3.1/2.git20150113.el7/x86_64/openvswitch-2.3.1-2.git20150113.el7.x86_64.rpm
+
 1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git golang \
-        docker openvswitch
+        docker openvswitch iptables-services
 
     We suggest running the Docker registry on the OpenShift Master, which is why we
     install Docker on all the systems.
@@ -546,16 +558,10 @@ View the contents of the file if you like. When you are ready, go ahead and
 apply it with `osc` and you will see some output:
 
     osc apply -f ~/docker-registry-config.json
-    I0122 10:23:28.599763    4537 apply.go:65] Creation succeeded for Service
+    I0126 13:56:20.160177    2189 apply.go:65] Creation succeeded for Service
     with name docker-registry
-    E0122 10:23:28.599777    4537 apply.go:69] Config.item[1].create: invalid
-    value '<*>(0xc208209100)deploymentConfig "docker-registry" is invalid:
-    template.controllerTemplate.template.spec.containers[0].privileged:
-    forbidden 'true'': unable to create:
-    {"kind":"DeploymentConfig","apiVersion":"v1beta1","metadata":{"name":"docker-registry","creationTimestamp":null},"triggers":[{"type":"ConfigChange"}],"template":{"strategy":{"type":"Recreate"},"controllerTemplate":{"replicas":1,"replicaSelector":{"name":"registrypod"},"podTemplate":{"desiredState":{"manifest":{"version":"v1beta2","id":"","volumes":[{"name":"registry-storage","source":{"hostDir":{"path":"/tmp/openshift.local.registry"},"emptyDir":null,"persistentDisk":null,"gitRepo":null}}],"containers":[{"name":"registry-container","image":"openshift/docker-registry","command":["sh","-c","REGISTRY_URL=${DOCKER_REGISTRY_SERVICE_HOST}:${DOCKER_REGISTRY_SERVICE_PORT}
-    OPENSHIFT_URL=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/osapi/v1beta1
-    OPENSHIFT_INSECURE=true exec
-    docker-registry"],"ports":[{"containerPort":5000,"protocol":"TCP"}],"env":[{"name":"STORAGE_PATH","key":"STORAGE_PATH","value":"/tmp/openshift.local.registry"}],"volumeMounts":[{"name":"registry-storage","mountPath":"/tmp/openshift.local.registry","path":"/tmp/openshift.local.registry"}],"privileged":true,"imagePullPolicy":"PullIfNotPresent"}],"restartPolicy":{}}},"labels":{"name":"registrypod"}}}}}
+    I0126 13:56:20.160194    2189 apply.go:65] Creation succeeded for
+    DeploymentConfig with name docker-registry
 
 You can use `osc get pods` and `osc get services` to see what happened.
 
