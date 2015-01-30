@@ -1,0 +1,46 @@
+{
+    "kind": "Pod",
+    "apiVersion": "v1beta1",
+    "id": "mainrouter",
+    "desiredState": {
+        "manifest": {
+            "version": "v1beta2",
+            "containers": [
+                {
+                    "name": "origin-haproxy-router-mainrouter",
+                    "image": "openshift/origin-haproxy-router",
+                    "ports": [
+                        {
+                            "containerPort": 80,
+                            "hostPort": 80
+                        },
+                        {
+                            "containerPort": 443,
+                            "hostPort": 443
+                        }
+                    ],
+                    "env": [
+                        {
+                            "name": "OPENSHIFT_MASTER",
+                            "value": "https://fqdn.of.master:8443"
+                        },
+                        {
+                            "name": "OPENSHIFT_CA_DATA",
+                            "value": ""
+                        },
+                        {
+                            "name": "OPENSHIFT_INSECURE",
+                            "value": "true"
+                        }
+                    ],
+                    "command": ["--loglevel=4"],
+                    "imagePullPolicy": "PullIfNotPresent"
+                }
+            ],
+            "restartPolicy": {
+                "always": {}
+            }
+        }
+    }
+}
+

@@ -14,14 +14,19 @@ For example:
 
     *.cloudapps.erikjacobs.com. 300 IN  A 192.168.133.4
 
+In almost all cases, when referencing VMs you must use hostnames and the
+hostnames that you use must match the output of `hostname -f` on each of your
+nodes. By extension, you must at least have all hostname/ip mappings in
+/etc/hosts files or forward DNS should work.
+
 ### Github
 You will need a Github account for the STI examples, or some internal and
 accessible Git repository into which you can place application code.
 
 ### Each VM
 
-Each of the virtual machines should have 4+ GB of memory and the following
-configuration:
+Each of the virtual machines should have 4+ GB of memory, 10+ GB of disk space,
+and the following configuration:
 
 * RHEL 7.1 Beta
 * "Minimal" installation option
@@ -52,15 +57,13 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
         yum -y update
 
-    You may wish to restart systems at this point.
-
 TODO: will need a repo for the openshift software and openvswitch
 http://download.eng.bos.redhat.com/brewroot/packages/openvswitch/2.3.1/2.git20150113.el7/x86_64/openvswitch-2.3.1-2.git20150113.el7.x86_64.rpm
 
 1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git golang \
-        docker openvswitch iptables-services
+        docker openvswitch iptables-services bridge-utils 
 
     We suggest running the Docker registry on the OpenShift Master, which is why we
     install Docker on all the systems.
@@ -69,33 +72,9 @@ http://download.eng.bos.redhat.com/brewroot/packages/openvswitch/2.3.1/2.git2015
 
         systemctl enable openvswitch
 
-1. Set up your Go environment and your paths:
-
-        mkdir $HOME/go
-        sed -i -e '/^PATH\=.*/i \export GOPATH=$HOME/go' \
-        -e '/^PATH\=.*/i \export OSEPATH=~\/origin\/_output\/local\/go\/bin\/' \
-        -e '/^PATH\=.*/i \export SDNPATH=~\/openshift-sdn\/_output\/local\/go\/bin\/' \
-        -e "s/^PATH=.*/PATH=\$PATH:\$HOME\/bin:\$GOPATH\/bin\/:\$OSEPATH/" \
-        ~/.bash_profile
-        source ~/.bash_profile
-
-1. Clone the origin git repository:
-
-        cd; git clone https://github.com/openshift/origin.git
-
-1. Build the openshift project:
-
-        cd ~/origin/hack
-        ./build-go.sh
-
-1. Create an `osc` symlink:
-
-        ln -s ~/origin/_output/local/bin/linux/amd64/openshift \
-        ~/origin/_output/local/bin/linux/amd64/osc
-
 1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file:
 
-        OPTIONS=--insecure-registry 192.0.0.0/8 -H fd://
+        OPTIONS=--insecure-registry 0.0.0.0/0 -H fd://
 
     The `--insecure-registry` option tells Docker to trust any registry on the
     specified subnet, without requiring a certificate. You would want to
@@ -127,70 +106,131 @@ releases. In between the following rules:
 
 1. Install `openshift-sdn`:
 
-        git clone https://github.com/openshift/openshift-sdn
-        cd openshift-sdn
-        make clean        # optional
-        make              # build
+        yum install openshift-sdn
+
+1. Add the following to `root`'s `.bash_profile`:
+
+        export KUBECONFIG=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig
 
 1. Restart your system.
 
-### Grab Docker Images
-On all of your nodes, grab the following docker images:
+### On Master
+1. Install the OpenShift software:
 
-        docker pull openshift/docker-registry
-        docker pull openshift/origin-sti-builder
-        docker pull openshift/origin-deployer
-        docker pull openshift/origin-haproxy-router
+        yum install 'openshift*'
+
+### On Nodes
+1. Install the OpenShift software:
+
+        yum install `openshift*`
+
+1. Edit `/etc/sysconfig/openshift-node` and set the `OPTIONS` stanza to read:
+
+        OPTIONS="--master=fqdn.of.master --loglevel=0"
+
+### Grab Docker Images
+On all of your systems, grab the following docker images:
+
+        docker pull openshift/docker-registry; \
+        docker pull openshift/origin-sti-builder; \
+        docker pull openshift/origin-deployer; \
+        docker pull openshift/origin-haproxy-router; \
+        docker pull google/golang;
 
 ## Starting the OpenShift Services
 ### Running a Master
-The Beta 1 setup assumes one master and two nodes. Running the master in a tmux
-or screen session will help enable you to do other things on the master while
-OpenShift is still running.
+#### The Master Service
+Nothing special is required to start the OpenShift master service. On your
+master, simply run:
 
-** workaround for SSL issues with router **
+    systemctl start openshift-master
 
---listen=http://0.0.0.0:8080
+You may also want to `systemctl enable openshift-master` to ensure the service
+automatically starts on the next boot.
 
-1. On the VM that you wish to be the OpenShift master, execute the following:
-
-        ~/origin/_output/local/bin/linux/amd64/openshift start master \
-        --nodes=hostname1,hostname2,hostname3
-
-    For example:
-    
-        ~/origin/_output/local/bin/linux/amd64/openshift start master \
-        --nodes=ose3-node1.erikjacobs.com,ose3-node2.erikjacobs.com
-
-    You must use hostnames and the hostnames that you use must match the output
-    of `hostname -f` on each of your nodes. By extension, you must at least have
-    all hostname/ip mappings in /etc/hosts files or forward DNS should work.
-
-### Setting Up the SDN
+#### Setting Up the SDN
 Once your master is started, we need to start the SDN (which uses Open vSwitch)
-to begin creating our network overlay. Simply execute:
+to begin creating our network overlay. The SDN master coordinates all of the SDN
+activities. The SDN node actually manipulates the local docker and network
+configuration. Since our OpenShift master is also a node, we will also run an
+SDN master and node.
 
-    openshift-sdn
+First, edit the
+`/etc/sysconfig/openshift-sdn-master` file and edit the `OPTIONS` to read:
 
-### Running a node
-Running a node is similar to running the master. Instead of specifying which
-nodes we will look for, we tell the OpenShift program to look for the master:
+    OPTIONS="-etcd-endpoints=http://fqdn-of-master:4001 -v=4"
 
-        ~/origin/_output/local/bin/linux/amd64/openshift start node \
-        --master=MASTER_HOSTNAME
+Then you can start the SDN master:
 
-### Starting the Router
-Earlier, we created the symbolic link for the `osc` program. There is a script
-that will configure and start a pod for the HAProxy router that leverages this
-command.
+    systemctl start openshift-sdn-master
 
-On your **master** host, execute the following:
+Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
 
-    ~/origin/hack/install-router.sh mainrouter IP_OF_MASTER \
-    ~/origin/_output/local/bin/linux/amd64/osc
+    MASTER_URL="http://fqdn.of.master:4001"
+    
+    MINION_IP="ip.address.of.public.interface"
+    
+    OPTIONS="-v=4 -hostname fqdn.of.node"
 
-This command will generate a JSON file for the command-line tool to ingest, and
-then will create a pod using this JSON file. Here are sample JSON contents:
+Then you can start the SDN node:
+
+    systemctl start openshift-sdn-node
+
+**BUG** You need to go back and edit `/etc/sysconfig/docker` to re-add the
+insecure registry options.
+
+#### The OpenShift Node
+We are running a "node" service on our master. In other words, the OpenShift
+Master will both orchestrate containers and run containers, too.
+
+Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
+
+    OPTIONS="--loglevel=4"
+
+Start the node service:
+
+    systemctl start openshift-node
+
+### Running a Node
+Perform the following steps, in order, on both nodes.
+
+#### The Node SDN
+Edit the `/etc/sysconfig/openshift-sdn-node` file:
+
+    MASTER_URL="http://fqdn.of.master:4001"
+    
+    MINION_IP="ip.address.of.public.interface"
+    
+    OPTIONS="-v=4 -hostname fqdn.of.node"
+
+And start the SDN node:
+
+    systemctl start openshift-sdn node
+
+Note that you **must** start the SDN before starting the OpenShift node service.
+
+**BUG** You need to go back and edit `/etc/sysconfig/docker` to re-add the
+insecure registry options.
+
+#### The OpenShift Node
+Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
+
+    OPTIONS="--loglevel=4 --master=fqdn.of.master"
+
+Start the node service:
+
+    systemctl start openshift-node
+
+### Running the Router
+Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
+easy to get a complete "multi-tier" "application" deployed, reaching it from
+anywhere outside of the OpenShift environment is not possible without something
+extra. This extra thing is the routing layer. The router is the ingress point
+for all traffic destined for OpenShift v3 services. It currently supports only
+HTTP(S) traffic.
+
+As with most things in OpenShift v3, resources are defined via JSON. The
+following JSON file describes the router:
 
     {
         "kind": "Pod",
@@ -203,11 +243,31 @@ then will create a pod using this JSON file. Here are sample JSON contents:
                     {
                         "name": "origin-haproxy-router-mainrouter",
                         "image": "openshift/origin-haproxy-router",
-                        "ports": [{
-                            "containerPort": 80,
-                            "hostPort": 80
-                        }],
-                        "command": ["--master=192.168.133.2:8080"],
+                        "ports": [
+                            {
+                                "containerPort": 80,
+                                "hostPort": 80
+                            },
+                            {
+                                "containerPort": 443,
+                                "hostPort": 443
+                            }
+                        ],
+                        "env": [
+                            {
+                                "name": "OPENSHIFT_MASTER",
+                                "value": "https://fqdn.of.master:8443"
+                            },
+                            {
+                                "name": "OPENSHIFT_CA_DATA",
+                                "value": ""
+                            },
+                            {
+                                "name": "OPENSHIFT_INSECURE",
+                                "value": "true"
+                            }
+                        ],
+                        "command": ["--loglevel=4"],
                         "imagePullPolicy": "PullIfNotPresent"
                     }
                 ],
@@ -218,8 +278,17 @@ then will create a pod using this JSON file. Here are sample JSON contents:
         }
     }
 
-If this works, you should see the pod status change to "running" after a few
-moments:
+Download this file onto your master and be sure to edit the `OPENSHIFT_MASTER`
+value to have the correct FQDN:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/router.json
+
+Then, use the `osc` tool to create the router:
+
+    osc create -f router.json
+
+If this works, in the output of `osc get pods` you should see the pod status
+change to "running" after a few moments:
 
     osc get pods
     POD                 CONTAINER(S)                       IMAGE(S)                          HOST                         LABELS              STATUS
@@ -316,6 +385,10 @@ issue a curl to the app's port:
 
 Hooray!
 
+Go ahead and delete this pod so that you don't get confused in later examples:
+
+    osc delete pod hello-openshift
+    
 ## Services
 From the [Kubernetes
 documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/services.md):
@@ -586,4 +659,47 @@ previous example, except that it uses a Ruby/Sinatra application instead of a Go
 application.
 
 For this example, we will be using the following application's source code:
+
+    https://github.com/thoraxe/simple-openshift-sinatra-sti
+
+need to substitute docker registry ip
+
+    cd
+    git clone https://github.com/thoraxe/simple-openshift-sinatra-sti
+    cd ~/simple-openshift-sinatra-sti
+    rm Dockerfile
+    app-gen.go --docker-registry="172.30.17.5:5001" | python -m json.tool >
+    ~/simple-sinatra.json
+
+Look at json
+
+    osc apply -f ~/simple-sinatra.json
+    I0128 14:34:32.200333   15887 apply.go:65] Creation succeeded for
+    BuildConfig with name simple-openshift-sinatra-sti
+    I0128 14:34:32.200345   15887 apply.go:65] Creation succeeded for
+    ImageRepository with name simple-openshift-sinatra-sti
+    I0128 14:34:32.200348   15887 apply.go:65] Creation succeeded for
+    DeploymentConfig with name ruby-20-centos
+    I0128 14:34:32.200351   15887 apply.go:65] Creation succeeded for Service
+    with name ruby-20-centos-9292
+
+No webhook - Need to manually trigger build. Find "password"/secret:
+
+    grep generic simple-sinatra.json -A1 | grep secret \
+    | awk '{print $2}' | cut -d\" -f2
+
+Builds can be triggered by hitting a URL on OpenShift. We can simulate this with
+`curl`. Substitute the UUID you found (password/secret) in the below:
+
+    curl -k -X POST
+    https://localhost:8443/osapi/v1beta1/buildConfigHooks/simple-openshift-sinatra-sti/7d962a54-fe5a-4385-9a99-9222e12186d0/generic?namespace=default
+
+Now we can look at the console to check on the progress of our build.
+
+## OpenShift Console
+Open the console by visiting the FQDN of your master at port 8444:
+
+    https://master-fqdn.domain.com:8444
+
+You should see the project we previously created (Hello, Sinatra!). Click it.
 
