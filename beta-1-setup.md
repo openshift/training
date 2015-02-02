@@ -140,8 +140,12 @@ On all of your systems, grab the following docker images:
 ## Starting the OpenShift Services
 ### Running a Master
 #### The Master Service
-Nothing special is required to start the OpenShift master service. On your
-master, simply run:
+First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
+`OPTIONS` to read:
+
+    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
+
+Then, start the `openshift-master` service:
 
     systemctl start openshift-master
 
@@ -158,11 +162,15 @@ SDN master and node.
 First, edit the
 `/etc/sysconfig/openshift-sdn-master` file and edit the `OPTIONS` to read:
 
-    OPTIONS="-etcd-endpoints=http://fqdn-of-master:4001 -v=4"
+    OPTIONS="-v=4"
+
+You can ignore the `DOCKER_OPTIONS`.
 
 Then you can start the SDN master:
 
     systemctl start openshift-sdn-master
+
+You may also want to enable the service.
 
 Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
 
@@ -170,14 +178,15 @@ Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
     
     MINION_IP="ip.address.of.public.interface"
     
-    OPTIONS="-v=4 -hostname fqdn.of.node"
+    OPTIONS="-v=4"
+
+    DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
 Then you can start the SDN node:
 
     systemctl start openshift-sdn-node
 
-**BUG** You need to go back and edit `/etc/sysconfig/docker` to re-add the
-insecure registry options.
+You may also want to enable the service.
 
 #### The OpenShift Node
 We are running a "node" service on our master. In other words, the OpenShift
@@ -185,14 +194,24 @@ Master will both orchestrate containers and run containers, too.
 
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
 
-    OPTIONS="--loglevel=4"
+    OPTIONS="--loglevel=4 --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
 
 Start the node service:
 
     systemctl start openshift-node
 
+
+You may also want to enable the service.
+
 ### Running a Node
 Perform the following steps, in order, on both nodes.
+
+#### Grab the SSL certificates
+You should grab the SSL certificates and other information from your master. You
+can do the following on your node:
+
+    rsync -av root@fqdn.of.node:/var/lib/openshift/openshift.local.certificates \
+    /var/lib/openshift/
 
 #### The Node SDN
 Edit the `/etc/sysconfig/openshift-sdn-node` file:
@@ -201,7 +220,9 @@ Edit the `/etc/sysconfig/openshift-sdn-node` file:
     
     MINION_IP="ip.address.of.public.interface"
     
-    OPTIONS="-v=4 -hostname fqdn.of.node"
+    OPTIONS="-v=4"
+
+    DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
 And start the SDN node:
 
@@ -209,8 +230,7 @@ And start the SDN node:
 
 Note that you **must** start the SDN before starting the OpenShift node service.
 
-**BUG** You need to go back and edit `/etc/sysconfig/docker` to re-add the
-insecure registry options.
+You may also want to enable the service.
 
 #### The OpenShift Node
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
@@ -652,6 +672,16 @@ appropriate Docker image to build and use to support the code) or a code
 repository + a Dockerfile (so that OpenShift can pull or build the Docker image
 for you).
 
+### A Project for Everything
+V3 has a concept of "projects" to contain a number of different services and
+their pods, builds and etc. Let's create a project for our first STI
+applciation.
+
+    wget \
+    https://raw.githubusercontent.com/openshift/training/master/sinatra-project.json
+
+    osc create -f sinatra-project.json
+
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
 extremely simple "Hello World" type application that looks very much like our
@@ -662,14 +692,11 @@ For this example, we will be using the following application's source code:
 
     https://github.com/thoraxe/simple-openshift-sinatra-sti
 
-need to substitute docker registry ip
-
     cd
     git clone https://github.com/thoraxe/simple-openshift-sinatra-sti
     cd ~/simple-openshift-sinatra-sti
     rm Dockerfile
-    app-gen.go --docker-registry="172.30.17.5:5001" | python -m json.tool >
-    ~/simple-sinatra.json
+    /path/to/app-gen -p 9292 | python -m json.tool > ~/simple-sinatra.json
 
 Look at json
 
