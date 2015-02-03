@@ -32,16 +32,15 @@ and the following configuration:
 * "Minimal" installation option
 * firewalld and NetworkManager **disabled**
 * SELinux **permissive** or **disabled**
-* Subscribed and registered to Red Hat
-* With these repositories:
+* Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
+* Then configure yum as follows:
 
         subscription-manager repos --disable="*"
         subscription-manager repos \
         --enable="rhel-7-server-beta-rpms" \
         --enable="rhel-7-server-extras-rpms" \
-        --enable="rhel-7-server-optional-beta-rpms"
-
-TODO: Needs openshift beta repo
+        --enable="rhel-7-server-optional-beta-rpms" \
+        --enable="rhel-server-7-ose-beta-rpms"
 
 Once you have prepared your VMs, you can do the following on **each** VM:
 
