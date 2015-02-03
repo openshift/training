@@ -210,7 +210,7 @@ Perform the following steps, in order, on both nodes.
 You should grab the SSL certificates and other information from your master. You
 can do the following on your node:
 
-    rsync -av root@fqdn.of.node:/var/lib/openshift/openshift.local.certificates \
+    rsync -av root@fqdn.of.master:/var/lib/openshift/openshift.local.certificates \
     /var/lib/openshift/
 
 #### The Node SDN
@@ -408,7 +408,7 @@ Hooray!
 Go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
-    
+
 ## Services
 From the [Kubernetes
 documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/services.md):
@@ -569,16 +569,17 @@ use wget to grab it:
 Once you have this file, go ahead and use `osc` to apply it. You should see
 something like the following:
 
-    osc apply -f test-complete.json 
-    I0121 14:43:40.987895    2202 apply.go:65] Creation succeeded for Pod with name hello-openshift-pod
-    I0121 14:43:40.987911    2202 apply.go:65] Creation succeeded for Service with name hello-openshift-service
-    I0121 14:43:40.987914    2202 apply.go:65] Creation succeeded for Route with name
+        # osc apply -f test-complete.json 
+        hello-openshift-pod
+        hello-openshift-service
+        
+        #
 
 You can verify this with other `osc` commands:
 
     osc get pods
     ...
-    hello-openshift-pod/172.17.0.2 ...
+    hello-openshift-pod/10.X.X.X ...
 
     osc get services
     ...
@@ -651,10 +652,8 @@ View the contents of the file if you like. When you are ready, go ahead and
 apply it with `osc` and you will see some output:
 
     osc apply -f ~/docker-registry-config.json
-    I0126 13:56:20.160177    2189 apply.go:65] Creation succeeded for Service
-    with name docker-registry
-    I0126 13:56:20.160194    2189 apply.go:65] Creation succeeded for
-    DeploymentConfig with name docker-registry
+    docker-registry
+    docker-registry
 
 You can use `osc get pods` and `osc get services` to see what happened.
 
