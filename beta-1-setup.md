@@ -639,13 +639,23 @@ Hooray!
 We mentioned a few times that OpenShift would host its own Docker registry in
 order to pull images "locally". Let's take a moment to set that up.
 
-Go ahead and grab the following JSON file -- it contains a number of
-configurations to tell OpenShift to stand up the Docker registry image as a
-service within OpenShift:
+The Docker registry requires some information about our environment (SSL info,
+namely), so we will use an install script to process a template. Go ahead and
+grab the following files:
 
-    cd
     wget \
-    https://raw.githubusercontent.com/openshift/origin/master/examples/sample-app/docker-registry-config.json
+    https://raw.githubusercontent.com/openshift/training/master/install-registry.sh
+    wget \
+    https://raw.githubusercontent.com/openshift/training/master/docker-registry-template.json
+
+Make the script executable:
+
+    chmod 755 install-registry.sh
+
+And now run it the following way:
+
+    CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
+    KUBERNETES_MASTER=https://ose3-master.example.com:8443 ./install-registry.sh
 
 View the contents of the file if you like. When you are ready, go ahead and
 apply it with `osc` and you will see some output:
