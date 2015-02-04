@@ -225,7 +225,7 @@ Edit the `/etc/sysconfig/openshift-sdn-node` file:
 
 And start the SDN node:
 
-    systemctl start openshift-sdn node
+    systemctl start openshift-sdn-node
 
 Note that you **must** start the SDN before starting the OpenShift node service.
 
