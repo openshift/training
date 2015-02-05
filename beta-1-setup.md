@@ -657,20 +657,17 @@ And now run it the following way:
     CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
     KUBERNETES_MASTER=https://ose3-master.example.com:8443 ./install-registry.sh
 
-View the contents of the file if you like. When you are ready, go ahead and
-apply it with `osc` and you will see some output:
+You'll get output like:
 
-    osc apply -f ~/docker-registry-config.json
+    [INFO] Submitting docker-registry template file for processing
     docker-registry
     docker-registry
 
-You can use `osc get pods` and `osc get services` to see what happened.
+You can use `osc get pods`, `osc get services`, and `osc get deploymentconfig`
+to see what happened.
 
 Ultimately, you will have a Docker registry that is being hosted by OpenShift
 and that is running on one of your nodes.
-
-TODO: There should be some way once the network overlay is up to be able to
-reach the registry from somewhere.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
