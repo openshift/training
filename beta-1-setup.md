@@ -619,6 +619,27 @@ You can verify this with other `osc` commands:
     ...
     cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.example.com ...
 
+### Verifying the Service
+Services are not externally accessible without a route being defined, because
+they always listen on "local" IP addresses (eg: 172.x.x.x). However, if you have
+access to the OpenShift environment, you can still test a service.
+
+    osc get services
+    NAME                      LABELS                                    SELECTOR                     IP                  PORT
+    hello-openshift-service   <none>                                    name=hello-openshift-label   172.30.17.88        27017
+    kubernetes                component=apiserver,provider=kubernetes   <none>                       172.30.17.2         443
+    kubernetes-ro             component=apiserver,provider=kubernetes   <none>                       172.30.17.1         80
+
+We can see that the service has been defined based on the JSON we used earlier.
+If the output of `osc get pods` shows that our pod is running, we can try to
+access the service:
+
+    curl http://172.30.17.88:27017
+    Hello OpenShift!
+
+This is a good sign! It means that, if the router is working, we should be able
+to access the service via the route.
+
 ### Verifying the Routing
 Verifying the routing is a little complicated, but not terribly so. First, find
 where the router is running using `osc get pods`:
@@ -676,6 +697,11 @@ grab the following files:
 
     wget https://raw.githubusercontent.com/openshift/training/master/install-registry.sh
     wget https://raw.githubusercontent.com/openshift/training/master/docker-registry-template.json
+
+Edit `docker-registry-template.json` and find `OPENSHIFT_MASTER` -- set it to
+the proper URL, for example:
+
+    https://ose3-master.example.com:8443
 
 Make the script executable:
 

@@ -10,7 +10,7 @@
       {
           "name": "OPENSHIFT_MASTER",
           "description": "OpenShift master",
-          "value": "http://localhost:8080"
+          "value": "http://ose3-master.example.com:8443"
       },
       {
           "name": "OPENSHIFT_CA_DATA",
