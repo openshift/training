@@ -40,7 +40,7 @@
       "id": "hello-openshift-route",
       "kind": "Route",
       "apiVersion": "v1beta1",
-      "host": "hello-openshift.cloudapps.erikjacobs.com",
+      "host": "hello-openshift.cloudapps.example.com",
       "serviceName": "hello-openshift-service"
     }
   ]

@@ -8,7 +8,7 @@
             "containers": [
                 {
                     "name": "origin-haproxy-router-mainrouter",
-                    "image": "openshift/origin-haproxy-router",
+                    "image": "openshift3_beta/ose-haproxy-router",
                     "ports": [
                         {
                             "containerPort": 80,

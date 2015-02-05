@@ -11,13 +11,14 @@ fine, but remember that you will have to adjust files and actions accordingly.
 ## Setting Up the Environment
 ### DNS
 You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
-address of the OpenShift router. For now, make sure you point this zone to one
-of the IP addresses of your node VMs and use a low TTL. We will adjust the IP
-later.
+address of the OpenShift router. The way we start the various services, the
+router will always end up on the OpenShift server that is running the master. Go
+ahead and create a wildcard DNS entry for "cloudapps" (or something similar),
+with a low TTL, that points to the public IP address of your master.
 
 For example:
 
-    *.cloudapps.example.com. 300 IN  A 192.168.133.4
+    *.cloudapps.example.com. 300 IN  A 192.168.133.2
 
 In almost all cases, when referencing VMs you must use hostnames and the
 hostnames that you use must match the output of `hostname -f` on each of your
@@ -101,8 +102,7 @@ releases. In between the following rules:
 
 1. Restart iptables and docker, enable iptables:
 
-        systemctl restart iptables; systemctl restart docker; systemctl enable \
-        iptables; systemctl start docker
+        systemctl enable iptables
 
 1. Add the following to `root`'s `.bash_profile`:
 
@@ -123,10 +123,17 @@ Edit `/etc/sysconfig/openshift-node` and set the `OPTIONS` stanza to read:
 ### Grab Docker Images
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift_beta/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift_beta/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
+    docker pull openshift/docker-registry
+
+**note: missing:
+    openshift/hello-openshift
+    sti images (eg: ruby20-centos-sti kind of thing)
+**
 
 And re-tag them:
 
@@ -141,7 +148,7 @@ And re-tag them:
 First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
 `OPTIONS` to read:
 
-    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
+    OPTIONS="--loglevel=4 --public-master=fqdn.of.master --images=openshift3_beta/ose-${component}"
 
 Then, start the `openshift-master` service:
 
@@ -225,7 +232,7 @@ following JSON file describes the router:
                 "containers": [
                     {
                         "name": "origin-haproxy-router-mainrouter",
-                        "image": "openshift/origin-haproxy-router",
+                        "image": "openshift_beta/ose-haproxy-router",
                         "ports": [
                             {
                                 "containerPort": 80,
@@ -271,11 +278,11 @@ Then, use the `osc` tool to create the router:
     osc create -f router.json
 
 If this works, in the output of `osc get pods` you should see the pod status
-change to "running" after a few moments:
+change to "running" after a few moments (it may take up to a few minutes):
 
     osc get pods
-    POD                 CONTAINER(S)                       IMAGE(S)                          HOST                         LABELS              STATUS
-    mainrouter          origin-haproxy-router-mainrouter   openshift/origin-haproxy-router   ose3-node2.erikjacobs.com/   <none>              Running
+    POD        IP       CONTAINER(S)                     IMAGE(S)                          HOST                                   LABELS STATUS
+    mainrouter 10.1.0.3 origin-haproxy-router-mainrouter openshift_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
 
 At this point you must update your DNS wildcard entry to point to the IP address
 of the host on which the router instance is running.
@@ -288,7 +295,6 @@ using some sample code.
 ### Grab the Definition JSON
 On your **master** node, go ahead and grab the JSON definition:
 
-    cd
     wget https://raw.githubusercontent.com/openshift/origin/master/examples/hello-openshift/hello-pod.json
 
 You can see the contents of our pod definition by using `cat`:
@@ -325,8 +331,7 @@ OpenShift further.
 ### Run the Pod
 To define the pod from our JSON file, execute the following:
 
-    cd
-    osc create -f ./hello-pod.json
+    osc create -f hello-pod.json
 
 You should see the ID of the pod returned to you:
 
@@ -337,31 +342,28 @@ status:
 
     osc get pods
     # osc get pods
-    POD                 CONTAINER(S)                       IMAGE(S)                              HOST                         LABELS                 STATUS
-    mainrouter          origin-haproxy-router-mainrouter   openshift/origin-haproxy-router       ose3-node2.erikjacobs.com/   <none>                 Running
-    hello-openshift     hello-openshift                    openshift/hello-openshift             ose3-node2.erikjacobs.com/   name=hello-openshift   Pending
+    POD             IP       CONTAINER(S)                     IMAGE(S)                          HOST                                  LABELS                 STATUS
+    hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift         ose3-master.example.com/192.168.133.2 name=hello-openshift   Running
+    mainrouter      10.1.0.3 origin-haproxy-router-mainrouter openshift_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2 <none>                 Running
 
+
+**note: we might pre-fetch**
 When you first issue `get pods`, you will likely see a pending status for the
 `hello-openshift` pod. This is because we did not pre-fetch its Docker image, so
 the node is pulling it from a registry. Later we will set up a local Docker
-registry for OpenShift to use.  In our case, the hello-openshift application is
-running on `node2`. 
+registry for OpenShift to use.
 
-On the node where your `hello-openshift` application is running once the pod
-status shows `Running`, look at the list of Docker containers to see the bound
-ports. We should see a Kubernetes `pause` container bound to 6061 on the host
-and bound to 8080 on the container.
+Look at the list of Docker containers with `docker ps` to see the bound ports.
+We should see an `openshift/origin-pod` container bound to 6061 on the host and
+bound to 8080 on the container.
 
-    docker ps
-
-The `pause` container exists because of the way network namespacing works in
-Kubernetes. For the sake of simplicity, think of the `pause` container as
-nothing more than a way for the host OS to get an interface created for the
-corresponding pod to be able to receive traffic. Deeper understanding of
+The `openshift/origin-pod` container exists because of the way network
+namespacing works in Kubernetes. For the sake of simplicity, think of the
+container as nothing more than a way for the host OS to get an interface created
+for the corresponding pod to be able to receive traffic. Deeper understanding of
 networking in OpenShift is outside the scope of this material.
 
-To verify that the app is working, on the node running `hello-openshift` you can
-issue a curl to the app's port:
+To verify that the app is working, you can issue a curl to the app's port:
 
     curl http://localhost:6061
     Hello OpenShift!
@@ -372,7 +374,10 @@ Go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
 
-### Running a Node
+## Adding Nodes
+It is extremely easy to add nodes to an existing OpenShift environment.
+
+### Configuring a Node
 Perform the following steps, in order, on both nodes.
 
 #### Grab the SSL certificates
@@ -385,7 +390,7 @@ can do the following on your node:
 #### The OpenShift Node
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
 
-    OPTIONS="--loglevel=4 --master=fqdn.of.master"
+    OPTIONS="--loglevel=4 --master=fqdn.of.master --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
 
 Do **not** start the openshift-node service. We will let openshift-sdn-node
 handle that for us (like before).
@@ -407,6 +412,36 @@ And start the SDN node:
 
 You may also want to enable the service.
 
+### Adding the Node Via OpenShift's API
+The following JSON describes a node:
+
+    {
+      "id": "ose3-node1.example.com",
+      "kind": "Minion",
+      "apiVersion": "v1beta1",
+    }
+
+Grab this node definition from the training repository:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/node.json
+
+Then, add the node via the API:
+
+    osc create -f node.json
+
+You can then edit the file to exchange `node1` for `node2` and then use `osc`
+again:
+
+    osc create -f node.json
+
+You should now have two running nodes in addition to your original "master"
+node:
+
+    osc get minions
+    NAME                      LABELS              STATUS
+    ose3-master.example.com   <none>              Ready
+    ose3-node1.example.com    <none>              Ready
+    ose3-node2.example.com    <none>              Ready
 
 ## Services
 From the [Kubernetes
@@ -532,7 +567,7 @@ with a corresponding route:
           "id": "hello-openshift-route",
           "kind": "Route",
           "apiVersion": "v1beta1",
-          "host": "hello-openshift.cloudapps.erikjacobs.com",
+          "host": "hello-openshift.cloudapps.example.com",
           "serviceName": "hello-openshift-service"
         }
       ]
@@ -545,12 +580,12 @@ In the JSON above:
   * with the id `hello-openshift-service`
   * with the selector `name=hello-openshift-label`
 * There is a route:
-  * with the FQDN `hello-openshift.cloudapps.erikjacobs.com`
+  * with the FQDN `hello-openshift.cloudapps.example.com`
   * with the `serviceName` directive `hello-openshift-service`
 
 If we work from the route down to the pod:
 
-* The route for `hello-openshift.cloudapps.erikjacobs.com` has an HAProxy pool
+* The route for `hello-openshift.cloudapps.example.com` has an HAProxy pool
 * The pool is for any pods in the service whose ID is `hello-openshift-service`,
     via the `serviceName` directive of the route.
 * The service `hello-openshift-service` includes every pod who has a label
@@ -561,18 +596,14 @@ If we work from the route down to the pod:
 Create the JSON file above on your **master** host in root's home directory. Or
 use wget to grab it:
 
-    cd
-    wget \
-    https://raw.githubusercontent.com/openshift/training/master/test-complete.json
+    wget https://raw.githubusercontent.com/openshift/training/master/test-complete.json
 
 Once you have this file, go ahead and use `osc` to apply it. You should see
 something like the following:
 
-        # osc apply -f test-complete.json 
+        osc create -f test-complete.json 
         hello-openshift-pod
         hello-openshift-service
-        
-        #
 
 You can verify this with other `osc` commands:
 
@@ -586,14 +617,14 @@ You can verify this with other `osc` commands:
 
     osc get routes
     ...
-    cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.erikjacobs.com ...
+    cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.example.com ...
 
 ### Verifying the Routing
 Verifying the routing is a little complicated, but not terribly so. First, find
 where the router is running using `osc get pods`:
 
     osc get pods | grep router | awk '{print $4}'
-    ose3-node1.erikjacobs.com/
+    ose3-node1.example.com/
 
 We ultimately want the PID of the container running the router so that we can go
 "inside" it. On the node, issue the following to get the PID:
@@ -619,7 +650,7 @@ If you see some content that looks like:
     "hello-openshift-service": {
       "Name": "hello-openshift-service",
       "HostAliases": [
-        "hello-openshift.cloudapps.erikjacobs.com"
+        "hello-openshift.cloudapps.example.com"
       ],
 
 You know that "it" worked -- the router watcher detected the creation of the
@@ -630,7 +661,7 @@ publicly-accessible OpenShift application!
 
     [root@mainrouter /]# exit
     logout
-    # curl http://hello-openshift.cloudapps.erikjacobs.com
+    # curl http://hello-openshift.cloudapps.example.com
     Hello OpenShift!
 
 Hooray!
@@ -643,10 +674,8 @@ The Docker registry requires some information about our environment (SSL info,
 namely), so we will use an install script to process a template. Go ahead and
 grab the following files:
 
-    wget \
-    https://raw.githubusercontent.com/openshift/training/master/install-registry.sh
-    wget \
-    https://raw.githubusercontent.com/openshift/training/master/docker-registry-template.json
+    wget https://raw.githubusercontent.com/openshift/training/master/install-registry.sh
+    wget https://raw.githubusercontent.com/openshift/training/master/docker-registry-template.json
 
 Make the script executable:
 
