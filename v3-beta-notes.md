@@ -2,20 +2,20 @@ deltarpm iptables-services
 
 Docker images:
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
-docker pull 10.3.13.28:5000/openshift/origin-haproxy-router
-docker pull 10.3.13.28:5000/openshift/origin-deployer
-docker pull 10.3.13.28:5000/openshift/origin-sti-builder
-docker pull 10.3.13.28:5000/openshift/origin-docker-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-haproxy-router
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-deployer
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-sti-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-docker-builder
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-sti-builder openshift_beta/ose-sti-builder
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-docker-builder openshift_beta/ose-docker-builder
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-deployer openshift_beta/ose-deployer
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift_beta/ose-haproxy-router openshift_beta/ose-haproxy-router
 docker pull google/golang
-docker tag 10.3.13.28:5000/openshift/origin-haproxy-router openshift/origin-haproxy-router
-docker tag 10.3.13.28:5000/openshift/origin-deployer openshift/origin-deployer
-docker tag 10.3.13.28:5000/openshift/origin-sti-builder openshift/origin-sti-builder
-docker tag 10.3.13.28:5000/openshift/origin-docker-builder openshift/origin-docker-builder
 
 DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
 ## start master
-sed -i -e 's/^OPTIONS=.*/OPTIONS="--loglevel=4 --public-master=ose3-master.example.com --nodes=ose3-master.example.com,ose3-node1.example.com,ose3-node2.example.com"/' /etc/sysconfig/openshift-master
+sed -i -e 's/^OPTIONS=.*/OPTIONS="--loglevel=4 --public-master=ose3-master.example.com"/' /etc/sysconfig/openshift-master
 sed -i -e 's/^OPTIONS=.*/OPTIONS=-v=4/' /etc/sysconfig/openshift-sdn-master
 sed -i -e 's/^MASTER_URL=.*/MASTER_URL=http:\/\/ose3-master.example.com:4001/' \
 -e 's/^MINION_IP=.*/MINION_IP=192.168.133.2/' \

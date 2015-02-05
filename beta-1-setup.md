@@ -3,6 +3,11 @@
 We **strongly** recommend that you use some kind of terminal window manager
 (Screen, Tmux).
 
+## Assumptions
+In most cases you will see references to "example.com" and other FQDNs related
+to it. If you choose not to use "example.com" in your configuration, that is
+fine, but remember that you will have to adjust files and actions accordingly.
+
 ## Setting Up the Environment
 ### DNS
 You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
@@ -12,16 +17,16 @@ later.
 
 For example:
 
-    *.cloudapps.erikjacobs.com. 300 IN  A 192.168.133.4
+    *.cloudapps.example.com. 300 IN  A 192.168.133.4
 
 In almost all cases, when referencing VMs you must use hostnames and the
 hostnames that you use must match the output of `hostname -f` on each of your
 nodes. By extension, you must at least have all hostname/ip mappings in
 /etc/hosts files or forward DNS should work.
 
-### Github
-You will need a Github account for the STI examples, or some internal and
-accessible Git repository into which you can place application code.
+### Git
+You will either need internet access or read and write access to an internal
+http-based git server.
 
 ### Each VM
 
@@ -31,7 +36,6 @@ and the following configuration:
 * RHEL 7.1 Beta
 * "Minimal" installation option
 * firewalld and NetworkManager **disabled**
-* SELinux **permissive** or **disabled**
 * Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
 * Then configure yum as follows:
 
@@ -52,20 +56,14 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
         yum -y remove NetworkManager*
 
-1. Update:
-
-        yum -y update
-
-TODO: will need a repo for the openshift software and openvswitch
-http://download.eng.bos.redhat.com/brewroot/packages/openvswitch/2.3.1/2.git20150113.el7/x86_64/openvswitch-2.3.1-2.git20150113.el7.x86_64.rpm
-
 1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git golang \
-        docker openvswitch iptables-services bridge-utils 
+        docker openvswitch iptables-services bridge-utils '*openshift*'
 
-    We suggest running the Docker registry on the OpenShift Master, which is why we
-    install Docker on all the systems.
+1. Update:
+
+        yum -y update
 
 1. Enable openvswitch:
 
@@ -94,18 +92,17 @@ releases. In between the following rules:
 
     Add these rules:
 
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-        -A INPUT -p tcp -m state --state NEW -m tcp --dport 1024:65535 -j ACCEPT
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 
 1. Restart iptables and docker, enable iptables:
 
         systemctl restart iptables; systemctl restart docker; systemctl enable \
-        iptables
-
-1. Install `openshift-sdn`:
-
-        yum install openshift-sdn
+        iptables; systemctl start docker
 
 1. Add the following to `root`'s `.bash_profile`:
 
@@ -114,27 +111,29 @@ releases. In between the following rules:
 1. Restart your system.
 
 ### On Master
-1. Install the OpenShift software:
+Edit `/etc/sysconfig/openshift-master` and set the `OPTIONS` stanza to read:
 
-        yum install 'openshift*'
-
+    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
+ 
 ### On Nodes
-1. Install the OpenShift software:
+Edit `/etc/sysconfig/openshift-node` and set the `OPTIONS` stanza to read:
 
-        yum install `openshift*`
-
-1. Edit `/etc/sysconfig/openshift-node` and set the `OPTIONS` stanza to read:
-
-        OPTIONS="--master=fqdn.of.master --loglevel=0"
+    OPTIONS="--master=fqdn.of.master --loglevel=4"
 
 ### Grab Docker Images
 On all of your systems, grab the following docker images:
 
-        docker pull openshift/docker-registry; \
-        docker pull openshift/origin-sti-builder; \
-        docker pull openshift/origin-deployer; \
-        docker pull openshift/origin-haproxy-router; \
-        docker pull google/golang;
+    docker pull registry.access.redhat.com/openshift_beta/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift_beta/ose-deployer
+    docker pull registry.access.redhat.com/openshift_beta/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift_beta/ose-docker-builder
+
+And re-tag them:
+
+    docker tag registry.access.redhat.com/openshift_beta/ose-sti-builder openshift_beta/ose-sti-builder
+    docker tag registry.access.redhat.com/openshift_beta/ose-docker-builder openshift_beta/ose-docker-builder
+    docker tag registry.access.redhat.com/openshift_beta/ose-deployer openshift_beta/ose-deployer
+    docker tag registry.access.redhat.com/openshift_beta/ose-haproxy-router openshift_beta/ose-haproxy-router
 
 ## Starting the OpenShift Services
 ### Running a Master
@@ -150,6 +149,18 @@ Then, start the `openshift-master` service:
 
 You may also want to `systemctl enable openshift-master` to ensure the service
 automatically starts on the next boot.
+
+#### The OpenShift Node
+We are running a "node" service on our master. In other words, the OpenShift
+Master will both orchestrate containers and run containers, too.
+
+Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
+
+    OPTIONS="--loglevel=4 --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
+
+Do **not** start the openshift-node service yet. We must start the openshift-sdn-node
+first in order to set up the proper bridges, and the openshift-sdn-node service
+will automatically start the openshift-node service for us.
 
 #### Setting Up the SDN
 Once your master is started, we need to start the SDN (which uses Open vSwitch)
@@ -187,58 +198,11 @@ Then you can start the SDN node:
 
 You may also want to enable the service.
 
-#### The OpenShift Node
-We are running a "node" service on our master. In other words, the OpenShift
-Master will both orchestrate containers and run containers, too.
+Starting the sdn-node service will automatically start the openshift-node
+service.
 
-Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
-
-    OPTIONS="--loglevel=4 --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
-
-Start the node service:
-
-    systemctl start openshift-node
-
-
-You may also want to enable the service.
-
-### Running a Node
-Perform the following steps, in order, on both nodes.
-
-#### Grab the SSL certificates
-You should grab the SSL certificates and other information from your master. You
-can do the following on your node:
-
-    rsync -av root@fqdn.of.master:/var/lib/openshift/openshift.local.certificates \
-    /var/lib/openshift/
-
-#### The Node SDN
-Edit the `/etc/sysconfig/openshift-sdn-node` file:
-
-    MASTER_URL="http://fqdn.of.master:4001"
-    
-    MINION_IP="ip.address.of.public.interface"
-    
-    OPTIONS="-v=4"
-
-    DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
-
-And start the SDN node:
-
-    systemctl start openshift-sdn-node
-
-Note that you **must** start the SDN before starting the OpenShift node service.
-
-You may also want to enable the service.
-
-#### The OpenShift Node
-Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
-
-    OPTIONS="--loglevel=4 --master=fqdn.of.master"
-
-Start the node service:
-
-    systemctl start openshift-node
+We will start our testing and operations with only one OpenShift "node" -- the
+master. Later, we will add the other two nodes.
 
 ### Running the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
@@ -407,6 +371,42 @@ Hooray!
 Go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
+
+### Running a Node
+Perform the following steps, in order, on both nodes.
+
+#### Grab the SSL certificates
+You should grab the SSL certificates and other information from your master. You
+can do the following on your node:
+
+    rsync -av root@fqdn.of.master:/var/lib/openshift/openshift.local.certificates \
+    /var/lib/openshift/
+
+#### The OpenShift Node
+Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
+
+    OPTIONS="--loglevel=4 --master=fqdn.of.master"
+
+Do **not** start the openshift-node service. We will let openshift-sdn-node
+handle that for us (like before).
+
+#### The Node SDN
+Edit the `/etc/sysconfig/openshift-sdn-node` file:
+
+    MASTER_URL="http://fqdn.of.master:4001"
+    
+    MINION_IP="ip.address.of.public.interface"
+    
+    OPTIONS="-v=4"
+
+    DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
+
+And start the SDN node:
+
+    systemctl start openshift-sdn-node
+
+You may also want to enable the service.
+
 
 ## Services
 From the [Kubernetes
