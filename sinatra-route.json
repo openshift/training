@@ -1,0 +1,8 @@
+{
+  "id": "sinatra-route",
+  "kind": "Route",
+  "apiVersion": "v1beta1",
+  "host": "hello-sinatra.cloudapps.example.com",
+  "serviceName": "hello-openshift-service"
+}
+

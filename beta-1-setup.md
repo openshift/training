@@ -374,6 +374,13 @@ Go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
 
+Take a moment to think about what this pod definition really did -- it defined
+an arbitrary Docker image, made sure to fetch it (if it wasn't present), and
+then ran it. This could have just as easily been an application from an ISV
+available in a registry or something already written and built-in house.
+
+This is really powerful. We will explore using "arbitrary" docker images later.
+
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment.
 
@@ -724,6 +731,14 @@ to see what happened.
 Ultimately, you will have a Docker registry that is being hosted by OpenShift
 and that is running on one of your nodes.
 
+To quickly test your Docker registry, you can do the following:
+
+    curl `osc get services docker-registry -o template --template="{{ .portalIP}}:{{ .port }}"`
+
+And you should see:
+
+    "docker-registry server (dev) (v0.9.0)"
+
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
 your application source code and build a Docker image for it. In the real world,
@@ -737,9 +752,7 @@ V3 has a concept of "projects" to contain a number of different services and
 their pods, builds and etc. Let's create a project for our first STI
 applciation.
 
-    wget \
-    https://raw.githubusercontent.com/openshift/training/master/sinatra-project.json
-
+    wget https://raw.githubusercontent.com/openshift/training/master/sinatra-project.json
     osc create -f sinatra-project.json
 
 ### A Simple STI Build
@@ -755,38 +768,165 @@ For this example, we will be using the following application's source code:
     cd
     git clone https://github.com/thoraxe/simple-openshift-sinatra-sti
     cd ~/simple-openshift-sinatra-sti
-    rm Dockerfile
-    /path/to/app-gen -p 9292 | python -m json.tool > ~/simple-sinatra.json
+    rm -f Dockerfile
+    openshift ex generate | python -m json.tool > ~/simple-sinatra.json
 
-Look at json
+`ex generate` is a tool that will examine the current directory tree and tries
+to generate an appropriate JSON template so that, when processed, OpenShift can
+build the resulting image to run. 
 
-    osc apply -f ~/simple-sinatra.json
-    I0128 14:34:32.200333   15887 apply.go:65] Creation succeeded for
-    BuildConfig with name simple-openshift-sinatra-sti
-    I0128 14:34:32.200345   15887 apply.go:65] Creation succeeded for
-    ImageRepository with name simple-openshift-sinatra-sti
-    I0128 14:34:32.200348   15887 apply.go:65] Creation succeeded for
-    DeploymentConfig with name ruby-20-centos
-    I0128 14:34:32.200351   15887 apply.go:65] Creation succeeded for Service
-    with name ruby-20-centos-9292
+need explanation of template -> config
 
-No webhook - Need to manually trigger build. Find "password"/secret:
+Go ahead and take a look at the JSON that was generated. You will see some
+familiar items at this point, and some new ones, like `BuildConfig`,
+`ImageRepository` and others.
 
-    grep generic simple-sinatra.json -A1 | grep secret \
-    | awk '{print $2}' | cut -d\" -f2
+    cat ~/simple-sinatra.json
 
-Builds can be triggered by hitting a URL on OpenShift. We can simulate this with
-`curl`. Substitute the UUID you found (password/secret) in the below:
+Essentially, the STI process is as follows:
 
-    curl -k -X POST
-    https://localhost:8443/osapi/v1beta1/buildConfigHooks/simple-openshift-sinatra-sti/7d962a54-fe5a-4385-9a99-9222e12186d0/generic?namespace=default
+1. OpenShift sets up various components such that it can build source code into
+a Docker image.
 
-Now we can look at the console to check on the progress of our build.
+1. OpenShift will then (on command) build the Docker image with the source code.
 
-## OpenShift Console
-Open the console by visiting the FQDN of your master at port 8444:
+1. OpenShift will then deploy the Docker image as a Pod with an associated
+Service.
 
-    https://master-fqdn.domain.com:8444
+Let's go ahead and get everything fired up:
 
-You should see the project we previously created (Hello, Sinatra!). Click it.
+    osc create -f ~/simple-sinatra.json -n sinatra-project
 
+To learn a little more about what happened, run the following:
+
+    for i in imagerepository buildconfig deploymentconfig service; do \
+    echo $i; osc --namespace=sinatra-project get $i; done
+
+Based on the JSON from `ex generate`, we have created:
+
+* An ImageRepository entry
+* A BuildConfig
+* A DeploymentConfig
+* A Service
+
+If you run:
+
+    osc --namespace=sinatra-project get pods
+
+You will see that there are currently no pods. That is because we have not
+actually gone through a build yet. While OpenShift has the capability of
+automatically triggering builds based on source control pushes (eg: Git(hub)
+webhooks, etc), we will be triggering builds manually.
+
+To start our build, execute the following:
+
+    osc --namespace=sinatra-project start-build simple-openshift-sinatra-sti
+
+You'll see some output to indicate the build:
+
+    a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+
+That's the UUID of our build. We can check on its status:
+
+    NAME                                   TYPE                STATUS  POD
+    a1aa7e35-ad82-11e4-8f5f-525400b33d1d   STI                 Running build-a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+
+Let's go ahead and start "tailing" the build log:
+
+    osc build-logs --namespace=sinatraproject a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+
+But, better yet, let's check out the web console.
+
+## Web Console
+Open your browser and visit the following URL:
+
+    https://fqdn.of.master:8444
+
+You will first need to accept the self-signed SSL certificate. You will then be
+asked for a username and a password - anything will work. Just enter `foo` as
+the user and `bar` as the password, for now.
+
+Once you are in, click the *Hello Sinatra* project. You should see the status of
+the build on the homepage.
+
+Take a moment to poke around the console. Once the build is complete, we'll look
+into things a little more.
+
+### Examining the Build
+If you go back to your console session where you examined the `build-logs`,
+you'll see a number of things happened.
+
+What were they?
+
+### Testing the Application
+Check the output of:
+
+    osc --namespace=sinatra-project get services
+
+And go ahead and `curl` the service ip:port. For example:
+
+    curl http://172.30.17.89:9292
+    Hello, Sinatra!
+
+So, from a simple code repository with a few lines of Ruby, we have successfully
+built a Docker image and OpenShift has deployed it for us.
+
+The last step will be to add a route to make it publicly accessible.
+
+### Adding a Route to Our Application
+When we used `ex generate`, the only thing that was not created was a route for
+our application.
+
+Remember that routes are associated with services, so, determine the id of your
+services from the service output you looked at above. For example, it might be
+`simple-openshift-si-7943`.
+
+Grab the route JSON file:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/sinatra-route.json
+
+And edit it to incorporate the service name you determined. Hint: you need to
+edit the `serviceName` field.
+
+When you are done, create your route:
+
+    osc --namespace=sinatraproject create -f sinatra-route.json
+
+Check to make sure it was created:
+
+    osc --namespace=sinatraproject get route
+    NAME                                 HOST/PORT                              PATH SERVICE                  LABELS
+    5ef9c778-ad89-11e4-8f5f-525400b33d1d hello-sinatra.cloudapps.example.com         simple-openshift-si-7943 
+
+And now, you should be able to verify everything is working right:
+
+    curl http://hello-sinatra.cloudapps.example.com
+    Hello, Sinatra!
+
+If you want to be fancy, try it in your browser!
+
+### A Fully-Integrated Application
+The next example will involve a build of another application, but also a service
+that has two pods -- a "front-end" web tier and a "back-end" database tier. This
+application also makes use of auto-generated parameters and other neat features
+of OpenShift.
+
+First we'll create a new project:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/integrated-project.json
+    osc create -f integrated-project.json
+
+Go ahead and fetch the definition for this application:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/integrated-build.json
+
+Examine it to see how parameters and other things are handled. Tthen go ahead
+and process and create it:
+
+    osc process -n integrated-project -f integrated-build.json | osc create \
+    -n integrated-project -f -
+
+The build configuration, in this case, is called `ruby-sample-build`. So, let's
+go ahead and start the build and watch the logs:
+
+    osc --namespace=integrated-project start-build ruby-sample-build

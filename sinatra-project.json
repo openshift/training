@@ -7,7 +7,7 @@
       "name": "sinatra-project"
     },
     "annotations": {
-      "description": "This is an example project to demonstrate OpenShift v3"
+      "description": "This is a simple project to demonstrate Ruby+STI on OpenShift v3"
     }
   },    
   "displayName": "Hello Sinatra",
