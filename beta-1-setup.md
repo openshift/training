@@ -44,7 +44,6 @@ and the following configuration:
         subscription-manager repos \
         --enable="rhel-7-server-beta-rpms" \
         --enable="rhel-7-server-extras-rpms" \
-        --enable="rhel-7-server-optional-beta-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
 
 Once you have prepared your VMs, you can do the following on **each** VM:
@@ -59,7 +58,7 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
 1. Install missing packages:
 
-        yum install wget vim-enhanced net-tools bind-utils tmux git golang \
+        yum install wget vim-enhanced net-tools bind-utils tmux git \
         docker openvswitch iptables-services bridge-utils '*openshift*'
 
 1. Update:
