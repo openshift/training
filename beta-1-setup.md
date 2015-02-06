@@ -109,24 +109,10 @@ releases. In between the following rules:
 
 1. Restart your system.
 
-### On Master
-Edit `/etc/sysconfig/openshift-master` and set the `OPTIONS` stanza to read:
-
-    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
- 
-### On Nodes
-Edit `/etc/sysconfig/openshift-node` and set the `OPTIONS` stanza to read:
-
-    OPTIONS="--master=fqdn.of.master --loglevel=4"
-
 ### Grab Docker Images
-On all of your systems, grab the following docker images:
+On your master, grab the following docker images:
 
     docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull openshift/docker-registry
 
 **note: missing:
@@ -136,10 +122,7 @@ On all of your systems, grab the following docker images:
 
 And re-tag them:
 
-    docker tag registry.access.redhat.com/openshift_beta/ose-sti-builder openshift_beta/ose-sti-builder
-    docker tag registry.access.redhat.com/openshift_beta/ose-docker-builder openshift_beta/ose-docker-builder
-    docker tag registry.access.redhat.com/openshift_beta/ose-deployer openshift_beta/ose-deployer
-    docker tag registry.access.redhat.com/openshift_beta/ose-haproxy-router openshift_beta/ose-haproxy-router
+    docker tag registry.access.redhat.com/openshift3_beta/ose-haproxy-router openshift3_beta/ose-haproxy-router
 
 ## Starting the OpenShift Services
 ### Running a Master
@@ -147,7 +130,7 @@ And re-tag them:
 First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
 `OPTIONS` to read:
 
-    OPTIONS="--loglevel=4 --public-master=fqdn.of.master --images=openshift3_beta/ose-${component}"
+    OPTIONS="--loglevel=4 --public-master=fqdn.of.master --images=registry.access.redhat.com/openshift3_beta/ose-${component}"
 
 Then, start the `openshift-master` service:
 
@@ -162,7 +145,7 @@ Master will both orchestrate containers and run containers, too.
 
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
 
-    OPTIONS="--loglevel=4 --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
+    OPTIONS="--loglevel=4 --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig --images=registry.access.redhat.com/openshift3_beta/ose-${component}"
 
 Do **not** start the openshift-node service yet. We must start the openshift-sdn-node
 first in order to set up the proper bridges, and the openshift-sdn-node service
@@ -231,7 +214,7 @@ following JSON file describes the router:
                 "containers": [
                     {
                         "name": "origin-haproxy-router-mainrouter",
-                        "image": "openshift_beta/ose-haproxy-router",
+                        "image": "openshift/ose-haproxy-router",
                         "ports": [
                             {
                                 "containerPort": 80,
@@ -281,10 +264,12 @@ change to "running" after a few moments (it may take up to a few minutes):
 
     osc get pods
     POD        IP       CONTAINER(S)                     IMAGE(S)                          HOST                                   LABELS STATUS
-    mainrouter 10.1.0.3 origin-haproxy-router-mainrouter openshift_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
+    mainrouter 10.1.0.3 origin-haproxy-router-mainrouter openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
 
-At this point you must update your DNS wildcard entry to point to the IP address
-of the host on which the router instance is running.
+At this point your DNS wildcard entry should point to the IP address
+of the master, as that is the only node where the router instance could be running.
+If you deploy this router with multiple nodes available, you would need to point
+the entry at the host(s) on which the router instance is running.
 
 ## Your First Application
 At this point you should essentially have a fully-functional V3 OpenShift
@@ -343,7 +328,7 @@ status:
     # osc get pods
     POD             IP       CONTAINER(S)                     IMAGE(S)                          HOST                                  LABELS                 STATUS
     hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift         ose3-master.example.com/192.168.133.2 name=hello-openshift   Running
-    mainrouter      10.1.0.3 origin-haproxy-router-mainrouter openshift_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2 <none>                 Running
+    mainrouter      10.1.0.3 origin-haproxy-router-mainrouter openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2 <none>                 Running
 
 
 **note: we might pre-fetch**
