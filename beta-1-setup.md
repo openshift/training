@@ -92,12 +92,12 @@ releases. In between the following rules:
 
     Add these rules:
 
-    -A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
-    -A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
-    -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
-    -A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
-    -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-    -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+         -A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
+         -A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
+         -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
+         -A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
+         -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+         -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 
 1. Restart iptables and docker, enable iptables:
 
