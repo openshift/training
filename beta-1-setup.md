@@ -513,6 +513,7 @@ with a corresponding route:
                 "name": "hello-openshift-container",
                 "image": "openshift/hello-openshift",
                 "ports": [{
+                  "hostPort": 6061,
                   "containerPort": 8080
                 }]
               }]
