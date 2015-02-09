@@ -59,3 +59,5 @@ sed -i -e 's/OPTIONS=.*/OPTIONS="--loglevel=4 --master=ose3-master.example.com"/
 rsync -av root@ose3-master.example.com:/var/lib/openshift/openshift.local.certificates /var/lib/openshift/
 
 docker run -i -t google/golang /bin/bash
+
+alias denter='bash -c '"'"' nsenter --mount --uts --ipc --net --pid --target $(docker inspect --format {{.State.Pid}} $0)'"'"
