@@ -7,7 +7,7 @@
             "version": "v1beta2",
             "containers": [
                 {
-                    "name": "origin-haproxy-router-mainrouter",
+                    "name": "ose-haproxy-router-mainrouter",
                     "image": "openshift3_beta/ose-haproxy-router",
                     "ports": [
                         {
@@ -26,12 +26,8 @@
                         },
                         {
                             "name": "OPENSHIFT_CA_DATA",
-                            "value": ""
+                            "value": "/var/lib/openshift/openshift.local.certificates/ca/cert.crt"
                         },
-                        {
-                            "name": "OPENSHIFT_INSECURE",
-                            "value": "true"
-                        }
                     ],
                     "command": ["--loglevel=4"],
                     "imagePullPolicy": "PullIfNotPresent"
