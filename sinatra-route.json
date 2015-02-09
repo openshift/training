@@ -3,6 +3,6 @@
   "kind": "Route",
   "apiVersion": "v1beta1",
   "host": "hello-sinatra.cloudapps.example.com",
-  "serviceName": "hello-openshift-service"
+  "serviceName": "simple-openshift-sinatra"
 }
 

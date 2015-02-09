@@ -109,16 +109,6 @@ releases. In between the following rules:
 
 1. Restart your system.
 
-### On Master
-Edit `/etc/sysconfig/openshift-master` and set the `OPTIONS` stanza to read:
-
-    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
- 
-### On Nodes
-Edit `/etc/sysconfig/openshift-node` and set the `OPTIONS` stanza to read:
-
-    OPTIONS="--master=fqdn.of.master --loglevel=4"
-
 ### Grab Docker Images
 On all of your systems, grab the following docker images:
 
@@ -136,10 +126,11 @@ On all of your systems, grab the following docker images:
 
 And re-tag them:
 
-    docker tag registry.access.redhat.com/openshift_beta/ose-sti-builder openshift_beta/ose-sti-builder
-    docker tag registry.access.redhat.com/openshift_beta/ose-docker-builder openshift_beta/ose-docker-builder
-    docker tag registry.access.redhat.com/openshift_beta/ose-deployer openshift_beta/ose-deployer
-    docker tag registry.access.redhat.com/openshift_beta/ose-haproxy-router openshift_beta/ose-haproxy-router
+    docker tag registry.access.redhat.com/openshift3_beta/ose-sti-builder openshift3_beta/ose-sti-builder
+    docker tag registry.access.redhat.com/openshift3_beta/ose-docker-builder openshift3_beta/ose-docker-builder
+    docker tag registry.access.redhat.com/openshift3_beta/ose-deployer openshift3_beta/ose-deployer
+    docker tag registry.access.redhat.com/openshift3_beta/ose-haproxy-router openshift3_beta/ose-haproxy-router
+    docker tag registry.access.redhat.com/openshift3_beta/ose-pod openshift3_beta/ose-pod
 
 ## Starting the OpenShift Services
 ### Running a Master
@@ -147,7 +138,11 @@ And re-tag them:
 First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
 `OPTIONS` to read:
 
-    OPTIONS="--loglevel=4 --public-master=fqdn.of.master --images=openshift3_beta/ose-${component}"
+    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
+
+Edit the `IMAGES` to read:
+
+    IMAGES=openshift3_beta/ose-${component}
 
 Then, start the `openshift-master` service:
 
@@ -162,11 +157,16 @@ Master will both orchestrate containers and run containers, too.
 
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
 
-    OPTIONS="--loglevel=4 --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
+    OPTIONS="--loglevel=4"
+    
+Edit the `IMAGES` to read:
 
-Do **not** start the openshift-node service yet. We must start the openshift-sdn-node
-first in order to set up the proper bridges, and the openshift-sdn-node service
-will automatically start the openshift-node service for us.
+    IMAGES=openshift3_beta/ose-${component}"
+
+Do **not** start the openshift-node service yet. We must configure and start the
+openshift-sdn-node first in order to set up the proper bridges, and the
+openshift-sdn-node service will automatically start the openshift-node service
+for us.
 
 #### Setting Up the SDN
 Once your master is started, we need to start the SDN (which uses Open vSwitch)
@@ -267,11 +267,11 @@ following JSON file describes the router:
         }
     }
 
-Download this file onto your master and be sure to edit the `OPENSHIFT_MASTER`
-value to have the correct FQDN:
+Download this file onto your master:
 
     wget https://raw.githubusercontent.com/openshift/training/master/router.json
 
+and **be sure to edit** the `OPENSHIFT_MASTER` value to have the correct FQDN.
 Then, use the `osc` tool to create the router:
 
     osc create -f router.json
@@ -280,16 +280,45 @@ If this works, in the output of `osc get pods` you should see the pod status
 change to "running" after a few moments (it may take up to a few minutes):
 
     osc get pods
-    POD        IP       CONTAINER(S)                     IMAGE(S)                          HOST                                   LABELS STATUS
-    mainrouter 10.1.0.3 origin-haproxy-router-mainrouter openshift_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
+    POD        IP       CONTAINER(S)                     IMAGE(S)                           HOST                                   LABELS STATUS
+    mainrouter 10.1.0.3 origin-haproxy-router-mainrouter openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
 
 At this point you must update your DNS wildcard entry to point to the IP address
 of the host on which the router instance is running.
 
+## Projects and the Web Console
+### A Project for Everything
+V3 has a concept of "projects" to contain a number of different services and
+their pods, builds and etc. We'll explore what this means in more details
+throughout the rest of the labs, but, first, let's create a project for our
+first application.
+
+    wget https://raw.githubusercontent.com/openshift/training/master/betaproject.json
+    osc create -f betaproject.json
+
+Since we have a project, future use of command line statements will have to
+reference this project in order for things to land in the right place.
+
+Now that you have a project created, it's time to look at the web console, which
+has been completely redesigned for V3.
+
+### Web Console
+Open your browser and visit the following URL:
+
+    https://fqdn.of.master:8444
+
+You will first need to accept the self-signed SSL certificate. You will then be
+asked for a username and a password - anything will work. Just enter `foo` as
+the user and `bar` as the password, for now.
+
+Once you are in, click the *Demo* project. There really isn't anything of
+interest at the moment, because we haven't put anything into our project. While
+we created the router, it's not part of our project (it is core infrastructure),
+so we do not see it here.
+
 ## Your First Application
-At this point you should essentially have a fully-functional V3 OpenShift
-environment. It is now time to create the classic "Hello World" application
-using some sample code. 
+At this point you have a sufficiently-functional V3 OpenShift environment. It is
+now time to create the classic "Hello World" application using some sample code. 
 
 ### Grab the Definition JSON
 On your **master** node, go ahead and grab the JSON definition:
@@ -328,35 +357,36 @@ Reality is more complex, and we will learn more about the terms as we explore
 OpenShift further.
 
 ### Run the Pod
-To define the pod from our JSON file, execute the following:
+To create the pod from our JSON file, execute the following:
 
-    osc create -f hello-pod.json
+    osc create -f hello-pod.json -n betaproject
 
-You should see the ID of the pod returned to you:
+Notice that we specfied the namespace, or project id, in the above command. This
+ensures that our pod is created (placed) into our namespace (project). The
+command should display the ID of the pod:
 
     hello-openshift
 
 Issue a `get pods` to see that it was, in fact, defined, and to check its
 status:
 
-    osc get pods
-    # osc get pods
-    POD             IP       CONTAINER(S)                     IMAGE(S)                          HOST                                  LABELS                 STATUS
-    hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift         ose3-master.example.com/192.168.133.2 name=hello-openshift   Running
-    mainrouter      10.1.0.3 origin-haproxy-router-mainrouter openshift_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2 <none>                 Running
-
+    osc get pods -n betaproject
+    POD             IP       CONTAINER(S)                     IMAGE(S)                           HOST                                  LABELS                 STATUS
+    hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift          ose3-master.example.com/192.168.133.2 name=hello-openshift   Pending
 
 **note: we might pre-fetch**
 When you first issue `get pods`, you will likely see a pending status for the
 `hello-openshift` pod. This is because we did not pre-fetch its Docker image, so
 the node is pulling it from a registry. Later we will set up a local Docker
-registry for OpenShift to use.
+registry for OpenShift to use. You should also note that we no longer see the
+router pod in the output. This is because the router is part of the "default"
+namespace, used for core infrastructure components.
 
 Look at the list of Docker containers with `docker ps` to see the bound ports.
-We should see an `openshift/origin-pod` container bound to 6061 on the host and
+We should see an `openshift3_beta/ose-pod` container bound to 6061 on the host and
 bound to 8080 on the container.
 
-The `openshift/origin-pod` container exists because of the way network
+The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
 container as nothing more than a way for the host OS to get an interface created
 for the corresponding pod to be able to receive traffic. Deeper understanding of
@@ -369,14 +399,19 @@ To verify that the app is working, you can issue a curl to the app's port:
 
 Hooray!
 
+### Looking at the Pod in the Web Console
+In the web console, if you click "Browse" and then "Pods", you'll see the pod we
+just created and some information about it.
+
 Go ahead and delete this pod so that you don't get confused in later examples:
 
-    osc delete pod hello-openshift
+    osc delete pod hello-openshift -n betaproject
 
-Take a moment to think about what this pod definition really did -- it defined
-an arbitrary Docker image, made sure to fetch it (if it wasn't present), and
-then ran it. This could have just as easily been an application from an ISV
-available in a registry or something already written and built-in house.
+Take a moment to think about what this pod definition really did -- it
+referenced an arbitrary Docker image, made sure to fetch it (if it wasn't
+present), and then ran it. This could have just as easily been an application
+from an ISV available in a registry or something already written and built
+in-house.
 
 This is really powerful. We will explore using "arbitrary" docker images later.
 
@@ -396,7 +431,11 @@ can do the following on your node:
 #### The OpenShift Node
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
 
-    OPTIONS="--loglevel=4 --master=fqdn.of.master --kubeconfig=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig"
+    OPTIONS="--loglevel=4 --master=fqdn.of.master"
+
+Edit `IMAGES` to read:
+
+    IMAGES=openshift3_beta/ose-${component}"
 
 Do **not** start the openshift-node service. We will let openshift-sdn-node
 handle that for us (like before).
@@ -441,13 +480,19 @@ again:
     osc create -f node.json
 
 You should now have two running nodes in addition to your original "master"
-node:
+node (it may take a minute for all to reach "Ready" status):
 
     osc get minions
     NAME                      LABELS              STATUS
     ose3-master.example.com   <none>              Ready
     ose3-node1.example.com    <none>              Ready
     ose3-node2.example.com    <none>              Ready
+
+Note that these commands do not take a namespace, because we are modifying core
+OpenShift components.
+
+Now that we have a larger OpenShift environment, let's examine more complicated
+application paradigms.
 
 ## Services
 From the [Kubernetes
@@ -499,11 +544,11 @@ and that is where the router comes in.
 Routes allow FQDN-destined traffic to ultimately reach the Kubernetes service,
 and then the pods/containers.
 
-In a simplification of the process, the `openshift/origin-haproxy-router`
+In a simplification of the process, the `openshift3_beta/ose-haproxy-router`
 container is a pre-configured instance of HAProxy as well as some of the
 OpenShift framework. The OpenShift instance running in this container watches a
 routes resource on the OpenShift master. This is why we specified the master's
-IP address when we installed the router.
+address when we installed the router.
 
 Here is an example route JSON definition:
 
@@ -604,57 +649,59 @@ use wget to grab it:
 
     wget https://raw.githubusercontent.com/openshift/training/master/test-complete.json
 
-Once you have this file, go ahead and use `osc` to apply it. You should see
-something like the following:
+Once you have this file, you must edit the `host` stanza for the route to have
+the correct domain, matching the DNS configuration for your environment. Once
+this is done, go ahead and use `osc` to apply it. You should see something like
+the following:
 
-        osc create -f test-complete.json 
+        osc create -f test-complete.json -n betaproject
         hello-openshift-pod
         hello-openshift-service
+        6b8b66e4-b078-11e4-b390-525400b33d1d
 
 You can verify this with other `osc` commands:
 
-    osc get pods
+    osc get pods -n betaproject
     ...
     hello-openshift-pod/10.X.X.X ...
 
-    osc get services
+    osc get services -n betaproject
     ...
     hello-openshift-service ...
 
-    osc get routes
+    osc get routes -n betaproject
     ...
     cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.example.com ...
+
+**Make sure that you specified your namespace when you created the example!**
 
 ### Verifying the Service
 Services are not externally accessible without a route being defined, because
 they always listen on "local" IP addresses (eg: 172.x.x.x). However, if you have
 access to the OpenShift environment, you can still test a service.
 
-    osc get services
-    NAME                      LABELS                                    SELECTOR                     IP                  PORT
-    hello-openshift-service   <none>                                    name=hello-openshift-label   172.30.17.88        27017
-    kubernetes                component=apiserver,provider=kubernetes   <none>                       172.30.17.2         443
-    kubernetes-ro             component=apiserver,provider=kubernetes   <none>                       172.30.17.1         80
+    osc get services -n betaproject
+    NAME                      LABELS              SELECTOR                     IP                  PORT
+    hello-openshift-service   <none>              name=hello-openshift-label   172.30.17.230       27017
 
 We can see that the service has been defined based on the JSON we used earlier.
 If the output of `osc get pods` shows that our pod is running, we can try to
 access the service:
 
-    curl http://172.30.17.88:27017
+    curl http://172.30.17.230:27017
     Hello OpenShift!
 
 This is a good sign! It means that, if the router is working, we should be able
 to access the service via the route.
 
 ### Verifying the Routing
-Verifying the routing is a little complicated, but not terribly so. First, find
-where the router is running using `osc get pods`:
-
-    osc get pods | grep router | awk '{print $4}'
-    ose3-node1.example.com/
+Verifying the routing is a little complicated, but not terribly so. Since we
+created the router when we only had the master running, we know that's where its
+Docker container is.
 
 We ultimately want the PID of the container running the router so that we can go
-"inside" it. On the node, issue the following to get the PID:
+"inside" it. On the master system, issue the following to get the PID of the
+router:
 
     docker inspect `docker ps | grep haproxy-router | awk '{print $1}'` | grep \
     Pid | awk '{print $2}' | cut -f1 -d,
@@ -693,6 +740,10 @@ publicly-accessible OpenShift application!
 
 Hooray!
 
+### The Web Console
+Take a moment to look in the web console to see if you can find everything that
+was just created.
+
 ## Preparing for STI and Other Things
 We mentioned a few times that OpenShift would host its own Docker registry in
 order to pull images "locally". Let's take a moment to set that up.
@@ -725,7 +776,8 @@ You'll get output like:
     docker-registry
 
 You can use `osc get pods`, `osc get services`, and `osc get deploymentconfig`
-to see what happened.
+to see what happened, again noting that we do not specify a namespace when
+dealing with core OpenShift components.
 
 Ultimately, you will have a Docker registry that is being hosted by OpenShift
 and that is running on one of your nodes.
@@ -746,14 +798,6 @@ appropriate Docker image to build and use to support the code) or a code
 repository + a Dockerfile (so that OpenShift can pull or build the Docker image
 for you).
 
-### A Project for Everything
-V3 has a concept of "projects" to contain a number of different services and
-their pods, builds and etc. Let's create a project for our first STI
-applciation.
-
-    wget https://raw.githubusercontent.com/openshift/training/master/sinatra-project.json
-    osc create -f sinatra-project.json
-
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
 extremely simple "Hello World" type application that looks very much like our
@@ -764,13 +808,15 @@ For this example, we will be using the following application's source code:
 
     https://github.com/thoraxe/simple-openshift-sinatra-sti
 
+Grab the code and process it using the following:
+
     cd
     git clone https://github.com/thoraxe/simple-openshift-sinatra-sti
     cd ~/simple-openshift-sinatra-sti
     rm -f Dockerfile
     openshift ex generate | python -m json.tool > ~/simple-sinatra.json
 
-`ex generate` is a tool that will examine the current directory tree and tries
+`ex generate` is a tool that will examine the current directory tree and attempt
 to generate an appropriate JSON template so that, when processed, OpenShift can
 build the resulting image to run. 
 
@@ -792,14 +838,29 @@ a Docker image.
 1. OpenShift will then deploy the Docker image as a Pod with an associated
 Service.
 
+### Create a New Project
+We will create a new project to put our first STI example into. Grab the project
+definition and create it:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/sinatraproject.json
+    osc create -f sinatraproject.json
+
+At this point, if you click the OpenShift image on the web console you should be
+returned to the project overview page where you will see the new project show
+up. Go ahead and click the *Sinatra* project - you'll see why soon.
+
+### Create the Build Process
 Let's go ahead and get everything fired up:
 
-    osc create -f ~/simple-sinatra.json -n sinatra-project
+    osc create -f ~/simple-sinatra.json -n sinatraproject
+
+As soon as you execute this command, go back to the web console and see if you
+can figure out what is different.
 
 To learn a little more about what happened, run the following:
 
     for i in imagerepository buildconfig deploymentconfig service; do \
-    echo $i; osc --namespace=sinatra-project get $i; done
+    echo $i; osc --namespace=sinatraproject get $i; done
 
 Based on the JSON from `ex generate`, we have created:
 
@@ -810,7 +871,7 @@ Based on the JSON from `ex generate`, we have created:
 
 If you run:
 
-    osc --namespace=sinatra-project get pods
+    osc --namespace=sinatraproject get pods
 
 You will see that there are currently no pods. That is because we have not
 actually gone through a build yet. While OpenShift has the capability of
@@ -819,37 +880,33 @@ webhooks, etc), we will be triggering builds manually.
 
 To start our build, execute the following:
 
-    osc --namespace=sinatra-project start-build simple-openshift-sinatra-sti
+    osc --namespace=sinatraproject start-build simple-openshift-sinatra-sti
 
 You'll see some output to indicate the build:
 
     a1aa7e35-ad82-11e4-8f5f-525400b33d1d
 
-That's the UUID of our build. We can check on its status:
+That's the UUID of our build. We can check on its status (it will switch to
+"Running" in a few moments):
 
+    osc --namespace=sinatraproject get builds
     NAME                                   TYPE                STATUS  POD
-    a1aa7e35-ad82-11e4-8f5f-525400b33d1d   STI                 Running build-a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+    a1aa7e35-ad82-11e4-8f5f-525400b33d1d   STI                 Pending build-a1aa7e35-ad82-11e4-8f5f-525400b33d1d
 
-Let's go ahead and start "tailing" the build log:
+Let's go ahead and start "tailing" the build log (substitute the proper UUID for
+your environment):
 
-    osc build-logs --namespace=sinatraproject a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+    osc build-logs a1aa7e35-ad82-11e4-8f5f-525400b33d1d -n sinatraproject
 
-But, better yet, let's check out the web console.
+### The Web Console Revisited
+If you peeked at the web console while the build was running, you probably
+noticed a lot of new information in the web console - the build status, the
+deployment status, new pods, and more.
 
-## Web Console
-Open your browser and visit the following URL:
+If you didn't, go to the web console now. The overview page should show that the
+application is running and show the information about the service at the top:
 
-    https://fqdn.of.master:8444
-
-You will first need to accept the self-signed SSL certificate. You will then be
-asked for a username and a password - anything will work. Just enter `foo` as
-the user and `bar` as the password, for now.
-
-Once you are in, click the *Hello Sinatra* project. You should see the status of
-the build on the homepage.
-
-Take a moment to poke around the console. Once the build is complete, we'll look
-into things a little more.
+    simple-openshift-sinatra - routing TCP traffic on 172.30.17.47:9292 to port 9292
 
 ### Examining the Build
 If you go back to your console session where you examined the `build-logs`,
@@ -858,13 +915,10 @@ you'll see a number of things happened.
 What were they?
 
 ### Testing the Application
-Check the output of:
+Using the information you found in the web console, try to see if your service
+is working:
 
-    osc --namespace=sinatra-project get services
-
-And go ahead and `curl` the service ip:port. For example:
-
-    curl http://172.30.17.89:9292
+    curl http://172.30.17.47:9292
     Hello, Sinatra!
 
 So, from a simple code repository with a few lines of Ruby, we have successfully
@@ -878,7 +932,9 @@ our application.
 
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above. For example, it might be
-`simple-openshift-si-7943`.
+`simple-openshift-sinatra`.
+
+**Hint:** You will need to use `osc get services` with a namespace to find it.
 
 Grab the route JSON file:
 
@@ -890,12 +946,13 @@ edit the `serviceName` field.
 When you are done, create your route:
 
     osc --namespace=sinatraproject create -f sinatra-route.json
+    a8b8c72b-b07c-11e4-b390-525400b33d1d
 
 Check to make sure it was created:
 
     osc --namespace=sinatraproject get route
     NAME                                 HOST/PORT                              PATH SERVICE                  LABELS
-    5ef9c778-ad89-11e4-8f5f-525400b33d1d hello-sinatra.cloudapps.example.com         simple-openshift-si-7943 
+    a8b8c72b-b07c-11e4-b390-525400b33d1d hello-sinatra.cloudapps.example.com         simple-openshift-sinatra 
 
 And now, you should be able to verify everything is working right:
 
@@ -922,10 +979,15 @@ Go ahead and fetch the definition for this application:
 Examine it to see how parameters and other things are handled. Tthen go ahead
 and process and create it:
 
-    osc process -n integrated-project -f integrated-build.json | osc create \
-    -n integrated-project -f -
+    osc process -n integratedproject -f integrated-build.json | osc create \
+    -n integratedproject -f -
 
 The build configuration, in this case, is called `ruby-sample-build`. So, let's
 go ahead and start the build and watch the logs:
 
-    osc --namespace=integrated-project start-build ruby-sample-build
+    osc --namespace=integratedproject start-build ruby-sample-build
+
+osc --namespace=integratedproject build-logs
+277f6eac-b07d-11e4-b390-525400b33d1d
+
+look in console at overview - shows buildingy stuff
