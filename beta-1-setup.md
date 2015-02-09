@@ -767,7 +767,9 @@ Make the script executable:
 And now run it the following way:
 
     CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
-    KUBERNETES_MASTER=https://ose3-master.example.com:8443 ./install-registry.sh
+    KUBERNETES_MASTER=https://ose3-master.example.com:8443 \
+    CONTAINER_ACCESSIBLE_API_HOST=ose3-master.example.com \
+    ./install-registry.sh
 
 You'll get output like:
 
