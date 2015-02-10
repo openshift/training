@@ -1,0 +1,7 @@
+{
+  "id": "frontend-route",
+  "kind": "Route",
+  "apiVersion": "v1beta1",
+  "host": "integrated.cloudapps.example.com",
+  "serviceName": "hello-openshift"
+}

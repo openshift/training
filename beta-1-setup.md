@@ -740,6 +740,11 @@ Hooray!
 Take a moment to look in the web console to see if you can find everything that
 was just created.
 
+And, while you're at it, you can verify that visiting your app with HTTPS will
+also work (albeit with a self-signed certificate):
+
+    https://hello-openshift.cloudapps.example.com
+
 ## Preparing for STI and Other Things
 We mentioned a few times that OpenShift would host its own Docker registry in
 order to pull images "locally". Let's take a moment to set that up.
@@ -984,14 +989,37 @@ The build configuration, in this case, is called `ruby-sample-build`. So, let's
 go ahead and start the build and watch the logs:
 
     osc --namespace=integratedproject start-build ruby-sample-build
+    277f6eac-b07d-11e4-b390-525400b33d1d
 
-osc --namespace=integratedproject build-logs
-277f6eac-b07d-11e4-b390-525400b33d1d
+    osc --namespace=integratedproject build-logs 277f6eac-b07d-11e4-b390-525400b33d1d
 
-look in console at overview - shows buildingy stuff
+Don't forget that the web console will show information about the build status,
+although in much less detail.
 
-add route
+### Routing Our Integrated Application
+Remember our experiments with routing from earlier? Well, our STI example
+doesn't include a route definition in its template. So, we can create one:
 
-show website
+    {
+      "id": "frontend-route",
+      "kind": "Route",
+      "apiVersion": "v1beta1",
+      "host": "integrated.cloudapps.example.com",
+      "serviceName": "hello-openshift"
+    }
 
-wow! beta1 complete!
+Go ahead and grab this route from the Git repository, and then create it:
+
+    wget https://raw.githubusercontent.com/openshift/training/master/integrated-route.json
+    osc --namespace=integratedproject create -f integrated-route.json
+
+Now, in your browser, you should be able to visit the website and actually use
+the application!
+
+    http://integrated.cloudapps.example.com
+
+**Note: HTTPS will *not* work for this example because the form submission was
+written with HTTP links. Be sure to use HTTP. **
+
+## Conclusion
+This concludes the Beta 1 training. Look for more example applications to come!
