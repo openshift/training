@@ -279,7 +279,7 @@ feed it the correct arguments. Let's run this script now, and be sure to
 substitute the correct domain name for your master: 
 
     chmod 755 install-router.sh
-    ./install-router.sh mainrouter https://ose3-master.example.com:8443 \
+    OPENSHIFT_CA_DATA=$(</var/lib/openshift/openshift.local.certificates/master/root.crt) ./install-router.sh mainrouter https://ose3-master.example.com:8443
 
 If this works, in the output of `osc get pods` you should see the pod status
 change to "running" after a few moments (it may take up to a few minutes):
