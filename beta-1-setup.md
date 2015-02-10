@@ -324,6 +324,39 @@ so we do not see it here.
 At this point you have a sufficiently-functional V3 OpenShift environment. It is
 now time to create the classic "Hello World" application using some sample code. 
 
+### Set the namespace (project) you are using
+The concept of a project in OpenShift v3 provides a scope for creating
+related things. The corresponding concept in underlying Kubernetes is a
+namespace. Thus far we have created only a router, which went into the
+`default` namespace.
+
+In order to start creating things with the namespace of our project,
+we will need to declare our new namespace to use with everything:
+
+     openshift ex config set-context user --cluster=master --user=admin --namespace=betaproject
+     openshift ex config use-context user
+
+This is a bit cryptic, and client configuration is experimental at this
+point, but here is a brief explanation:
+
+1. `openshift ex` provides some experimental subcommands that could go
+   away at any time (probably with the next beta). One of these subcommands
+   is `config` which manipulates your $KUBECONFIG file (we set the env var
+   above; otherwise it would be `~/.kubeconfig`).
+2. The "context" referred to by `set-context` is a section in the
+   $KUBECONFIG that encapsulates the OpenShift server, the account to access
+   it with, and the current namespace (if any). A single user might very
+   well have multiple namespaces, accounts, and servers to interact with,
+   so it can be helpful to define a context for each combination. Here we
+   are defining a new context `user` (to be distinguished from the initial
+   context under which we created the router, `master-admin` with namespace
+   `default`). In the new context, the current namespace is `betaproject`
+   (the project we just created).
+3. Having created the new `user` context, we set that context to be used
+   by default. (It could be overridden with the `--context` flag.)
+
+Any `osc create` or `osc get` or `osc delete` (etc.) will now operate only with entities in the `betaproject` namespace.
+
 ### The Definition JSON
 In the training folder, you can see the contents of our pod definition by using
 `cat`:
@@ -360,18 +393,16 @@ OpenShift further.
 ### Run the Pod
 To create the pod from our JSON file, execute the following:
 
-    osc create -f hello-pod.json -n betaproject
+    osc create -f hello-pod.json
 
-Notice that we specfied the namespace, or project id, in the above command. This
-ensures that our pod is created (placed) into our namespace (project). The
-command should display the ID of the pod:
+The command should display the ID of the pod:
 
     hello-openshift
 
 Issue a `get pods` to see that it was, in fact, defined, and to check its
 status:
 
-    osc get pods -n betaproject
+    osc get pods
     POD             IP       CONTAINER(S)                     IMAGE(S)                           HOST                                  LABELS                 STATUS
     hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift          ose3-master.example.com/192.168.133.2 name=hello-openshift   Pending
 
@@ -380,7 +411,7 @@ When you first issue `get pods`, you will likely see a pending status for the
 `hello-openshift` pod. This is because we did not pre-fetch its Docker image, so
 the node is pulling it from a registry. Later we will set up a local Docker
 registry for OpenShift to use. You should also note that we no longer see the
-router pod in the output. This is because the router is part of the "default"
+router pod in the output. This is because the router is part of the `default`
 namespace, used for core infrastructure components.
 
 Look at the list of Docker containers with `docker ps` to see the bound ports.
@@ -407,7 +438,7 @@ just created and some information about it.
 ### Delete the Pod
 Go ahead and delete this pod so that you don't get confused in later examples:
 
-    osc delete pod hello-openshift -n betaproject
+    osc delete pod hello-openshift
 
 Take a moment to think about what this pod definition really did -- it
 referenced an arbitrary Docker image, made sure to fetch it (if it wasn't
@@ -487,8 +518,7 @@ node (it may take a minute for all to reach "Ready" status):
     ose3-node1.example.com    <none>              Ready
     ose3-node2.example.com    <none>              Ready
 
-Note that these commands do not take a namespace, because we are modifying core
-OpenShift components.
+Note that nodes are not scoped by namespace.
 
 Now that we have a larger OpenShift environment, let's examine more complicated
 application paradigms.
@@ -648,26 +678,24 @@ the correct domain, matching the DNS configuration for your environment. Once
 this is done, go ahead and use `osc` to apply it. You should see something like
 the following:
 
-        osc create -f test-complete.json -n betaproject
+        osc create -f test-complete.json
         hello-openshift-pod
         hello-openshift-service
         6b8b66e4-b078-11e4-b390-525400b33d1d
 
 You can verify this with other `osc` commands:
 
-    osc get pods -n betaproject
+    osc get pods
     ...
     hello-openshift-pod/10.X.X.X ...
 
-    osc get services -n betaproject
+    osc get services
     ...
     hello-openshift-service ...
 
-    osc get routes -n betaproject
+    osc get routes
     ...
     cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.example.com ...
-
-**Make sure that you specified your namespace when you created the example!**
 
 ### Verifying the Service
 Services are not externally accessible without a route being defined, because
@@ -747,6 +775,11 @@ also work (albeit with a self-signed certificate):
 We mentioned a few times that OpenShift would host its own Docker registry in
 order to pull images "locally". Let's take a moment to set that up.
 
+First we will want to switch back to our original context to use the `default`
+namespace for infrastructure components.
+
+    openshift ex config use-context master-admin
+
 The Docker registry requires some information about our environment (SSL info,
 namely), so we will use an install script to process a template.
 
@@ -771,8 +804,7 @@ You'll get output like:
     docker-registry
 
 You can use `osc get pods`, `osc get services`, and `osc get deploymentconfig`
-to see what happened, again noting that we do not specify a namespace when
-dealing with core OpenShift components.
+to see what happened.
 
 Ultimately, you will have a Docker registry that is being hosted by OpenShift
 and that is running on one of your nodes.
@@ -802,6 +834,13 @@ definition and create it:
 At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
 up. Go ahead and click the *Sinatra* project - you'll see why soon.
+
+### Switch contexts
+
+Let's update and use the `user` context for interacting with the new project you just created:
+
+    openshift ex config set-context user --namespace=sinatraproject
+    openshift ex config use-context user
 
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
@@ -846,7 +885,7 @@ Service.
 ### Create the Build Process
 Let's go ahead and get everything fired up:
 
-    osc create -f ~/simple-sinatra.json -n sinatraproject
+    osc create -f ~/simple-sinatra.json
 
 As soon as you execute this command, go back to the web console and see if you
 can figure out what is different.
@@ -854,7 +893,7 @@ can figure out what is different.
 To learn a little more about what happened, run the following:
 
     for i in imagerepository buildconfig deploymentconfig service; do \
-    echo $i; osc --namespace=sinatraproject get $i; done
+    echo $i; osc get $i; done
 
 Based on the JSON from `ex generate`, we have created:
 
@@ -865,7 +904,7 @@ Based on the JSON from `ex generate`, we have created:
 
 If you run:
 
-    osc --namespace=sinatraproject get pods
+    osc get pods
 
 You will see that there are currently no pods. That is because we have not
 actually gone through a build yet. While OpenShift has the capability of
@@ -874,7 +913,7 @@ webhooks, etc), we will be triggering builds manually.
 
 To start our build, execute the following:
 
-    osc --namespace=sinatraproject start-build simple-openshift-sinatra-sti
+    osc start-build simple-openshift-sinatra-sti
 
 You'll see some output to indicate the build:
 
@@ -883,14 +922,14 @@ You'll see some output to indicate the build:
 That's the UUID of our build. We can check on its status (it will switch to
 "Running" in a few moments):
 
-    osc --namespace=sinatraproject get builds
+    osc get builds
     NAME                                   TYPE                STATUS  POD
     a1aa7e35-ad82-11e4-8f5f-525400b33d1d   STI                 Pending build-a1aa7e35-ad82-11e4-8f5f-525400b33d1d
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs a1aa7e35-ad82-11e4-8f5f-525400b33d1d -n sinatraproject
+    osc build-logs a1aa7e35-ad82-11e4-8f5f-525400b33d1d
 
 **Note: If the build isn't "Running" yet, build-logs will give you an error**
 
@@ -930,19 +969,19 @@ Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above. For example, it might be
 `simple-openshift-sinatra`.
 
-**Hint:** You will need to use `osc get services` with a namespace to find it.
+**Hint:** You will need to use `osc get services` to find it.
 
 Edit `sinatra-route.json` it to incorporate the service name you determined.
 Hint: you need to edit the `serviceName` field.
 
 When you are done, create your route:
 
-    osc --namespace=sinatraproject create -f sinatra-route.json
+    osc create -f sinatra-route.json
     a8b8c72b-b07c-11e4-b390-525400b33d1d
 
 Check to make sure it was created:
 
-    osc --namespace=sinatraproject get route
+    osc get route
     NAME                                 HOST/PORT                              PATH SERVICE                  LABELS
     a8b8c72b-b07c-11e4-b390-525400b33d1d hello-sinatra.cloudapps.example.com         simple-openshift-sinatra 
 
@@ -963,19 +1002,22 @@ First we'll create a new project:
 
     osc create -f ~/training/integrated-project.json
 
-Examine `integrated-build.json` to see how parameters and other things are
-handled. Tthen go ahead and process it and create it:
+We'll set our context to use the corresponding namespace:
 
-    osc process -n integratedproject -f ~/training/integrated-build.json | osc create \
-    -n integratedproject -f -
+    openshift ex config set-context user --namespace=integratedproject
+
+Examine `integrated-build.json` to see how parameters and other things are
+handled. Then go ahead and process it and create it:
+
+    osc process -f ~/training/integrated-build.json | osc create -f -
 
 The build configuration, in this case, is called `ruby-sample-build`. So, let's
 go ahead and start the build and watch the logs:
 
-    osc --namespace=integratedproject start-build ruby-sample-build
+    osc start-build ruby-sample-build
     277f6eac-b07d-11e4-b390-525400b33d1d
 
-    osc --namespace=integratedproject build-logs 277f6eac-b07d-11e4-b390-525400b33d1d
+    osc build-logs 277f6eac-b07d-11e4-b390-525400b33d1d
 
 Don't forget that the web console will show information about the build status,
 although in much less detail. And, don't forget that if you are too quick on the
@@ -996,7 +1038,7 @@ doesn't include a route definition in its template. So, we can create one:
 Go ahead and edit `integrated-route.json` to have the appropriate domain, and
 then create it:
 
-    osc --namespace=integratedproject create -f ~/training/integrated-route.json
+    osc create -f ~/training/integrated-route.json
 
 Now, in your browser, you should be able to visit the website and actually use
 the application!
