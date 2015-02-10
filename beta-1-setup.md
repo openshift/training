@@ -164,7 +164,7 @@ Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
  
 Edit the `IMAGES` to read:
 
-    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}"
+    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}
 
 Do **not** start the openshift-node service yet. We must configure and start the
 openshift-sdn-node first in order to set up the proper bridges, and the
