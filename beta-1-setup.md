@@ -34,7 +34,7 @@ http-based git server.
 Each of the virtual machines should have 4+ GB of memory, 10+ GB of disk space,
 and the following configuration:
 
-* RHEL 7.1 Beta
+* RHEL 7.1 Beta (Note: beta kernel is required for openvswitch)
 * "Minimal" installation option
 * firewalld and NetworkManager **disabled**
 * Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
@@ -99,15 +99,17 @@ releases. In between the following rules:
          -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
          -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 
-1. Restart iptables and docker, enable iptables:
+1. Enable iptables:
 
         systemctl enable iptables
 
-1. Add the following to `root`'s `.bash_profile`:
+1. Add the following OpenShift client config variable to the `.bash_profile` for `root`:
 
         export KUBECONFIG=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig
 
-1. Restart your system.
+1. Restart the services with their new configurations:
+
+        systemctl restart openvswitch docker iptables
 
 ### Grab Docker Images
 On all of your systems, grab the following docker images:
