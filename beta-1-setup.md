@@ -230,8 +230,8 @@ following JSON file describes the router:
                 "version": "v1beta2",
                 "containers": [
                     {
-                        "name": "origin-haproxy-router-mainrouter",
-                        "image": "openshift_beta/ose-haproxy-router",
+                        "name": "ose-haproxy-router-mainrouter",
+                        "image": "openshift3_beta/ose-haproxy-router",
                         "ports": [
                             {
                                 "containerPort": 80,
@@ -249,12 +249,8 @@ following JSON file describes the router:
                             },
                             {
                                 "name": "OPENSHIFT_CA_DATA",
-                                "value": ""
+                                "value": "/var/lib/openshift/openshift.local.certificates/ca/cert.crt"
                             },
-                            {
-                                "name": "OPENSHIFT_INSECURE",
-                                "value": "true"
-                            }
                         ],
                         "command": ["--loglevel=4"],
                         "imagePullPolicy": "PullIfNotPresent"
@@ -281,7 +277,7 @@ change to "running" after a few moments (it may take up to a few minutes):
 
     osc get pods
     POD        IP       CONTAINER(S)                     IMAGE(S)                           HOST                                   LABELS STATUS
-    mainrouter 10.1.0.3 origin-haproxy-router-mainrouter openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
+    mainrouter 10.1.0.3 ose-haproxy-router-mainrouter    openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
 
 At this point you must update your DNS wildcard entry to point to the IP address
 of the host on which the router instance is running.
