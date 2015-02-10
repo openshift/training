@@ -3,5 +3,5 @@
   "kind": "Route",
   "apiVersion": "v1beta1",
   "host": "integrated.cloudapps.example.com",
-  "serviceName": "hello-openshift"
+  "serviceName": "frontend"
 }

@@ -748,23 +748,17 @@ We mentioned a few times that OpenShift would host its own Docker registry in
 order to pull images "locally". Let's take a moment to set that up.
 
 The Docker registry requires some information about our environment (SSL info,
-namely), so we will use an install script to process a template. Go ahead and
-grab the following files:
-
-    wget https://raw.githubusercontent.com/openshift/training/master/install-registry.sh
-    wget https://raw.githubusercontent.com/openshift/training/master/docker-registry-template.json
+namely), so we will use an install script to process a template.
 
 Edit `docker-registry-template.json` and find `OPENSHIFT_MASTER` -- set it to
 the proper URL, for example:
 
     https://ose3-master.example.com:8443
 
-Make the script executable:
+Make the script executable and run it the following way (subsituting the correct
+domain for your environment):
 
     chmod 755 install-registry.sh
-
-And now run it the following way:
-
     CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
     KUBERNETES_MASTER=https://ose3-master.example.com:8443 \
     CONTAINER_ACCESSIBLE_API_HOST=ose3-master.example.com \
@@ -798,6 +792,16 @@ you would need to have a code repository (where OpenShift can introspect an
 appropriate Docker image to build and use to support the code) or a code
 repository + a Dockerfile (so that OpenShift can pull or build the Docker image
 for you).
+
+### Create a New Project
+We will create a new project to put our first STI example into. Grab the project
+definition and create it:
+
+    osc create -f ~/training/sinatraproject.json
+
+At this point, if you click the OpenShift image on the web console you should be
+returned to the project overview page where you will see the new project show
+up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
@@ -838,17 +842,6 @@ a Docker image.
 
 1. OpenShift will then deploy the Docker image as a Pod with an associated
 Service.
-
-### Create a New Project
-We will create a new project to put our first STI example into. Grab the project
-definition and create it:
-
-    wget https://raw.githubusercontent.com/openshift/training/master/sinatraproject.json
-    osc create -f sinatraproject.json
-
-At this point, if you click the OpenShift image on the web console you should be
-returned to the project overview page where you will see the new project show
-up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
 ### Create the Build Process
 Let's go ahead and get everything fired up:
@@ -899,6 +892,8 @@ your environment):
 
     osc build-logs a1aa7e35-ad82-11e4-8f5f-525400b33d1d -n sinatraproject
 
+**Note: If the build isn't "Running" yet, build-logs will give you an error**
+
 ### The Web Console Revisited
 If you peeked at the web console while the build was running, you probably
 noticed a lot of new information in the web console - the build status, the
@@ -937,12 +932,8 @@ services from the service output you looked at above. For example, it might be
 
 **Hint:** You will need to use `osc get services` with a namespace to find it.
 
-Grab the route JSON file:
-
-    wget https://raw.githubusercontent.com/openshift/training/master/sinatra-route.json
-
-And edit it to incorporate the service name you determined. Hint: you need to
-edit the `serviceName` field.
+Edit `sinatra-route.json` it to incorporate the service name you determined.
+Hint: you need to edit the `serviceName` field.
 
 When you are done, create your route:
 
@@ -970,17 +961,12 @@ of OpenShift.
 
 First we'll create a new project:
 
-    wget https://raw.githubusercontent.com/openshift/training/master/integrated-project.json
-    osc create -f integrated-project.json
+    osc create -f ~/training/integrated-project.json
 
-Go ahead and fetch the definition for this application:
+Examine `integrated-build.json` to see how parameters and other things are
+handled. Tthen go ahead and process it and create it:
 
-    wget https://raw.githubusercontent.com/openshift/training/master/integrated-build.json
-
-Examine it to see how parameters and other things are handled. Tthen go ahead
-and process and create it:
-
-    osc process -n integratedproject -f integrated-build.json | osc create \
+    osc process -n integratedproject -f ~/training/integrated-build.json | osc create \
     -n integratedproject -f -
 
 The build configuration, in this case, is called `ruby-sample-build`. So, let's
@@ -992,7 +978,8 @@ go ahead and start the build and watch the logs:
     osc --namespace=integratedproject build-logs 277f6eac-b07d-11e4-b390-525400b33d1d
 
 Don't forget that the web console will show information about the build status,
-although in much less detail.
+although in much less detail. And, don't forget that if you are too quick on the
+`build-logs` you will catch it before the build actually starts.
 
 ### Routing Our Integrated Application
 Remember our experiments with routing from earlier? Well, our STI example
@@ -1006,10 +993,10 @@ doesn't include a route definition in its template. So, we can create one:
       "serviceName": "hello-openshift"
     }
 
-Go ahead and grab this route from the Git repository, and then create it:
+Go ahead and edit `integrated-route.json` to have the appropriate domain, and
+then create it:
 
-    wget https://raw.githubusercontent.com/openshift/training/master/integrated-route.json
-    osc --namespace=integratedproject create -f integrated-route.json
+    osc --namespace=integratedproject create -f ~/training/integrated-route.json
 
 Now, in your browser, you should be able to visit the website and actually use
 the application!
