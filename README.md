@@ -1,17 +1,17 @@
-# OpenShift V3 Beta1 Documentation
-- Basic Installation via go binary.  No docker-ized framework components (ie
-    OpenShift router, master, etcd, and other internal components of OpenShift)
-    - Be able to add multiple nodes to the master. 
-- All features found in the Alpha drops the Ben has been demo'ing around STI and
-    then basically adding routing/dns/users/auth/console
-- Limited console and command line
-- Basic HTTP/S only routing for application protocols.  No non-HTTP application
-    traffic.
-- DNS alias assignments for application urls via the REST API only
-- Non-SSL HTTP routing integration example for F5
-- Work with supplied docker example applications
-- No application docker image auto-binding.  Need to hardwire multi-tier
-    application components to each other post deployment
-- Users can form projects
-- Multi-user protection
-    - roles, AUTH, identity
+# OpenShift V3 Training Overview
+OpenShift V3 will be introduced with a series of beta releases. This document
+provides an overview of the training materials for each beta release and what
+that release covers.
+
+## V3 Beta 1
+The following is an overview of the OpenShift features covered in beta 1:
+
+- Installation and configuration of OpenShift and openshift-sdn
+- Adding nodes to the master
+- Web console and project basics
+- Extensive command line use
+- Basic HTTP/S (only) routing. 
+- Work with supplied example applications
+    - Includes STI (source-to-image) build examples
+
+[The specific documentation for beta 1 is here.](beta-1-setup.md)
