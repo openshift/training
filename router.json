@@ -1,14 +1,14 @@
 {
     "kind": "Pod",
     "apiVersion": "v1beta1",
-    "id": "mainrouter",
+    "id": "ROUTER_ID",
     "desiredState": {
         "manifest": {
             "version": "v1beta2",
             "containers": [
                 {
-                    "name": "ose-haproxy-router-mainrouter",
-                    "image": "openshift3_beta/ose-haproxy-router",
+                    "name": "origin-haproxy-router-ROUTER_ID",
+                    "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router",
                     "ports": [
                         {
                             "containerPort": 80,
@@ -22,12 +22,16 @@
                     "env": [
                         {
                             "name": "OPENSHIFT_MASTER",
-                            "value": "https://fqdn.of.master:8443"
+                            "value": "${OPENSHIFT_MASTER}"
                         },
                         {
                             "name": "OPENSHIFT_CA_DATA",
-                            "value": "/var/lib/openshift/openshift.local.certificates/ca/cert.crt"
+                            "value": "${OPENSHIFT_CA_DATA}"
                         },
+                        {
+                            "name": "OPENSHIFT_INSECURE",
+                            "value": "${OPENSHIFT_INSECURE}"
+                        }
                     ],
                     "command": ["--loglevel=4"],
                     "imagePullPolicy": "PullIfNotPresent"
@@ -39,4 +43,3 @@
         }
     }
 }
-

@@ -117,20 +117,23 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull openshift/docker-registry
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
 
 **note: missing:
     openshift/hello-openshift
     sti images (eg: ruby20-centos-sti kind of thing)
 **
 
-And re-tag them:
+### Clone the Training Repository
+On your master, it makes sense to clone the training git repository:
 
-    docker tag registry.access.redhat.com/openshift3_beta/ose-sti-builder openshift3_beta/ose-sti-builder
-    docker tag registry.access.redhat.com/openshift3_beta/ose-docker-builder openshift3_beta/ose-docker-builder
-    docker tag registry.access.redhat.com/openshift3_beta/ose-deployer openshift3_beta/ose-deployer
-    docker tag registry.access.redhat.com/openshift3_beta/ose-haproxy-router openshift3_beta/ose-haproxy-router
-    docker tag registry.access.redhat.com/openshift3_beta/ose-pod openshift3_beta/ose-pod
+    cd
+    git clone http://github.com/openshift/training
+    cd ~/training
+
+### REMINDER
+Almost all of the files for this training are in the training folder you just
+cloned.
 
 ## Starting the OpenShift Services
 ### Running a Master
@@ -142,7 +145,7 @@ First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
 
 Edit the `IMAGES` to read:
 
-    IMAGES=openshift3_beta/ose-${component}
+    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}
 
 Then, start the `openshift-master` service:
 
@@ -158,10 +161,10 @@ Master will both orchestrate containers and run containers, too.
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
 
     OPTIONS="--loglevel=4"
-    
+ 
 Edit the `IMAGES` to read:
 
-    IMAGES=openshift3_beta/ose-${component}"
+    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}"
 
 Do **not** start the openshift-node service yet. We must configure and start the
 openshift-sdn-node first in order to set up the proper bridges, and the
@@ -224,14 +227,14 @@ following JSON file describes the router:
     {
         "kind": "Pod",
         "apiVersion": "v1beta1",
-        "id": "mainrouter",
+        "id": "ROUTER_ID",
         "desiredState": {
             "manifest": {
                 "version": "v1beta2",
                 "containers": [
                     {
-                        "name": "ose-haproxy-router-mainrouter",
-                        "image": "openshift3_beta/ose-haproxy-router",
+                        "name": "origin-haproxy-router-ROUTER_ID",
+                        "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router",
                         "ports": [
                             {
                                 "containerPort": 80,
@@ -245,12 +248,16 @@ following JSON file describes the router:
                         "env": [
                             {
                                 "name": "OPENSHIFT_MASTER",
-                                "value": "https://fqdn.of.master:8443"
+                                "value": "${OPENSHIFT_MASTER}"
                             },
                             {
                                 "name": "OPENSHIFT_CA_DATA",
-                                "value": "/var/lib/openshift/openshift.local.certificates/ca/cert.crt"
+                                "value": "${OPENSHIFT_CA_DATA}"
                             },
+                            {
+                                "name": "OPENSHIFT_INSECURE",
+                                "value": "${OPENSHIFT_INSECURE}"
+                            }
                         ],
                         "command": ["--loglevel=4"],
                         "imagePullPolicy": "PullIfNotPresent"
@@ -263,14 +270,16 @@ following JSON file describes the router:
         }
     }
 
-Download this file onto your master:
+Go into the training folder:
 
-    wget https://raw.githubusercontent.com/openshift/training/master/router.json
+    cd ~/training
 
-and **be sure to edit** the `OPENSHIFT_MASTER` value to have the correct FQDN.
-Then, use the `osc` tool to create the router:
+There is an installation script that will set up the router for us, provided we
+feed it the correct arguments. Let's run this script now, and be sure to
+substitute the correct domain name for your master: 
 
-    osc create -f router.json
+    chmod 755 install-router.sh
+    ./install-router.sh mainrouter https://ose3-master.example.com:8443 \
 
 If this works, in the output of `osc get pods` you should see the pod status
 change to "running" after a few moments (it may take up to a few minutes):
@@ -287,9 +296,8 @@ of the host on which the router instance is running.
 V3 has a concept of "projects" to contain a number of different services and
 their pods, builds and etc. We'll explore what this means in more details
 throughout the rest of the labs, but, first, let's create a project for our
-first application.
+first application. From the `training` folder:
 
-    wget https://raw.githubusercontent.com/openshift/training/master/betaproject.json
     osc create -f betaproject.json
 
 Since we have a project, future use of command line statements will have to
@@ -316,12 +324,9 @@ so we do not see it here.
 At this point you have a sufficiently-functional V3 OpenShift environment. It is
 now time to create the classic "Hello World" application using some sample code. 
 
-### Grab the Definition JSON
-On your **master** node, go ahead and grab the JSON definition:
-
-    wget https://raw.githubusercontent.com/openshift/origin/master/examples/hello-openshift/hello-pod.json
-
-You can see the contents of our pod definition by using `cat`:
+### The Definition JSON
+In the training folder, you can see the contents of our pod definition by using
+`cat`:
 
     cat hello-pod.json 
     {
@@ -399,6 +404,7 @@ Hooray!
 In the web console, if you click "Browse" and then "Pods", you'll see the pod we
 just created and some information about it.
 
+### Delete the Pod
 Go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift -n betaproject
@@ -431,7 +437,7 @@ Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
 
 Edit `IMAGES` to read:
 
-    IMAGES=openshift3_beta/ose-${component}"
+    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}"
 
 Do **not** start the openshift-node service. We will let openshift-sdn-node
 handle that for us (like before).
@@ -456,17 +462,14 @@ You may also want to enable the service.
 ### Adding the Node Via OpenShift's API
 The following JSON describes a node:
 
+    cat node.json
     {
       "id": "ose3-node1.example.com",
       "kind": "Minion",
       "apiVersion": "v1beta1",
     }
 
-Grab this node definition from the training repository:
-
-    wget https://raw.githubusercontent.com/openshift/training/master/node.json
-
-Then, add the node via the API:
+Add the node via the API:
 
     osc create -f node.json
 
@@ -552,7 +555,7 @@ Here is an example route JSON definition:
       "id": "hello-route",
       "kind": "Route",
       "apiVersion": "v1beta1",
-      "host": "hello-openshift.v3.rhcloud.com",
+      "host": "hello-openshift.cloudapps.example.com",
       "serviceName": "hello-openshift"
     }
 
@@ -640,12 +643,7 @@ If we work from the route down to the pod:
 * There is a single pod with a single container that has the label
     `name=hello-openshift-label`
 
-Create the JSON file above on your **master** host in root's home directory. Or
-use wget to grab it:
-
-    wget https://raw.githubusercontent.com/openshift/training/master/test-complete.json
-
-Once you have this file, you must edit the `host` stanza for the route to have
+Edit `test-complete.json` and change the `host` stanza for the route to have
 the correct domain, matching the DNS configuration for your environment. Once
 this is done, go ahead and use `osc` to apply it. You should see something like
 the following:

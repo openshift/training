@@ -1,6 +1,6 @@
 {
   "metadata":{
-    "name":"hello-service-pod-thingy"
+    "name":"hello-service-pod-meta"
   },
   "kind":"Config",
   "apiVersion":"v1beta1",
