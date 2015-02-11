@@ -355,7 +355,11 @@ point, but here is a brief explanation:
 3. Having created the new `user` context, we set that context to be used
    by default. (It could be overridden with the `--context` flag.)
 
-Any `osc create` or `osc get` or `osc delete` (etc.) will now operate only with entities in the `betaproject` namespace.
+Any `osc create` or `osc get` or `osc delete` (etc.) will now operate only with
+entities in the `betaproject` namespace.
+
+**Note:**
+Creating nodes or projects currently ignores the current context.
 
 ### The Definition JSON
 In the training folder, you can see the contents of our pod definition by using
@@ -395,7 +399,8 @@ To create the pod from our JSON file, execute the following:
 
     osc create -f hello-pod.json
 
-The command should display the ID of the pod:
+Remember, we already set our context earlier using `ex config`, so this pod will
+land in our `betaproject` namespace. The command should display the ID of the pod:
 
     hello-openshift
 
@@ -502,17 +507,27 @@ The following JSON describes a node:
 
     cat node.json
     {
-      "id": "ose3-node1.example.com",
-      "kind": "Node",
-      "apiVersion": "v1beta1",
+      "metadata":{
+        "name":"add-two-nodes"
+      },
+      "kind":"Config",
+      "apiVersion":"v1beta1",
+      "creationTimestamp":"2014-09-18T18:28:38-04:00",
+      "items":[
+        {
+          "id": "ose3-node1.example.com",
+          "kind": "Node",
+          "apiVersion": "v1beta1",
+        },
+        {
+          "id": "ose3-node2.example.com",
+          "kind": "Node",
+          "apiVersion": "v1beta1",
+        }
+      ]
     }
 
 Add the node via the API:
-
-    osc create -f node.json
-
-You can then edit the file to exchange `node1` for `node2` and then use `osc`
-again:
 
     osc create -f node.json
 
@@ -752,13 +767,22 @@ If you see some content that looks like:
 
     "hello-openshift-service": {
       "Name": "hello-openshift-service",
-      ...
+      "EndpointTable": {
+        "10.1.0.4:8080": {
+          "ID": "10.1.0.4:8080",
+          "IP": "10.1.0.4",
+          "Port": "8080"
+        }
+      },
       "ServiceAliasConfigs": {
-        "hello-openshift.cloudapps.example.com-": {
-          "Host": "hello-openshift.cloudapps.example.com",
-          ...
-         }
+        "hello-openshift.cloudapps.erikjacobs.com-": {
+          "Host": "hello-openshift.cloudapps.erikjacobs.com",
+          "Path": "",
+          "TLSTermination": "",
+          "Certificates": null
+        }
       }
+    },
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
@@ -787,7 +811,8 @@ We mentioned a few times that OpenShift would host its own Docker registry in
 order to pull images "locally". Let's take a moment to set that up.
 
 First we will want to switch back to our original context to use the `default`
-namespace for infrastructure components.
+namespace for infrastructure components. The `master-admin` context is
+predefined and comes with OpenShift.
 
     openshift ex config use-context master-admin
 
@@ -853,6 +878,40 @@ Let's update and use the `user` context for interacting with the new project you
     openshift ex config set-context user --namespace=sinatraproject
     openshift ex config use-context user
 
+**Note:**
+If you ever get confused about what context you're using, or what contexts are
+defined, you can look at `$KUBECONFIG`:
+
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority: root.crt
+        server: https://192.168.133.2:8443
+      name: master
+    contexts:
+    - context:
+        cluster: master
+        user: admin
+      name: master-admin
+    - context:
+        cluster: master
+        namespace: sinatraproject
+        user: admin
+      name: user
+    current-context: user
+    kind: Config
+    preferences: {}
+    users:
+    - name: admin
+      user:
+        client-certificate: cert.crt
+        client-key: key.key
+
+Or, to quickly get your current context:
+
+    grep current $KUBECONFIG
+    current-context: user
+
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
 extremely simple "Hello World" type application that looks very much like our
@@ -875,7 +934,7 @@ Grab the code and process it using the following:
 to generate an appropriate JSON template so that, when processed, OpenShift can
 build the resulting image to run. 
 
-need explanation of template -> config
+** need explanation of template -> config **
 
 Go ahead and take a look at the JSON that was generated. You will see some
 familiar items at this point, and some new ones, like `BuildConfig`,
@@ -1087,6 +1146,7 @@ You will need to ensure the following, or fix the following:
     nameserver
 * Your master `/etc/resolv.conf` points to a real, functional, accessible
     nameserver (eg: Google DNS @ `8.8.8.8`)
+* That you also open port 53 (UDP) to allow DNS queries to hit the master
 
 Following this setup for dnsmasq will ensure that your wildcard domain works as
 well as DNS resolution inside of all of your containers.
