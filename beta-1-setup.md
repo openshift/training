@@ -794,11 +794,6 @@ namespace for infrastructure components.
 The Docker registry requires some information about our environment (SSL info,
 namely), so we will use an install script to process a template.
 
-Edit `docker-registry-template.json` and find `OPENSHIFT_MASTER` -- set it to
-the proper URL, for example:
-
-    https://ose3-master.example.com:8443
-
 Make the script executable and run it the following way (subsituting the correct
 domain for your environment):
 
