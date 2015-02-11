@@ -1,5 +1,5 @@
 {
   "id": "ose3-node1.example.com",
-  "kind": "Minion",
+  "kind": "Node",
   "apiVersion": "v1beta1",
 }
