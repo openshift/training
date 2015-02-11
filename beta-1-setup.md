@@ -725,8 +725,8 @@ We ultimately want the PID of the container running the router so that we can go
 "inside" it. On the master system, issue the following to get the PID of the
 router:
 
-    docker inspect `docker ps | grep haproxy-router | awk '{print $1}'` | grep \
-    Pid | awk '{print $2}' | cut -f1 -d,
+    docker inspect --format {{.State.Pid}}   \
+      `docker ps | grep haproxy-router | awk '{print $1}'`
     2239
 
 The output will be a PID -- in this case, the PID is `2239`. We can use
