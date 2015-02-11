@@ -752,9 +752,13 @@ If you see some content that looks like:
 
     "hello-openshift-service": {
       "Name": "hello-openshift-service",
-      "HostAliases": [
-        "hello-openshift.cloudapps.example.com"
-      ],
+      ...
+      "ServiceAliasConfigs": {
+        "hello-openshift.cloudapps.example.com-": {
+          "Host": "hello-openshift.cloudapps.example.com",
+          ...
+         }
+      }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
