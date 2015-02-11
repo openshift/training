@@ -195,7 +195,7 @@ Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
 
     MASTER_URL="http://fqdn.of.master:4001"
     
-    MINION_IP="ip.address.of.node.interface"
+    MINION_IP="ip.address.of.node.public.interface"
     
     OPTIONS="-v=4"
 
@@ -478,7 +478,7 @@ Edit the `/etc/sysconfig/openshift-sdn-node` file:
 
     MASTER_URL="http://fqdn.of.master:4001"
     
-    MINION_IP="ip.address.of.node.interface"
+    MINION_IP="ip.address.of.node.public.interface"
     
     OPTIONS="-v=4"
 
@@ -490,7 +490,12 @@ And start the SDN node:
 
 You may also want to enable the service.
 
-Note: If you check status on openshift-sdn-node, you will see that the service blocks with an error (and does not start openshift-node) until the node has been defined at the master in the next section.
+**Note:** 
+Since we are starting the sdn-node before we have actually created the entry for
+our node with the OpenShift master, if you check status on openshift-sdn-node
+(`journalctl -u openshift-sdn-node`) you will see that the service blocks with
+an error (and does not start openshift-node) until the node has been defined in
+the next section.
 
 ### Adding the Node Via OpenShift's API
 The following JSON describes a node:
