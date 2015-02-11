@@ -794,7 +794,6 @@ domain for your environment):
     chmod 755 install-registry.sh
     CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
     KUBERNETES_MASTER=https://ose3-master.example.com:8443 \
-    CONTAINER_ACCESSIBLE_API_HOST=ose3-master.example.com \
     ./install-registry.sh
 
 You'll get output like:
@@ -816,6 +815,8 @@ To quickly test your Docker registry, you can do the following:
 And you should see:
 
     "docker-registry server (dev) (v0.9.0)"
+
+This can take a while to happen; the image needs to download and the container needs to start (watch it with `osc get pods --watch` until it changes to `Running` status), and the service itself can take on the order of a minute to start within the container.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
