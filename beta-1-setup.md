@@ -195,7 +195,7 @@ Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
 
     MASTER_URL="http://fqdn.of.master:4001"
     
-    MINION_IP="ip.address.of.public.interface"
+    MINION_IP="ip.address.of.node.interface"
     
     OPTIONS="-v=4"
 
@@ -478,7 +478,7 @@ Edit the `/etc/sysconfig/openshift-sdn-node` file:
 
     MASTER_URL="http://fqdn.of.master:4001"
     
-    MINION_IP="ip.address.of.public.interface"
+    MINION_IP="ip.address.of.node.interface"
     
     OPTIONS="-v=4"
 
@@ -490,13 +490,15 @@ And start the SDN node:
 
 You may also want to enable the service.
 
+Note: If you check status on openshift-sdn-node, you will see that the service blocks with an error (and does not start openshift-node) until the node has been defined at the master in the next section.
+
 ### Adding the Node Via OpenShift's API
 The following JSON describes a node:
 
     cat node.json
     {
       "id": "ose3-node1.example.com",
-      "kind": "Minion",
+      "kind": "Node",
       "apiVersion": "v1beta1",
     }
 
@@ -512,7 +514,7 @@ again:
 You should now have two running nodes in addition to your original "master"
 node (it may take a minute for all to reach "Ready" status):
 
-    osc get minions
+    osc get nodes
     NAME                      LABELS              STATUS
     ose3-master.example.com   <none>              Ready
     ose3-node1.example.com    <none>              Ready
