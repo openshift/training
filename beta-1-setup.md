@@ -1050,3 +1050,32 @@ written with HTTP links. Be sure to use HTTP. **
 
 ## Conclusion
 This concludes the Beta 1 training. Look for more example applications to come!
+
+# APPENDIX - DNSMasq setup
+In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
+file. If you do not have the ability to manipulate DNS in your environment, or
+just want a quick and dirty way to set up DNS, you can install dnsmasq on your
+master:
+
+    yum -y install dnsmasq
+
+Replace `/etc/dnsmasq.conf` with the one from this repository, and replace
+`/etc/hosts` with the `hosts` file from this repository.
+
+Enable and start the dnsmasq service:
+
+    systemctl enable dnsmasq; systemctl start dnsmasq
+
+You will need to ensure the following, or fix the following:
+
+* Your IP addresses match the entries in `/etc/hosts`
+* Your hostnames for your machines match the entries in `/etc/hosts`
+* Your `cloudapps` domain points to the correct ip in `dnsmasq.conf`
+* Each of your systems has the same `/etc/hosts` file
+* Your nodes `/etc/resolv.conf` points to the master IP address as the
+    nameserver
+* Your master `/etc/resolv.conf` points to a real, functional, accessible
+    nameserver (eg: Google DNS @ `8.8.8.8`)
+
+Following this setup for dnsmasq will ensure that your wildcard domain works as
+well as DNS resolution inside of all of your containers.
