@@ -520,16 +520,40 @@ The following JSON describes a node:
           "id": "ose3-node1.example.com",
           "kind": "Node",
           "apiVersion": "v1beta1",
+          "resources": {
+            "capacity": {
+              "cpu": 1,
+              "memory": 80% of freemem (ytes)
+            },
+          },
         },
         {
           "id": "ose3-node2.example.com",
           "kind": "Node",
           "apiVersion": "v1beta1",
+          "resources": {
+            "capacity": {
+              "cpu": 1,
+              "memory": 80% of freemem (bytes)
+            },
+          },
         }
       ]
     }
 
-Add the node via the API:
+You will need to edit the `node.json` file and replace the memory line with the
+correct value for your system. For example, given the output of `free`:
+
+    free -b
+                  total        used        free      shared  buff/cache   available
+    Mem:     1041629184   284721152   321036288     7761920   435871744   577949696
+    Swap:    1073737728           0  1073737728
+
+You might set your `node.json` to have:
+
+    "memory": 256000000
+
+Once edited, add the nodes via the API:
 
     osc create -f node.json
 

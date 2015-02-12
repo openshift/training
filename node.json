@@ -10,11 +10,23 @@
       "id": "ose3-node1.example.com",
       "kind": "Node",
       "apiVersion": "v1beta1",
+      "resources": {
+        "capacity": {
+          "cpu": 1,
+          "memory": 80% of freemem (ytes)
+        },
+      },
     },
     {
       "id": "ose3-node2.example.com",
       "kind": "Node",
       "apiVersion": "v1beta1",
+      "resources": {
+        "capacity": {
+          "cpu": 1,
+          "memory": 80% of freemem (bytes)
+        },
+      },
     }
   ]
 }
