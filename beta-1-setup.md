@@ -777,8 +777,8 @@ If you see some content that looks like:
         }
       },
       "ServiceAliasConfigs": {
-        "hello-openshift.cloudapps.erikjacobs.com-": {
-          "Host": "hello-openshift.cloudapps.erikjacobs.com",
+        "hello-openshift.cloudapps.example.com-": {
+          "Host": "hello-openshift.cloudapps.example.com",
           "Path": "",
           "TLSTermination": "",
           "Certificates": null
