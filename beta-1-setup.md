@@ -1147,3 +1147,13 @@ You will need to ensure the following, or fix the following:
 
 Following this setup for dnsmasq will ensure that your wildcard domain works as
 well as DNS resolution inside of all of your containers.
+
+# APPENDIX - Cleaning Up
+Figuring out everything that you have deployed is a little bit of a bear right
+now. The following command will show you just about everything you might need to
+delete. Be sure to change your context across all the namespaces and the
+master-admin to find everything:
+
+    for resource in build buildconfig images imagerepository deploymentconfig \
+    route replicationcontroller service pod; do echo -e "Resource: $resource"; \
+    osc get $resource; echo -e "\n\n"; done
