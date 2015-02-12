@@ -726,7 +726,7 @@ Services are not externally accessible without a route being defined, because
 they always listen on "local" IP addresses (eg: 172.x.x.x). However, if you have
 access to the OpenShift environment, you can still test a service.
 
-    osc get services -n betaproject
+    osc get services
     NAME                      LABELS              SELECTOR                     IP                  PORT
     hello-openshift-service   <none>              name=hello-openshift-label   172.30.17.230       27017
 
