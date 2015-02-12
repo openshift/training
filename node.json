@@ -1,5 +1,20 @@
 {
-  "id": "ose3-node1.example.com",
-  "kind": "Node",
-  "apiVersion": "v1beta1",
+  "metadata":{
+    "name":"add-two-nodes"
+  },
+  "kind":"Config",
+  "apiVersion":"v1beta1",
+  "creationTimestamp":"2014-09-18T18:28:38-04:00",
+  "items":[
+    {
+      "id": "ose3-node1.example.com",
+      "kind": "Node",
+      "apiVersion": "v1beta1",
+    },
+    {
+      "id": "ose3-node2.example.com",
+      "kind": "Node",
+      "apiVersion": "v1beta1",
+    }
+  ]
 }
