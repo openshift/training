@@ -119,7 +119,7 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/docker-registry
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
 
 **note: missing:
     openshift/hello-openshift
