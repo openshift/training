@@ -960,7 +960,7 @@ can figure out what is different.
 To learn a little more about what happened, run the following:
 
     for i in imagerepository buildconfig deploymentconfig service; do \
-    echo $i; osc get $i; done
+    echo $i; osc get $i; echo -e "\n\n"; done
 
 Based on the JSON from `ex generate`, we have created:
 
