@@ -1157,3 +1157,9 @@ master-admin to find everything:
     for resource in build buildconfig images imagerepository deploymentconfig \
     route replicationcontroller service pod; do echo -e "Resource: $resource"; \
     osc get $resource; echo -e "\n\n"; done
+
+# APPENDIX - Pretty Output
+If the output of `osc get pods` is a little too busy, you can use the following
+to limit some of what it returns:
+
+    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
