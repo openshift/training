@@ -935,19 +935,17 @@ For this example, we will be using the following application's source code:
 
     https://github.com/thoraxe/simple-openshift-sinatra-sti
 
-Grab the code and process it using the following:
+Let's clone the repository and then generate a config for OpenShift to create:
 
     cd
-    git clone https://github.com/thoraxe/simple-openshift-sinatra-sti
-    cd ~/simple-openshift-sinatra-sti
+    git clone https://github.com/thoraxe/simple-openshift-sinatra-sti.git
+    cd simple-openshift-sinatra-sti
     rm -f Dockerfile
     openshift ex generate | python -m json.tool > ~/simple-sinatra.json
 
 `ex generate` is a tool that will examine the current directory tree and attempt
-to generate an appropriate JSON template so that, when processed, OpenShift can
-build the resulting image to run. 
-
-** need explanation of template -> config **
+to generate an appropriate JSON configuration so that, when processed, OpenShift
+can build the resulting image to run. 
 
 Go ahead and take a look at the JSON that was generated. You will see some
 familiar items at this point, and some new ones, like `BuildConfig`,
@@ -1089,6 +1087,16 @@ We'll set our context to use the corresponding namespace:
 
     openshift ex config set-context user --namespace=integratedproject
 
+#### A Quick Aside on Templates
+From the [OpenShift
+documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/latest/using_openshift/templates.html):
+
+    A template describes a set of resources intended to be used together that
+    can be customized and processed to produce a configuration. Each template
+    can define a list of parameters that can be modified for consumption by
+    containers.
+
+### Creating the Integrated Application
 Examine `integrated-build.json` to see how parameters and other things are
 handled. Then go ahead and process it and create it:
 
@@ -1133,6 +1141,27 @@ written with HTTP links. Be sure to use HTTP. **
 
 ## Conclusion
 This concludes the Beta 1 training. Look for more example applications to come!
+
+# APPENDIX - Extra STI code examples
+## Wildfly
+A Wildfly-based JEE application example is here:
+
+    https://github.com/bparees/javaee7-hol
+
+If you have successfully built and deployed the "integrated" example above, you
+can simply create a new project, change your context, and then:
+
+    osc process \
+    -f https://raw.githubusercontent.com/bparees/javaee7-hol/master/application-template-jeebuild.json \
+    | osc create -f -
+
+Once created, you can go through the same build process as before.
+
+**Note: You should wait for the database/mysql pod to come up before starting
+your build.**
+
+**Note: You will want to create a route for this app so that you can access it
+with your browser.**
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
