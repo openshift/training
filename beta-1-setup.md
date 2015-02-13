@@ -527,7 +527,7 @@ The following JSON describes a node:
           "resources": {
             "capacity": {
               "cpu": 1,
-              "memory": 80% of freemem (ytes)
+              "memory": 80% of freemem (bytes)
             },
           },
         },
