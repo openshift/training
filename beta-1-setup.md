@@ -107,6 +107,10 @@ releases. In between the following rules:
 
         export KUBECONFIG=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig
 
+1. And then source your profile:
+
+        source ~/.bash_profile
+
 1. Restart the services with their new configurations:
 
         systemctl restart openvswitch docker iptables
@@ -1187,3 +1191,22 @@ If the output of `osc get pods` is a little too busy, you can use the following
 to limit some of what it returns:
 
     osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
+
+# APPENDIX - Troubleshooting
+* When using an "osc" command like "osc get pods" I see a "certificate signed by
+  unknown authority error":
+
+        F0212 16:15:52.195372   13995 create.go:79] Post
+        https://ose3-master.example.net:8443/api/v1beta1/pods?namespace=default:
+        x509: certificate signed by unknown authority
+  
+    Check the value of $KUBECONFIG:
+
+        echo $kubeconfig
+
+    If you don't see anything, you may have changed your `.bash_profile` but
+    have not yet sourced it. Make sure that you followed the step of adding
+    `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
+
+        source ~/.bash_profile
+
