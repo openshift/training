@@ -149,10 +149,6 @@ First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
 
     OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
 
-Edit the `IMAGES` to read:
-
-    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}
-
 Then, start the `openshift-master` service:
 
     systemctl start openshift-master
@@ -168,10 +164,6 @@ Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
 
     OPTIONS="--loglevel=4"
  
-Edit the `IMAGES` to read:
-
-    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}
-
 Do **not** start the openshift-node service yet. We must configure and start the
 openshift-sdn-node first in order to set up the proper bridges, and the
 openshift-sdn-node service will automatically start the openshift-node service
@@ -476,10 +468,6 @@ can do the following on your node:
 Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
 
     OPTIONS="--loglevel=4 --master=fqdn.of.master"
-
-Edit `IMAGES` to read:
-
-    IMAGES=registry.access.redhat.com/openshift3_beta/ose-${component}"
 
 Do **not** start the openshift-node service. We will let openshift-sdn-node
 handle that for us (like before).
