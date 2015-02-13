@@ -134,7 +134,7 @@ On all of your systems, grab the following docker images:
 On your master, it makes sense to clone the training git repository:
 
     cd
-    git clone http://github.com/openshift/training
+    git clone https://github.com/openshift/training.git
     cd ~/training
 
 ### REMINDER
