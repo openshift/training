@@ -125,10 +125,8 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
 
-**note: missing:
-    openshift/hello-openshift
-    sti images (eg: ruby20-centos-sti kind of thing)
-**
+There are other images that will be pulled during the rest of the activities in
+this training, so internet access is required.
 
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
@@ -286,9 +284,6 @@ change to "running" after a few moments (it may take up to a few minutes):
     POD        IP       CONTAINER(S)                     IMAGE(S)                           HOST                                   LABELS STATUS
     mainrouter 10.1.0.3 ose-haproxy-router-mainrouter    openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
 
-At this point you must update your DNS wildcard entry to point to the IP address
-of the host on which the router instance is running.
-
 ## Projects and the Web Console
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different services and
@@ -409,13 +404,9 @@ status:
     POD             IP       CONTAINER(S)                     IMAGE(S)                           HOST                                  LABELS                 STATUS
     hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift          ose3-master.example.com/192.168.133.2 name=hello-openshift   Pending
 
-**note: we might pre-fetch**
-When you first issue `get pods`, you will likely see a pending status for the
-`hello-openshift` pod. This is because we did not pre-fetch its Docker image, so
-the node is pulling it from a registry. Later we will set up a local Docker
-registry for OpenShift to use. You should also note that we no longer see the
-router pod in the output. This is because the router is part of the `default`
-namespace, used for core infrastructure components.
+You should note that we no longer see the router pod in the output. This is
+because the router is part of the `default` namespace, used for core
+infrastructure components.
 
 Look at the list of Docker containers with `docker ps` to see the bound ports.
 We should see an `openshift3_beta/ose-pod` container bound to 6061 on the host and
@@ -933,12 +924,12 @@ application.
 
 For this example, we will be using the following application's source code:
 
-    https://github.com/thoraxe/simple-openshift-sinatra-sti
+    https://github.com/openshift/simple-openshift-sinatra-sti
 
 Let's clone the repository and then generate a config for OpenShift to create:
 
     cd
-    git clone https://github.com/thoraxe/simple-openshift-sinatra-sti.git
+    git clone https://github.com/openshift/simple-openshift-sinatra-sti.git
     cd simple-openshift-sinatra-sti
     rm -f Dockerfile
     openshift ex generate | python -m json.tool > ~/simple-sinatra.json
@@ -1226,4 +1217,3 @@ to limit some of what it returns:
     `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
 
         source ~/.bash_profile
-
