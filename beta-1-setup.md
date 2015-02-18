@@ -1184,6 +1184,19 @@ You will need to ensure the following, or fix the following:
 Following this setup for dnsmasq will ensure that your wildcard domain works as
 well as DNS resolution inside of all of your containers.
 
+### Verifying DNSMasq
+
+You can query the local DNS on the master using `dig` to make sure it returns the correct records:
+
+    dig ose3-master.example.com @loclahost
+    
+    ...
+    ;; ANSWER SECTION:
+    ose3-master.example.com. 0  IN  A 192.168.133.2
+    ...
+   
+The returned IP should be the IP of the master.
+
 # APPENDIX - Cleaning Up
 Figuring out everything that you have deployed is a little bit of a bear right
 now. The following command will show you just about everything you might need to
