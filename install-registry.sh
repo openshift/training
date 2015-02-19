@@ -5,11 +5,18 @@
 # for connecting securely to the OpenShift master's.
 #
 # To use key/certs generated automatically by "openshift start", look for the
-# openshift.local.certificates/master/ directory underneath where it was started.
+# openshift.local.certificates/openshift-client/ directory underneath where it was started.
 # For instance, if the openshift home directory is /var/lib/openshift, then run:
-# CERT_DIR=/var/lib/openshift/openshift.local.certificates/master hack/install-registry.sh
+# CERT_DIR=/var/lib/openshift/openshift.local.certificates/openshift-client hack/install-registry.sh
 #
 # You may also need to set KUBERNETES_MASTER if the master is not listening at https://localhost:8443/
+
+if [ -z "${CERT_DIR}" ]; then
+  echo "You have to set the CERT_DIR environment variable to point into master certificate"
+  echo "Example:"
+  echo "$ CERT_DIR='/var/lib/openshift/openshift.local.certificates/openshift-client' install-registry.sh"
+  exit 1
+fi
 
 set -o errexit
 set -o nounset
@@ -40,4 +47,4 @@ export KUBERNETES_MASTER
 
 # Deploy private docker registry
 echo "[INFO] Submitting docker-registry template file for processing"
-osc process -f docker-registry-template.json -v "OPENSHIFT_MASTER=$API_SCHEME://${CONTAINER_ACCESSIBLE_API_HOST}:${API_PORT},OPENSHIFT_CA_DATA=${OPENSHIFT_CA_DATA},OPENSHIFT_CERT_DATA=${OPENSHIFT_CERT_DATA},OPENSHIFT_KEY_DATA=${OPENSHIFT_KEY_DATA}" | osc apply -f -
+osc process -f docker-registry-template.json -v "OPENSHIFT_MASTER=$API_SCHEME://${CONTAINER_ACCESSIBLE_API_HOST}:${API_PORT},OPENSHIFT_CA_DATA=${OPENSHIFT_CA_DATA},OPENSHIFT_CERT_DATA=${OPENSHIFT_CERT_DATA},OPENSHIFT_KEY_DATA=${OPENSHIFT_KEY_DATA}" | osc create -f -
