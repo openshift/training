@@ -1159,6 +1159,10 @@ your build.**
 **Note: You will want to create a route for this app so that you can access it
 with your browser.**
 
+**Note: If you needed to pre-pull the Docker images, you will want to fetch
+`openshift/wildfly-8-centos` ahead of time. Also, if you were using sneakernet,
+you should also include that image in the list in the appendix below.**
+
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
 file. If you do not have the ability to manipulate DNS in your environment, or
@@ -1214,6 +1218,43 @@ wildcard space:
     ;; ANSWER SECTION:
     foo.cloudapps.example.com 0 IN A 192.168.133.2
     ...
+
+# APPENDIX - Import/Export of Docker Images (Disconnected Use)
+Docker supports import/save of Images via tarball. You can do something like the
+following on your connected machine:
+
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull openshift/ruby-20-centos
+    docker pull mysql
+    docker pull openshift/hello-openshift
+
+This will fetch all of the images. You can then save them to a tarball:
+
+    docker save -o beta1-images.tar \
+    registry.access.redhat.com/openshift3_beta/ose-haproxy-router \
+    registry.access.redhat.com/openshift3_beta/ose-deployer \
+    registry.access.redhat.com/openshift3_beta/ose-sti-builder \
+    registry.access.redhat.com/openshift3_beta/ose-docker-builder \
+    registry.access.redhat.com/openshift3_beta/ose-pod \
+    registry.access.redhat.com/openshift3_beta/ose-docker-registry \
+    openshift/ruby-20-centos \
+    mysql \
+    openshift/hello-openshift
+
+**Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
+space**
+
+Sneakernet that tarball to your disconnected machines, and then simply load the
+tarball:
+
+    docker load -i beta1-images.tar
+
+**Note: On an SSD-equipped system this took ~4 min**
 
 # APPENDIX - Cleaning Up
 Figuring out everything that you have deployed is a little bit of a bear right
