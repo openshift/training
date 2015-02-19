@@ -138,7 +138,7 @@ On your master, it makes sense to clone the training git repository:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training
+    cd ~/training/beta1
 
 ### REMINDER
 Almost all of the files for this training are in the training folder you just
@@ -273,7 +273,7 @@ following JSON file describes the router:
 
 Go into the training folder:
 
-    cd ~/training
+    cd ~/training/beta1
 
 There is an installation script that will set up the router for us, provided we
 feed it the correct arguments. Let's run this script now, and be sure to
@@ -294,7 +294,7 @@ change to "running" after a few moments (it may take up to a few minutes):
 V3 has a concept of "projects" to contain a number of different services and
 their pods, builds and etc. We'll explore what this means in more details
 throughout the rest of the labs, but, first, let's create a project for our
-first application. From the `training` folder:
+first application. From the `training/beta1` folder:
 
     osc create -f betaproject.json
 
@@ -360,7 +360,7 @@ entities in the `betaproject` namespace.
 Creating nodes or projects currently ignores the current context.
 
 ### The Definition JSON
-In the training folder, you can see the contents of our pod definition by using
+In the `training/beta1` folder, you can see the contents of our pod definition by using
 `cat`:
 
     cat hello-pod.json 
@@ -874,7 +874,7 @@ for you).
 We will create a new project to put our first STI example into. Grab the project
 definition and create it:
 
-    osc create -f ~/training/sinatraproject.json
+    osc create -f ~/training/beta1/sinatraproject.json
 
 At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
@@ -1077,7 +1077,7 @@ of OpenShift.
 
 First we'll create a new project:
 
-    osc create -f ~/training/integrated-project.json
+    osc create -f ~/training/beta1/integrated-project.json
 
 We'll set our context to use the corresponding namespace:
 
@@ -1096,7 +1096,7 @@ documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/lat
 Examine `integrated-build.json` to see how parameters and other things are
 handled. Then go ahead and process it and create it:
 
-    osc process -f ~/training/integrated-build.json | osc create -f -
+    osc process -f ~/training/beta1/integrated-build.json | osc create -f -
 
 The build configuration, in this case, is called `ruby-sample-build`. So, let's
 go ahead and start the build and watch the logs:
@@ -1125,7 +1125,7 @@ doesn't include a route definition in its template. So, we can create one:
 Go ahead and edit `integrated-route.json` to have the appropriate domain, and
 then create it:
 
-    osc create -f ~/training/integrated-route.json
+    osc create -f ~/training/beta1/integrated-route.json
 
 Now, in your browser, you should be able to visit the website and actually use
 the application!
