@@ -15,3 +15,9 @@ The following is an overview of the OpenShift features covered in beta 1:
     - Includes STI (source-to-image) build examples
 
 [The specific documentation for beta 1 is here.](beta-1-setup.md)
+
+## V3 Beta 2
+The following is an overview of the OpenShift features covered in beta 2:
+
+[The specific documentation for beta 2 is here.](beta-2-setup.md)
+

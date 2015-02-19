@@ -27,7 +27,8 @@ nodes. By extension, you must at least have all hostname/ip mappings in
 
 ### Git
 You will either need internet access or read and write access to an internal
-http-based git server.
+http-based git server where you will duplicate the public code repositories used
+in the labs.
 
 ### Each VM
 
@@ -125,8 +126,12 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
 
-There are other images that will be pulled during the rest of the activities in
-this training, so internet access is required.
+It may be advisable to pull the following Docker images as well, since they are
+used during the various labs:
+
+    docker pull openshift/ruby-20-centos
+    docker pull mysql
+    docker pull openshift/hello-openshift
 
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
