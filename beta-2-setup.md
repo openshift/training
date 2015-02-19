@@ -230,7 +230,7 @@ following JSON file describes the router:
                 "containers": [
                     {
                         "name": "origin-haproxy-router-ROUTER_ID",
-                        "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router",
+                        "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.1",
                         "ports": [
                             {
                                 "containerPort": 80,

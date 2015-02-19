@@ -7,8 +7,8 @@
             "version": "v1beta2",
             "containers": [
                 {
-                    "name": "ose-haproxy-router-ROUTER_ID",
-                    "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router",
+                    "name": "origin-haproxy-router-ROUTER_ID",
+                    "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.1",
                     "ports": [
                         {
                             "containerPort": 80,
