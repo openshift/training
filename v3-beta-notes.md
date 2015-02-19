@@ -1,7 +1,14 @@
 deltarpm iptables-services
 
 Docker images:
-docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
+docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
+
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
 
 DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
