@@ -138,7 +138,7 @@ On your master, it makes sense to clone the training git repository:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training
+    cd ~/training/beta2
 
 ### REMINDER
 Almost all of the files for this training are in the training folder you just
@@ -268,7 +268,7 @@ following JSON file describes the router:
 
 Go into the training folder:
 
-    cd ~/training
+    cd ~/training/beta2
 
 There is an installation script that will set up the router for us, provided we
 feed it the correct arguments. Let's run this script now, and be sure to
