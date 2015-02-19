@@ -10,7 +10,7 @@
       {
           "name": "OPENSHIFT_MASTER",
           "description": "OpenShift master",
-          "value": "http://localhost:8080"
+          "value": "http://ose3-master.example.com:8443"
       },
       {
           "name": "OPENSHIFT_CA_DATA",
@@ -64,7 +64,7 @@
               "manifest":{
                 "containers":[
                   {
-                    "image":"registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.1",
+                    "image":"registry.access.redhat.com/openshift3_beta/ose-docker-registry",
                     "imagePullPolicy":"PullIfNotPresent",
                     "name":"registry-container",
                     "ports":[
@@ -102,8 +102,7 @@
                         "readOnly":false
                       }
                     ],
-
-                    "command": ["sh", "-c", "echo \"$OPENSHIFT_KEY_DATA\" > $STORAGE_PATH/key.key && echo \"$OPENSHIFT_CERT_DATA\" > $STORAGE_PATH/cert.crt && echo \"$OPENSHIFT_CA_DATA\" > $STORAGE_PATH/root.crt && echo \"$OPENSHIFT_CA_DATA\" > $STORAGE_PATH/root.crt && REGISTRY_URL=${DOCKER_REGISTRY_SERVICE_HOST}:${DOCKER_REGISTRY_SERVICE_PORT} OPENSHIFT_URL=${OPENSHIFT_MASTER}/osapi/v1beta1 OPENSHIFT_CA_BUNDLE=$STORAGE_PATH/root.crt OPENSHIFT_CLIENT_CERT=$STORAGE_PATH/cert.crt OPENSHIFT_CLIENT_KEY=$STORAGE_PATH/key.key exec docker-registry"],
+                    "command": ["sh", "-c", "echo \"$OPENSHIFT_CA_DATA\" > $STORAGE_PATH/root.crt && REGISTRY_URL=${DOCKER_REGISTRY_SERVICE_HOST}:${DOCKER_REGISTRY_SERVICE_PORT} OPENSHIFT_URL=${OPENSHIFT_MASTER}/osapi/v1beta1 OPENSHIFT_CA_BUNDLE=$STORAGE_PATH/root.crt exec docker-registry"],
                     "privileged":true
                   }
                 ],
