@@ -1180,27 +1180,36 @@ You will need to ensure the following, or fix the following:
 * Your hostnames for your machines match the entries in `/etc/hosts`
 * Your `cloudapps` domain points to the correct ip in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
-* Your nodes `/etc/resolv.conf` points to the master IP address as the
-    nameserver
-* Your master `/etc/resolv.conf` points to a real, functional, accessible
-    nameserver (eg: Google DNS @ `8.8.8.8`)
+* Your master and nodes `/etc/resolv.conf` points to the master IP address as
+  the nameserver
 * That you also open port 53 (UDP) to allow DNS queries to hit the master
 
 Following this setup for dnsmasq will ensure that your wildcard domain works as
-well as DNS resolution inside of all of your containers.
+well as DNS resolution inside of all of your containers. Don't forget to start
+and enable the `dnsmasq` service.
 
 ### Verifying DNSMasq
 
-You can query the local DNS on the master using `dig` to make sure it returns the correct records:
+You can query the local DNS on the master using `dig` (provided by the
+`bind-utils` package) to make sure it returns the correct records:
 
-    dig ose3-master.example.com @loclahost
+    dig ose3-master.example.com
     
     ...
     ;; ANSWER SECTION:
     ose3-master.example.com. 0  IN  A 192.168.133.2
     ...
    
-The returned IP should be the IP of the master.
+The returned IP should be the public interface's IP on the master. Repeat for
+your nodes. To verify the wildcard entry, simply dig an arbitrary domain in the
+wildcard space:
+
+    dig foo.cloudapps.example.com
+
+    ...
+    ;; ANSWER SECTION:
+    foo.cloudapps.example.com 0 IN A 192.168.133.2
+    ...
 
 # APPENDIX - Cleaning Up
 Figuring out everything that you have deployed is a little bit of a bear right
