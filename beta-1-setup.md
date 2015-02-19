@@ -1181,12 +1181,16 @@ You will need to ensure the following, or fix the following:
 * Your `cloudapps` domain points to the correct ip in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
 * Your master and nodes `/etc/resolv.conf` points to the master IP address as
-  the nameserver
+    the first nameserver
+* The second nameserver in `/etc/resolv.conf` on master points to your corporate
+    or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
 * That you also open port 53 (UDP) to allow DNS queries to hit the master
 
-Following this setup for dnsmasq will ensure that your wildcard domain works as
-well as DNS resolution inside of all of your containers. Don't forget to start
-and enable the `dnsmasq` service.
+Following this setup for dnsmasq will ensure that your wildcard domain works,
+that your hosts in the `example.com` domain resolve, that any other DNS requests
+resolve via your configured local/remote nameservers, and that DNS resolution
+works inside of all of your containers. Don't forget to start and enable the
+`dnsmasq` service.
 
 ### Verifying DNSMasq
 
