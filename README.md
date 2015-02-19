@@ -18,6 +18,13 @@ The following is an overview of the OpenShift features covered in beta 1:
 
 ## V3 Beta 2
 The following is an overview of the OpenShift features covered in beta 2:
+- Features of Beta 1
+- User authentication
+- Project quotas
+- Container remote access
+- HA routing
+- Rollback / Activate
+- Complex / Tiered app deployment
 
 [The specific documentation for beta 2 is here.](beta-2-setup.md)
 
