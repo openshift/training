@@ -152,10 +152,6 @@ First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
 
     OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
 
-Then, start the `openshift-master` service:
-
-    systemctl start openshift-master
-
 You may also want to `systemctl enable openshift-master` to ensure the service
 automatically starts on the next boot.
 
@@ -186,11 +182,7 @@ First, edit the
 
 You can ignore the `DOCKER_OPTIONS`.
 
-Then you can start the SDN master:
-
-    systemctl start openshift-sdn-master
-
-You may also want to enable the service.
+You may want to enable the `openshift-sdn-master` service.
 
 Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
 
@@ -202,17 +194,20 @@ Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
 
     DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
-Then you can start the SDN node:
+You may also want to enable the `openshift-sdn-node` service.
 
-    systemctl start openshift-sdn-node
-
-You may also want to enable the service.
-
-Starting the sdn-node service will automatically start the openshift-node
+Remember, starting the sdn-node service will automatically start the openshift-node
 service.
 
 We will start our testing and operations with only one OpenShift "node" -- the
 master. Later, we will add the other two nodes.
+
+### Start All Services
+Now that all of the services are configured, we can start them all in one fell
+swoop:
+
+    systemctl start openshift-master; systemctl start openshift-sdn-master;\
+    systemctl start openshift-sdn-node;
 
 ### Running the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
