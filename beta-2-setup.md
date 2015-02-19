@@ -857,6 +857,10 @@ And you should see:
 
     "docker-registry server (dev) (v0.9.0)"
 
+**Note: if you get "connection reset by peer" you may have to wait a few more
+moments after the pod is running for the service proxy to get all the info it
+needs to fulfill your request**
+
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
 your application source code and build a Docker image for it. In the real world,
