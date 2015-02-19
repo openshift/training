@@ -8,7 +8,7 @@
             "containers": [
                 {
                     "name": "origin-haproxy-router-ROUTER_ID",
-                    "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router",
+                    "image": "openshift/origin-haproxy-router",
                     "ports": [
                         {
                             "containerPort": 80,
@@ -27,6 +27,14 @@
                         {
                             "name": "OPENSHIFT_CA_DATA",
                             "value": "${OPENSHIFT_CA_DATA}"
+                        },
+                        {
+                            "name": "OPENSHIFT_KEY_DATA",
+                            "value": "${OPENSHIFT_KEY_DATA}"
+                        },
+                        {
+                            "name": "OPENSHIFT_CERT_DATA",
+                            "value": "${OPENSHIFT_CERT_DATA}"
                         },
                         {
                             "name": "OPENSHIFT_INSECURE",
