@@ -2,6 +2,7 @@ deltarpm iptables-services
 
 Docker images:
 docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
+docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
 
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
@@ -39,6 +40,7 @@ sed -i -e 's/OPTIONS=.*/OPTIONS="--loglevel=4 --master=ose3-master.example.com"/
 systemctl start openshift-master; systemctl start openshift-sdn-master; systemctl start openshift-sdn-node;
 
 ## start node 1
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
 sed -i -e 's/^MASTER_URL=.*/MASTER_URL=http:\/\/ose3-master.example.com:4001/' \
 -e 's/^MINION_IP=.*/MINION_IP=192.168.133.3/' \
 -e 's/^OPTIONS=.*/OPTIONS=-v=4/' \
@@ -49,6 +51,7 @@ sed -i -e 's/OPTIONS=.*/OPTIONS="--loglevel=4 --master=ose3-master.example.com"/
 rsync -av root@ose3-master.example.com:/var/lib/openshift/openshift.local.certificates /var/lib/openshift/
 
 ## start node 2
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
 sed -i -e 's/^MASTER_URL=.*/MASTER_URL=http:\/\/ose3-master.example.com:4001/' \
 -e 's/^MINION_IP=.*/MINION_IP=192.168.133.4/' \
 -e 's/^OPTIONS=.*/OPTIONS=-v=4/' \
