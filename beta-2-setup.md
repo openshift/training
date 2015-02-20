@@ -858,8 +858,8 @@ And you should see:
     "docker-registry server (dev) (v0.9.0)"
 
 **Note: if you get "connection reset by peer" you may have to wait a few more
-moments after the pod is running for the service proxy to get all the info it
-needs to fulfill your request**
+moments after the pod is running for the service proxy to update the endpoints
+necessary to fulfill your request**
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
@@ -1006,7 +1006,8 @@ your environment):
 
     osc build-logs a1aa7e35-ad82-11e4-8f5f-525400b33d1d
 
-**Note: If the build isn't "Running" yet, build-logs will give you an error**
+**Note: If the build isn't "Running" yet, or the sti-build container hasn't been
+deployed yet, build-logs will give you an error**
 
 ### The Web Console Revisited
 If you peeked at the web console while the build was running, you probably
