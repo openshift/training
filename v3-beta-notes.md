@@ -19,6 +19,12 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-dock
 DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
 ## start master
+cd ~/training
+git pull origin master
+mv -f ~/training/beta1/dnsmasq.conf /etc/
+restorecon -rv /etc/dnsmasq.conf
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
+systemctl start dnsmasq
 sed -i -e 's/^OPTIONS=.*/OPTIONS="--loglevel=4 --public-master=ose3-master.example.com"/' \
 /etc/sysconfig/openshift-master
 sed -i -e 's/^OPTIONS=.*/OPTIONS=-v=4/' /etc/sysconfig/openshift-sdn-master
