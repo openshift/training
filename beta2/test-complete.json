@@ -37,9 +37,12 @@
       }
     },
     {
-      "id": "hello-openshift-route",
       "kind": "Route",
       "apiVersion": "v1beta1",
+      "metadata": {
+        "name": "hello-openshift-route"
+      },
+      "id": "hello-openshift-route",
       "host": "hello-openshift.cloudapps.example.com",
       "serviceName": "hello-openshift-service"
     }
