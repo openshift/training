@@ -873,7 +873,7 @@ for you).
 We will create a new project to put our first STI example into. Grab the project
 definition and create it:
 
-    osc create -f ~/training/sinatraproject.json
+    osc create -f ~/training/beta2/sinatraproject.json
 
 At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
@@ -935,7 +935,6 @@ Let's clone the repository and then generate a config for OpenShift to create:
     cd
     git clone https://github.com/openshift/simple-openshift-sinatra-sti.git
     cd simple-openshift-sinatra-sti
-    rm -f Dockerfile
     openshift ex generate | python -m json.tool > ~/simple-sinatra.json
 
 `ex generate` is a tool that will examine the current directory tree and attempt

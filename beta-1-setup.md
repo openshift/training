@@ -936,7 +936,6 @@ Let's clone the repository and then generate a config for OpenShift to create:
     cd
     git clone https://github.com/openshift/simple-openshift-sinatra-sti.git
     cd simple-openshift-sinatra-sti
-    rm -f Dockerfile
     openshift ex generate | python -m json.tool > ~/simple-sinatra.json
 
 `ex generate` is a tool that will examine the current directory tree and attempt
