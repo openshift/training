@@ -1224,15 +1224,27 @@ And now, you should be able to verify everything is working right:
 
 If you want to be fancy, try it in your browser!
 
+### Notes on Cleanup, Enforcement
+Currently the STI process involves a pod that is created to build your code
+(sti-build) as well as a pod that is used to deploy your code (ose-deployer).
+Right now, OpenShift doesn't "clean up" after the build process. So, if you go
+to the *Settings* tab for the *Sinatra* project, you'll see that you have hit
+your pod quote (3). This issue is understood and will be fixed.
+
+Since we are not doing anything else with the *Sinatra* project, we can ignore
+these artifacts for now.
+
 ### A Fully-Integrated Application
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
 application also makes use of auto-generated parameters and other neat features
-of OpenShift.
+of OpenShift. One thing of note is that this project already has the
+wiring/plumbing between the front- and back-end components pre-defined as part
+of its JSON. Adding resources "after the fact" will come in a later lab.
 
 First we'll create a new project:
 
-    osc create -f ~/training/integrated-project.json
+    osc create -f ~/training/beta2/integrated-project.json
 
 We'll set our context to use the corresponding namespace:
 
