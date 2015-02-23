@@ -5,19 +5,23 @@ docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
 
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.1
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.1
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.1
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.1
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.1
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.2 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2
 
 DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
+
+for resource in build buildconfig images imagerepository deploymentconfig \
+route replicationcontroller service pod; do echo -e "Resource: $resource"; \
+osc get $resource; echo -e "\n\n"; done
 
 ## start master
 cd ~/training
@@ -36,7 +40,6 @@ sed -i -e 's/^MASTER_URL=.*/MASTER_URL=http:\/\/ose3-master.example.com:4001/' \
 /etc/sysconfig/openshift-sdn-node
 sed -i -e 's/OPTIONS=.*/OPTIONS="--loglevel=4 --master=ose3-master.example.com"/' \
 /etc/sysconfig/openshift-node
-
 systemctl start openshift-master; systemctl start openshift-sdn-master; systemctl start openshift-sdn-node;
 
 ## start node 1

@@ -209,6 +209,25 @@ swoop:
     systemctl start openshift-master; systemctl start openshift-sdn-master;\
     systemctl start openshift-sdn-node;
 
+### Watching Logs
+RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
+`/var/log/messages` any longer. You will need to use `journalctl`.
+
+Since we are running all of the components in higher loglevels, it is suggested
+that you use your terminal emulator to set up windows for each process. If you
+are familiar with the Ruby Gem, `tmuxinator`, there is a config file in the
+training repository. Otherwise, you should run each of the following in its own
+window:
+
+    journalctl -f -u openshift-master
+    journalctl -f -u openshift-node
+    journalctl -f -u openshift-sdn-master
+    journalctl -f -u openshift-sdn-node
+
+**Note: You will want to do this on the other nodes as they are added, but you
+will not need the `master`-related services. These instructions will not appear
+again.**
+
 ### Running the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
 easy to get a complete "multi-tier" "application" deployed, reaching it from
@@ -218,7 +237,7 @@ for all traffic destined for OpenShift v3 services. It currently supports only
 HTTP(S) traffic.
 
 As with most things in OpenShift v3, resources are defined via JSON. The
-following JSON file describes the router:
+following JSON file could describe the router:
 
     {
         "kind": "Pod",
@@ -266,35 +285,82 @@ following JSON file describes the router:
         }
     }
 
-Go into the training folder:
+OpenShift's "experimental" command set enables you to install the router
+automatically. Try running it with no options and you should see the note that a
+router is needed:
 
-    cd ~/training/beta2
+    openshift ex router
+    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
+    (no service). Pass --create to install.
 
-There is an installation script that will set up the router for us, provided we
-feed it the correct arguments. Let's run this script now, and be sure to
-substitute the correct domain name for your master: 
+So, go ahead and do what it says:
 
-    chmod 755 install-router.sh
-    OPENSHIFT_CA_DATA=$(</var/lib/openshift/openshift.local.certificates/master/root.crt) ./install-router.sh mainrouter https://ose3-master.example.com:8443
+    openshift ex router --create
+    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
+    file path containing credentials for connecting the router to the master
+    with --credentials
 
-If this works, in the output of `osc get pods` you should see the pod status
-change to "running" after a few moments (it may take up to a few minutes):
+Just about every form of communication with OpenShift components is secured by
+SSL and uses various certificates and authentication methods. Just like how we
+previously edited our `bash` configuration to point to our authentication
+configuration, we need to tell the router installer about it, too. We also need
+to specify the router image, since currently the experimental tooling points to
+upstream/origin:
 
-    osc get pods
-    POD        IP       CONTAINER(S)                     IMAGE(S)                           HOST                                   LABELS STATUS
-    mainrouter 10.1.0.3 ose-haproxy-router-mainrouter    openshift3_beta/ose-haproxy-router ose3-master.example.com/192.168.133.2  <none> Running
+    openshift ex router --create --credentials=$KUBECONFIG \
+    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2"
+
+**Note: if you failed to correctly edit your `.bash_profile` and source it, this
+will probably do something unexpected.**
+
+If this works, you'll see some output:
+
+    router
+    router
+
+Let's check the pods with the following:
+
+    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
+
+In the output, you should see the router pod status change to "running" after a
+few moments (it may take up to a few minutes):
+
+    POD                   CONTAINER(S)  HOST                                   STATUS
+    deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
+    router-1-58u3j        router        ose3-master.example.com/192.168.133.2  Running
 
 ## Projects and the Web Console
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different services and
 their pods, builds and etc. We'll explore what this means in more details
 throughout the rest of the labs, but, first, let's create a project for our
-first application. From the `training` folder:
+first application. 
 
-    osc create -f betaproject.json
+Our default configuration is to be the `master-admin` user, which is allowed to
+create projects. We can use the "experimental" openshift command to create a
+project, and assign an administrative user to it:
 
-Since we have a project, future use of command line statements will have to
-reference this project in order for things to land in the right place.
+    openshift ex new-project demo --display-name="OpenShift 3 Demo" \
+    --description="This is the first demo project with OpenShift v3" \
+    --admin=anypassword:joe
+
+This command creates a project:
+* with the id `demo`
+* with a display name
+* with a description 
+* with an administrative user `joe` who can login with any password
+
+Future use of command line statements will have to reference this project in
+order for things to land in the right place.
+
+The "anypassword" authentication mechanism is not intended for production use,
+but it will work just fine for us. On your first login to the web console, any
+password can be used. Future access to the console from the same browser
+(session) will require the same password (stored via cookie). 
+
+Unfortunately, anyone that goes to the console will be able to also login, since
+the password is not stored in any data store inside OpenShift. Again, this is
+fine for non-production use, and perfect for our demo
 
 Now that you have a project created, it's time to look at the web console, which
 has been completely redesigned for V3.
@@ -305,17 +371,82 @@ Open your browser and visit the following URL:
     https://fqdn.of.master:8444
 
 You will first need to accept the self-signed SSL certificate. You will then be
-asked for a username and a password - anything will work. Just enter `foo` as
-the user and `bar` as the password, for now.
+asked for a username and a password. Remembering that we created a user
+previously, `joe`, go ahead and enter that and use `any` as the password (it
+doesn't matter what password you use).
 
-Once you are in, click the *Demo* project. There really isn't anything of
+Once you are in, click the *OpenShift 3 Demo* project. There really isn't anything of
 interest at the moment, because we haven't put anything into our project. While
-we created the router, it's not part of our project (it is core infrastructure),
-so we do not see it here.
+we created the router, it's not part of this project (it is core infrastructure),
+so we do not see it here. If you were to look in the *default* project, you
+would see things like the router and other core infrastructure components.
 
 ## Your First Application
 At this point you have a sufficiently-functional V3 OpenShift environment. It is
-now time to create the classic "Hello World" application using some sample code. 
+now time to create the classic "Hello World" application using some sample code.
+But, first, some housekeeping.
+
+### "Resources"
+There are a number of different resource types in OpenShift 3, and, essentially,
+going through the motions of creating/destroying apps, scaling, building and
+etc. all ends up manipulating OpenShift and Kubernetes resources under the
+covers. Resources can have quotas enforced against them, so let's take a moment
+to look at some example JSON for project resource quota might look like:
+
+    {
+      "id": "demo-quota",
+      "kind": "ResourceQuota",
+      "apiVersion": "v1beta1",
+      "spec": {
+        "hard": {
+          "memory": "512000000",
+          "cpu": "3",
+          "pods": "3",
+          "services": "3",
+          "replicationcontrollers":"4",
+          "resourcequotas":"1",
+        },
+      }
+    }
+
+The above quota (simply called *quota*) defines limits for several resources. In
+other words, within a project, users cannot "do stuff" that will cause these
+resource limits to be exceeded.
+
+The memory figure is in bytes, and it and CPU are somewhat self explanatory. We
+will get into a description of what pods, services and replication controllers
+are over the next few labs. Lastly, we can ignore "resourcequotas", as it is a
+bit of a trick so that Kubernetes doesn't accidentally try to apply two quotas
+to the same namespace.
+
+### Applying Quota to Projects
+At this point we have created our "demo" project, so let's apply the quota above
+to it. 
+
+    osc create -f quota.json --namespace=demo
+
+If you want to see that it was created:
+
+    osc get -n demo quota
+    NAME
+    demo-quota
+
+And if you want to verify limits or examine usage:
+
+    osc describe -n demo quota demo-quota
+    Name:                   demo-quota
+    Resource                Used    Hard
+    --------                ----    ----
+    cpu                     0m      3
+    memory                  0       500000Ki
+    pods                    0       3
+    replicationcontrollers  0       4
+    resourcequotas          1       1
+    services                0       3
+
+If you go back into the web console and click into the "OpenShift 3 Demo"
+project, and click on the *Settings* tab, you'll see that the quota information
+is displayed.
 
 ### Set the namespace (project) you are using
 The concept of a project in OpenShift v3 provides a scope for creating
@@ -324,9 +455,9 @@ namespace. Thus far we have created only a router, which went into the
 `default` namespace.
 
 In order to start creating things with the namespace of our project,
-we will need to declare our new namespace to use with everything:
+we will need to configure the CLI to use our new project:
 
-     openshift ex config set-context user --cluster=master --user=admin --namespace=betaproject
+     openshift ex config set-context user --cluster=master --user=joe --namespace=demo
      openshift ex config use-context user
 
 This is a bit cryptic, and client configuration is experimental at this
@@ -343,7 +474,7 @@ point, but here is a brief explanation:
    so it can be helpful to define a context for each combination. Here we
    are defining a new context `user` (to be distinguished from the initial
    context under which we created the router, `master-admin` with namespace
-   `default`). In the new context, the current namespace is `betaproject`
+   `default`). In the new context, the current namespace is `demo`
    (the project we just created).
 3. Having created the new `user` context, we set that context to be used
    by default. (It could be overridden with the `--context` flag.)
