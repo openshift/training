@@ -214,6 +214,25 @@ service.
 We will start our testing and operations with only one OpenShift "node" -- the
 master. Later, we will add the other two nodes.
 
+### Watching Logs
+RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
+`/var/log/messages` any longer. You will need to use `journalctl`.
+
+Since we are running all of the components in higher loglevels, it is suggested
+that you use your terminal emulator to set up windows for each process. If you
+are familiar with the Ruby Gem, `tmuxinator`, there is a config file in the
+training repository. Otherwise, you should run each of the following in its own
+window:
+
+    journalctl -f -u openshift-master
+    journalctl -f -u openshift-node
+    journalctl -f -u openshift-sdn-master
+    journalctl -f -u openshift-sdn-node
+
+**Note: You will want to do this on the other nodes as they are added, but you
+will not need the `master`-related services. These instructions will not appear
+again.**
+
 ### Running the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
 easy to get a complete "multi-tier" "application" deployed, reaching it from
