@@ -64,7 +64,7 @@
               "manifest":{
                 "containers":[
                   {
-                    "image":"registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.1",
+                    "image":"registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2",
                     "imagePullPolicy":"PullIfNotPresent",
                     "name":"registry-container",
                     "ports":[

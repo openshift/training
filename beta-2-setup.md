@@ -381,6 +381,9 @@ we created the router, it's not part of this project (it is core infrastructure)
 so we do not see it here. If you were to look in the *default* project, you
 would see things like the router and other core infrastructure components.
 
+**Note: You will see the other projects until
+https://github.com/openshift/origin/pull/1074**
+
 ## Your First Application
 At this point you have a sufficiently-functional V3 OpenShift environment. It is
 now time to create the classic "Hello World" application using some sample code.
@@ -418,6 +421,9 @@ will get into a description of what pods, services and replication controllers
 are over the next few labs. Lastly, we can ignore "resourcequotas", as it is a
 bit of a trick so that Kubernetes doesn't accidentally try to apply two quotas
 to the same namespace.
+
+**Note: CPU is not really all that self-explanatory. But we'll explain it
+eventually**
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
@@ -557,19 +563,27 @@ To verify that the app is working, you can issue a curl to the app's port:
 Hooray!
 
 ### Looking at the Pod in the Web Console
-In the web console, if you click "Browse" and then "Pods", you'll see the pod we
-just created and some information about it.
+Go to the web console and go to the *Overview* tab for the *OpenShift 3 Demo*
+project. You'll see some interesting things:
+
+* You'll see the pod is running (eventually)
+* You'll see the SDN IP address that the pod is associated with
+* You'll see the internal port that the pod's container's "application"/process
+    is using
+* You'll see that there's no service yet - we'll get to services soon.
+
+### Quota Usage
+If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 
 ### Delete the Pod
 Go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
 
-Take a moment to think about what this pod definition really did -- it
-referenced an arbitrary Docker image, made sure to fetch it (if it wasn't
-present), and then ran it. This could have just as easily been an application
-from an ISV available in a registry or something already written and built
-in-house.
+Take a moment to think about what this pod exercise really did -- it referenced
+an arbitrary Docker image, made sure to fetch it (if it wasn't present), and
+then ran it. This could have just as easily been an application from an ISV
+available in a registry or something already written and built in-house.
 
 This is really powerful. We will explore using "arbitrary" docker images later.
 
@@ -738,8 +752,7 @@ and then the pods/containers.
 In a simplification of the process, the `openshift3_beta/ose-haproxy-router`
 container is a pre-configured instance of HAProxy as well as some of the
 OpenShift framework. The OpenShift instance running in this container watches a
-routes resource on the OpenShift master. This is why we specified the master's
-address when we installed the router.
+routes resource on the OpenShift master.
 
 Here is an example route JSON definition:
 
@@ -1010,8 +1023,11 @@ At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
 up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
-### Switch contexts
+We can also apply the same quota we used before to this new project:
 
+    osc create -n sinatraproject -f demo-quota.json
+
+### Switch contexts
 Let's update and use the `user` context for interacting with the new project you just created:
 
     openshift ex config set-context user --namespace=sinatraproject
@@ -1064,13 +1080,13 @@ For this example, we will be using the following application's source code:
 Let's clone the repository and then generate a config for OpenShift to create:
 
     cd
-    git clone https://github.com/openshift/simple-openshift-sinatra-sti.git
-    cd simple-openshift-sinatra-sti
-    openshift ex generate | python -m json.tool > ~/simple-sinatra.json
+    openshift ex generate \
+    https://github.com/openshift/simple-openshift-sinatra-sti.git \
+    | python -m json.tool > ~/simple-sinatra.json
 
-`ex generate` is a tool that will examine the current directory tree and attempt
-to generate an appropriate JSON configuration so that, when processed, OpenShift
-can build the resulting image to run. 
+`ex generate` is a tool that will examine a directory tree, a remote repo, or
+other sources and attempt to generate an appropriate JSON configuration so that,
+when created, OpenShift can build the resulting image to run. 
 
 Go ahead and take a look at the JSON that was generated. You will see some
 familiar items at this point, and some new ones, like `BuildConfig`,
@@ -1117,6 +1133,9 @@ actually gone through a build yet. While OpenShift has the capability of
 automatically triggering builds based on source control pushes (eg: Git(hub)
 webhooks, etc), we will be triggering builds manually.
 
+By the way, most of these things can (SHOULD!) also be verified in the web
+console. If anything, it looks prettier!
+
 To start our build, execute the following:
 
     osc start-build simple-openshift-sinatra-sti
@@ -1131,6 +1150,12 @@ That's the UUID of our build. We can check on its status (it will switch to
     osc get builds
     NAME                                   TYPE                STATUS  POD
     a1aa7e35-ad82-11e4-8f5f-525400b33d1d   STI                 Pending build-a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+
+Almost immediately, the web console would've updated the *Overview* tab for the
+*Sinatra* project to say:
+
+    A build of simple-openshift-sinatra-sti is pending. A new deployment will be
+    created automatically once the build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
