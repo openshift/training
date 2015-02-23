@@ -1263,7 +1263,7 @@ documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/lat
 Examine `integrated-build.json` to see how parameters and other things are
 handled. Then go ahead and process it and create it:
 
-    osc process -f ~/training/integrated-build.json | osc create -f -
+    osc process -f ~/training/beta2/integrated-build.json | osc create -f -
 
 The build configuration, in this case, is called `ruby-sample-build`. So, let's
 go ahead and start the build and watch the logs:
@@ -1292,7 +1292,7 @@ doesn't include a route definition in its template. So, we can create one:
 Go ahead and edit `integrated-route.json` to have the appropriate domain, and
 then create it:
 
-    osc create -f ~/training/integrated-route.json
+    osc create -f ~/training/beta2/integrated-route.json
 
 Now, in your browser, you should be able to visit the website and actually use
 the application!
@@ -1303,7 +1303,7 @@ the application!
 written with HTTP links. Be sure to use HTTP. **
 
 ## Conclusion
-This concludes the Beta 1 training. Look for more example applications to come!
+This concludes the Beta 2 training. Look for more example applications to come!
 
 # APPENDIX - Extra STI code examples
 ## Wildfly

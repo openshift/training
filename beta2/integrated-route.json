@@ -1,7 +1,10 @@
 {
-  "id": "frontend-route",
-  "kind": "Route",
-  "apiVersion": "v1beta1",
-  "host": "integrated.cloudapps.example.com",
-  "serviceName": "frontend"
+    "kind": "Route",
+    "apiVersion": "v1beta1",
+    "metadata": {
+        "name": "integrated-route"
+    },
+    "id": "integrated-route",
+    "host": "integrated.cloudapps.example.com",
+    "serviceName": "frontend"
 }
