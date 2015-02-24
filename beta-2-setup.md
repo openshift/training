@@ -1,4 +1,5 @@
 # OpenShift Beta 2 Setup Information
+# WIP - NOT COMPLETE
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
 (Screen, Tmux).

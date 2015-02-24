@@ -16,7 +16,7 @@ The following is an overview of the OpenShift features covered in beta 1:
 
 [The specific documentation for beta 1 is here.](beta-1-setup.md)
 
-## V3 Beta 2
+## V3 Beta 2 (WIP - INCOMPLETE)
 The following is an overview of the OpenShift features covered in beta 2:
 - Features of Beta 1
 - User authentication
