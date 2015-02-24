@@ -25,6 +25,11 @@ hostnames that you use must match the output of `hostname -f` on each of your
 nodes. By extension, you must at least have all hostname/ip mappings in
 /etc/hosts files or forward DNS should work.
 
+It is possible to use dnsmasq inside of your beta environment to handle these
+duties. See the [appendix on
+dnsmasq](#appendix---dnsmasq-setup) if you can't easily manipulate your existing
+DNS environment.
+
 ### Git
 You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
