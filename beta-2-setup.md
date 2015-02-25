@@ -129,7 +129,7 @@ On all of your systems, grab the following docker images:
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull openshift/ruby-20-centos
+    docker pull openshift/ruby-20-centos7
     docker pull mysql
     docker pull openshift/hello-openshift
 
@@ -1396,7 +1396,7 @@ following on your connected machine:
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
-    docker pull openshift/ruby-20-centos
+    docker pull openshift/ruby-20-centos7
     docker pull mysql
     docker pull openshift/hello-openshift
 
@@ -1409,7 +1409,7 @@ This will fetch all of the images. You can then save them to a tarball:
     registry.access.redhat.com/openshift3_beta/ose-docker-builder \
     registry.access.redhat.com/openshift3_beta/ose-pod \
     registry.access.redhat.com/openshift3_beta/ose-docker-registry \
-    openshift/ruby-20-centos \
+    openshift/ruby-20-centos7 \
     mysql \
     openshift/hello-openshift
 
