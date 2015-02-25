@@ -50,7 +50,7 @@
     },
     {
       "metadata":{
-        "name": "ruby-20-centos",
+        "name": "ruby-20-centos7",
       },
       "kind": "ImageRepository",
       "apiVersion": "v1beta1",
@@ -77,8 +77,8 @@
         {
           "type": "imageChange",
           "imageChange": {
-            "image": "openshift/ruby-20-centos",
-            "from": { "name": "ruby-20-centos"},
+            "image": "openshift/ruby-20-centos7",
+            "from": { "name": "ruby-20-centos7"},
             "tag":"latest"
           }
         }
@@ -93,8 +93,8 @@
         "strategy": {
           "type": "STI",
           "stiStrategy": {
-            "image": "openshift/ruby-20-centos",
-            "scripts": "https://raw.githubusercontent.com/openshift/ruby-20-centos/master/.sti/bin"
+            "image": "openshift/ruby-20-centos7",
+            "scripts": "https://raw.githubusercontent.com/openshift/sti-ruby/master/2.0/.sti/bin"
           }
         },
         "output": {
