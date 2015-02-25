@@ -505,8 +505,8 @@ we have created a router and a Docker registry, both of which went into the
 In order to start creating things inside of our "Demo" project, we will need to
 configure the CLI to use our new project:
 
-     openshift ex config set-context user --cluster=master --user=joe --namespace=demo
-     openshift ex config use-context user
+     openshift ex config set-context demo --cluster=master --user=joe --namespace=demo
+     openshift ex config use-context demo
 
 This is a bit cryptic, and client configuration is experimental at this
 point, but here is a brief explanation:
@@ -520,12 +520,12 @@ point, but here is a brief explanation:
    it with, and the current namespace (if any). A single user might very
    well have multiple namespaces, accounts, and servers to interact with,
    so it can be helpful to define a context for each combination. Here we
-   are defining a new context `user` (to be distinguished from the initial
+   are defining a new context `demo` (to be distinguished from the initial
    context under which we created the router, `master-admin` with namespace
    `default`). In the new context, the current namespace is `demo`
    (the project we just created).
-3. Having created the new `user` context, we set that context to be used
-   by default. (It could be overridden with the `--context` flag.)
+3. Having created the new `demo` context, we set that context to be used
+   by default. (It could be overridden in subsequent commands with the `--context` flag.)
 
 Any `osc create` or `osc get` or `osc delete` (etc.) will now operate only with
 entities in the `betaproject` namespace.
@@ -589,7 +589,7 @@ infrastructure components.
 
 Look at the list of Docker containers with `docker ps` to see the bound ports.
 We should see an `openshift3_beta/ose-pod` container bound to 6061 on the host and
-bound to 8080 on the container.
+bound to 8080 on the container, along with several other `ose-pod` containers.
 
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
@@ -609,7 +609,7 @@ Go to the web console and go to the *Overview* tab for the *OpenShift 3 Demo*
 project. You'll see some interesting things:
 
 * You'll see the pod is running (eventually)
-* You'll see the SDN IP address that the pod is associated with
+* You'll see the SDN IP address that the pod is associated with (10....)
 * You'll see the internal port that the pod's container's "application"/process
     is using
 * You'll see that there's no service yet - we'll get to services soon.
@@ -852,18 +852,21 @@ with a corresponding route:
           },
         },
         {
-          "id": "hello-openshift-service",
           "kind": "Service",
           "apiVersion": "v1beta1",
+          "id": "hello-openshift-service",
           "port": 27017,
           "selector": {
             "name": "hello-openshift-label"
           }
         },
         {
-          "id": "hello-openshift-route",
           "kind": "Route",
           "apiVersion": "v1beta1",
+          "metadata": {
+              "name": "hello-openshift-route"
+          },
+          "id": "hello-openshift-route",
           "host": "hello-openshift.cloudapps.example.com",
           "serviceName": "hello-openshift-service"
         }
@@ -898,7 +901,7 @@ the following:
         osc create -f test-complete.json
         hello-openshift-pod
         hello-openshift-service
-        6b8b66e4-b078-11e4-b390-525400b33d1d
+        hello-openshift-route
 
 You can verify this with other `osc` commands:
 
@@ -1026,8 +1029,9 @@ We can also apply the same quota we used before to this new project:
 ### Switch contexts
 Let's update and use the `user` context for interacting with the new project you just created:
 
-    openshift ex config set-context user --namespace=sinatraproject
-    openshift ex config use-context user
+    openshift ex config set-context sinatra --cluster=master --user=joe \
+    --namespace=sinatraproject
+    openshift ex config use-context sinatra
 
 **Note:**
 If you ever get confused about what context you're using, or what contexts are
@@ -1076,9 +1080,11 @@ For this example, we will be using the following application's source code:
 Let's clone the repository and then generate a config for OpenShift to create:
 
     cd
-    openshift ex generate \
+    openshift ex generate --name=sin \
     https://github.com/openshift/simple-openshift-sinatra-sti.git \
     | python -m json.tool > ~/simple-sinatra.json
+
+** note: bug in length of build name **
 
 `ex generate` is a tool that will examine a directory tree, a remote repo, or
 other sources and attempt to generate an appropriate JSON configuration so that,
@@ -1134,29 +1140,29 @@ console. If anything, it looks prettier!
 
 To start our build, execute the following:
 
-    osc start-build simple-openshift-sinatra-sti
+    osc start-build sin
 
 You'll see some output to indicate the build:
 
-    a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+    sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
 
 That's the UUID of our build. We can check on its status (it will switch to
 "Running" in a few moments):
 
     osc get builds
-    NAME                                   TYPE                STATUS  POD
-    a1aa7e35-ad82-11e4-8f5f-525400b33d1d   STI                 Pending build-a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+    NAME                                       TYPE                STATUS  POD
+    sin-fcae9c05-bd31-11e4-8e35-525400b33d1d   STI                 Pending build-sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
 
 Almost immediately, the web console would've updated the *Overview* tab for the
 *Sinatra* project to say:
 
-    A build of simple-openshift-sinatra-sti is pending. A new deployment will be
-    created automatically once the build completes.
+    A build of sin. A new deployment will be created automatically once the
+    build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs a1aa7e35-ad82-11e4-8f5f-525400b33d1d
+    osc build-logs sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error**
