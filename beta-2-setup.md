@@ -234,7 +234,7 @@ window:
 will not need the `master`-related services. These instructions will not appear
 again.**
 
-### Running the Router
+### Installing the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
 easy to get a complete "multi-tier" "application" deployed, reaching it from
 anywhere outside of the OpenShift environment is not possible without something
@@ -335,16 +335,52 @@ few moments (it may take up to a few minutes):
     deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
     router-1-58u3j        router        ose3-master.example.com/192.168.133.2  Running
 
+### Preparing for STI and Other Things
+One of the really interesting things about OpenShift v3 is that it will build
+Docker images from your source code and deploy and manage their lifecycle. In
+order to do this, OpenShift can host its own Docker registry in
+order to pull images "locally". Let's take a moment to set that up.
+
+`openshift ex` again comes to our rescue with a handy installer for the
+registry:
+
+    openshift ex registry --create --credentials=$KUBECONFIG \
+    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2"
+
+You'll get output like:
+
+    docker-registry
+    docker-registry
+
+You can use `osc get pods`, `osc get services`, and `osc get deploymentconfig`
+to see what happened.
+
+Ultimately, you will have a Docker registry that is being hosted by OpenShift
+and that is running on one of your nodes.
+
+To quickly test your Docker registry, you can do the following:
+
+    curl `osc get services docker-registry -o template --template="{{ .portalIP}}:{{ .port }}"`
+
+And you should see:
+
+    "docker-registry server (dev) (v0.9.0)"
+
+**Note: if you get "connection reset by peer" you may have to wait a few more
+moments after the pod is running for the service proxy to update the endpoints
+necessary to fulfill your request**
+
 ## Projects and the Web Console
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different services and
-their pods, builds and etc. We'll explore what this means in more details
-throughout the rest of the labs, but, first, let's create a project for our
-first application. 
+their pods, builds and etc. They are somewhat similar to "namespaces" in
+OpenShift v2. We'll explore what this means in more details throughout the rest
+of the labs. Let's create a project for our first application. 
 
-Our default configuration is to be the `master-admin` user, which is allowed to
-create projects. We can use the "experimental" openshift command to create a
-project, and assign an administrative user to it:
+We also need to understand a little bit about users and administration. The
+default configuration for CLI operations currently is to be the `master-admin`
+user, which is allowed to create projects. We can use the "experimental"
+OpenShift command to create a project, and assign an administrative user to it:
 
     openshift ex new-project demo --display-name="OpenShift 3 Demo" \
     --description="This is the first demo project with OpenShift v3" \
@@ -360,8 +396,8 @@ Future use of command line statements will have to reference this project in
 order for things to land in the right place.
 
 The "anypassword" authentication mechanism is not intended for production use,
-but it will work just fine for us. On your first login to the web console, any
-password can be used. Future access to the console from the same browser
+but it will work just fine for testing. On your first login to the web console,
+any password can be used. Future access to the console from the same browser
 (session) will require the same password (stored via cookie). 
 
 Unfortunately, anyone that goes to the console will be able to also login, since
@@ -391,9 +427,9 @@ would see things like the router and other core infrastructure components.
 https://github.com/openshift/origin/pull/1074**
 
 ## Your First Application
-At this point you have a sufficiently-functional V3 OpenShift environment. It is
-now time to create the classic "Hello World" application using some sample code.
-But, first, some housekeeping.
+At this point you essentially have a sufficiently-functional V3 OpenShift
+environment. It is now time to create the classic "Hello World" application
+using some sample code.  But, first, some housekeeping.
 
 ### "Resources"
 There are a number of different resource types in OpenShift 3, and, essentially,
@@ -435,7 +471,7 @@ eventually**
 At this point we have created our "demo" project, so let's apply the quota above
 to it. 
 
-    osc create -f quota.json --namespace=demo
+    osc create -f demo-quota.json --namespace=demo
 
 If you want to see that it was created:
 
@@ -462,12 +498,12 @@ is displayed.
 
 ### Set the namespace (project) you are using
 The concept of a project in OpenShift v3 provides a scope for creating
-related things. The corresponding concept in underlying Kubernetes is a
-namespace. Thus far we have created only a router, which went into the
+resources. The corresponding concept in Kubernetes is a *namespace*.  Thus far
+we have created a router and a Docker registry, both of which went into the
 `default` namespace.
 
-In order to start creating things with the namespace of our project,
-we will need to configure the CLI to use our new project:
+In order to start creating things inside of our "Demo" project, we will need to
+configure the CLI to use our new project:
 
      openshift ex config set-context user --cluster=master --user=joe --namespace=demo
      openshift ex config use-context user
@@ -495,10 +531,10 @@ Any `osc create` or `osc get` or `osc delete` (etc.) will now operate only with
 entities in the `betaproject` namespace.
 
 **Note:**
-Creating nodes or projects currently ignores the current context.
+Creating nodes or projects currently ignores the current/set context.
 
-### The Definition JSON
-In the training folder, you can see the contents of our pod definition by using
+### The Hello World Definition JSON
+In the beta2 training folder, you can see the contents of our pod definition by using
 `cat`:
 
     cat hello-pod.json 
@@ -964,52 +1000,6 @@ And, while you're at it, you can verify that visiting your app with HTTPS will
 also work (albeit with a self-signed certificate):
 
     https://hello-openshift.cloudapps.example.com
-
-## Preparing for STI and Other Things
-We mentioned a few times that OpenShift would host its own Docker registry in
-order to pull images "locally". Let's take a moment to set that up.
-
-First we will want to switch back to our original context to use the `default`
-namespace for infrastructure components. The `master-admin` context is
-predefined and comes with OpenShift.
-
-    openshift ex config use-context master-admin
-
-The Docker registry requires some information about our environment (SSL info,
-namely), so we will use an install script to process a template.
-
-Make the script executable and run it the following way (subsituting the correct
-domain for your environment):
-
-    chmod 755 install-registry.sh
-    CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
-    KUBERNETES_MASTER=https://ose3-master.example.com:8443 \
-    CONTAINER_ACCESSIBLE_API_HOST=ose3-master.example.com \
-    ./install-registry.sh
-
-You'll get output like:
-
-    [INFO] Submitting docker-registry template file for processing
-    docker-registry
-    docker-registry
-
-You can use `osc get pods`, `osc get services`, and `osc get deploymentconfig`
-to see what happened.
-
-Ultimately, you will have a Docker registry that is being hosted by OpenShift
-and that is running on one of your nodes.
-
-To quickly test your Docker registry, you can do the following:
-
-    curl `osc get services docker-registry -o template --template="{{ .portalIP}}:{{ .port }}"`
-
-And you should see:
-
-    "docker-registry server (dev) (v0.9.0)"
-
-**Note: if you get "connection reset by peer" you may have to wait a few more
-moments after the pod is running for the service proxy to update the endpoints
-necessary to fulfill your request**
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
