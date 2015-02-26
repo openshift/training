@@ -36,7 +36,7 @@ You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
 in the labs.
 
-### Each VM
+### Preparing Each VM
 
 Each of the virtual machines should have 4+ GB of memory, 10+ GB of disk space,
 and the following configuration:
@@ -51,7 +51,10 @@ and the following configuration:
         subscription-manager repos \
         --enable="rhel-7-server-beta-rpms" \
         --enable="rhel-7-server-extras-rpms" \
+        --enable="rhel-7-server-optional-beta-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
+
+**TODO: need ansible/epel repo**
 
 Once you have prepared your VMs, you can do the following on **each** VM:
 
@@ -66,7 +69,7 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git \
-        docker openvswitch iptables-services bridge-utils '*openshift*'
+        docker openvswitch iptables-services bridge-utils
 
 1. Update:
 
@@ -138,6 +141,48 @@ used during the various labs:
     docker pull openshift/ruby-20-centos7
     docker pull mysql
     docker pull openshift/hello-openshift
+
+### Ansible-based Installer
+The installer uses Ansible. Eventually there will be an interactive text-based
+CLI installer. 
+
+#### Install Ansible
+Ansible currently comes from the EPEL repository.
+
+Install EPEL:
+
+    yum install \
+    http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+
+Disable EPEL so that it is not accidentally used later:
+
+    sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+
+Install the packages for Ansible:
+
+    yum --enablerepo=epel install ansible util-linux
+
+#### Generate SSH Keys
+Because of the way Ansible works, SSH key distribution is required. First,
+generate an SSH key on your master, where we will run Ansible:
+
+    ssh-keygen
+
+Do *not* use a password.
+
+#### Distribute SSH Keys
+An easy way to distribute your SSH keys is by using a `bash` loop:
+
+    for host in ose3-master.example.com ose3-node1.example.com \
+    ose3-node2.example.coml; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
+    $host; done
+
+#### Clone the Ansible Repository
+The configuration files for the Ansible installer are currently available on
+Github. Clone the repository:
+
+    cd
+    https://github.com/detiber/openshift-ansible.git
 
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
@@ -1216,8 +1261,8 @@ When you are done, create your route:
 Check to make sure it was created:
 
     osc get route
-    NAME                                 HOST/PORT                              PATH SERVICE                  LABELS
-    a8b8c72b-b07c-11e4-b390-525400b33d1d hello-sinatra.cloudapps.example.com         simple-openshift-sinatra 
+    NAME                HOST/PORT                             PATH                SERVICE             LABELS
+    sinatra-route       hello-sinatra.cloudapps.example.com                       sin
 
 And now, you should be able to verify everything is working right:
 
@@ -1250,7 +1295,9 @@ First we'll create a new project:
 
 We'll set our context to use the corresponding namespace:
 
-    openshift ex config set-context user --namespace=integratedproject
+    openshift ex config set-context int --cluster=master --user=joe \
+    --namespace=integratedproject
+    openshift ex config use-context int
 
 #### A Quick Aside on Templates
 From the [OpenShift
@@ -1260,6 +1307,35 @@ documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/lat
     can be customized and processed to produce a configuration. Each template
     can define a list of parameters that can be modified for consumption by
     containers.
+
+As we mentioned previously, this template has some auto-generated parameters.
+For example, take a look at the following JSON:
+
+    "parameters": [
+      {
+        "name": "ADMIN_USERNAME",
+        "description": "administrator username",
+        "generate": "expression",
+        "from": "admin[A-Z0-9]{3}"
+      },
+
+This portion of the template's JSON tells OpenShift to generate an expression
+using a regex-like string that will be presnted as ADMIN_USERNAME.
+
+Go ahead and do the following:
+
+    osc process -f ~/training/beta2/integrated-build.json \
+    | python -m json.tool
+
+Take a moment to examine the JSON that is generated and see how the different
+parameters are placed into the actual processable config. If you look closely,
+you'll see that some of these items are passed into the "env" of the container
+-- they're passed in as environment variables inside the Docker container.
+
+If the application or container is built correctly, it's various processes will
+use these environment variables. In this example, the front-end will use the
+information about where the back-end is, as well as user and password
+information that was generated.
 
 ### Creating the Integrated Application
 Examine `integrated-build.json` to see how parameters and other things are
@@ -1284,11 +1360,14 @@ Remember our experiments with routing from earlier? Well, our STI example
 doesn't include a route definition in its template. So, we can create one:
 
     {
-      "id": "frontend-route",
-      "kind": "Route",
-      "apiVersion": "v1beta1",
-      "host": "integrated.cloudapps.example.com",
-      "serviceName": "hello-openshift"
+        "kind": "Route",
+        "apiVersion": "v1beta1",
+        "metadata": {
+            "name": "integrated-route"
+        },
+        "id": "integrated-route",
+        "host": "integrated.cloudapps.example.com",
+        "serviceName": "frontend"
     }
 
 Go ahead and edit `integrated-route.json` to have the appropriate domain, and
