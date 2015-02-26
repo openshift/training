@@ -68,42 +68,27 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
 1. Install missing packages:
 
-        yum install wget vim-enhanced net-tools bind-utils tmux git \
-        docker
+        yum install wget vim-enhanced net-tools bind-utils tmux git
 
 1. Update:
 
         yum -y update
 
-1. Enable openvswitch:
+### Grab Docker Images (Optional, Recommended)
+**If you want** to pre-fetch Docker images to make the first few things in your
+environment happen **faster**, you'll need to first install and start Docker:
 
-        systemctl enable openvswitch
+    yum -y install docker
+    systemctl start docker
 
-1. Enable Docker
-
-        systemctl enable docker
-
-1. Add the following OpenShift client config variable to the `.bash_profile` for `root`:
-
-        export KUBECONFIG=/var/lib/openshift/openshift.local.certificates/admin/.kubeconfig
-
-1. And then source your profile:
-
-        source ~/.bash_profile
-
-1. Restart the services with their new configurations:
-
-        systemctl restart openvswitch docker iptables
-
-### Grab Docker Images
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -188,6 +173,10 @@ prevents `openshift-sdn-node` from starting, which, in turn, prevents
 Simply restart `openshift-sdn-master` and you should be ready to go:
 
     systemctl restart openshift-sdn-master
+
+Ansible modified our profile, so go ahead and source it:
+
+        source ~/.bash_profile
 
 ## Starting the OpenShift Services
 ### Running a Master
