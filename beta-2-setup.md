@@ -43,7 +43,7 @@ and the following configuration:
 
 * RHEL 7.1 Beta (Note: beta kernel is required for openvswitch)
 * "Minimal" installation option
-* firewalld and NetworkManager **disabled**
+* NetworkManager **disabled**
 * Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
 * Then configure yum as follows:
 
@@ -69,7 +69,7 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 1. Install missing packages:
 
         yum install wget vim-enhanced net-tools bind-utils tmux git \
-        docker openvswitch iptables-services bridge-utils
+        docker
 
 1. Update:
 
@@ -79,39 +79,9 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
         systemctl enable openvswitch
 
-1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file:
-
-        OPTIONS=--insecure-registry 0.0.0.0/0 -H fd://
-
-    The `--insecure-registry` option tells Docker to trust any registry on the
-    specified subnet, without requiring a certificate. You would want to
-    exchange the subnet above with whatever subnet your OpenShift environment is
-    running on. Ultimately, we will be running a Docker registry on OpenShift,
-    which explains this setting.
-
 1. Enable Docker
 
         systemctl enable docker
-
-1. Add iptables port rules for OpenShift by editing `/etc/sysconfig/iptables`.
-The port range is wide open for now, but will be significantly closed in future
-releases. In between the following rules:
-
-        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-
-    Add these rules:
-
-         -A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
-         -A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
-         -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
-         -A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
-         -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-         -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
-
-1. Enable iptables:
-
-        systemctl enable iptables
 
 1. Add the following OpenShift client config variable to the `.bash_profile` for `root`:
 
@@ -186,7 +156,7 @@ Do *not* use a password.
 An easy way to distribute your SSH keys is by using a `bash` loop:
 
     for host in ose3-master.example.com ose3-node1.example.com \
-    ose3-node2.example.coml; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
+    ose3-node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
     $host; done
 
 #### Clone the Ansible Repository
@@ -194,12 +164,30 @@ The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
     cd
-    https://github.com/detiber/openshift-ansible.git
+    git clone https://github.com/detiber/openshift-ansible.git
+    cd ~/openshift-ansible
+    git checkout enterprise2
 
 #### Configure Ansible
 Move the staged Ansible configuration files to `/etc/ansible`:
 
     mv -f ~/training/beta2/ansible/* /etc/ansible
+
+#### Run the Ansible Installer
+Now we can simply run the Ansible installer:
+
+    ansible-playbook playbooks/byo/config.yml
+
+#### Cleanup
+When the Ansible installer is finished, your master will be completely installed
+and configured. However, because of the way the installer adds the node running
+on master, the `openshift-sdn-master` service will have failed to start, which
+prevents `openshift-sdn-node` from starting, which, in turn, prevents
+`openshift-node` from starting.
+
+Simply restart `openshift-sdn-master` and you should be ready to go:
+
+    systemctl restart openshift-sdn-master
 
 ## Starting the OpenShift Services
 ### Running a Master

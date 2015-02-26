@@ -5,21 +5,7 @@ docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
 docker images | grep 0.3.2 | awk {'print $3'} | xargs docker rmi -f
 
-## beta1
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3
-
-## beta2
+# beta2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
@@ -32,6 +18,20 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.2 
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2
+
+# beta1
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3
 
 DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
 
