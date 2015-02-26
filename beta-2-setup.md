@@ -1,5 +1,30 @@
 # OpenShift Beta 2 Setup Information
 # WIP - NOT COMPLETE
+
+**Table of contents:**
+
+* [Setting Up the Environment](#setting-up-the-environment)
+* [Ansible-based Installer](#ansible-based-installer)
+* [Watching Logs](#watching-logs)
+* [Installing the Router](#installing-the-router)
+* [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
+* [Projects and the Web Console](#projects-and-the-web-console)
+* [Your First Application](#your-first-application)
+* [Adding Nodes](#adding-nodes)
+* [Services](#services)
+* [Routing](#routing)
+* [The Complete Pod-Service-Route](#the-complete-pod-service-route)
+* [STI - What Is It?](#sti---what-is-it)
+
+**Appendices:**
+
+* [Extra STI code examples](#appendix---extra-sti-code-examples)
+* [DNSMasq setup](#appendix---dnsmasq-setup)
+* [Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
+* [Cleaning Up](#appendix---cleaning-up)
+* [Pretty Output](#appendix---pretty-output)
+* [Troubleshooting](#appendix---troubleshooting)
+
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
 (Screen, Tmux).
