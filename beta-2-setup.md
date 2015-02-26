@@ -142,9 +142,21 @@ used during the various labs:
     docker pull mysql
     docker pull openshift/hello-openshift
 
+### Clone the Training Repository
+On your master, it makes sense to clone the training git repository:
+
+    cd
+    git clone https://github.com/openshift/training.git
+    cd ~/training/beta2
+
+### REMINDER
+Almost all of the files for this training are in the training folder you just
+cloned.
+
 ### Ansible-based Installer
 The installer uses Ansible. Eventually there will be an interactive text-based
-CLI installer. 
+CLI installer that leverages Ansible under the covers. For now, we have to
+incant Ansible manually.
 
 #### Install Ansible
 Ansible currently comes from the EPEL repository.
@@ -184,16 +196,10 @@ Github. Clone the repository:
     cd
     https://github.com/detiber/openshift-ansible.git
 
-### Clone the Training Repository
-On your master, it makes sense to clone the training git repository:
+#### Configure Ansible
+Move the staged Ansible configuration files to `/etc/ansible`:
 
-    cd
-    git clone https://github.com/openshift/training.git
-    cd ~/training/beta2
-
-### REMINDER
-Almost all of the files for this training are in the training folder you just
-cloned.
+    mv -f ~/training/beta2/ansible/* /etc/ansible
 
 ## Starting the OpenShift Services
 ### Running a Master

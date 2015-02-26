@@ -6,4 +6,5 @@ ose3-master.example.com
 
 # host group for nodes
 [nodes]
-ose3-node[1:2].example.com
+ose3-master.example.com
+#ose3-node[1:2].example.com
