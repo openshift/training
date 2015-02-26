@@ -108,17 +108,17 @@ On your master, it makes sense to clone the training git repository:
 Almost all of the files for this training are in the training folder you just
 cloned.
 
-### Ansible-based Installer
+## Ansible-based Installer
 The installer uses Ansible. Eventually there will be an interactive text-based
 CLI installer that leverages Ansible under the covers. For now, we have to
 incant Ansible manually.
 
-#### Install Ansible
+### Install Ansible
 Ansible currently comes from the EPEL repository.
 
 Install EPEL:
 
-    yum install \
+    yum -y install \
     http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 
 Disable EPEL so that it is not accidentally used later:
@@ -127,9 +127,10 @@ Disable EPEL so that it is not accidentally used later:
 
 Install the packages for Ansible:
 
-    yum --enablerepo=epel install ansible util-linux
+    yum --enablerepo=epel -y install ansible rubygem-thor rubygem-parseconfig \
+    util-linux
 
-#### Generate SSH Keys
+### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
 generate an SSH key on your master, where we will run Ansible:
 
@@ -137,14 +138,17 @@ generate an SSH key on your master, where we will run Ansible:
 
 Do *not* use a password.
 
-#### Distribute SSH Keys
+### Distribute SSH Keys
 An easy way to distribute your SSH keys is by using a `bash` loop:
 
     for host in ose3-master.example.com ose3-node1.example.com \
     ose3-node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
     $host; done
 
-#### Clone the Ansible Repository
+Remember, if your FQDNs are different, you would have to modify the loop
+accordingly.
+
+### Clone the Ansible Repository
 The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
@@ -153,97 +157,27 @@ Github. Clone the repository:
     cd ~/openshift-ansible
     git checkout enterprise2
 
-#### Configure Ansible
+### Configure Ansible
 Move the staged Ansible configuration files to `/etc/ansible`:
 
     mv -f ~/training/beta2/ansible/* /etc/ansible
 
-#### Run the Ansible Installer
+### Modify Hosts
+If you are not using the "example.com" domain and the training example
+hostnames, modify /etc/ansible/hosts accordingly. Do not adjust the commented
+lines (`#`) at this time.
+
+### Run the Ansible Installer
 Now we can simply run the Ansible installer:
 
     ansible-playbook playbooks/byo/config.yml
 
-#### Cleanup
-When the Ansible installer is finished, your master will be completely installed
-and configured. However, because of the way the installer adds the node running
-on master, the `openshift-sdn-master` service will have failed to start, which
-prevents `openshift-sdn-node` from starting, which, in turn, prevents
-`openshift-node` from starting.
-
-Simply restart `openshift-sdn-master` and you should be ready to go:
-
-    systemctl restart openshift-sdn-master
-
+### Cleanup
 Ansible modified our profile, so go ahead and source it:
 
         source ~/.bash_profile
 
-## Starting the OpenShift Services
-### Running a Master
-#### The Master Service
-First, we must edit the `/etc/sysconfig/openshift-master` file. Edit the
-`OPTIONS` to read:
-
-    OPTIONS="--loglevel=4 --public-master=fqdn.of.master"
-
-You may also want to `systemctl enable openshift-master` to ensure the service
-automatically starts on the next boot.
-
-#### The OpenShift Node
-We are running a "node" service on our master. In other words, the OpenShift
-Master will both orchestrate containers and run containers, too.
-
-Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS`:
-
-    OPTIONS="--loglevel=4"
- 
-Do **not** start the openshift-node service yet. We must configure and start the
-openshift-sdn-node first in order to set up the proper bridges, and the
-openshift-sdn-node service will automatically start the openshift-node service
-for us.
-
-#### Setting Up the SDN
-Once your master is started, we need to start the SDN (which uses Open vSwitch)
-to begin creating our network overlay. The SDN master coordinates all of the SDN
-activities. The SDN node actually manipulates the local docker and network
-configuration. Since our OpenShift master is also a node, we will also run an
-SDN master and node.
-
-First, edit the
-`/etc/sysconfig/openshift-sdn-master` file and edit the `OPTIONS` to read:
-
-    OPTIONS="-v=4"
-
-You can ignore the `DOCKER_OPTIONS`.
-
-You may want to enable the `openshift-sdn-master` service.
-
-Then, edit the `/etc/sysconfig/openshift-sdn-node` file:
-
-    MASTER_URL="http://fqdn.of.master:4001"
-    
-    MINION_IP="ip.address.of.node.public.interface"
-    
-    OPTIONS="-v=4"
-
-    DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
-
-You may also want to enable the `openshift-sdn-node` service.
-
-Remember, starting the sdn-node service will automatically start the openshift-node
-service.
-
-We will start our testing and operations with only one OpenShift "node" -- the
-master. Later, we will add the other two nodes.
-
-### Start All Services
-Now that all of the services are configured, we can start them all in one fell
-swoop:
-
-    systemctl start openshift-master; systemctl start openshift-sdn-master;\
-    systemctl start openshift-sdn-node;
-
-### Watching Logs
+## Watching Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
 `/var/log/messages` any longer. You will need to use `journalctl`.
 
@@ -262,7 +196,7 @@ window:
 will not need the `master`-related services. These instructions will not appear
 again.**
 
-### Installing the Router
+## Installing the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
 easy to get a complete "multi-tier" "application" deployed, reaching it from
 anywhere outside of the OpenShift environment is not possible without something
@@ -344,7 +278,7 @@ upstream/origin:
     openshift ex router --create --credentials=$KUBECONFIG \
     --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2"
 
-**Note: if you failed to correctly edit your `.bash_profile` and source it, this
+**Note: If you failed to source your `.bash_profile`, this
 will probably do something unexpected.**
 
 If this works, you'll see some output:
@@ -363,7 +297,10 @@ few moments (it may take up to a few minutes):
     deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
     router-1-58u3j        router        ose3-master.example.com/192.168.133.2  Running
 
-### Preparing for STI and Other Things
+Note: You may or may not see the deploy pod, depending on when you run this
+command.
+
+## Preparing for STI and Other Things
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code and deploy and manage their lifecycle. In
 order to do this, OpenShift can host its own Docker registry in
