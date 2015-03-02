@@ -641,111 +641,14 @@ This is really powerful. We will explore using "arbitrary" docker images later.
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment.
 
-### Configuring a Node
-Perform the following steps, in order, on both nodes.
+### Modifying the Ansible Configuration
+On your master, edit the `/etc/ansible/hosts` file and uncomment the nodes, or
+add them as appropriate for your DNS/hostnames.
 
-#### Grab the SSL certificates
-You should grab the SSL certificates and other information from your master. You
-can do the following on your node:
+Then, run the ansible playbook again:
 
-    rsync -av root@fqdn.of.master:/var/lib/openshift/openshift.local.certificates \
-    /var/lib/openshift/
-
-#### The OpenShift Node
-Edit the `/etc/sysconfig/openshift-node` file and edit the `OPTIONS` to read:
-
-    OPTIONS="--loglevel=4 --master=fqdn.of.master"
-
-Do **not** start the openshift-node service. We will let openshift-sdn-node
-handle that for us (like before).
-
-#### The Node SDN
-Edit the `/etc/sysconfig/openshift-sdn-node` file:
-
-    MASTER_URL="http://fqdn.of.master:4001"
-    
-    MINION_IP="ip.address.of.node.public.interface"
-    
-    OPTIONS="-v=4"
-
-    DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
-
-And start the SDN node:
-
-    systemctl start openshift-sdn-node
-
-You may also want to enable the service.
-
-**Note:** 
-Since we are starting the sdn-node before we have actually created the entry for
-our node with the OpenShift master, if you check status on openshift-sdn-node
-(`journalctl -u openshift-sdn-node`) you will see that the service blocks with
-an error (and does not start openshift-node) until the node has been defined in
-the next section.
-
-### Adding the Node Via OpenShift's API
-The following JSON describes a node:
-
-    cat node.json
-    {
-      "metadata":{
-        "name":"add-two-nodes"
-      },
-      "kind":"Config",
-      "apiVersion":"v1beta1",
-      "creationTimestamp":"2014-09-18T18:28:38-04:00",
-      "items":[
-        {
-          "id": "ose3-node1.example.com",
-          "kind": "Node",
-          "apiVersion": "v1beta1",
-          "resources": {
-            "capacity": {
-              "cpu": 1,
-              "memory": 80% of freemem (bytes)
-            },
-          },
-        },
-        {
-          "id": "ose3-node2.example.com",
-          "kind": "Node",
-          "apiVersion": "v1beta1",
-          "resources": {
-            "capacity": {
-              "cpu": 1,
-              "memory": 80% of freemem (bytes)
-            },
-          },
-        }
-      ]
-    }
-
-You will need to edit the `node.json` file and replace the memory line with the
-correct value for your system. For example, given the output of `free`:
-
-    free -b
-                  total        used        free      shared  buff/cache   available
-    Mem:     1041629184   284721152   321036288     7761920   435871744   577949696
-    Swap:    1073737728           0  1073737728
-
-You might set your `node.json` to have:
-
-    "memory": 256000000
-
-Once edited, add the nodes via the API:
-
-    osc create -f node.json
-
-You should now have two running nodes in addition to your original "master"
-node (it may take a minute for all to reach "Ready" status):
-
-    osc get nodes
-    NAME                      LABELS              STATUS
-    ose3-master.example.com   <none>              Ready
-    ose3-node1.example.com    <none>              Ready
-    ose3-node2.example.com    <none>              Ready
-
-Note that nodes are not scoped by namespace.
+    cd ~/openshift-ansible/
+    ansible-playbook playbooks/byo/config.yml
 
 Now that we have a larger OpenShift environment, let's examine more complicated
 application paradigms.
