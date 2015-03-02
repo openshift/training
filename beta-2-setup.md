@@ -335,7 +335,37 @@ And you should see:
 moments after the pod is running for the service proxy to update the endpoints
 necessary to fulfill your request**
 
-## Projects and the Web Console
+## Auth, Projects and the Web Console
+### Configuring htpasswd Authentication
+OpenShift v3 supports a number of mechanisms for authentication. The simplest
+use case for our testing purposes is `htpasswd`-based authentication.
+
+To start, we will need the `htpasswd` binary, which is made available by
+installing:
+
+    yum -y install httpd-tools
+
+From there, we can create a password for our user, Joe:
+
+    htpasswd -c /etc/openshift-passwd joe
+    New password: 
+    Re-type new password: 
+    Adding password for user joe
+    Use the password "redhat".
+
+Then, add the following lines to `/etc/sysconfig/openshift-master`:
+
+    cat <<EOF >> /etc/sysconfig/openshift-master
+    OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
+    OPENSHIFT_OAUTH_HANDLER=login
+    OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
+    OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
+    EOF
+
+Restart `openshift-master`:
+
+    systemctl restart openshift-master
+
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different services and
 their pods, builds and etc. They are somewhat similar to "namespaces" in
@@ -349,7 +379,7 @@ OpenShift command to create a project, and assign an administrative user to it:
 
     openshift ex new-project demo --display-name="OpenShift 3 Demo" \
     --description="This is the first demo project with OpenShift v3" \
-    --admin=anypassword:joe
+    --admin=htpasswd:joe
 
 This command creates a project:
 * with the id `demo`
@@ -1442,12 +1472,12 @@ to limit some of what it returns:
 
 # APPENDIX - Troubleshooting
 * When using an "osc" command like "osc get pods" I see a "certificate signed by
-  unknown authority error":
+    unknown authority error":
 
         F0212 16:15:52.195372   13995 create.go:79] Post
         https://ose3-master.example.net:8443/api/v1beta1/pods?namespace=default:
         x509: certificate signed by unknown authority
-  
+
     Check the value of $KUBECONFIG:
 
         echo $kubeconfig
@@ -1457,3 +1487,13 @@ to limit some of what it returns:
     `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
 
         source ~/.bash_profile
+
+* When issuing a `curl` to my service, I see `curl: (56) Recv failure:
+    Connection reset by peer`
+
+    It can take as long as 90 seconds for the service URL to start working.
+    There is some internal house cleaning that occurs inside Kubernetes
+    regarding the endpoint maps.
+
+    If you look at the log for the node, you might see some messages about
+    looking at endpoint maps and not finding an endpoint for the service.

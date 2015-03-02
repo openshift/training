@@ -1312,3 +1312,13 @@ to limit some of what it returns:
     `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
 
         source ~/.bash_profile
+
+* When issuing a `curl` to my service, I see `curl: (56) Recv failure:
+    Connection reset by peer`
+
+    It can take as long as 90 seconds for the service URL to start working.
+    There is some internal house cleaning that occurs inside Kubernetes
+    regarding the endpoint maps.
+
+    If you look at the log for the node, you might see some messages about
+    looking at endpoint maps and not finding an endpoint for the service.
