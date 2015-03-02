@@ -5,6 +5,12 @@ docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
 docker images | grep 0.3.2 | awk {'print $3'} | xargs docker rmi -f
 
+for resource in build buildconfig images imagerepository deploymentconfig \
+route replicationcontroller service pod; do echo -e "Resource: $resource"; \
+osc get $resource; echo -e "\n\n"; done
+
+osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
+
 # beta2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
@@ -12,12 +18,62 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-dep
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.2 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.3 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.3
+
+yum -y install \
+http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+yum --enablerepo=epel -y install ansible rubygem-thor rubygem-parseconfig \
+util-linux
+
+ssh-keygen
+
+for host in ose3-master.example.com ose3-node1.example.com \
+ose3-node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
+$host; done
+
+cd
+git clone https://github.com/detiber/openshift-ansible.git
+cd ~/openshift-ansible
+git checkout enterprise2
+mv -f ~/training/beta2/ansible/* /etc/ansible
+ansible-playbook playbooks/byo/config.yml
+
+source ~/.bash_profile
+
+yum -y install iptables-services
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+
+systemctl disable firewalld; systemctl stop firewalld; systemctl enable iptables; systemctl start iptables
+systemctl stop openshift-node; systemctl restart openshift-sdn-node
+
+yum -y install httpd-tools
+htpasswd -c /etc/openshift-passwd joe
+
+cat <<EOF >> /etc/sysconfig/openshift-master
+OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
+OPENSHIFT_OAUTH_HANDLER=login
+OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
+OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
+EOF
+systemctl restart openshift-master
+
+cd ~/training
+git pull origin master
+mv -f ~/training/beta1/dnsmasq.conf /etc/
+restorecon -rv /etc/dnsmasq.conf
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
+systemctl start dnsmasq
 
 # beta1
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3
@@ -34,10 +90,6 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3
 
 DOCKER_OPTIONS='--insecure-registry=0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled'
-
-for resource in build buildconfig images imagerepository deploymentconfig \
-route replicationcontroller service pod; do echo -e "Resource: $resource"; \
-osc get $resource; echo -e "\n\n"; done
 
 ## start master
 cd ~/training

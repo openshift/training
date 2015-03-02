@@ -76,9 +76,13 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
 ### Grab Docker Images (Optional, Recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
-environment happen **faster**, you'll need to first install and start Docker:
+environment happen **faster**, you'll need to first install Docker:
 
     yum -y install docker
+
+You'll need to add `--insecure-registry 0.0.0.0/0` to your
+`/etc/sysconfig/docker` `OPTIONS`. Then:
+
     systemctl start docker
 
 On all of your systems, grab the following docker images:
@@ -175,7 +179,9 @@ Now we can simply run the Ansible installer:
 ### Cleanup
 Ansible modified our profile, so go ahead and source it:
 
-        source ~/.bash_profile
+    source ~/.bash_profile
+
+** need to fix firewalld stuff **
 
 ## Watching Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
@@ -276,7 +282,7 @@ to specify the router image, since currently the experimental tooling points to
 upstream/origin:
 
     openshift ex router --create --credentials=$KUBECONFIG \
-    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2"
+    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.3"
 
 **Note: If you failed to source your `.bash_profile`, this
 will probably do something unexpected.**
@@ -310,7 +316,7 @@ order to pull images "locally". Let's take a moment to set that up.
 registry:
 
     openshift ex registry --create --credentials=$KUBECONFIG \
-    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2"
+    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.3"
 
 You'll get output like:
 
@@ -351,7 +357,8 @@ From there, we can create a password for our user, Joe:
     New password: 
     Re-type new password: 
     Adding password for user joe
-    Use the password "redhat".
+    
+Use the password "redhat".
 
 Then, add the following lines to `/etc/sysconfig/openshift-master`:
 
@@ -425,6 +432,9 @@ https://github.com/openshift/origin/pull/1074**
 At this point you essentially have a sufficiently-functional V3 OpenShift
 environment. It is now time to create the classic "Hello World" application
 using some sample code.  But, first, some housekeeping.
+
+Also, don't forget, the materials for these labs are in your `~/training/beta2`
+folder.
 
 ### "Resources"
 There are a number of different resource types in OpenShift 3, and, essentially,
@@ -527,6 +537,10 @@ entities in the `betaproject` namespace.
 
 **Note:**
 Creating nodes or projects currently ignores the current/set context.
+
+**Note:**
+Restarting OpenShift's master will rewrite the contents of the `.kubeconfig`
+file, which means you need to re-create your contexts using `set-context`.
 
 ### The Hello World Definition JSON
 In the beta2 training folder, you can see the contents of our pod definition by using
