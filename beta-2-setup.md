@@ -1419,3 +1419,7 @@ to limit some of what it returns:
 
     If you look at the log for the node, you might see some messages about
     looking at endpoint maps and not finding an endpoint for the service.
+
+    To find out if the endpoints have been updated you can run:
+
+    `osc describe service $name_of_service` and check the value of `Endpoints:`
