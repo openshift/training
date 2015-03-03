@@ -25,6 +25,12 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-dock
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.4 
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4
 
+cd ~/training
+git pull origin master
+mv -f ~/training/beta1/dnsmasq.conf /etc/
+restorecon -rv /etc/dnsmasq.conf
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
+systemctl start dnsmasq
 yum -y install \
 http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
@@ -43,18 +49,6 @@ git checkout enterprise2
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
 source ~/.bash_profile
-
-yum -y install iptables-services
-vim /etc/sysconfig/iptables
--A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 4001 -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
-
-systemctl disable firewalld; systemctl stop firewalld; systemctl enable iptables; systemctl start iptables
-systemctl stop openshift-node; systemctl restart openshift-sdn-node
 
 yum -y install httpd-tools
 htpasswd -c /etc/openshift-passwd joe

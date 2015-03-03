@@ -112,12 +112,12 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -397,7 +397,7 @@ From there, we can create a password for our user, Joe:
     Re-type new password: 
     Adding password for user joe
     
-Use the password "redhat".
+Use the password `redhat`.
 
 Then, add the following lines to `/etc/sysconfig/openshift-master`:
 
@@ -411,6 +411,18 @@ Then, add the following lines to `/etc/sysconfig/openshift-master`:
 Restart `openshift-master`:
 
     systemctl restart openshift-master
+
+**Note:** There's currently a bug with the installer's configuration of master,
+and you'll likely see something like the following in your log:
+
+    Mar 03 14:31:05 ose3-master openshift[5527]: E0303 14:31:05.985647    5527
+    nodecontroller.go:139] Error registering node *, retrying: Node "*" is
+    invalid: metadata.name: invalid value '*': must have at most 253 characters
+    and match regex
+    [a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
+
+It will take your master a while to "give up" and finally finish starting up.
+Wait about 90 seconds.
 
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different services and
@@ -431,7 +443,8 @@ This command creates a project:
 * with the id `demo`
 * with a display name
 * with a description 
-* with an administrative user `joe` who can login with any password
+* with an administrative user `joe` who can login with the password defined by
+    htpasswd
 
 Future use of command line statements will have to reference this project in
 order for things to land in the right place.
@@ -455,8 +468,7 @@ Open your browser and visit the following URL:
 
 You will first need to accept the self-signed SSL certificate. You will then be
 asked for a username and a password. Remembering that we created a user
-previously, `joe`, go ahead and enter that and use `any` as the password (it
-doesn't matter what password you use).
+previously, `joe`, go ahead and enter that and use the password you set earlier.
 
 Once you are in, click the *OpenShift 3 Demo* project. There really isn't anything of
 interest at the moment, because we haven't put anything into our project. While
@@ -985,7 +997,7 @@ We can also apply the same quota we used before to this new project:
 Let's create a new context for interacting with the new project you just created:
 
     openshift ex config set-context sinatra --cluster=master --user=joe \
-    --namespace=sinatraproject
+    --namespace=sinatra
     openshift ex config use-context sinatra
 
 **Note:**
@@ -1192,7 +1204,7 @@ your pod quote (3). This issue is understood and will be fixed.
 Since we are not doing anything else with the *Sinatra* project, we can ignore
 these artifacts for now.
 
-### A Fully-Integrated Application
+### A Fully-Integrated "Quickstart" Application
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
 application also makes use of auto-generated parameters and other neat features
@@ -1200,14 +1212,19 @@ of OpenShift. One thing of note is that this project already has the
 wiring/plumbing between the front- and back-end components pre-defined as part
 of its JSON. Adding resources "after the fact" will come in a later lab.
 
+This example is effectively a "quickstart" -- a pre-defined application that
+comes in a template that you can just fire up and start using or hacking on.
+
 First we'll create a new project:
 
-    osc create -f ~/training/beta2/integrated-project.json
+    openshift ex new-project integrated --display-name="Frontend/Backend" \
+    --description='A demonstration of a "quickstart/template"' \
+    --admin=htpasswd:joe
 
 We'll set our context to use the corresponding namespace:
 
     openshift ex config set-context int --cluster=master --user=joe \
-    --namespace=integratedproject
+    --namespace=integrated
     openshift ex config use-context int
 
 #### A Quick Aside on Templates
