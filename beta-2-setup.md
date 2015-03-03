@@ -341,7 +341,7 @@ order to pull images "locally". Let's take a moment to set that up.
 registry:
 
     openshift ex registry --create --credentials=$KUBECONFIG \
-    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.3"
+    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4"
 
 You'll get output like:
 
@@ -362,9 +362,23 @@ And you should see:
 
     "docker-registry server (dev) (v0.9.0)"
 
-**Note: if you get "connection reset by peer" you may have to wait a few more
-moments after the pod is running for the service proxy to update the endpoints
-necessary to fulfill your request**
+If you get "connection reset by peer" you may have to wait a few more moments
+after the pod is running for the service proxy to update the endpoints necessary
+to fulfill your request. You can check if your service has finished updating its
+endpoints with:
+
+    osc describe service docker-registry
+
+And you will eventually see something like:
+
+    Name:           docker-registry
+    Labels:         docker-registry=default
+    Selector:       docker-registry=default
+    Port:           5000
+    Endpoints:      10.1.0.7:5000
+    No events.
+
+Once there is an endpoint listed, the curl should work.
 
 ## Auth, Projects and the Web Console
 ### Configuring htpasswd Authentication

@@ -30,7 +30,6 @@ http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
 yum --enablerepo=epel -y install ansible rubygem-thor rubygem-parseconfig \
 util-linux
-
 ssh-keygen
 
 for host in ose3-master.example.com ose3-node1.example.com \
@@ -43,10 +42,10 @@ cd ~/openshift-ansible
 git checkout enterprise2
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
-
 source ~/.bash_profile
 
 yum -y install iptables-services
+vim /etc/sysconfig/iptables
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 10250 -j ACCEPT
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 8443:8444 -j ACCEPT
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 7001 -j ACCEPT
