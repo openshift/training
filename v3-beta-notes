@@ -18,12 +18,12 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.3
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.3 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.3 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.3
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.4 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4
 
 yum -y install \
 http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm

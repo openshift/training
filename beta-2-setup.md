@@ -282,7 +282,7 @@ to specify the router image, since currently the experimental tooling points to
 upstream/origin:
 
     openshift ex router --create --credentials=$KUBECONFIG \
-    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.3"
+    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.4"
 
 **Note: If you failed to source your `.bash_profile`, this
 will probably do something unexpected.**
