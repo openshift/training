@@ -1206,7 +1206,7 @@ be fixed.
 Since we are not doing anything else with the *Sinatra* project, we can ignore
 these artifacts for now.
 
-### A Fully-Integrated "Quickstart" Application
+## A Fully-Integrated "Quickstart" Application
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
 application also makes use of auto-generated parameters and other neat features
@@ -1217,6 +1217,7 @@ of its JSON. Adding resources "after the fact" will come in a later lab.
 This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
 
+### A Project for the Quickstart
 First we'll create a new project:
 
     openshift ex new-project integrated --display-name="Frontend/Backend" \
@@ -1229,7 +1230,7 @@ We'll set our context to use the corresponding namespace:
     --namespace=integrated
     openshift ex config use-context int
 
-#### A Quick Aside on Templates
+### A Quick Aside on Templates
 From the [OpenShift
 documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/latest/using_openshift/templates.html):
 
@@ -1285,33 +1286,32 @@ Don't forget that the web console will show information about the build status,
 although in much less detail. And, don't forget that if you are too quick on the
 `build-logs` you will catch it before the build actually starts.
 
-### Routing Our Integrated Application
-Remember our experiments with routing from earlier? Well, our STI example
-doesn't include a route definition in its template. So, we can create one:
-
-    {
-        "kind": "Route",
-        "apiVersion": "v1beta1",
-        "metadata": {
-            "name": "integrated-route"
-        },
-        "id": "integrated-route",
-        "host": "integrated.cloudapps.example.com",
-        "serviceName": "frontend"
-    }
-
-Go ahead and edit `integrated-route.json` to have the appropriate domain, and
-then create it:
-
-    osc create -f ~/training/beta2/integrated-route.json
-
-Now, in your browser, you should be able to visit the website and actually use
-the application!
+### Using Your App
+Now that the app is built, you should be able to visit the routed URL and
+actually use the application!
 
     http://integrated.cloudapps.example.com
 
 **Note: HTTPS will *not* work for this example because the form submission was
 written with HTTP links. Be sure to use HTTP. **
+
+## Creating and Wiring Disparate Components
+Quickstarts are great, but sometimes a developer wants to build up the various
+components manually. Let's take our quickstart example and treat it like two
+separate "applications" that we want to wire together.
+
+### Create a New Project
+Create another new project for this "wiring" project:
+
+    openshift ex new-project wiring --display-name="Exploring Parameters" \
+    --description='An exploration of wiring using parameters' \
+    --admin=htpasswd:joe
+
+We'll set our context to use the corresponding namespace:
+
+    openshift ex config set-context wiring --cluster=master --user=joe \
+    --namespace=wiring
+    openshift ex config use-context wiring
 
 ## Conclusion
 This concludes the Beta 2 training. Look for more example applications to come!
