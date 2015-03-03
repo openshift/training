@@ -514,7 +514,7 @@ Since we are starting the sdn-node before we have actually created the entry for
 our node with the OpenShift master, if you check status on openshift-sdn-node
 (`journalctl -u openshift-sdn-node`) you will see that the service blocks with
 an error (and does not start openshift-node) until the node has been defined in
-the next section.
+the next section. See the troubleshooting section for more details.
 
 ### Adding the Node Via OpenShift's API
 The following JSON describes a node:
@@ -1322,3 +1322,19 @@ to limit some of what it returns:
 
     If you look at the log for the node, you might see some messages about
     looking at endpoint maps and not finding an endpoint for the service.
+
+* When starting `openshift-sdn-node` I see an error like:
+        
+        Could not find an allocated subnet for this minion
+        (ose3-node1.example.com)(501: All the given peers are not reachable
+        (Tried to connect to each peer twice and failed) [0]). Waiting..
+
+    The labs have us perform things in this order:
+    * Configure node
+    * Start node services
+    * Add node to master
+
+    Until the point that the node is actually added to the master,
+    `openshift-sdn-master` has not allocated a subnet. Hence, this error will
+    persist until the node is added.
+

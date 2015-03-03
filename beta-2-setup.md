@@ -729,6 +729,8 @@ service that corresponds to the `serviceName` directive.
 Let's take a look at an entire Pod-Service-Route definition template and put all
 the pieces together.
 
+Don't forget -- the materials are in `~/training/beta2`.
+
 ## The Complete Pod-Service-Route
 ### Creating the Definition
 The following is a complete definition for a pod with a corresponding service
@@ -928,7 +930,9 @@ for you).
 We will create a new project to put our first STI example into. Grab the project
 definition and create it:
 
-    osc create -f ~/training/beta2/sinatraproject.json
+    openshift ex new-project sinatra --display-name="Ruby/Sinatra" \
+    --description="Our Simple Sintra STI Example" \
+    --admin=htpasswd:joe
 
 At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
@@ -936,10 +940,10 @@ up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
 We can also apply the same quota we used before to this new project:
 
-    osc create -n sinatraproject -f demo-quota.json
+    osc create -n sinatra -f demo-quota.json
 
 ### Switch contexts
-Let's update and use the `user` context for interacting with the new project you just created:
+Let's create a new context for interacting with the new project you just created:
 
     openshift ex config set-context sinatra --cluster=master --user=joe \
     --namespace=sinatraproject
@@ -1077,7 +1081,8 @@ your environment):
     osc build-logs sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
-deployed yet, build-logs will give you an error**
+deployed yet, build-logs will give you an error. Just wait a few moments and
+retry it.**
 
 ### The Web Console Revisited
 If you peeked at the web console while the build was running, you probably
