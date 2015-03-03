@@ -1197,9 +1197,11 @@ If you want to be fancy, try it in your browser!
 ### Notes on Cleanup, Enforcement
 Currently the STI process involves a pod that is created to build your code
 (sti-build) as well as a pod that is used to deploy your code (ose-deployer).
-Right now, OpenShift doesn't "clean up" after the build process. So, if you go
-to the *Settings* tab for the *Sinatra* project, you'll see that you have hit
-your pod quote (3). This issue is understood and will be fixed.
+Right now, OpenShift doesn't "clean up" after the build process - pods that were
+generated to build your application code will stick around. If you do a few
+builds, and go to the *Settings* tab for the *Sinatra* project, you'll see that
+you can hit or exceed your pod quote (3). These issues are understood and will
+be fixed.
 
 Since we are not doing anything else with the *Sinatra* project, we can ignore
 these artifacts for now.
