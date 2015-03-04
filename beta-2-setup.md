@@ -184,7 +184,7 @@ Github. Clone the repository:
     cd
     git clone https://github.com/detiber/openshift-ansible.git
     cd ~/openshift-ansible
-    git checkout enterprise2
+    git checkout v3-beta2
 
 ### Configure Ansible
 Move the staged Ansible configuration files to `/etc/ansible`:
