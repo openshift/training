@@ -1301,7 +1301,7 @@ components manually. Let's take our quickstart example and treat it like two
 separate "applications" that we want to wire together.
 
 ### Create a New Project
-Create another new project for this "wiring" project:
+Create another new project for this "wiring" example:
 
     openshift ex new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
@@ -1312,6 +1312,89 @@ We'll set our context to use the corresponding namespace:
     openshift ex config set-context wiring --cluster=master --user=joe \
     --namespace=wiring
     openshift ex config use-context wiring
+
+### Stand Up the Frontend
+The first step will be to stand up the frontend of our application. For
+argument's sake, this could have just as easily been brand new vanilla code.
+However, to make things faster, we'll start with an application that already is
+looking for a DB, but won't fail spectacularly if one isn't found.
+
+Go ahead and process the frontend template and then examine it:
+
+    osc process -f frontend-template.json > frontend-config.json
+
+**Note:** If you are using a different domain, you will need to edit the route.
+
+In the config, you will see that a DB password and other parameters have been
+generated (remember the template and parameter info from earlier?).
+
+Go ahead and create the configuration:
+   
+    osc create -f frontend-config.json
+
+Run a build for the frontend:
+
+    osc start-build ruby-sample-build
+
+### Visit Your Application
+Once the build is finished and the frontend service's endpoint has been updated,
+visit your application. The frontend configuration contained a route for
+`wiring.cloudapps.example.com`. You should see a note that the database is
+missing. So, let's create it!
+
+### Create the Database Config
+Remember, `osc process` will examine a template, generate any desired
+parameters, and spit out a JSON `config`uration that can be `create`d with
+`osc`.
+
+First, we will generate a config for the database:
+
+    osc process -f db-template.json > db-config.json
+
+Processing the template for the db will generate some values for the DB root
+user and password, but they don't actually match what was previously generated
+when we set up the front-end. In the "quickstart" example, we generated these
+values and used them for both the frontend and the back-end at the exact same
+time. In this case, we need to do some manual intervention.
+
+In the future, you'll be able to pass values into the template when it is
+processed, or things will be auto-populated (like in OpenShift v2).
+
+So, look at the frontend configuration (`frontend-config.json`) and find the
+value for `MYSQL_ROOT_PASSWORD`. For example, `mugX5R2B`.
+
+Edit `db-config.json` and set the value for `MYSQL_ROOT_PASSWORD` to match
+whatever is in your `frontend-config.json`. Once you are finished, you can
+create the backend:
+
+    osc create -f db-config.json
+
+All we are doing is leveraging the standard Dockerhub MySQL container, which
+knows to take some env-vars when it fires up (eg: the MySQL root password).
+
+### Visit Your Application Again
+Visit your application again with your web browser. Why does it still say that
+there is no database?
+
+When the frontend was first built and created, there was no service called
+"database", so the environment variable `DATABASE_SERVICE_HOST` did not get
+populated with any values. Our database does exist now, and there is a service
+for it, but OpenShift did not "inject" those values into the running container.
+
+The easiest way to get this going? Just nuke the existing pod. There is a
+replication controller running for both the frontend and backend:
+
+    osc get replicationcontroller
+
+The replication controller will ensure that we always have however many
+replicas (instances) running. We can look at how many that should be:
+
+    osc describe rc frontend
+
+So, if we kill the pod, the RC will detect that, and fire it back up. When it
+gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
+which means it will be able to connect to the DB, which means that we should no
+longer see these errors!
 
 ## Conclusion
 This concludes the Beta 2 training. Look for more example applications to come!
