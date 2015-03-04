@@ -3,7 +3,7 @@ deltarpm iptables-services
 Docker images:
 docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
-docker images | grep 0.3.2 | awk {'print $3'} | xargs docker rmi -f
+docker images | grep 0.3.4 | awk {'print $3'} | xargs docker rmi -f
 
 for resource in build buildconfig images imagerepository deploymentconfig \
 route replicationcontroller service pod; do echo -e "Resource: $resource"; \
@@ -18,12 +18,12 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.4 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.3.4 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4
 
 cd ~/training
 git pull origin master
@@ -45,7 +45,7 @@ $host; done
 cd
 git clone https://github.com/detiber/openshift-ansible.git
 cd ~/openshift-ansible
-git checkout enterprise2
+git checkout v3-beta2
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
 source ~/.bash_profile
