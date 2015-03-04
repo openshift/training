@@ -1323,7 +1323,8 @@ Go ahead and process the frontend template and then examine it:
 
     osc process -f frontend-template.json > frontend-config.json
 
-**Note:** If you are using a different domain, you will need to edit the route.
+**Note:** If you are using a different domain, you will need to edit the route
+before running `create`.
 
 In the config, you will see that a DB password and other parameters have been
 generated (remember the template and parameter info from earlier?).
@@ -1381,6 +1382,7 @@ When the frontend was first built and created, there was no service called
 populated with any values. Our database does exist now, and there is a service
 for it, but OpenShift did not "inject" those values into the running container.
 
+### Replication Controllers
 The easiest way to get this going? Just nuke the existing pod. There is a
 replication controller running for both the frontend and backend:
 
@@ -1389,12 +1391,57 @@ replication controller running for both the frontend and backend:
 The replication controller will ensure that we always have however many
 replicas (instances) running. We can look at how many that should be:
 
-    osc describe rc frontend
+    osc describe rc frontend-1
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
 which means it will be able to connect to the DB, which means that we should no
 longer see these errors!
+
+Go ahead and find your frontend pod, and then kill it:
+
+    osc delete pod `osc get pod | grep front | awk '{print $1}'
+
+You'll see something like:
+
+    frontend-1-hvxiy
+
+That was the generated name of the pod when the replication controller stood it
+up the first time. After a few moments, we can look at the list of pods again:
+
+    osc get pod | grep front
+
+And we should see a different name for the pod this time:
+
+    frontend-1-0fs20
+
+This shows that, underneath the covers, the RC restarted our pod. Since it was
+restarted, it should have a value for the `DATABASE_SERVICE_HOST` environment
+variable. Go to the node where the pod is running, and find the Docker container
+id:
+
+    docker inspect `docker ps | grep wiring | grep front | grep run | awk \
+    '{print $1}'` | grep DATABASE
+
+The output will look like:
+
+    "MYSQL_DATABASE=root",
+    "DATABASE_PORT_5434_TCP_ADDR=172.30.17.106",
+    "DATABASE_PORT=tcp://172.30.17.106:5434",
+    "DATABASE_PORT_5434_TCP=tcp://172.30.17.106:5434",
+    "DATABASE_PORT_5434_TCP_PROTO=tcp",
+    "DATABASE_SERVICE_HOST=172.30.17.106",
+    "DATABASE_SERVICE_PORT=5434",
+    "DATABASE_PORT_5434_TCP_PORT=5434",
+
+### Revisit the Webpage
+Go ahead and revisit `http://wiring.cloudapps.example.com` (or your appropriate
+FQDN) in your browser, and you should see that the application is now fully
+functional!
+
+Remember, wiring up apps yourself right now is a little clunky. These things
+will get much easier with future beta drops and will also be more accessible
+from the web console.
 
 ## Conclusion
 This concludes the Beta 2 training. Look for more example applications to come!
