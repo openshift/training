@@ -48,7 +48,6 @@ cd ~/openshift-ansible
 git checkout v3-beta2
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
-source ~/.bash_profile
 
 yum -y install httpd-tools
 touch /etc/openshift-passwd

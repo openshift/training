@@ -246,55 +246,6 @@ extra. This extra thing is the routing layer. The router is the ingress point
 for all traffic destined for OpenShift v3 services. It currently supports only
 HTTP(S) traffic.
 
-As with most things in OpenShift v3, resources are defined via JSON. The
-following JSON file could describe the router:
-
-    {
-        "kind": "Pod",
-        "apiVersion": "v1beta1",
-        "id": "ROUTER_ID",
-        "desiredState": {
-            "manifest": {
-                "version": "v1beta2",
-                "containers": [
-                    {
-                        "name": "origin-haproxy-router-ROUTER_ID",
-                        "image": "registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.1",
-                        "ports": [
-                            {
-                                "containerPort": 80,
-                                "hostPort": 80
-                            },
-                            {
-                                "containerPort": 443,
-                                "hostPort": 443
-                            }
-                        ],
-                        "env": [
-                            {
-                                "name": "OPENSHIFT_MASTER",
-                                "value": "${OPENSHIFT_MASTER}"
-                            },
-                            {
-                                "name": "OPENSHIFT_CA_DATA",
-                                "value": "${OPENSHIFT_CA_DATA}"
-                            },
-                            {
-                                "name": "OPENSHIFT_INSECURE",
-                                "value": "${OPENSHIFT_INSECURE}"
-                            }
-                        ],
-                        "command": ["--loglevel=4"],
-                        "imagePullPolicy": "PullIfNotPresent"
-                    }
-                ],
-                "restartPolicy": {
-                    "always": {}
-                }
-            }
-        }
-    }
-
 OpenShift's "experimental" command set enables you to install the router
 automatically. Try running it with no options and you should see the note that a
 router is needed:
@@ -311,13 +262,12 @@ So, go ahead and do what it says:
     with --credentials
 
 Just about every form of communication with OpenShift components is secured by
-SSL and uses various certificates and authentication methods. Just like how we
-previously edited our `bash` configuration to point to our authentication
-configuration, we need to tell the router installer about it, too. We also need
-to specify the router image, since currently the experimental tooling points to
-upstream/origin:
+SSL and uses various certificates and authentication methods. Even though we set
+up our `.kubeconfig`, unfortunately, ex router does not seem to look in the
+default location for it. We also need to specify the router image, since
+currently the experimental tooling points to upstream/origin:
 
-    openshift ex router --create --credentials=/root/.kubeconfig \
+    openshift ex router --create --credentials=/root/.kube/.kubeconfig \
     --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4"
 
 If this works, you'll see some output:
@@ -348,7 +298,7 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create --credentials=/root/.kubeconfig \
+    openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
     --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4"
 
 You'll get output like:
@@ -467,7 +417,8 @@ Open your browser and visit the following URL:
 
 You will first need to accept the self-signed SSL certificate. You will then be
 asked for a username and a password. Remembering that we created a user
-previously, `joe`, go ahead and enter that and use the password you set earlier.
+previously, `joe`, go ahead and enter that and use the password (redhat) you set
+earlier.
 
 Once you are in, click the *OpenShift 3 Demo* project. There really isn't
 anything of interest at the moment, because we haven't put anything into our
@@ -565,7 +516,7 @@ Then, change to that folder and login:
 
     cd ~/.kube
     openshift ex login \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
     --namespace=demo
 
 This created a file called `.kubeconfig`. Take a look at it:
@@ -851,6 +802,12 @@ with a corresponding route:
           "id": "hello-openshift-route",
           "host": "hello-openshift.cloudapps.example.com",
           "serviceName": "hello-openshift-service"
+          "tls": {
+            "termination": "edge",
+            "certificate": "-----BEGIN CERTIFICATE-----\nMIIDIjCCAgqgAwIBAgIBATANBgkqhkiG9w0BAQUFADCBoTELMAkGA1UEBhMCVVMx\nCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0Rl\nZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0ExGjAYBgNVBAMMEXd3\ndy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFtcGxlQGV4YW1wbGUu\nY29tMB4XDTE1MDExMjE0MTk0MVoXDTE2MDExMjE0MTk0MVowfDEYMBYGA1UEAwwP\nd3d3LmV4YW1wbGUuY29tMQswCQYDVQQIDAJTQzELMAkGA1UEBhMCVVMxIjAgBgkq\nhkiG9w0BCQEWE2V4YW1wbGVAZXhhbXBsZS5jb20xEDAOBgNVBAoMB0V4YW1wbGUx\nEDAOBgNVBAsMB0V4YW1wbGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMrv\ngu6ZTTefNN7jjiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm\n47VRx5Qrf/YLXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1M\nmNrQUgZyQC6XIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAGjDTALMAkGA1UdEwQC\nMAAwDQYJKoZIhvcNAQEFBQADggEBAFCi7ZlkMnESvzlZCvv82Pq6S46AAOTPXdFd\nTMvrh12E1sdVALF1P1oYFJzG1EiZ5ezOx88fEDTW+Lxb9anw5/KJzwtWcfsupf1m\nV7J0D3qKzw5C1wjzYHh9/Pz7B1D0KthQRATQCfNf8s6bbFLaw/dmiIUhHLtIH5Qc\nyfrejTZbOSP77z8NOWir+BWWgIDDB2//3AkDIQvT20vmkZRhkqSdT7et4NmXOX/j\njhPti4b2Fie0LeuvgaOdKjCpQQNrYthZHXeVlOLRhMTSk3qUczenkKTOhvP7IS9q\n+Dzv5hqgSfvMG392KWh5f8xXfJNs4W5KLbZyl901MeReiLrPH3w=\n-----END CERTIFICATE-----",
+            "key": "-----BEGIN PRIVATE KEY-----\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMrvgu6ZTTefNN7j\njiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm47VRx5Qrf/YL\nXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1MmNrQUgZyQC6X\nIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAECgYEAnxOjEj/vrLNLMZE1Q9H7PZVF\nWdP/JQVNvQ7tCpZ3ZdjxHwkvf//aQnuxS5yX2Rnf37BS/TZu+TIkK4373CfHomSx\nUTAn2FsLmOJljupgGcoeLx5K5nu7B7rY5L1NHvdpxZ4YjeISrRtEPvRakllENU5y\ngJE8c2eQOx08ZSRE4TkCQQD7dws2/FldqwdjJucYijsJVuUdoTqxP8gWL6bB251q\nelP2/a6W2elqOcWId28560jG9ZS3cuKvnmu/4LG88vZFAkEAzphrH3673oTsHN+d\nuBd5uyrlnGjWjuiMKv2TPITZcWBjB8nJDSvLneHF59MYwejNNEof2tRjgFSdImFH\nmi995wJBAMtPjW6wiqRz0i41VuT9ZgwACJBzOdvzQJfHgSD9qgFb1CU/J/hpSRIM\nkYvrXK9MbvQFvG6x4VuyT1W8mpe1LK0CQAo8VPpffhFdRpF7psXLK/XQ/0VLkG3O\nKburipLyBg/u9ZkaL0Ley5zL5dFBjTV2Qkx367Ic2b0u9AYTCcgi2DsCQQD3zZ7B\nv7BOm7MkylKokY2MduFFXU0Bxg6pfZ7q3rvg8gqhUFbaMStPRYg6myiDiW/JfLhF\nTcFT4touIo7oriFJ\n-----END PRIVATE KEY-----",
+            "caCertificate": "-----BEGIN CERTIFICATE-----\nMIIEFzCCAv+gAwIBAgIJALK1iUpF2VQLMA0GCSqGSIb3DQEBBQUAMIGhMQswCQYD\nVQQGEwJVUzELMAkGA1UECAwCU0MxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoG\nA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDEQMA4GA1UECwwHVGVzdCBDQTEaMBgG\nA1UEAwwRd3d3LmV4YW1wbGVjYS5jb20xIjAgBgkqhkiG9w0BCQEWE2V4YW1wbGVA\nZXhhbXBsZS5jb20wHhcNMTUwMTEyMTQxNTAxWhcNMjUwMTA5MTQxNTAxWjCBoTEL\nMAkGA1UEBhMCVVMxCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkx\nHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0Ex\nGjAYBgNVBAMMEXd3dy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFt\ncGxlQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\nw2rK1J2NMtQj0KDug7g7HRKl5jbf0QMkMKyTU1fBtZ0cCzvsF4CqV11LK4BSVWaK\nrzkaXe99IVJnH8KdOlDl5Dh/+cJ3xdkClSyeUT4zgb6CCBqg78ePp+nN11JKuJlV\nIG1qdJpB1J5O/kCLsGcTf7RS74MtqMFo96446Zvt7YaBhWPz6gDaO/TUzfrNcGLA\nEfHVXkvVWqb3gqXUztZyVex/gtP9FXQ7gxTvJml7UkmT0VAFjtZnCqmFxpLZFZ15\n+qP9O7Q2MpsGUO/4vDAuYrKBeg1ZdPSi8gwqUP2qWsGd9MIWRv3thI2903BczDc7\nr8WaIbm37vYZAS9G56E4+wIDAQABo1AwTjAdBgNVHQ4EFgQUugLrSJshOBk5TSsU\nANs4+SmJUGwwHwYDVR0jBBgwFoAUugLrSJshOBk5TSsUANs4+SmJUGwwDAYDVR0T\nBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEAaMJ33zAMV4korHo5aPfayV3uHoYZ\n1ChzP3eSsF+FjoscpoNSKs91ZXZF6LquzoNezbfiihK4PYqgwVD2+O0/Ty7UjN4S\nqzFKVR4OS/6lCJ8YncxoFpTntbvjgojf1DEataKFUN196PAANc3yz8cWHF4uvjPv\nWkgFqbIjb+7D1YgglNyovXkRDlRZl0LD1OQ0ZWhd4Ge1qx8mmmanoBeYZ9+DgpFC\nj9tQAbS867yeOryNe7sEOIpXAAqK/DTu0hB6+ySsDfMo4piXCc2aA/eI2DCuw08e\nw17Dz9WnupZjVdwTKzDhFgJZMLDqn37HQnT6EemLFqbcR0VPEnfyhDtZIQ==\n-----END CERTIFICATE-----"
+          }
         }
       ]
     }
@@ -875,10 +832,10 @@ If we work from the route down to the pod:
 * There is a single pod with a single container that has the label
     `name=hello-openshift-label`
 
-Edit `test-complete.json` and change the `host` stanza for the route to have
-the correct domain, matching the DNS configuration for your environment. Once
-this is done, go ahead and use `osc` to apply it. You should see something like
-the following:
+Logged in as `joe`, edit `test-complete.json` and change the `host` stanza for
+the route to have the correct domain, matching the DNS configuration for your
+environment. Once this is done, go ahead and use `osc` to apply it. You should
+see something like the following:
 
         osc create -f test-complete.json
         hello-openshift-pod
