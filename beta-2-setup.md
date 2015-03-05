@@ -517,7 +517,8 @@ Then, change to that folder and login:
     cd ~/.kube
     openshift ex login \
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
-    --namespace=demo
+    --cluster=master --server=https://ose3-master.example.com:8443 \
+    --namespace=demo --name=demo
 
 This created a file called `.kubeconfig`. Take a look at it:
 
@@ -525,22 +526,22 @@ This created a file called `.kubeconfig`. Take a look at it:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
-        server: https://localhost:8443
-      name: localhost:8443
+        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/root.crt
+        server: https://ose3-master.example.com:8443
+      name: ose3-master.example.com:8443
     contexts:
     - context:
-        cluster: localhost:8443
+        cluster: ose3-master.example.com:8443
         namespace: demo
         user: joe
-      name: localhost:8443-joe
-    current-context: localhost:8443-joe
+      name: ose3-master.example.com:8443-joe
+    current-context: ose3-master.example.com:8443-joe
     kind: Config
     preferences: {}
     users:
     - name: joe
       user:
-        token: ZDMwOWUyZjAtMDcyYy00NDFmLTgxYzMtZTI0YzQ5ZDgxNmQz
+        token: MDU5ZWFjMGUtYWZmOS00MzY4LWE3N2MtNzFiNTYyOWJkZjY4
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, and etc. If we now do something like:
@@ -811,6 +812,7 @@ with a corresponding route:
         }
       ]
     }
+** remove TLS? **
 
 In the JSON above:
 
@@ -952,8 +954,8 @@ repository + a Dockerfile (so that OpenShift can pull or build the Docker image
 for you).
 
 ### Create a New Project
-We will create a new project to put our first STI example into. Grab the project
-definition and create it:
+As the `root` user, we will create a new project to put our first STI example
+into. Grab the project definition and create it:
 
     openshift ex new-project sinatra --display-name="Ruby/Sinatra" \
     --description="Our Simple Sintra STI Example" \
@@ -968,45 +970,48 @@ We can also apply the same quota we used before to this new project:
     osc create -n sinatra -f demo-quota.json
 
 ### Switch contexts
-Let's create a new context for interacting with the new project you just created:
+As the `joe` user, let's create a new context for interacting with the new
+project you just created:
 
-    openshift ex config set-context sinatra --cluster=master --user=joe \
-    --namespace=sinatra
+    cd ~/.kube
+    openshift ex config set-context sinatra --cluster=ose3-master.example.com:8443 \
+    --namespace=sinatra --user=joe
     openshift ex config use-context sinatra
 
 **Note:**
 If you ever get confused about what context you're using, or what contexts are
-defined, you can look at `$KUBECONFIG`:
+defined, you can look at `~/.kube/.kubeconfig`:
 
+    cat ~/.kube/.kubeconfig 
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: root.crt
-        server: https://192.168.133.2:8443
-      name: master
+        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/root.crt
+        server: https://ose3-master.example.com:8443
+      name: ose3-master.example.com:8443
     contexts:
     - context:
-        cluster: master
-        user: admin
-      name: master-admin
+        cluster: ose3-master.example.com:8443
+        namespace: demo
+        user: joe
+      name: ose3-master.example.com:8443-joe
     - context:
-        cluster: master
-        namespace: sinatraproject
-        user: admin
-      name: user
-    current-context: user
+        cluster: ose3-master.example.com:8443
+        namespace: sinatra
+        user: joe
+      name: sinatra
+    current-context: sinatra
     kind: Config
     preferences: {}
     users:
-    - name: admin
+    - name: joe
       user:
-        client-certificate: cert.crt
-        client-key: key.key
+        token: MDU5ZWFjMGUtYWZmOS00MzY4LWE3N2MtNzFiNTYyOWJkZjY4
 
 Or, to quickly get your current context:
 
-    grep current $KUBECONFIG
-    current-context: user
+    grep current ~/.kube/.kubeconfig
+    current-context: sinatra
 
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
@@ -1105,6 +1110,8 @@ your environment):
 
     osc build-logs sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
 
+**NOTE: there's a bug that makes this not work (forbidden)** 
+
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
 retry it.**
@@ -1174,7 +1181,7 @@ Currently the STI process involves a pod that is created to build your code
 Right now, OpenShift doesn't "clean up" after the build process - pods that were
 generated to build your application code will stick around. If you do a few
 builds, and go to the *Settings* tab for the *Sinatra* project, you'll see that
-you can hit or exceed your pod quote (3). These issues are understood and will
+you can reach or exceed your pod quote (3). These issues are understood and will
 be fixed.
 
 Since we are not doing anything else with the *Sinatra* project, we can ignore
@@ -1192,17 +1199,23 @@ This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
 
 ### A Project for the Quickstart
-First we'll create a new project:
+As the `root` user, first we'll create a new project:
 
     openshift ex new-project integrated --display-name="Frontend/Backend" \
     --description='A demonstration of a "quickstart/template"' \
     --admin=htpasswd:joe
 
-We'll set our context to use the corresponding namespace:
+As the `joe` user, we'll set our context to use the corresponding namespace:
 
-    openshift ex config set-context int --cluster=master --user=joe \
-    --namespace=integrated
+    cd ~/.kube
+    openshift ex config set-context int --cluster=ose3-master.example.com:8443 \
+    --namespace=integrated --user=joe
     openshift ex config use-context int
+
+**Note:** You could also have specified `--kubeconfig=~/.kube/.kubeconfig` with
+`set-context`.
+
+**Note:** You can also `export KUBECONFIG=~/.kube/.kubeconfig`.
 
 ### A Quick Aside on Templates
 From the [OpenShift
