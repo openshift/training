@@ -1387,7 +1387,7 @@ longer see these errors!
 
 Go ahead and find your frontend pod, and then kill it:
 
-    osc delete pod `osc get pod | grep front | awk '{print $1}'
+    osc delete pod `osc get pod | grep front | awk '{print $1}'`
 
 You'll see something like:
 
