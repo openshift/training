@@ -77,7 +77,7 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
 1. Edit the `OPTIONS=` line of your `/etc/sysconfig/docker` file:
 
-        OPTIONS=--insecure-registry 0.0.0.0/0 -H fd://
+        OPTIONS=--insecure-registry 0.0.0.0/0
 
     The `--insecure-registry` option tells Docker to trust any registry on the
     specified subnet, without requiring a certificate. You would want to
