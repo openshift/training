@@ -112,12 +112,12 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.3.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.3.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.3.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.3.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -266,8 +266,8 @@ up our `.kubeconfig`, unfortunately, ex router does not seem to look in the
 default location for it. We also need to specify the router image, since
 currently the experimental tooling points to upstream/origin:
 
-    openshift ex router --create --credentials=/root/.kube/.kubeconfig \
-    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4"
+    openshift ex router --create --credentials=/root/.kubeconfig \
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
 
@@ -297,8 +297,8 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
-    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4"
+    openshift ex registry --create --credentials=/root/.kubeconfig \
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
 
