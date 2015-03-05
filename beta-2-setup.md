@@ -156,7 +156,7 @@ Disable EPEL so that it is not accidentally used later:
 
 Install the packages for Ansible:
 
-    yum --enablerepo=epel -y install ansible rubygem-thor util-linux
+    yum --enablerepo=epel -y install ansible 
 
 ### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
