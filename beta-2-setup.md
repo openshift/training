@@ -201,12 +201,23 @@ Now we can simply run the Ansible installer:
 
     ansible-playbook playbooks/byo/config.yml
 
+### Add Development Users
+In the "real world" your developers would likely be using the OpenShift tools on
+their own machines (`osc` and `openshift` and etc). For the Beta training, we
+will create user accounts for two non-privileged users of OpenShift, *joe* and
+*alice*.
+
+    useradd joe
+    useradd alice
+
+We will come back to these users later.
+
 ### Cleanup
-Ansible modified our profile, so go ahead and source it:
+One last step: Copy the `.kubeconfig` file into a place where the CLI tools look
+for it:
 
-    source ~/.bash_profile
-
-** need to fix firewalld stuff **
+    mkdir ~/.kube
+    cp /var/lib/openshift/openshift.local.certificates/admin/.kubeconfig ~/.kube
 
 ## Watching Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
@@ -306,11 +317,8 @@ configuration, we need to tell the router installer about it, too. We also need
 to specify the router image, since currently the experimental tooling points to
 upstream/origin:
 
-    openshift ex router --create --credentials=$KUBECONFIG \
-    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.3.4"
-
-**Note: If you failed to source your `.bash_profile`, this
-will probably do something unexpected.**
+    openshift ex router --create --credentials=/root/.kubeconfig \
+    --images="registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4"
 
 If this works, you'll see some output:
 
@@ -340,8 +348,8 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create --credentials=$KUBECONFIG \
-    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.3.4"
+    openshift ex registry --create --credentials=/root/.kubeconfig \
+    --images="registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4"
 
 You'll get output like:
 
@@ -390,14 +398,13 @@ installing:
 
     yum -y install httpd-tools
 
-From there, we can create a password for our user, Joe:
+From there, we can create a password for our users, Joe and Alice:
 
-    htpasswd -c /etc/openshift-passwd joe
-    New password: 
-    Re-type new password: 
+    touch /etc/openshift-passwd
+    htpasswd -b /etc/openshift-passwd joe redhat
     Adding password for user joe
-    
-Use the password `redhat`.
+    htpasswd -b /etc/openshift-passwd alice redhat
+    Adding password for user alice
 
 Then, add the following lines to `/etc/sysconfig/openshift-master`:
 
@@ -412,8 +419,9 @@ Restart `openshift-master`:
 
     systemctl restart openshift-master
 
-**Note:** There's currently a bug with the installer's configuration of master,
-and you'll likely see something like the following in your log:
+**Note:** There's currently a bug with the way we have to prevent
+auto-registration of the master as a node, and you'll likely see something like
+the following in your log:
 
     Mar 03 14:31:05 ose3-master openshift[5527]: E0303 14:31:05.985647    5527
     nodecontroller.go:139] Error registering node *, retrying: Node "*" is
@@ -449,15 +457,6 @@ This command creates a project:
 Future use of command line statements will have to reference this project in
 order for things to land in the right place.
 
-The "anypassword" authentication mechanism is not intended for production use,
-but it will work just fine for testing. On your first login to the web console,
-any password can be used. Future access to the console from the same browser
-(session) will require the same password (stored via cookie). 
-
-Unfortunately, anyone that goes to the console will be able to also login, since
-the password is not stored in any data store inside OpenShift. Again, this is
-fine for non-production use, and perfect for our demo
-
 Now that you have a project created, it's time to look at the web console, which
 has been completely redesigned for V3.
 
@@ -470,14 +469,12 @@ You will first need to accept the self-signed SSL certificate. You will then be
 asked for a username and a password. Remembering that we created a user
 previously, `joe`, go ahead and enter that and use the password you set earlier.
 
-Once you are in, click the *OpenShift 3 Demo* project. There really isn't anything of
-interest at the moment, because we haven't put anything into our project. While
-we created the router, it's not part of this project (it is core infrastructure),
-so we do not see it here. If you were to look in the *default* project, you
-would see things like the router and other core infrastructure components.
-
-**Note: You will see the other projects until
-https://github.com/openshift/origin/pull/1074**
+Once you are in, click the *OpenShift 3 Demo* project. There really isn't
+anything of interest at the moment, because we haven't put anything into our
+project. While we created the router, it's not part of this project (it is core
+infrastructure), so we do not see it here. If you had access to the *default*
+project, you would see things like the router and other core infrastructure
+components.
 
 ## Your First Application
 At this point you essentially have a sufficiently-functional V3 OpenShift
@@ -552,46 +549,67 @@ If you go back into the web console and click into the "OpenShift 3 Demo"
 project, and click on the *Settings* tab, you'll see that the quota information
 is displayed.
 
-### Set the namespace (project) you are using
-The concept of a project in OpenShift v3 provides a scope for creating
-resources. The corresponding concept in Kubernetes is a *namespace*.  Thus far
-we have created a router and a Docker registry, both of which went into the
-`default` namespace.
+### Login
+Since we have taken the time to create the *joe* user as well as a project for
+him, now we will login from the command line to set up our tooling.
 
-In order to start creating things inside of our "Demo" project, we will need to
-configure the CLI to use our new project:
+Open a terminal as `joe`:
 
-     openshift ex config set-context demo --cluster=master --user=joe --namespace=demo
-     openshift ex config use-context demo
+    # su - joe
 
-This is a bit cryptic, and client configuration is experimental at this
-point, but here is a brief explanation:
+Make a `.kube` folder:
 
-1. `openshift ex` provides some experimental subcommands that could go
-   away at any time (probably with the next beta). One of these subcommands
-   is `config` which manipulates your $KUBECONFIG file (we set the env var
-   above; otherwise it would be `~/.kubeconfig`).
-2. The "context" referred to by `set-context` is a section in the
-   $KUBECONFIG that encapsulates the OpenShift server, the account to access
-   it with, and the current namespace (if any). A single user might very
-   well have multiple namespaces, accounts, and servers to interact with,
-   so it can be helpful to define a context for each combination. Here we
-   are defining a new context `demo` (to be distinguished from the initial
-   context under which we created the router, `master-admin` with namespace
-   `default`). In the new context, the current namespace is `demo`
-   (the project we just created).
-3. Having created the new `demo` context, we set that context to be used
-   by default. (It could be overridden in subsequent commands with the `--context` flag.)
+    mkdir .kube
 
-Any `osc create` or `osc get` or `osc delete` (etc.) will now operate only with
-entities in the `betaproject` namespace.
+Then, change to that folder and login:
 
-**Note:**
-Creating nodes or projects currently ignores the current/set context.
+    cd ~/.kube
+    openshift ex login \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --namespace=demo
 
-**Note:**
-Restarting OpenShift's master will rewrite the contents of the `.kubeconfig`
-file, which means you need to re-create your contexts using `set-context`.
+This created a file called `.kubeconfig`. Take a look at it:
+
+    cat .kubeconfig 
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+        server: https://localhost:8443
+      name: localhost:8443
+    contexts:
+    - context:
+        cluster: localhost:8443
+        namespace: demo
+        user: joe
+      name: localhost:8443-joe
+    current-context: localhost:8443-joe
+    kind: Config
+    preferences: {}
+    users:
+    - name: joe
+      user:
+        token: ZDMwOWUyZjAtMDcyYy00NDFmLTgxYzMtZTI0YzQ5ZDgxNmQz
+
+This configuration file has an authorization token, some information about where
+our server lives, our project, and etc. If we now do something like:
+
+    osc get pod
+
+We should get a response, but not see anything. That's because the core
+infrastructure, again, lives in the *default* project, which we're not
+accessing.
+
+The reason we perform the `login` inside of the `.kube` folder is that all of
+the command line tooling eventually looks in there for `.kubeconfig`.
+
+### Grab the Training Repo Again
+Since Joe and Alice can't access the training folder in root's home directory,
+go ahead and grab it inside Joe's home folder:
+
+    cd
+    git clone https://github.com/openshift/training.git
+    cd ~/training/beta2
 
 ### The Hello World Definition JSON
 In the beta2 training folder, you can see the contents of our pod definition by using
@@ -631,8 +649,8 @@ To create the pod from our JSON file, execute the following:
 
     osc create -f hello-pod.json
 
-Remember, we already set our context earlier using `ex config`, so this pod will
-land in our `betaproject` namespace. The command should display the ID of the pod:
+Remember, we've "logged in" to OpenShift and our project, so this will create
+the pod inside of it. The command should display the ID of the pod:
 
     hello-openshift
 
@@ -643,13 +661,10 @@ status:
     POD             IP       CONTAINER(S)                     IMAGE(S)                           HOST                                  LABELS                 STATUS
     hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift          ose3-master.example.com/192.168.133.2 name=hello-openshift   Pending
 
-You should note that we no longer see the router pod in the output. This is
-because the router is part of the `default` namespace, used for core
-infrastructure components.
-
-Look at the list of Docker containers with `docker ps` to see the bound ports.
-We should see an `openshift3_beta/ose-pod` container bound to 6061 on the host and
-bound to 8080 on the container, along with several other `ose-pod` containers.
+Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
+see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
+to 6061 on the host and bound to 8080 on the container, along with several other
+`ose-pod` containers.
 
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
@@ -672,6 +687,7 @@ project. You'll see some interesting things:
 * You'll see the SDN IP address that the pod is associated with (10....)
 * You'll see the internal port that the pod's container's "application"/process
     is using
+* You'll see the host port that the pod is bound to
 * You'll see that there's no service yet - we'll get to services soon.
 
 ### Quota Usage
@@ -690,7 +706,8 @@ available in a registry or something already written and built in-house.
 This is really powerful. We will explore using "arbitrary" docker images later.
 
 ## Adding Nodes
-It is extremely easy to add nodes to an existing OpenShift environment.
+It is extremely easy to add nodes to an existing OpenShift environment. Return
+to a `root` terminal.
 
 ### Modifying the Ansible Configuration
 On your master, edit the `/etc/ansible/hosts` file and uncomment the nodes, or

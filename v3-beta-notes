@@ -51,7 +51,9 @@ ansible-playbook playbooks/byo/config.yml
 source ~/.bash_profile
 
 yum -y install httpd-tools
-htpasswd -c /etc/openshift-passwd joe
+touch /etc/openshift-passwd
+htpasswd -b /etc/openshift-passwd joe redhat
+htpasswd -b /etc/openshift-passwd alice redhat
 
 cat <<EOF >> /etc/sysconfig/openshift-master
 OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
