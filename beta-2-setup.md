@@ -1390,6 +1390,20 @@ create the backend:
 All we are doing is leveraging the standard Dockerhub MySQL container, which
 knows to take some env-vars when it fires up (eg: the MySQL root password).
 
+It may take a little while for the mysql container to download from the Docker
+Hub which can cause the frontend application to appear broken if it is
+restarted.  In reality it's simply polling for the database connection to
+become active.  It's a good idea to verify that that database is running at
+this point.  If you don't happen to have a mysql client installed you can
+verify it's running with curl:
+
+    curl `osc get services | grep database | awk '{print $4}'`:5434
+
+Obviously mysql doesn't speak HTTP so you'll see garbled output like this
+(however, you'll know your database is running!):
+
+    5.6.2K\l-7mA<��F/T:emsy'TR~mysql_native_password!��#08S01Got packets out of order
+
 ### Visit Your Application Again
 Visit your application again with your web browser. Why does it still say that
 there is no database?
