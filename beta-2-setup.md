@@ -66,7 +66,7 @@ in the labs.
 Each of the virtual machines should have 4+ GB of memory, 10+ GB of disk space,
 and the following configuration:
 
-* RHEL 7.1 Beta (Note: beta kernel is required for openvswitch)
+* RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
 * NetworkManager **disabled**
 * Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
@@ -74,12 +74,10 @@ and the following configuration:
 
         subscription-manager repos --disable="*"
         subscription-manager repos \
-        --enable="rhel-7-server-beta-rpms" \
+        --enable="rhel-7-server-rpms" \
         --enable="rhel-7-server-extras-rpms" \
-        --enable="rhel-7-server-optional-beta-rpms" \
+        --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
-
-**TODO: need ansible/epel repo**
 
 Once you have prepared your VMs, you can do the following on **each** VM:
 
@@ -140,7 +138,7 @@ cloned.
 ## Ansible-based Installer
 The installer uses Ansible. Eventually there will be an interactive text-based
 CLI installer that leverages Ansible under the covers. For now, we have to
-incant Ansible manually.
+invoke Ansible manually.
 
 ### Install Ansible
 Ansible currently comes from the EPEL repository.
@@ -181,14 +179,13 @@ The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
     cd
-    git clone https://github.com/detiber/openshift-ansible.git
+    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta2
     cd ~/openshift-ansible
-    git checkout v3-beta2
 
 ### Configure Ansible
 Move the staged Ansible configuration files to `/etc/ansible`:
 
-    mv -f ~/training/beta2/ansible/* /etc/ansible
+    "cp" -r ~/training/beta2/ansible/* /etc/ansible/
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
