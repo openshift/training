@@ -25,8 +25,9 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-dock
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4 
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4
 
-cd ~/training
-git pull origin master
+cd
+git clone https://github.com/openshift/training.git
+cd ~/training/beta2
 mv -f ~/training/beta1/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
@@ -35,13 +36,9 @@ yum -y install \
 http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
 yum --enablerepo=epel -y install ansible
-ssh-keygen
-
-for host in ose3-master.example.com ose3-node1.example.com \
-ose3-node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
-$host; done
 
 cd
+rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git
 cd ~/openshift-ansible
 git checkout v3-beta2
