@@ -39,9 +39,8 @@ yum --enablerepo=epel -y install ansible
 
 cd
 rm -rf openshift-ansible
-git clone https://github.com/detiber/openshift-ansible.git
+git clone https://github.com/detiber/openshift-ansible.git -b v3-beta2
 cd ~/openshift-ansible
-git checkout v3-beta2
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
 
