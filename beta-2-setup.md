@@ -263,7 +263,7 @@ up our `.kubeconfig`, unfortunately, ex router does not seem to look in the
 default location for it. We also need to specify the router image, since
 currently the experimental tooling points to upstream/origin:
 
-    openshift ex router --create --credentials=/root/.kubeconfig \
+    openshift ex router --create --credentials=/root/.kube/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -294,7 +294,7 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create --credentials=/root/.kubeconfig \
+    openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
@@ -310,7 +310,7 @@ and that is running on one of your nodes.
 
 To quickly test your Docker registry, you can do the following:
 
-    curl `osc get services docker-registry -o template --template="{{ .portalIP}}:{{ .port }}"`
+    curl `osc get services | grep registry | awk '{print $4":"$5}'`
 
 And you should see:
 
@@ -514,7 +514,7 @@ Then, change to that folder and login:
     openshift ex login \
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
     --cluster=master --server=https://ose3-master.example.com:8443 \
-    --namespace=demo --name=demo
+    --namespace=demo 
 
 This created a file called `.kubeconfig`. Take a look at it:
 
@@ -802,7 +802,6 @@ with a corresponding route:
         }
       ]
     }
-** remove TLS? **
 
 In the JSON above:
 
@@ -861,7 +860,7 @@ We can see that the service has been defined based on the JSON we used earlier.
 If the output of `osc get pods` shows that our pod is running, we can try to
 access the service:
 
-    curl http://172.30.17.230:27017
+    curl `osc get services | grep hello-openshift | awk '{print $4":"$5}'`
     Hello OpenShift!
 
 This is a good sign! It means that, if the router is working, we should be able
@@ -1126,7 +1125,7 @@ What were they?
 Using the information you found in the web console, try to see if your service
 is working:
 
-    curl http://172.30.17.47:9292
+    curl `osc get services | grep sin | awk '{print $4":"$5}'`
     Hello, Sinatra!
 
 So, from a simple code repository with a few lines of Ruby, we have successfully

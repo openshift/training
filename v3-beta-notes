@@ -39,7 +39,6 @@ cd ~/openshift-ansible
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
 
-yum -y install httpd-tools
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat
 htpasswd -b /etc/openshift-passwd alice redhat
@@ -58,6 +57,13 @@ mv -f ~/training/beta1/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
 systemctl start dnsmasq
+
+mkdir .kube
+cd ~/.kube
+openshift ex login \
+--certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
+--cluster=master --server=https://ose3-master.example.com:8443 \
+--namespace=demo
 
 # beta1
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3
