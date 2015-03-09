@@ -41,10 +41,10 @@ ansible-playbook playbooks/byo/config.yml
 useradd joe
 useradd alice
 
+yum -y install httpd-tools
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat
 htpasswd -b /etc/openshift-passwd alice redhat
-
 cat <<EOF >> /etc/sysconfig/openshift-master
 OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
 OPENSHIFT_OAUTH_HANDLER=login

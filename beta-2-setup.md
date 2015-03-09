@@ -358,19 +358,6 @@ Restart `openshift-master`:
 
     systemctl restart openshift-master
 
-**Note:** There's currently a bug with the way we have to prevent
-auto-registration of the master as a node, and you'll likely see something like
-the following in your log:
-
-    Mar 03 14:31:05 ose3-master openshift[5527]: E0303 14:31:05.985647    5527
-    nodecontroller.go:139] Error registering node *, retrying: Node "*" is
-    invalid: metadata.name: invalid value '*': must have at most 253 characters
-    and match regex
-    [a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
-
-It will take your master a while to "give up" and finally finish starting up.
-Wait about 90 seconds.
-
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different services and
 their pods, builds and etc. They are somewhat similar to "namespaces" in
