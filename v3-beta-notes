@@ -1,5 +1,9 @@
 deltarpm iptables-services
 
+curl -i -H "Accept: application/json" -H "X-HTTP-Method-Override: PUT" -X POST
+-k
+https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=integrated
+
 Docker images:
 docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
@@ -66,6 +70,14 @@ openshift ex login \
 --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
 --cluster=master --server=https://ose3-master.example.com:8443 \
 --namespace=demo
+
+for resource in build buildconfig images imagerepository deploymentconfig \
+route replicationcontroller service pod; do echo -e "Resource: $resource"; \
+osc delete $resource; echo -e "\n\n"; done
+
+for resource in build buildconfig images imagerepository deploymentconfig \
+route replicationcontroller service pod; do echo -e "Resource: $resource"; \
+osc get $resource; echo -e "\n\n"; done
 
 # beta1
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.3

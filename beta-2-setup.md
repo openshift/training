@@ -69,6 +69,7 @@ and the following configuration:
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
 * NetworkManager **disabled**
+* SELinux in **permissive** mode
 * Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
 * Then configure yum as follows:
 
@@ -391,6 +392,9 @@ Open your browser and visit the following URL:
 
     https://fqdn.of.master:8444
 
+It may take up to 90 seconds for the web console to be available after
+restarting the master (when you changed the authentication settings).
+    
 You will first need to accept the self-signed SSL certificate. You will then be
 asked for a username and a password. Remembering that we created a user
 previously, `joe`, go ahead and enter that and use the password (redhat) you set
@@ -449,7 +453,7 @@ eventually**
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. 
+to it. Still in a `root` terminal:
 
     osc create -f demo-quota.json --namespace=demo
 
@@ -1257,17 +1261,37 @@ components manually. Let's take our quickstart example and treat it like two
 separate "applications" that we want to wire together.
 
 ### Create a New Project
-Create another new project for this "wiring" example:
+As the `root` user, create another new project for this "wiring" example:
 
     openshift ex new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
-    --admin=htpasswd:joe
+    --admin=htpasswd:alice
 
-We'll set our context to use the corresponding namespace:
+As `alice`, let's set up our `.kubeconfig`. Open a terminal as `alice`:
 
-    openshift ex config set-context wiring --cluster=master --user=joe \
+    # su - alice
+
+Make a `.kube` folder:
+
+    mkdir .kube
+
+Then, change to that folder and login:
+
+    cd ~/.kube
+    openshift ex login \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
+    --cluster=master --server=https://ose3-master.example.com:8443 \
     --namespace=wiring
-    openshift ex config use-context wiring
+
+Remember, your password was probably "redhat". 
+
+Log into the web console as `alice`. Can you see `joe`'s projects and content?
+
+Before continuing, `alice` will also need the training repository:
+
+    cd
+    git clone https://github.com/openshift/training.git
+    cd ~/training/beta2
 
 ### Stand Up the Frontend
 The first step will be to stand up the frontend of our application. For
@@ -1289,9 +1313,44 @@ Go ahead and create the configuration:
    
     osc create -f frontend-config.json
 
-Run a build for the frontend:
+### Webhooks
+Webhooks are a way to integrate external systems into your OpenShift
+environment. They can be used to fire off builds. Generally speaking, one would
+make code changes, update the code repository, and then some process would hit
+OpenShift's webhook URL in order to start a build with the new code.
 
-    osc start-build ruby-sample-build
+Visit the web console, click into the project, click on *Browse* and then on
+*Builds*. You'll see two webhook URLs. Copy the *Generic* one. It should look
+like:
+
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+If you look at the `frontend-config.json` file that you created earlier, you'll
+notice these same "secrets". These are kind of like user/password combinations
+to secure the build. More access control will be added around these webhooks,
+but, for now, this is the simple way it is achieved.
+
+This time, in order to run a build for the frontend, we'll use `curl` to hit our
+webhook URL.
+
+First, look at the list of builds:
+
+    osc get build
+
+You should see that there aren't any. Then, `curl`:
+
+    curl -i -H "Accept: application/json" \
+    -H "X-HTTP-Method-Override: PUT" -X POST -k \
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+And now `get build` again:
+
+    osc get build
+    NAME                                                   TYPE STATUS  POD
+    ruby-sample-build-9ae35312-c687-11e4-a4a6-525400b33d1d STI  Running build-ruby-sample-build-9ae35312-c687-11e4-a4a6-525400b33d1d
+
+You can see that this could have been part of some CI/CD workflow that
+automatically called our webhook once the code was tested.
 
 ### Visit Your Application
 Once the build is finished and the frontend service's endpoint has been updated,
