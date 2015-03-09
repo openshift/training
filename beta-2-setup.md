@@ -208,13 +208,6 @@ will create user accounts for two non-privileged users of OpenShift, *joe* and
 
 We will come back to these users later.
 
-### Cleanup
-One last step: Copy the `.kubeconfig` file into a place where the CLI tools look
-for it:
-
-    mkdir ~/.kube
-    cp /var/lib/openshift/openshift.local.certificates/admin/.kubeconfig ~/.kube
-
 ## Watching Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
 `/var/log/messages` any longer. You will need to use `journalctl`.

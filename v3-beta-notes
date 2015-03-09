@@ -38,6 +38,8 @@ git clone https://github.com/detiber/openshift-ansible.git -b v3-beta2
 cd ~/openshift-ansible
 mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
+useradd joe
+useradd alice
 
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat
