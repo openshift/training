@@ -129,7 +129,7 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull registry.access.redhat.com/openshift3_beta/docker-registry
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -885,6 +885,11 @@ To quickly test your Docker registry, you can do the following:
 And you should see:
 
     "docker-registry server (dev) (v0.9.0)"
+
+This may fail at first, as the service is created before the pod is
+actually available; after the pod starts (watch it with `osc get pods
+--watch` until it changes to `Running` status) the process inside can
+take on the order of a minute to start responding.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
