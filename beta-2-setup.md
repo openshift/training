@@ -877,8 +877,8 @@ Since we are using HAProxy as the router, we can cat the `routes.json` file:
 
 If you see some content that looks like:
 
-    "hello-openshift-service": {
-      "Name": "hello-openshift-service",
+    "demo/hello-openshift-service": {
+      "Name": "demo/hello-openshift-service",
       "EndpointTable": {
         "10.1.0.4:8080": {
           "ID": "10.1.0.4:8080",
@@ -894,7 +894,7 @@ If you see some content that looks like:
           "Certificates": null
         }
       }
-    },
+    }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
