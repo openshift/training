@@ -46,7 +46,6 @@ mv -f ~/training/beta2/ansible/* /etc/ansible
 ansible-playbook playbooks/byo/config.yml
 useradd joe
 useradd alice
-
 yum -y install httpd-tools
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat

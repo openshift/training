@@ -228,6 +228,85 @@ window:
 will not need the `master`-related services. These instructions will not appear
 again.**
 
+## Auth, Projects and the Web Console
+### Configuring htpasswd Authentication
+OpenShift v3 supports a number of mechanisms for authentication. The simplest
+use case for our testing purposes is `htpasswd`-based authentication.
+
+To start, we will need the `htpasswd` binary, which is made available by
+installing:
+
+    yum -y install httpd-tools
+
+From there, we can create a password for our users, Joe and Alice:
+
+    touch /etc/openshift-passwd
+    htpasswd -b /etc/openshift-passwd joe redhat
+    Adding password for user joe
+    htpasswd -b /etc/openshift-passwd alice redhat
+    Adding password for user alice
+
+Then, add the following lines to `/etc/sysconfig/openshift-master`:
+
+    cat <<EOF >> /etc/sysconfig/openshift-master
+    OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
+    OPENSHIFT_OAUTH_HANDLER=login
+    OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
+    OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
+    EOF
+
+Restart `openshift-master`:
+
+    systemctl restart openshift-master
+
+### A Project for Everything
+V3 has a concept of "projects" to contain a number of different services and
+their pods, builds and etc. They are somewhat similar to "namespaces" in
+OpenShift v2. We'll explore what this means in more details throughout the rest
+of the labs. Let's create a project for our first application. 
+
+We also need to understand a little bit about users and administration. The
+default configuration for CLI operations currently is to be the `master-admin`
+user, which is allowed to create projects. We can use the "experimental"
+OpenShift command to create a project, and assign an administrative user to it:
+
+    openshift ex new-project demo --display-name="OpenShift 3 Demo" \
+    --description="This is the first demo project with OpenShift v3" \
+    --admin=htpasswd:joe
+
+This command creates a project:
+* with the id `demo`
+* with a display name
+* with a description 
+* with an administrative user `joe` who can login with the password defined by
+    htpasswd
+
+Future use of command line statements will have to reference this project in
+order for things to land in the right place.
+
+Now that you have a project created, it's time to look at the web console, which
+has been completely redesigned for V3.
+
+### Web Console
+Open your browser and visit the following URL:
+
+    https://fqdn.of.master:8444
+
+It may take up to 90 seconds for the web console to be available after
+restarting the master (when you changed the authentication settings).
+    
+You will first need to accept the self-signed SSL certificate. You will then be
+asked for a username and a password. Remembering that we created a user
+previously, `joe`, go ahead and enter that and use the password (redhat) you set
+earlier.
+
+Once you are in, click the *OpenShift 3 Demo* project. There really isn't
+anything of interest at the moment, because we haven't put anything into our
+project. While we created the router, it's not part of this project (it is core
+infrastructure), so we do not see it here. If you had access to the *default*
+project, you would see things like the router and other core infrastructure
+components.
+
 ## Installing the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
 easy to get a complete "multi-tier" "application" deployed, reaching it from
@@ -327,85 +406,6 @@ And you will eventually see something like:
     No events.
 
 Once there is an endpoint listed, the curl should work.
-
-## Auth, Projects and the Web Console
-### Configuring htpasswd Authentication
-OpenShift v3 supports a number of mechanisms for authentication. The simplest
-use case for our testing purposes is `htpasswd`-based authentication.
-
-To start, we will need the `htpasswd` binary, which is made available by
-installing:
-
-    yum -y install httpd-tools
-
-From there, we can create a password for our users, Joe and Alice:
-
-    touch /etc/openshift-passwd
-    htpasswd -b /etc/openshift-passwd joe redhat
-    Adding password for user joe
-    htpasswd -b /etc/openshift-passwd alice redhat
-    Adding password for user alice
-
-Then, add the following lines to `/etc/sysconfig/openshift-master`:
-
-    cat <<EOF >> /etc/sysconfig/openshift-master
-    OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
-    OPENSHIFT_OAUTH_HANDLER=login
-    OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
-    OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
-    EOF
-
-Restart `openshift-master`:
-
-    systemctl restart openshift-master
-
-### A Project for Everything
-V3 has a concept of "projects" to contain a number of different services and
-their pods, builds and etc. They are somewhat similar to "namespaces" in
-OpenShift v2. We'll explore what this means in more details throughout the rest
-of the labs. Let's create a project for our first application. 
-
-We also need to understand a little bit about users and administration. The
-default configuration for CLI operations currently is to be the `master-admin`
-user, which is allowed to create projects. We can use the "experimental"
-OpenShift command to create a project, and assign an administrative user to it:
-
-    openshift ex new-project demo --display-name="OpenShift 3 Demo" \
-    --description="This is the first demo project with OpenShift v3" \
-    --admin=htpasswd:joe
-
-This command creates a project:
-* with the id `demo`
-* with a display name
-* with a description 
-* with an administrative user `joe` who can login with the password defined by
-    htpasswd
-
-Future use of command line statements will have to reference this project in
-order for things to land in the right place.
-
-Now that you have a project created, it's time to look at the web console, which
-has been completely redesigned for V3.
-
-### Web Console
-Open your browser and visit the following URL:
-
-    https://fqdn.of.master:8444
-
-It may take up to 90 seconds for the web console to be available after
-restarting the master (when you changed the authentication settings).
-    
-You will first need to accept the self-signed SSL certificate. You will then be
-asked for a username and a password. Remembering that we created a user
-previously, `joe`, go ahead and enter that and use the password (redhat) you set
-earlier.
-
-Once you are in, click the *OpenShift 3 Demo* project. There really isn't
-anything of interest at the moment, because we haven't put anything into our
-project. While we created the router, it's not part of this project (it is core
-infrastructure), so we do not see it here. If you had access to the *default*
-project, you would see things like the router and other core infrastructure
-components.
 
 ## Your First Application
 At this point you essentially have a sufficiently-functional V3 OpenShift
