@@ -1083,11 +1083,13 @@ your environment):
 
     osc build-logs sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
 
-**NOTE: there's a bug that makes this not work (forbidden)** 
-
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
 retry it.**
+
+**Note: Once the build is finished, build-logs no longer shows you the logs.
+You'll have to figure out which Docker container was used for the build and then
+use `docker logs`. This is a known issue.**
 
 ### The Web Console Revisited
 If you peeked at the web console while the build was running, you probably

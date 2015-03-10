@@ -58,19 +58,14 @@ OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
 EOF
 systemctl restart openshift-master
 
-cd ~/training
-git pull origin master
-mv -f ~/training/beta1/dnsmasq.conf /etc/
-restorecon -rv /etc/dnsmasq.conf
-sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
-systemctl start dnsmasq
-
 mkdir .kube
 cd ~/.kube
 openshift ex login \
 --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
 --cluster=master --server=https://ose3-master.example.com:8443 \
 --namespace=demo
+
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
 
 for resource in build buildconfig images imagerepository deploymentconfig \
 route replicationcontroller service pod; do echo -e "Resource: $resource"; \
