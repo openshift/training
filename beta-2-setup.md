@@ -1241,6 +1241,9 @@ handled. Then go ahead and process it and create it:
 
     osc process -f ~/training/beta2/integrated-build.json | osc create -f -
 
+**Note: You might want to wait for the mysql pod to become *Running* before
+continuing.**
+
 The build configuration, in this case, is called `ruby-sample-build`. So, let's
 go ahead and start the build and watch the logs:
 
@@ -1268,7 +1271,8 @@ components manually. Let's take our quickstart example and treat it like two
 separate "applications" that we want to wire together.
 
 ### Create a New Project
-As the `root` user, create another new project for this "wiring" example:
+As the `root` user, create another new project for this "wiring" example. This
+time we'll make it belong to `alice`:
 
     openshift ex new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
@@ -1478,6 +1482,158 @@ functional!
 Remember, wiring up apps yourself right now is a little clunky. These things
 will get much easier with future beta drops and will also be more accessible
 from the web console.
+
+## Rollback/Activate and Code Lifecycle
+Not every coder is perfect, and sometimes you want to rollback to a previous
+incarnation of your application. Sometimes you then want to go forward to a
+newer version, too.
+
+The next few labs require that you have a Github account. We will take Alice's
+"wiring" application and modify its front-end and then rebuild. We'll roll-back
+to the original version, and then go forward to our re-built version.
+
+### Fork the Repository
+Our wiring example's frontend service uses the following Github repository:
+
+    https://github.com/openshift/ruby-hello-world
+
+Go ahead and fork this into your own account by clicking the *Fork* Button at
+the upper right.
+
+### Update the BuildConfig
+Remember that a "`BuildConfig`"(uration) tells OpenShift how to do a build.
+Still as the `alice` user, take a look at the current `BuildConfig` for our
+frontend:
+
+    osc get buildconfig ruby-sample-build -o yaml
+    apiVersion: v1beta1
+    kind: BuildConfig
+    metadata:
+      creationTimestamp: 2015-03-10T15:40:26-04:00
+      labels:
+        template: application-template-stibuild
+      name: ruby-sample-build
+      namespace: wiring
+      resourceVersion: "831"
+      selfLink: /osapi/v1beta1/buildConfigs/ruby-sample-build?namespace=wiring
+      uid: 4cff2e5e-c75d-11e4-806e-525400b33d1d
+    parameters:
+      output:
+        to:
+          kind: ImageRepository
+          name: origin-ruby-sample
+      source:
+        git:
+          uri: git://github.com/openshift/ruby-hello-world.git
+        type: Git
+      strategy:
+        stiStrategy:
+          builderImage: openshift/ruby-20-centos7
+          image: openshift/ruby-20-centos7
+        type: STI
+    triggers:
+    - github:
+        secret: secret101
+      type: github
+    - generic:
+        secret: secret101
+      type: generic
+    - imageChange:
+        from:
+          name: ruby-20-centos7
+        image: openshift/ruby-20-centos7
+        imageRepositoryRef:
+          name: ruby-20-centos7
+        tag: latest
+      type: imageChange
+
+As you can see, the current configuration points at the
+`openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
+ahead and re-point our configuration. Assuming your github user is
+`alice`, you could do something like the following:
+
+    osc get buildconfig ruby-sample-build -o yaml | sed -e \
+    's/openshift\/ruby-hello-world/alice/ruby-hello-world/' | osc update \
+    buildconfig ruby-sample-build -f -
+
+If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
+that the `uri` has been updated.
+
+### Change the Code
+Github's web interface will let you make edits to files. Go to your forked
+repository (eg: https://github.com/alice/ruby-hello-world) and find the file
+`main.erb` in the `views` folder.
+
+Change the following HTML:
+
+    <div class="page-header" align=center>
+      <h1> Welcome to an OpenShift v3 Demo App! </h1>
+    </div>
+
+To read (with the typo):
+
+    <div class="page-header" align=center>
+      <h1> This is my crustom demo! </h1>
+    </div>
+
+You can edit code on Github by clicking the pencil icon which is next to the
+"History" button. Provide some nifty commit message like "Personalizing the
+application."
+
+### Kick Off Another Build
+Now that our code is changed, we can kick off another build process using the
+same webhook as before:
+
+    curl -i -H "Accept: application/json" \
+    -H "X-HTTP-Method-Override: PUT" -X POST -k \
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+As soon as you issue this curl, you can check the web interface (logged in as
+`alice`) and see that the build is running. Once it is complete, point your web
+browser at the application:
+
+    http://wiring.cloudapps.example.com/
+
+You should see your big fat typo.
+
+### Oops!
+Since we failed to properly test our application, and our ugly typo has made it
+into production, a nastygram from corporate marketing has told us that we need
+to revert to the previous version, ASAP.
+
+If you log into the web console as `alice` and find the `Deployments` section of
+the `Browse` menu, you'll see that there are two deployments of our frontend: 1
+and 2.
+
+You can also see this information from the cli by doing:
+
+    osc get replicationcontroller
+
+The semantics of this are that a `DeploymentConfig` ensures a
+`ReplicationController` is created to manage the deployment of the built `Image`
+from the `ImageRepository`.
+
+Simple, right?
+
+### Rollback
+You can rollback a deployment using the CLI. Let's go and checkout what a rollback to
+`frontend-1` would look like:
+
+    osc rollback frontend-1 --dry-run
+
+Since it looks OK, let's go ahead and do it:
+
+    osc rollback frontend-1
+
+If you look at the `Browse` tab of your project, you'll see that in the `Pods`
+section there is a `frontend-3...` pod now. After a few moments, revisit the
+application in your web browser, and you should see the old "Welcome..." text.
+
+### Activate
+Corporate marketing called again. They think the typo makes us look hip and
+cool. Let's now roll forward (activate) the typo-enabled application:
+
+    osc rollback frontend-2
 
 ## Conclusion
 This concludes the Beta 2 training. Look for more example applications to come!

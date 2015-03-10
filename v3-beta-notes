@@ -55,15 +55,33 @@ OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
 OPENSHIFT_OAUTH_HANDLER=login
 OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
 OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
+OPENSHIFT_OAUTH_ACCESS_TOKEN_MAX_AGE_SECONDS=172800
 EOF
 systemctl restart openshift-master
 
+cd
 mkdir .kube
 cd ~/.kube
 openshift ex login \
 --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
 --cluster=master --server=https://ose3-master.example.com:8443 \
 --namespace=demo
+
+cd
+git clone https://github.com/openshift/training.git
+cd ~/training/beta2
+
+cd
+mkdir .kube
+cd ~/.kube
+openshift ex login \
+--certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
+--cluster=master --server=https://ose3-master.example.com:8443 \
+--namespace=wiring
+
+cd
+git clone https://github.com/openshift/training.git
+cd ~/training/beta2
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
 
