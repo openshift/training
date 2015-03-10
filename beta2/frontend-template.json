@@ -58,7 +58,8 @@
         },
         "source": {
           "git": {
-            "uri": "git://github.com/openshift/ruby-hello-world.git"
+            "uri": "git://github.com/openshift/ruby-hello-world.git",
+            "ref": "beta2"
           },
           "type": "Git"
         },
