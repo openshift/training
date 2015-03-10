@@ -253,6 +253,7 @@ Then, add the following lines to `/etc/sysconfig/openshift-master`:
     OPENSHIFT_OAUTH_HANDLER=login
     OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
     OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
+    OPENSHIFT_OAUTH_ACCESS_TOKEN_MAX_AGE_SECONDS=172800
     EOF
 
 Restart `openshift-master`:
@@ -534,6 +535,10 @@ accessing.
 
 The reason we perform the `login` inside of the `.kube` folder is that all of
 the command line tooling eventually looks in there for `.kubeconfig`.
+
+**Note:** See the [troubleshooting guide](#appendix---troubleshooting) for details on how to fetch a new token
+once this once expires.  This training document sets the default token lifetime
+to 48 hours.
 
 ### Grab the Training Repo Again
 Since Joe and Alice can't access the training folder in root's home directory,
@@ -1612,6 +1617,29 @@ to limit some of what it returns:
     osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 # APPENDIX - Troubleshooting
+* All of a sudden authentication seems broken for non-admin users.  Whenever I run osc commands I see output such as:
+
+        F0310 14:59:59.219087   30319 get.go:164] request 
+        [&{Method:GET URL:https://ose3-master.example.com:8443/api/v1beta1/pods?namespace=demo
+        Proto:HTTP/1.1 ProtoMajor:1 ProtoMinor:1 Header:map[] Body:<nil> ContentLength:0 TransferEncoding:[] 
+        Close:false Host:ose3-master.example.com:8443 Form:map[] PostForm:map[] 
+        MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}] 
+        failed (401) 401 Unauthorized: Unauthorized
+
+    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
+
+        # The login command creates a .kubeconfig file in the CWD.
+        # But we need it to exist in ~/.kube
+        cd ~/.kube
+
+        # If a stale token exists it will prevent the beta2 login command from working
+        rm .kubeconfig
+
+        openshift ex login \
+        --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
+        --cluster=master --server=https://ose3-master.example.com:8443 \
+        --namespace=[INSERT NAMESPACE HERE]
+
 * When using an "osc" command like "osc get pods" I see a "certificate signed by
     unknown authority error":
 
