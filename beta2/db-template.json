@@ -58,7 +58,7 @@
 			"mountPath": "/var/lib/mysql",
 			"path": "/var/lib/mysql"
 		      }
-		    ],
+		    ]
                   }
                 ],
                 "version": "v1beta1"

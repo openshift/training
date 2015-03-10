@@ -223,7 +223,7 @@
                             "mountPath": "/var/lib/mysql",
                             "path": "/var/lib/mysql"
                         }
-                    ],
+                    ]
 
                   }
                 ],
