@@ -1635,6 +1635,46 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
     osc rollback frontend-2
 
+## Customized Build Process
+OpenShift v3 supports customization of the build process. Generally speaking,
+this involves modifying the various STI scripts from the builder image. When
+OpenShift builds your code, it checks to see if any of the scripts in the
+`.sti/bin` folder of your repository override/supercede the builder image's
+scripts. If so, it will execute the repository script instead.
+
+### Add a Script
+You will find a script called `custom-build.sh` in the `beta2` folder. Go to
+your Github repository for your application from the previous lab, and find the
+`.sti/bin` folder. 
+
+* Click the "+" button at the top (to the right of `bin` in the
+    breadcrumbs).
+* Name your file `assemble`.
+* Paste the contents of `custom-build.sh` into the text area.
+* Provide a nifty commit message.
+* Click the "commit" button.
+
+Once this is complete, we can now do another build. The only difference in this
+"custom" assemble script is that it logs some extra output. We will see that
+shortly.
+
+### Kick Off a Build
+Our old friend `curl` is back:
+
+    curl -i -H "Accept: application/json" \
+    -H "X-HTTP-Method-Override: PUT" -X POST -k \
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+### Watch the Build Logs
+Using the skills you have learned, watch the build logs for this build. If you
+miss them, remember that you can find the Docker container that ran the build
+and look at its Docker logs.
+
+### Did You See It?
+
+    2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
+    ---> CUSTOM STI ASSEMBLE COMPLETE
+
 ## Conclusion
 This concludes the Beta 2 training. Look for more example applications to come!
 
