@@ -92,7 +92,7 @@ Once you have prepared your VMs, you can do the following on **each** VM:
 
 1. Install missing packages:
 
-        yum install wget vim-enhanced net-tools bind-utils tmux git
+        yum -y install wget vim-enhanced net-tools bind-utils tmux git
 
 1. Update:
 
