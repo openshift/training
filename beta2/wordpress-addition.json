@@ -14,7 +14,7 @@
           },
       "id": "wordpress-route",
       "host": "wordpress.cloudapps.example.com",
-      "serviceName": "wordpress"
+      "serviceName": "wordpress-httpd-service"
     },
     {
       "id": "wordpress-httpd-service",
