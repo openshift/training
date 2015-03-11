@@ -1,6 +1,6 @@
 {
   "metadata":{
-    "name": "ruby-helloworld-sample",
+    "name": "ruby-helloworld-sample"
   },
   "kind": "Template",
   "apiVersion": "v1beta1",
@@ -43,21 +43,21 @@
     },
     {
       "metadata":{
-        "name": "origin-ruby-sample",
+        "name": "origin-ruby-sample"
       },
       "kind": "ImageRepository",
-      "apiVersion": "v1beta1",
+      "apiVersion": "v1beta1"
     },
     {
       "metadata":{
-        "name": "ruby-20-centos",
+        "name": "ruby-20-centos"
       },
       "kind": "ImageRepository",
-      "apiVersion": "v1beta1",
+      "apiVersion": "v1beta1"
     },
     {
       "metadata":{
-        "name": "ruby-sample-build",
+        "name": "ruby-sample-build"
       },
       "kind": "BuildConfig",
       "apiVersion": "v1beta1",
@@ -101,7 +101,7 @@
           "to": {
             "name": "origin-ruby-sample"
           }
-        },
+        }
       },
       "labels": {
         "name": "ruby-sample-build"
@@ -109,7 +109,7 @@
     },
     {
       "metadata":{
-        "name": "frontend",
+        "name": "frontend"
       },
       "kind": "DeploymentConfig",
       "apiVersion": "v1beta1",
@@ -191,7 +191,7 @@
     },
     {
       "metadata":{
-        "name": "database",
+        "name": "database"
       },
       "kind": "DeploymentConfig",
       "apiVersion": "v1beta1",

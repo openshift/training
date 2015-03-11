@@ -25,7 +25,7 @@
             }]
           }]
         }
-      },
+      }
     },
     {
       "id": "hello-openshift-service",
@@ -44,7 +44,7 @@
       },
       "id": "hello-openshift-route",
       "host": "hello-openshift.cloudapps.example.com",
-      "serviceName": "hello-openshift-service",
+      "serviceName": "hello-openshift-service"
     }
   ]
 }
