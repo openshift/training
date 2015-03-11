@@ -14,8 +14,8 @@
         "capacity": {
           "cpu": 1,
           "memory": 80% of freemem (bytes)
-        },
-      },
+        }
+      }
     },
     {
       "id": "ose3-node2.example.com",
@@ -25,8 +25,8 @@
         "capacity": {
           "cpu": 1,
           "memory": 80% of freemem (bytes)
-        },
-      },
+        }
+      }
     }
   ]
 }
