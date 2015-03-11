@@ -63,7 +63,7 @@ in the labs.
 
 ### Preparing Each VM
 
-Each of the virtual machines should have 4+ GB of memory, 10+ GB of disk space,
+Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
 and the following configuration:
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
@@ -1674,6 +1674,67 @@ and look at its Docker logs.
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM STI ASSEMBLE COMPLETE
+
+## Arbitrary Docker Image (Builder)
+One of the first things we did with OpenShift was launch an "arbitrary" Docker
+image from the Docker Hub. However, we can also build Docker images from Docker
+files, too. While this is a "build" process, it's not a "source-to-image"
+process -- we're not working with only a source code repo.
+
+As an example, the CentOS community maintains a Wordpress all-in-one Docker
+image:
+
+    https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
+
+We've taken the content of this subfolder and placed it in the `beta2/wordpress`
+folder in the `training` repository. Let's run `ex generate` and see what
+happens:
+
+    cd ~/training/beta2/wordpress
+    openshift ex generate --name=wordpress | python -m json.tool
+
+This all looks good for now.
+
+### That Project Thing
+As `root`, create a new project for Wordpress for `alice`:
+
+    openshift ex new-project wordpress --display-name="Wordpress" \
+    --description='Building an arbitrary Wordpress Docker image' \
+    --admin=htpasswd:alice
+
+As `alice`:
+
+    cd ~/.kube
+    openshift ex config set-context wordpress --cluster=ose3-master.example.com:8443 \
+    --namespace=wordpress --user=alice
+    openshift ex config use-context wordpress
+
+### Build Wordpress
+Let's choose the Wordpress example:
+
+    openshift ex generate --name=wordpress | osc create -f -
+
+Then, start the build:
+
+    osc start-build wordpress
+
+You will need a route for this application, as `curl` won't do a whole lot for
+us here. Additionally, `ex generate` currently has a bug in the way services are
+provided, so we'll have a service for SSH but not one for httpd.
+
+    osc create -f wordpress-addition.json
+
+### Test Your Application
+You should be able to visit:
+
+    http://wordpress.cloudapps.example.com
+
+Check it out!
+
+Remember - not only did we use an arbitrary Docker image, we actually built the
+Docker image using OpenShift. Technically there was no "code repository". So, if
+you allow it, developers can actually simply build Docker containers as their
+"apps" and run them directly on OpenShift.
 
 ## Conclusion
 This concludes the Beta 2 training. Look for more example applications to come!
