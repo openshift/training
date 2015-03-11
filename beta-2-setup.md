@@ -342,9 +342,9 @@ From there, we can create a password for our users, Joe and Alice:
 
     touch /etc/openshift-passwd
     htpasswd -b /etc/openshift-passwd joe redhat
-    Adding password for user joe
+    # Adding password for user joe
     htpasswd -b /etc/openshift-passwd alice redhat
-    Adding password for user alice
+    # Adding password for user alice
 
 Then, add the following lines to `/etc/sysconfig/openshift-master`:
 
