@@ -162,7 +162,6 @@ On your master, it makes sense to clone the training git repository:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training/beta2
 
 ### REMINDER
 Almost all of the files for this training are in the training folder you just
@@ -218,7 +217,7 @@ Github. Clone the repository:
 ### Configure Ansible
 Move the staged Ansible configuration files to `/etc/ansible`:
 
-    "cp" -r ~/training/beta2/ansible/* /etc/ansible/
+    cp -r ~/training/beta2/ansible/* /etc/ansible/
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
@@ -274,9 +273,7 @@ From there, we can create a password for our users, Joe and Alice:
 
     touch /etc/openshift-passwd
     htpasswd -b /etc/openshift-passwd joe redhat
-    Adding password for user joe
     htpasswd -b /etc/openshift-passwd alice redhat
-    Adding password for user alice
 
 Then, add the following lines to `/etc/sysconfig/openshift-master`:
 
@@ -365,11 +362,13 @@ So, go ahead and do what it says:
 
 Just about every form of communication with OpenShift components is secured by
 SSL and uses various certificates and authentication methods. Even though we set
-up our `.kubeconfig`, unfortunately, ex router does not seem to look in the
-default location for it. We also need to specify the router image, since
-currently the experimental tooling points to upstream/origin:
+up our `.kubeconfig` for the root user, `ex router` is asking us what
+credentials the *router* should use to communicate. We also need to specify the
+router image, since currently the experimental tooling points to
+upstream/origin:
 
-    openshift ex router --create --credentials=/root/.kube/.kubeconfig \
+    openshift ex router --create \
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -400,7 +399,8 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
+    openshift ex registry --create \
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
@@ -486,7 +486,7 @@ eventually**
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal:
+to it. Still in a `root` terminal in the `training/beta2` folder:
 
     osc create -f demo-quota.json --namespace=demo
 
@@ -1033,14 +1033,15 @@ For this example, we will be using the following application's source code:
 
     https://github.com/openshift/simple-openshift-sinatra-sti
 
-Let's clone the repository and then generate a config for OpenShift to create:
+Let's generate a config for OpenShift to create:
 
     cd
     openshift ex generate --name=sin --ref=beta2 \
     https://github.com/openshift/simple-openshift-sinatra-sti.git \
     | python -m json.tool > ~/simple-sinatra.json
 
-** note: bug in length of build name **
+**Note: There is currently a bug in the valid length of build name, so we
+forcibly set a name using the --name flag **
 
 `ex generate` is a tool that will examine a directory tree, a remote repo, or
 other sources and attempt to generate an appropriate JSON configuration so that,
@@ -1252,7 +1253,7 @@ For example, take a look at the following JSON:
 This portion of the template's JSON tells OpenShift to generate an expression
 using a regex-like string that will be presnted as ADMIN_USERNAME.
 
-Go ahead and do the following:
+Go ahead and do the following as `joe`:
 
     osc process -f ~/training/beta2/integrated-build.json \
     | python -m json.tool
@@ -1585,7 +1586,8 @@ ahead and re-point our configuration. Assuming your github user is
 `alice`, you could do something like the following:
 
     osc get buildconfig ruby-sample-build -o yaml | sed -e \
-    's/openshift\/ruby-hello-world/alice/ruby-hello-world/' | osc update \
+    's/openshift\/ruby-hello-world/alice\/ruby-hello-world/' \
+    -e '/ref: beta2/d' | osc update \
     buildconfig ruby-sample-build -f -
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
@@ -1627,6 +1629,10 @@ browser at the application:
     http://wiring.cloudapps.example.com/
 
 You should see your big fat typo.
+
+**Note: Remember that it can take a minute for your service endpoint to get
+updated. You might get a `503` error if you try to access the application before
+this happens.**
 
 ### Oops!
 Since we failed to properly test our application, and our ugly typo has made it
@@ -1722,8 +1728,8 @@ We've taken the content of this subfolder and placed it in the `beta2/wordpress`
 folder in the `training` repository. Let's run `ex generate` and see what
 happens:
 
-    cd ~/training/beta2/wordpress
-    openshift ex generate --name=wordpress | python -m json.tool
+    openshift ex generate --name=wordpress \
+    https://github.com/openshift/centos7-wordpress.git | python -m json.tool
 
 This all looks good for now.
 
@@ -1744,7 +1750,8 @@ As `alice`:
 ### Build Wordpress
 Let's choose the Wordpress example:
 
-    openshift ex generate --name=wordpress | osc create -f -
+    openshift ex generate --name=wordpress \
+    https://github.com/openshift/centos7-wordpress.git | osc create -f -
 
 Then, start the build:
 
