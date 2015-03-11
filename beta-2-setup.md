@@ -6,15 +6,47 @@
 * [Setting Up the Environment](#setting-up-the-environment)
 * [Ansible-based Installer](#ansible-based-installer)
 * [Watching Logs](#watching-logs)
+* [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
+ * [Configuring htpasswd Authentication](#auth-projects-and-the-web-console)
+ * [A Project for Everything](#a-project-for-everything)
+ * [Web Console](#web-console)
 * [Installing the Router](#installing-the-router)
 * [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
-* [Projects and the Web Console](#projects-and-the-web-console)
 * [Your First Application](#your-first-application)
+ * ["Resources"](#resources)
+ * [Applying Quota to Projects](#applying-quota-to-projects)
+ * [Login](#login)
+ * [The Hello World Definition JSON](#the-hello-world-definition-json)
+ * [Run the Pod](#run-the-pod)
+ * [Delete the Pod](#delete-the-pod)
 * [Adding Nodes](#adding-nodes)
 * [Services](#services)
 * [Routing](#routing)
 * [The Complete Pod-Service-Route](#the-complete-pod-service-route)
+ * [Creating the Definition](#creating-the-definition)
+ * [Verifying the Service](#verifying-the-service)
+ * [Verifying the Routing](#verifying-the-routing)
 * [STI - What Is It?](#sti---what-is-it)
+ * [Create a New Project](#create-a-new-project)
+ * [Switch contexts](#switch-contexts)
+ * [A Simple STI Build](#a-simple-sti-build)
+ * [Create the Build Process](#create-the-build-process)
+ * [Adding a Route to Our Application](#adding-a-route-to-our-application)
+* [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
+ * [A Project for the Quickstart](#a-project-for-the-quickstart)
+ * [A Quick Aside on Templates](#a-quick-aside-on-templates)
+ * [Creating the Integrated Application](#creating-the-integrated-application)
+* [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
+ * [Stand Up the Frontend](#stand-up-the-frontend)
+ * [Webhooks](#webhooks)
+ * [Create the Database Config](#create-the-database-config)
+ * [Replication Controllers](#replication-controllers)
+* [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
+ * [Update the BuildConfig](#update-the-buildconfig)
+ * [Change the Code](#change-the-code)
+ * [Kick Off Another Build](#kick-off-another-build)
+ * [Rollback](#rollback)
+* [Customized Build Process](#customized-build-process)
 
 **Appendices:**
 
@@ -228,7 +260,7 @@ window:
 will not need the `master`-related services. These instructions will not appear
 again.**
 
-## Auth, Projects and the Web Console
+## Auth, Projects, and the Web Console
 ### Configuring htpasswd Authentication
 OpenShift v3 supports a number of mechanisms for authentication. The simplest
 use case for our testing purposes is `htpasswd`-based authentication.
@@ -1501,7 +1533,7 @@ Go ahead and fork this into your own account by clicking the *Fork* Button at
 the upper right.
 
 ### Update the BuildConfig
-Remember that a "`BuildConfig`"(uration) tells OpenShift how to do a build.
+Remember that a `BuildConfig`(uration) tells OpenShift how to do a build.
 Still as the `alice` user, take a look at the current `BuildConfig` for our
 frontend:
 
