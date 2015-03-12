@@ -1,5 +1,4 @@
 # OpenShift Beta 2 Setup Information
-# WIP - NOT COMPLETE
 
 **Table of contents:**
 
