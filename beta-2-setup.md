@@ -109,6 +109,9 @@ and the following configuration:
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
+* Import the GPG key for beta:
+
+        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
 
 Once you have prepared your VMs, you can do the following on **each** VM:
 
@@ -746,11 +749,14 @@ routes resource on the OpenShift master.
 Here is an example route JSON definition:
 
     {
-      "id": "hello-route",
       "kind": "Route",
       "apiVersion": "v1beta1",
+      "metadata": {
+        "name": "hello-openshift-route"
+      },
+      "id": "hello-openshift-route",
       "host": "hello-openshift.cloudapps.example.com",
-      "serviceName": "hello-openshift"
+      "serviceName": "hello-openshift-service"
     }
 
 When the `osc` command is used to create this route, a new instance of a route
@@ -1754,6 +1760,8 @@ Let's choose the Wordpress example:
 Then, start the build:
 
     osc start-build wordpress
+
+**Note: This can take a *really* long time to build.**
 
 You will need a route for this application, as `curl` won't do a whole lot for
 us here. Additionally, `ex generate` currently has a bug in the way services are
