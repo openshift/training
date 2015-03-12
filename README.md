@@ -7,11 +7,12 @@ that release covers.
 The following is an overview of the OpenShift features covered in beta 2:
 - Features of Beta 1
 - User authentication
-- Project quotas
-- Container remote access
-- HA routing
+- Project quotas (display)
 - Rollback / Activate
 - Complex / Tiered app deployment
+- Arbitrary docker image deployment
+- "integration" / webhooks
+- Ansible-based installer (non-interactive)
 
 [The specific documentation for beta 2 is here.](beta-2-setup.md)
 
