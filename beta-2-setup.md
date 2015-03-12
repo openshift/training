@@ -100,7 +100,6 @@ and the following configuration:
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
 * NetworkManager **disabled**
-* SELinux in **permissive** mode
 * Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
 * Then configure yum as follows:
 
