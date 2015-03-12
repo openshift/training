@@ -45,7 +45,12 @@
  * [Change the Code](#change-the-code)
  * [Kick Off Another Build](#kick-off-another-build)
  * [Rollback](#rollback)
+ * [Activate](#activate)
 * [Customized Build Process](#customized-build-process)
+* [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
+ * [That Project Thing](#that-project-thing)
+ * [Build Wordpress](#build-wordpress)
+ * [Test Your Application](#test-your-application)
 
 **Appendices:**
 
