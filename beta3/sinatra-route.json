@@ -1,0 +1,11 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta1",
+      "metadata": {
+        "name": "sinatra-route"
+      },
+  "id": "sinatra-route",
+  "host": "hello-sinatra.cloudapps.example.com",
+  "serviceName": "sin"
+}
+

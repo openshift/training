@@ -1018,7 +1018,7 @@ For this example, we will be using the following application's source code:
 Let's generate a config for OpenShift to create:
 
     cd
-    openshift ex generate --name=sin --ref=beta2 \
+    openshift ex generate --name=sin --ref=beta3 \
     https://github.com/openshift/simple-openshift-sinatra-sti.git \
     | python -m json.tool > ~/simple-sinatra.json
 
