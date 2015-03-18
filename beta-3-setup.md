@@ -994,51 +994,16 @@ up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
 We can also apply the same quota we used before to this new project:
 
-    osc create -n sinatra -f demo-quota.json
+    osc create -n sinatra -f quota.json
 
-### Switch contexts
-As the `joe` user, let's create a new context for interacting with the new
-project you just created:
+### Switch Projects
+As the `joe` user, let's switch to the `sinatra` project:
 
-    cd ~/.kube
-    openshift ex config set-context sinatra --cluster=ose3-master.example.com:8443 \
-    --namespace=sinatra --user=joe
-    openshift ex config use-context sinatra
+    osc project sinatra
 
-**Note:**
-If you ever get confused about what context you're using, or what contexts are
-defined, you can look at `~/.kube/.kubeconfig`:
-
-    cat ~/.kube/.kubeconfig 
-    apiVersion: v1
-    clusters:
-    - cluster:
-        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/root.crt
-        server: https://ose3-master.example.com:8443
-      name: ose3-master.example.com:8443
-    contexts:
-    - context:
-        cluster: ose3-master.example.com:8443
-        namespace: demo
-        user: joe
-      name: ose3-master.example.com:8443-joe
-    - context:
-        cluster: ose3-master.example.com:8443
-        namespace: sinatra
-        user: joe
-      name: sinatra
-    current-context: sinatra
-    kind: Config
-    preferences: {}
-    users:
-    - name: joe
-      user:
-        token: MDU5ZWFjMGUtYWZmOS00MzY4LWE3N2MtNzFiNTYyOWJkZjY4
-
-Or, to quickly get your current context:
-
-    grep current ~/.kube/.kubeconfig
-    current-context: sinatra
+You should see:
+   
+    Now using project 'sinatra'.
 
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
