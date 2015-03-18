@@ -7,13 +7,61 @@ https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-
 Docker images:
 docker images | grep buildvm | awk {'print $3'} | xargs docker rmi -f
 docker images | grep ago | awk {'print $3'} | xargs docker rmi -f
-docker images | grep 0.3.4 | awk {'print $3'} | xargs docker rmi -f
+docker images | grep 0.4.1 | awk {'print $3'} | xargs docker rmi -f
 
 for resource in build buildconfig images imagerepository deploymentconfig \
 route replicationcontroller service pod; do echo -e "Resource: $resource"; \
 osc get $resource; echo -e "\n\n"; done
 
 osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
+
+#beta3
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.1 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.1 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.1
+
+cd
+git clone https://github.com/openshift/training.git -b beta3
+cd ~/training/beta2
+/bin/cp ~/training/beta1/dnsmasq.conf /etc/
+restorecon -rv /etc/dnsmasq.conf
+sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
+systemctl start dnsmasq
+cd
+rm -rf openshift-ansible
+git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
+cd ~/openshift-ansible
+/bin/cp -r ~/training/beta2/ansible/* /etc/ansible/
+ansible-playbook playbooks/byo/config.yml
+useradd joe
+useradd alice
+yum -y install httpd-tools
+touch /etc/openshift-passwd
+htpasswd -b /etc/openshift-passwd joe redhat
+htpasswd -b /etc/openshift-passwd alice redhat
+cat <<EOF >> /etc/sysconfig/openshift-master
+OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
+OPENSHIFT_OAUTH_HANDLER=login
+OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
+OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
+OPENSHIFT_OAUTH_ACCESS_TOKEN_MAX_AGE_SECONDS=172800
+EOF
+systemctl restart openshift-master
+openshift ex router --create --credentials=/root/.kube/.kubeconfig \
+--images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
+--images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 # beta2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4
