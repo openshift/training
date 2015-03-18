@@ -496,18 +496,19 @@ eventually**
 At this point we have created our "demo" project, so let's apply the quota above
 to it. Still in a `root` terminal in the `training/beta3` folder:
 
-    osc create -f demo-quota.json --namespace=demo
+    osc create -f quota.json --namespace=demo
 
 If you want to see that it was created:
 
     osc get -n demo quota
     NAME
-    demo-quota
+    test-quota
 
 And if you want to verify limits or examine usage:
+**note: currently hangs**
 
-    osc describe -n demo quota demo-quota
-    Name:                   demo-quota
+    osc describe -n demo quota test-quota
+    Name:                   test-quota
     Resource                Used    Hard
     --------                ----    ----
     cpu                     0m      3
@@ -523,31 +524,31 @@ is displayed.
 
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
-him, now we will login from the command line to set up our tooling.
+him, we can log into a terminal as *joe* and then set up the command line
+tooling.
 
 Open a terminal as `joe`:
 
     # su - joe
 
-Make a `.kube` folder:
+Then, execute:
 
-    mkdir .kube
+    osc login -n demo \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --server=https://ose3-master.example.com:8443
 
-Then, change to that folder and login:
+OpenShift, by default, is using a self-signed SSL certificate, so we must point
+our tool at the CA file. 
 
-    cd ~/.kube
-    openshift ex login \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
-    --cluster=master --server=https://ose3-master.example.com:8443 \
-    --namespace=demo 
+This created a file called `.config` in the `~/.config/openshift` folder. Take a
+look at it, and you'll see something like the following:
 
-This created a file called `.kubeconfig`. Take a look at it:
-
-    cat .kubeconfig 
+    cat ~/.config/openshift/.config 
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/root.crt
+        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+        certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM1akNDQWRDZ0F3SUJBZ0lCQVRBTEJna3Foa2lHOXcwQkFRc3dKakVrTUNJR0ExVUVBd3diYjNCbGJuTm8KYVdaMExYTnBaMjVsY2tBeE5ESTJOamc1TXpNek1CNFhEVEUxTURNeE9ERTBNelV6TWxvWERURTJNRE14TnpFMApNelV6TTFvd0pqRWtNQ0lHQTFVRUF3d2JiM0JsYm5Ob2FXWjBMWE5wWjI1bGNrQXhOREkyTmpnNU16TXpNSUlCCklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFyZCtZQnlXSkRRdzN6ZklMOXF2UHg3bzcKd1oxQmhMamJPTWhnQ29WQUhjNEMzUjE0b2dxZ2RjZDFwc1JEamxFa1orYU1TemlyaXg0RVRKNHE3TW9uOHQ2TgpsaElWMlJmaXo0SEQ1Mm5wOThhaU5qeDY1ZnpPNGE4aHJTMDZOQmg1dWREdTJnalp3d0dyeFVNdW5jbzExRS9VCmFGNitheVhvaitOS01kak5leHpmM0hNR2Vld2tzd3o0Z3kxd29RdDFKMWplS21JVHVXaHA2a1BRUitqTy9CbEIKN2duRG1HL0pVWi8zUkJlNmxqRHRBblBXSGROMlYxcUVHbENEdkF6dVRYVVJTU1VjMS9udEdUbyt1TzhFQ1pURgp5N3FHbVU4QkVqYTM4VklVYTltLzlNcHVQdlptV05Ed1N1YWtKOGlsRHQ4Y0NHczcrMUU0MDR3anhZS1pVUUlECkFRQUJveU13SVRBT0JnTlZIUThCQWY4RUJBTUNBS1F3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFMQmdrcWhraUcKOXcwQkFRc0RnZ0VCQUFIOGhNNUMzVjkwUVNyK1A4a3lpTDl0UHNJNUVsZlQxV1BsbTVVRHVnKzVaVkpSVk95WgpvektaSDBSWmR3TVdtSkhtVEJuRXd3V3pGVzVkc0NUQWJyZzBIWEVLcUxyNkxZZFhtMER1bVp1QkxxWGZQSHlBClBJcENleERvQW1Ub0ZDdG0ySkwxcU84YVI2TXBBdkQ3d0FsdTZDdlRIMWtYSGhUQ1hPQVMyVUFQY0drNUhzejMKOFpFTTUwSktpMForcnJTcy9GK2prU1BEU083K2JFZ3lnR3BUckVTbmdmZVBVS3E3K3JGS2VIRHRmVXUrKzNsOQpQeFhvUlRIanNSSDV2NkRIWTNNUFVjYndSQWJRNWEyWkYyRkZ1QTBKdC9DWW1Yc0NCejFCOGh6RnFvQkxZWkNrCmRQREtGVC9IVmRyTmlxNExLL0ltbmRJVXVUVkoraU5nZitJPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
         server: https://ose3-master.example.com:8443
       name: ose3-master.example.com:8443
     contexts:
@@ -562,19 +563,24 @@ This created a file called `.kubeconfig`. Take a look at it:
     users:
     - name: joe
       user:
-        token: MDU5ZWFjMGUtYWZmOS00MzY4LWE3N2MtNzFiNTYyOWJkZjY4
+        token: ZDE3ODY2MWQtYThlYi00NjlhLThiNDEtYmE3OGIzY2Y4YmNk
 
 This configuration file has an authorization token, some information about where
-our server lives, our project, and etc. If we now do something like:
+our server lives, our project, and etc. 
+
+**Bug:**
+There is currently a bug in the `login` tool, so we must remove the
+`certificate-authority-data` line or we will get an error:
+
+    sed -i -e '/certificate-authority-data:/d' ~/.config/openshift/.config
+
+If we now do something like:
 
     osc get pod
 
 We should get a response, but not see anything. That's because the core
 infrastructure, again, lives in the *default* project, which we're not
 accessing.
-
-The reason we perform the `login` inside of the `.kube` folder is that all of
-the command line tooling eventually looks in there for `.kubeconfig`.
 
 **Note:** See the [troubleshooting guide](#appendix---troubleshooting) for details on how to fetch a new token
 once this once expires.  This training document sets the default token lifetime
