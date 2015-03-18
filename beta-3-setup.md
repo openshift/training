@@ -464,7 +464,7 @@ covers. Resources can have quotas enforced against them, so let's take a moment
 to look at some example JSON for project resource quota might look like:
 
     {
-      "id": "demo-quota",
+      "id": "test-quota",
       "kind": "ResourceQuota",
       "apiVersion": "v1beta1",
       "spec": {
