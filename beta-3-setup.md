@@ -99,8 +99,9 @@ in the labs.
 
 ### Preparing Each VM
 
-Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
-and the following configuration:
+You will need 3 virtual machines to follow this beta documentation exactly. Each
+of the virtual machines should have 4+ GB of memory, 20+ GB of disk space, and
+the following configuration:
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
@@ -662,6 +663,9 @@ To verify that the app is working, you can issue a curl to the app's port:
 
 Hooray!
 
+### Quota Enforcement
+NEEDS WRITING
+
 ### Looking at the Pod in the Web Console
 Go to the web console and go to the *Overview* tab for the *OpenShift 3 Demo*
 project. You'll see some interesting things:
@@ -1107,10 +1111,6 @@ your environment):
 deployed yet, build-logs will give you an error. Just wait a few moments and
 retry it.**
 
-**Note: Once the build is finished, build-logs no longer shows you the logs.
-You'll have to figure out which Docker container was used for the build and then
-use `docker logs`. This is a known issue.**
-
 ### The Web Console Revisited
 If you peeked at the web console while the build was running, you probably
 noticed a lot of new information in the web console - the build status, the
@@ -1202,15 +1202,7 @@ As the `root` user, first we'll create a new project:
 
 As the `joe` user, we'll set our context to use the corresponding namespace:
 
-    cd ~/.kube
-    openshift ex config set-context int --cluster=ose3-master.example.com:8443 \
-    --namespace=integrated --user=joe
-    openshift ex config use-context int
-
-**Note:** You could also have specified `--kubeconfig=~/.kube/.kubeconfig` with
-`set-context`.
-
-**Note:** You can also `export KUBECONFIG=~/.kube/.kubeconfig`.
+    osc project integrated
 
 ### A Quick Aside on Templates
 From the [OpenShift
@@ -1235,27 +1227,36 @@ For example, take a look at the following JSON:
 This portion of the template's JSON tells OpenShift to generate an expression
 using a regex-like string that will be presnted as ADMIN_USERNAME.
 
+### Adding the Template
 Go ahead and do the following as `joe`:
 
-    osc process -f ~/training/beta3/integrated-build.json \
-    | python -m json.tool
+    osc create -f integrated-project.json
 
-Take a moment to examine the JSON that is generated and see how the different
-parameters are placed into the actual processable config. If you look closely,
-you'll see that some of these items are passed into the "env" of the container
--- they're passed in as environment variables inside the Docker container.
+What did you just do? The `integrated-project.json` file defined a template. By
+"creating" it, you have added it to your project for use in the web console.
+Let's take a look at how that works.
 
-If the application or container is built correctly, it's various processes will
-use these environment variables. In this example, the front-end will use the
-information about where the back-end is, as well as user and password
-information that was generated.
+### Create an Instance of the Template
+In the web console, find the "Frontend/Backend" project, and then hit the
+"Create +" button. You will be taken to a page that lists the current templates
+that are available for use.
 
-### Creating the Integrated Application
-Examine `integrated-build.json` to see how parameters and other things are
-handled. Then go ahead and process it and create it:
+Click "ruby-helloworld-sample", and you'll see a modal pop-up that provides more
+information about the template.
 
-    osc process -f ~/training/beta3/integrated-build.json | osc create -f -
+Click "Select template..."
 
+The next page that you will see is the template "configuration" page. This is
+where you can specify certain options for how the application components will be
+insantiated.
+
+* It will show you what Docker images are used
+* It will let you add label:value pairs that can be used for other things
+* It will let you set specific values for any parameters, if you so choose
+
+Leave all of the defaults and simply click "Create".
+
+### Run the Build
 **Note: You might want to wait for the mysql pod to become *Running* before
 continuing.**
 
