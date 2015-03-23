@@ -43,7 +43,7 @@ cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b reworkNodeRegistration
 cd ~/openshift-ansible
-/bin/cp -r ~/training/beta2/ansible/* /etc/ansible/
+/bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
 useradd joe
 useradd alice
