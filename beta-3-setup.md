@@ -549,7 +549,6 @@ look at it, and you'll see something like the following:
     clusters:
     - cluster:
         certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
-        certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM1akNDQWRDZ0F3SUJBZ0lCQVRBTEJna3Foa2lHOXcwQkFRc3dKakVrTUNJR0ExVUVBd3diYjNCbGJuTm8KYVdaMExYTnBaMjVsY2tBeE5ESTJOamc1TXpNek1CNFhEVEUxTURNeE9ERTBNelV6TWxvWERURTJNRE14TnpFMApNelV6TTFvd0pqRWtNQ0lHQTFVRUF3d2JiM0JsYm5Ob2FXWjBMWE5wWjI1bGNrQXhOREkyTmpnNU16TXpNSUlCCklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFyZCtZQnlXSkRRdzN6ZklMOXF2UHg3bzcKd1oxQmhMamJPTWhnQ29WQUhjNEMzUjE0b2dxZ2RjZDFwc1JEamxFa1orYU1TemlyaXg0RVRKNHE3TW9uOHQ2TgpsaElWMlJmaXo0SEQ1Mm5wOThhaU5qeDY1ZnpPNGE4aHJTMDZOQmg1dWREdTJnalp3d0dyeFVNdW5jbzExRS9VCmFGNitheVhvaitOS01kak5leHpmM0hNR2Vld2tzd3o0Z3kxd29RdDFKMWplS21JVHVXaHA2a1BRUitqTy9CbEIKN2duRG1HL0pVWi8zUkJlNmxqRHRBblBXSGROMlYxcUVHbENEdkF6dVRYVVJTU1VjMS9udEdUbyt1TzhFQ1pURgp5N3FHbVU4QkVqYTM4VklVYTltLzlNcHVQdlptV05Ed1N1YWtKOGlsRHQ4Y0NHczcrMUU0MDR3anhZS1pVUUlECkFRQUJveU13SVRBT0JnTlZIUThCQWY4RUJBTUNBS1F3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFMQmdrcWhraUcKOXcwQkFRc0RnZ0VCQUFIOGhNNUMzVjkwUVNyK1A4a3lpTDl0UHNJNUVsZlQxV1BsbTVVRHVnKzVaVkpSVk95WgpvektaSDBSWmR3TVdtSkhtVEJuRXd3V3pGVzVkc0NUQWJyZzBIWEVLcUxyNkxZZFhtMER1bVp1QkxxWGZQSHlBClBJcENleERvQW1Ub0ZDdG0ySkwxcU84YVI2TXBBdkQ3d0FsdTZDdlRIMWtYSGhUQ1hPQVMyVUFQY0drNUhzejMKOFpFTTUwSktpMForcnJTcy9GK2prU1BEU083K2JFZ3lnR3BUckVTbmdmZVBVS3E3K3JGS2VIRHRmVXUrKzNsOQpQeFhvUlRIanNSSDV2NkRIWTNNUFVjYndSQWJRNWEyWkYyRkZ1QTBKdC9DWW1Yc0NCejFCOGh6RnFvQkxZWkNrCmRQREtGVC9IVmRyTmlxNExLL0ltbmRJVXVUVkoraU5nZitJPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
         server: https://ose3-master.example.com:8443
       name: ose3-master.example.com:8443
     contexts:
@@ -564,16 +563,10 @@ look at it, and you'll see something like the following:
     users:
     - name: joe
       user:
-        token: ZDE3ODY2MWQtYThlYi00NjlhLThiNDEtYmE3OGIzY2Y4YmNk
+        token: ZmUxZDFiYmUtOGI0Mi00OTBlLWJlZjUtZTdjNDhjZDU5ODJk
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, and etc. 
-
-**Bug:**
-There is currently a bug in the `login` tool, so we must remove the
-`certificate-authority-data` line or we will get an error:
-
-    sed -i -e '/certificate-authority-data:/d' ~/.config/openshift/.config
 
 If we now do something like:
 
@@ -583,9 +576,9 @@ We should get a response, but not see anything. That's because the core
 infrastructure, again, lives in the *default* project, which we're not
 accessing.
 
-**Note:** See the [troubleshooting guide](#appendix---troubleshooting) for details on how to fetch a new token
-once this once expires.  This training document sets the default token lifetime
-to 48 hours.
+**Note:** See the [troubleshooting guide](#appendix---troubleshooting) for
+details on how to fetch a new token once this once expires.  The installer sets
+the default token lifetime to 48 hours.
 
 ### Grab the Training Repo Again
 Since Joe and Alice can't access the training folder in root's home directory,
