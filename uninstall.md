@@ -20,6 +20,8 @@ rm /etc/sysconfig/*openshift*
 # it's best to start from a clean slate.
 docker rm -f $(docker ps -a -q)
 docker rmi -f $(docker images -q)
+yum erase "docker"
+rm /etc/sysconfig/docker*
 
 # Make sure you're running the latest RHEL 7.1 release
 yum update
