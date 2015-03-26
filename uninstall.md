@@ -19,7 +19,7 @@ rm /etc/sysconfig/*openshift*
 # Remove all docker processes and images.  This is not strictly required but
 # it's best to start from a clean slate.
 docker rm -f $(docker ps -a -q)
-docker rmi $(docker images -q)
+docker rmi -f $(docker images -q)
 
 # Make sure you're running the latest RHEL 7.1 release
 yum update
