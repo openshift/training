@@ -684,11 +684,21 @@ This is really powerful. We will explore using "arbitrary" docker images later.
 
 ### Quota Enforcement
 Since we know we can run a pod directly, we'll go through a simple quota
-enforcement exercise. The following JSON will attempt to create four instances
-of the "hello-openshift" pod. It will fail when it tries to create the fourth,
-because the quota on this project limits us to three total pods.
+enforcement exercise. The `hello-quota` JSON will attempt to create four
+instances of the "hello-openshift" pod. It will fail when it tries to create the
+fourth, because the quota on this project limits us to three total pods.
 
+Go ahead and use `osc create` and you will see the following:
 
+    osc create -f hello-quota.json 
+    1-hello-openshift
+    2-hello-openshift
+    3-hello-openshift
+    F0331 12:06:29.927989    7202 create.go:50] Client error processing command: pods "4-hello-openshift" is forbidden: Limited to 3 pods
+
+Go ahead and clean up:
+
+    osc get pod | awk '{print $1}' | grep openshift | xargs osc delete pod
 
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment. Return
