@@ -1159,25 +1159,14 @@ And now, you should be able to verify everything is working right:
 
 If you want to be fancy, try it in your browser!
 
-### Notes on Cleanup, Enforcement
-Currently the STI process involves a pod that is created to build your code
-(sti-build) as well as a pod that is used to deploy your code (ose-deployer).
-Right now, OpenShift doesn't "clean up" after the build process - pods that were
-generated to build your application code will stick around. If you do a few
-builds, and go to the *Settings* tab for the *Sinatra* project, you'll see that
-you can reach or exceed your pod quote (3). These issues are understood and will
-be fixed.
-
-Since we are not doing anything else with the *Sinatra* project, we can ignore
-these artifacts for now.
-
 ## A Fully-Integrated "Quickstart" Application
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
 application also makes use of auto-generated parameters and other neat features
 of OpenShift. One thing of note is that this project already has the
 wiring/plumbing between the front- and back-end components pre-defined as part
-of its JSON. Adding resources "after the fact" will come in a later lab.
+of its JSON and embedded in the source code. Adding resources "after the fact"
+will come in a later lab.
 
 This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
@@ -1219,9 +1208,9 @@ using a regex-like string that will be presnted as ADMIN_USERNAME.
 ### Adding the Template
 Go ahead and do the following as `joe`:
 
-    osc create -f integrated-project.json
+    osc create -f integrated-template.json
 
-What did you just do? The `integrated-project.json` file defined a template. By
+What did you just do? The `integrated-template.json` file defined a template. By
 "creating" it, you have added it to your project for use in the web console.
 Let's take a look at how that works.
 
@@ -1245,21 +1234,21 @@ insantiated.
 
 Leave all of the defaults and simply click "Create".
 
-### Run the Build
-**Note: You might want to wait for the mysql pod to become *Running* before
-continuing.**
+### The Template is Alive
+Once you hit the "Create" button, several things will start to happen:
 
-The build configuration, in this case, is called `ruby-sample-build`. So, let's
-go ahead and start the build and watch the logs:
+* The services and pods and replicationcontrollers and etc. will be instantiated
+* The build of the frontend application code will start
 
-    osc start-build ruby-sample-build
-    277f6eac-b07d-11e4-b390-525400b33d1d
+The cool thing about the template is that it has a built-in route. The not so
+cool thing is that route is not configurable at the moment. But, it's there!
 
-    osc build-logs 277f6eac-b07d-11e4-b390-525400b33d1d
+If you click "Browse" and then "Services" you will see that there is a route for
+the *frontend* service:
 
-Don't forget that the web console will show information about the build status,
-although in much less detail. And, don't forget that if you are too quick on the
-`build-logs` you will catch it before the build actually starts.
+    `integrated.cloudapps.example.com`
+
+Go ahead and click it!
 
 ### Using Your App
 Now that the app is built, you should be able to visit the routed URL and
