@@ -1004,10 +1004,6 @@ At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
 up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
-We can also apply the same quota we used before to this new project:
-
-    osc create -n sinatra -f quota.json
-
 ### Switch Projects
 As the `joe` user, let's switch to the `sinatra` project:
 
@@ -1015,7 +1011,7 @@ As the `joe` user, let's switch to the `sinatra` project:
 
 You should see:
    
-    Now using project 'sinatra'.
+    Now using project "sinatra" on server "https://ose3-master.example.com:8443".
 
 ### A Simple STI Build
 We'll be using a pre-build/configured code repository. This repository is an
@@ -1027,25 +1023,12 @@ For this example, we will be using the following application's source code:
 
     https://github.com/openshift/simple-openshift-sinatra-sti
 
-Let's generate a config for OpenShift to create:
+Let's see some JSON:
 
-    cd
-    openshift ex generate --name=sin --ref=beta3 \
-    https://github.com/openshift/simple-openshift-sinatra-sti.git \
-    | python -m json.tool > ~/simple-sinatra.json
+    osc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
 
-**Note: There is currently a bug in the valid length of build name, so we
-forcibly set a name using the --name flag **
-
-`ex generate` is a tool that will examine a directory tree, a remote repo, or
-other sources and attempt to generate an appropriate JSON configuration so that,
-when created, OpenShift can build the resulting image to run. 
-
-Go ahead and take a look at the JSON that was generated. You will see some
-familiar items at this point, and some new ones, like `BuildConfig`,
-`ImageRepository` and others.
-
-    cat ~/simple-sinatra.json
+Take a look at the JSON that was generated. You will see some familiar items at
+this point, and some new ones, like `BuildConfig`, `ImageRepository` and others.
 
 Essentially, the STI process is as follows:
 
@@ -1054,13 +1037,13 @@ a Docker image.
 
 1. OpenShift will then (on command) build the Docker image with the source code.
 
-1. OpenShift will then deploy the Docker image as a Pod with an associated
+1. OpenShift will then deploy the built Docker image as a Pod with an associated
 Service.
 
 ### Create the Build Process
 Let's go ahead and get everything fired up:
 
-    osc create -f ~/simple-sinatra.json
+    osc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git
 
 As soon as you execute this command, go back to the web console and see if you
 can figure out what is different.
@@ -1070,7 +1053,7 @@ To learn a little more about what happened, run the following:
     for i in imagerepository buildconfig deploymentconfig service; do \
     echo $i; osc get $i; echo -e "\n\n"; done
 
-Based on the JSON from `ex generate`, we have created:
+Based on the JSON from `new-app`, we have created:
 
 * An ImageRepository entry
 * A BuildConfig
@@ -1091,29 +1074,29 @@ console. If anything, it looks prettier!
 
 To start our build, execute the following:
 
-    osc start-build sin
+    osc start-build simple-openshift-sinatra-sti
 
 You'll see some output to indicate the build:
 
-    sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
+    simple-openshift-sinatra-sti-1
 
 That's the UUID of our build. We can check on its status (it will switch to
 "Running" in a few moments):
 
     osc get builds
-    NAME                                       TYPE                STATUS  POD
-    sin-fcae9c05-bd31-11e4-8e35-525400b33d1d   STI                 Pending build-sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
+    NAME                             TYPE                STATUS    POD
+    simple-openshift-sinatra-sti-1   STI                 Pending   simple-openshift-sinatra-sti-1
 
 Almost immediately, the web console would've updated the *Overview* tab for the
 *Sinatra* project to say:
 
-    A build of sin. A new deployment will be created automatically once the
-    build completes.
+    A build of simple-openshift-sinatra-sti is pending. A new deployment will be
+    created automatically once the build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs sin-fcae9c05-bd31-11e4-8e35-525400b33d1d
+    osc build-logs simple-openshift-sinatra-sti-1
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
@@ -1127,7 +1110,7 @@ deployment status, new pods, and more.
 If you didn't, go to the web console now. The overview page should show that the
 application is running and show the information about the service at the top:
 
-    simple-openshift-sinatra - routing TCP traffic on 172.30.17.47:9292 to port 9292
+    simple-openshift-sinatra - routing TCP traffic on 172.30.17.20:8080 to port 8080
 
 ### Examining the Build
 If you go back to your console session where you examined the `build-logs`,
@@ -1148,28 +1131,26 @@ built a Docker image and OpenShift has deployed it for us.
 The last step will be to add a route to make it publicly accessible.
 
 ### Adding a Route to Our Application
-When we used `ex generate`, the only thing that was not created was a route for
+When we used `new-app`, the only thing that was not created was a route for
 our application.
 
 Remember that routes are associated with services, so, determine the id of your
-services from the service output you looked at above. For example, it might be
-`simple-openshift-sinatra`.
+services from the service output you looked at above.
+
+**Hint:** It is `simple-openshift-sinatra`.
 
 **Hint:** You will need to use `osc get services` to find it.
-
-Edit `sinatra-route.json` it to incorporate the service name you determined.
-Hint: you need to edit the `serviceName` field.
 
 When you are done, create your route:
 
     osc create -f sinatra-route.json
-    a8b8c72b-b07c-11e4-b390-525400b33d1d
+    sinatra-route
 
 Check to make sure it was created:
 
     osc get route
-    NAME                HOST/PORT                             PATH                SERVICE             LABELS
-    sinatra-route       hello-sinatra.cloudapps.example.com                       sin
+    NAME                HOST/PORT                             PATH                SERVICE                  LABELS
+    sinatra-route       hello-sinatra.cloudapps.example.com                       simple-openshift-sinatra
 
 And now, you should be able to verify everything is working right:
 

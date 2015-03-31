@@ -6,6 +6,6 @@
       },
   "id": "sinatra-route",
   "host": "hello-sinatra.cloudapps.example.com",
-  "serviceName": "sin"
+  "serviceName": "simple-openshift-sinatra"
 }
 
