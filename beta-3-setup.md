@@ -144,6 +144,8 @@ environment happen **faster**, you'll need to first install Docker:
 
     yum -y install docker
 
+Make sure that you are running at least `docker-1.5.0-27.el7.x86_64`.
+
 You'll need to add `--insecure-registry 0.0.0.0/0` to your
 `/etc/sysconfig/docker` `OPTIONS`. Then:
 
