@@ -32,6 +32,7 @@
       "kind": "Service",
       "apiVersion": "v1beta1",
       "port": 27017,
+      "containerPort": 8080,
       "selector": {
         "name": "hello-openshift-label"
       }
