@@ -329,7 +329,7 @@ has been completely redesigned for V3.
 ### Web Console
 Open your browser and visit the following URL:
 
-    https://fqdn.of.master:8444
+    https://fqdn.of.master:8443
 
 It may take up to 90 seconds for the web console to be available after
 restarting the master (when you changed the authentication settings).
@@ -376,8 +376,7 @@ credentials the *router* should use to communicate. We also need to specify the
 router image, since currently the experimental tooling points to
 upstream/origin:
 
-    openshift ex router --create \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig \
+    openshift ex router --create --credentials=/root/.kube/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -408,9 +407,8 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
+--images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
 
@@ -440,11 +438,13 @@ endpoints with:
 
 And you will eventually see something like:
 
-    Name:           docker-registry
-    Labels:         docker-registry=default
-    Selector:       docker-registry=default
-    Port:           5000
-    Endpoints:      10.1.0.7:5000
+    Name:                   docker-registry
+    Labels:                 docker-registry=default
+    Selector:               docker-registry=default
+    IP:                     172.30.17.154
+    Port:                   5000
+    Endpoints:              10.1.0.7:5000
+    Session Affinity:       None
     No events.
 
 Once there is an endpoint listed, the curl should work.
@@ -589,7 +589,7 @@ go ahead and grab it inside Joe's home folder:
     cd ~/training/beta3
 
 ### The Hello World Definition JSON
-In the beta2 training folder, you can see the contents of our pod definition by using
+In the beta3 training folder, you can see the contents of our pod definition by using
 `cat`:
 
     cat hello-pod.json 
@@ -656,9 +656,6 @@ To verify that the app is working, you can issue a curl to the app's port:
 
 Hooray!
 
-### Quota Enforcement
-NEEDS WRITING
-
 ### Looking at the Pod in the Web Console
 Go to the web console and go to the *Overview* tab for the *OpenShift 3 Demo*
 project. You'll see some interesting things:
@@ -684,6 +681,14 @@ then ran it. This could have just as easily been an application from an ISV
 available in a registry or something already written and built in-house.
 
 This is really powerful. We will explore using "arbitrary" docker images later.
+
+### Quota Enforcement
+Since we know we can run a pod directly, we'll go through a simple quota
+enforcement exercise. The following JSON will attempt to create four instances
+of the "hello-openshift" pod. It will fail when it tries to create the fourth,
+because the quota on this project limits us to three total pods.
+
+
 
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment. Return

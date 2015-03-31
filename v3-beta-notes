@@ -42,7 +42,7 @@ sed -e '/^nameserver .*/i nameserver 192.168.133.2' -i /etc/resolv.conf
 systemctl start dnsmasq
 cd
 rm -rf openshift-ansible
-git clone https://github.com/detiber/openshift-ansible.git -b reworkNodeRegistration
+git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
@@ -63,6 +63,8 @@ systemctl restart openshift-master
 sleep 30
 openshift ex router --create --credentials=/root/.kube/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+sleep 2
+osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' -e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
 openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
