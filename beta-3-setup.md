@@ -409,8 +409,8 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
---images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+    openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
 
