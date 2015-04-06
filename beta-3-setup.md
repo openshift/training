@@ -270,91 +270,13 @@ window:
 will not need the `master`-related services. These instructions will not appear
 again.**
 
-## Auth, Projects, and the Web Console
-### Configuring htpasswd Authentication
-OpenShift v3 supports a number of mechanisms for authentication. The simplest
-use case for our testing purposes is `htpasswd`-based authentication.
-
-To start, we will need the `htpasswd` binary, which is made available by
-installing:
-
-    yum -y install httpd-tools
-
-From there, we can create a password for our users, Joe and Alice:
-
-    touch /etc/openshift-passwd
-    htpasswd -b /etc/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift-passwd alice redhat
-
-Then, add the following lines to `/etc/sysconfig/openshift-master`:
-
-    cat <<EOF >> /etc/sysconfig/openshift-master
-    OPENSHIFT_OAUTH_REQUEST_HANDLERS=session,basicauth
-    OPENSHIFT_OAUTH_HANDLER=login
-    OPENSHIFT_OAUTH_PASSWORD_AUTH=htpasswd
-    OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
-    OPENSHIFT_OAUTH_ACCESS_TOKEN_MAX_AGE_SECONDS=172800
-    EOF
-
-Restart `openshift-master`:
-
-    systemctl restart openshift-master
-
-### A Project for Everything
-V3 has a concept of "projects" to contain a number of different services and
-their pods, builds and etc. They are somewhat similar to "namespaces" in
-OpenShift v2. We'll explore what this means in more details throughout the rest
-of the labs. Let's create a project for our first application. 
-
-We also need to understand a little bit about users and administration. The
-default configuration for CLI operations currently is to be the `master-admin`
-user, which is allowed to create projects. We can use the "experimental"
-OpenShift command to create a project, and assign an administrative user to it:
-
-    openshift ex new-project demo --display-name="OpenShift 3 Demo" \
-    --description="This is the first demo project with OpenShift v3" \
-    --admin=htpasswd:joe
-
-This command creates a project:
-* with the id `demo`
-* with a display name
-* with a description 
-* with an administrative user `joe` who can login with the password defined by
-    htpasswd
-
-Future use of command line statements will have to reference this project in
-order for things to land in the right place.
-
-Now that you have a project created, it's time to look at the web console, which
-has been completely redesigned for V3.
-
-### Web Console
-Open your browser and visit the following URL:
-
-    https://fqdn.of.master:8443
-
-It may take up to 90 seconds for the web console to be available after
-restarting the master (when you changed the authentication settings).
-    
-You will first need to accept the self-signed SSL certificate. You will then be
-asked for a username and a password. Remembering that we created a user
-previously, `joe`, go ahead and enter that and use the password (redhat) you set
-earlier.
-
-Once you are in, click the *OpenShift 3 Demo* project. There really isn't
-anything of interest at the moment, because we haven't put anything into our
-project. While we created the router, it's not part of this project (it is core
-infrastructure), so we do not see it here. If you had access to the *default*
-project, you would see things like the router and other core infrastructure
-components.
-
 ## Installing the Router
 Networking in OpenShift v3 is quite complex. Suffice it to say that, while it is
 easy to get a complete "multi-tier" "application" deployed, reaching it from
 anywhere outside of the OpenShift environment is not possible without something
 extra. This extra thing is the routing layer. The router is the ingress point
 for all traffic destined for OpenShift v3 services. It currently supports only
-HTTP(S) traffic.
+HTTP(S) traffic (and "any" TLS-enabled traffic via SNI).
 
 OpenShift's "experimental" command set enables you to install the router
 automatically. Try running it with no options and you should see the note that a
@@ -378,7 +300,8 @@ credentials the *router* should use to communicate. We also need to specify the
 router image, since currently the experimental tooling points to
 upstream/origin:
 
-    openshift ex router --create --credentials=/root/.kube/.kubeconfig \
+    openshift ex router --create \
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -409,7 +332,8 @@ order to pull images "locally". Let's take a moment to set that up.
 `openshift ex` again comes to our rescue with a handy installer for the
 registry:
 
-    openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
+    openshift ex registry --create \
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
@@ -450,6 +374,98 @@ And you will eventually see something like:
     No events.
 
 Once there is an endpoint listed, the curl should work.
+
+## Auth, Projects, and the Web Console
+### Configuring htpasswd Authentication
+OpenShift v3 supports a number of mechanisms for authentication. The simplest
+use case for our testing purposes is `htpasswd`-based authentication.
+
+To start, we will need the `htpasswd` binary, which is made available by
+installing:
+
+    yum -y install httpd-tools
+
+From there, we can create a password for our users, Joe and Alice:
+
+    touch /etc/openshift-passwd
+    htpasswd -b /etc/openshift-passwd joe redhat
+    htpasswd -b /etc/openshift-passwd alice redhat
+
+The OpenShift configuration is kept in a YAML file which currently lives at
+`/var/lib/openshift/master.yml`. We need to edit the `oauthConfig`'s
+`identityProviders` stanza so that it looks like the following:
+
+    identityProviders:
+    - challenge: true
+      login: true
+      name: apache_auth
+      provider:
+        apiVersion: v1
+        file: /etc/openshift-passwd
+        kind: HTPasswdPasswordIdentityProvider
+
+More information on these configuration settings can be found here:
+
+    http://docs.openshift.org/latest/architecture/authentication.html#HTPasswdPasswordIdentityProvider
+
+If you're feeling lazy, use your friend `sed`:
+
+    sed -i -e 's/name: anypassword/name: apache_auth/' \
+    -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
+    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift-passwd' \
+    /var/lib/openshift/master.yaml
+
+Restart `openshift-master`:
+
+    systemctl restart openshift-master
+
+### A Project for Everything
+V3 has a concept of "projects" to contain a number of different services and
+their pods, builds and etc. They are somewhat similar to "namespaces" in
+OpenShift v2. We'll explore what this means in more details throughout the rest
+of the labs. Let's create a project for our first application. 
+
+We also need to understand a little bit about users and administration. The
+default configuration for CLI operations currently is to be the `master-admin`
+user, which is allowed to create projects. We can use the "experimental"
+OpenShift command to create a project, and assign an administrative user to it:
+
+    openshift ex new-project demo --display-name="OpenShift 3 Demo" \
+    --description="This is the first demo project with OpenShift v3" \
+    --admin=joe
+
+This command creates a project:
+* with the id `demo`
+* with a display name
+* with a description 
+* with an administrative user `joe` who can login with the password defined by
+    htpasswd
+
+Future use of command line statements will have to reference this project in
+order for things to land in the right place.
+
+Now that you have a project created, it's time to look at the web console, which
+has been completely redesigned for V3.
+
+### Web Console
+Open your browser and visit the following URL:
+
+    https://fqdn.of.master:8443
+
+It may take up to 90 seconds for the web console to be available after
+restarting the master (when you changed the authentication settings).
+    
+You will first need to accept the self-signed SSL certificate. You will then be
+asked for a username and a password. Remembering that we created a user
+previously, `joe`, go ahead and enter that and use the password (redhat) you set
+earlier.
+
+Once you are in, click the *OpenShift 3 Demo* project. There really isn't
+anything of interest at the moment, because we haven't put anything into our
+project. While we created the router, it's not part of this project (it is core
+infrastructure), so we do not see it here. If you had access to the *default*
+project, you would see things like the router and other core infrastructure
+components.
 
 ## Your First Application
 At this point you essentially have a sufficiently-functional V3 OpenShift
@@ -546,26 +562,25 @@ our tool at the CA file.
 This created a file called `.config` in the `~/.config/openshift` folder. Take a
 look at it, and you'll see something like the following:
 
-    cat ~/.config/openshift/.config 
     apiVersion: v1
     clusters:
     - cluster:
         certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
         server: https://ose3-master.example.com:8443
-      name: ose3-master.example.com:8443
+      name: ose3-master-example-com-8443
     contexts:
     - context:
-        cluster: ose3-master.example.com:8443
+        cluster: ose3-master-example-com-8443
         namespace: demo
         user: joe
-      name: ose3-master.example.com:8443-joe
-    current-context: ose3-master.example.com:8443-joe
+      name: demo
+    current-context: demo
     kind: Config
     preferences: {}
     users:
     - name: joe
       user:
-        token: ZmUxZDFiYmUtOGI0Mi00OTBlLWJlZjUtZTdjNDhjZDU5ODJk
+        token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, and etc. 
@@ -672,6 +687,10 @@ project. You'll see some interesting things:
 ### Quota Usage
 If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 
+### Extra Credit
+If you try to curl the pod IP and port, you get "connection refused". See if you
+can figure out why.
+
 ### Delete the Pod
 Go ahead and delete this pod so that you don't get confused in later examples:
 
@@ -700,7 +719,10 @@ Go ahead and use `osc create` and you will see the following:
 
 Go ahead and clean up:
 
-    osc get pod | awk '{print $1}' | grep openshift | xargs osc delete pod
+    osc delete pod --all
+
+**Note:** You can delete most resources using "--all" but there is *no sanity
+check*. Be careful.
 
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment. Return
@@ -924,8 +946,8 @@ created the router when we only had the master running, we know that's where its
 Docker container is.
 
 We ultimately want the PID of the container running the router so that we can go
-"inside" it. On the master system, issue the following to get the PID of the
-router:
+"inside" it. On the master system, as the `root` user, issue the following to
+get the PID of the router:
 
     docker inspect --format {{.State.Pid}}   \
       `docker ps | grep haproxy-router | awk '{print $1}'`
@@ -946,23 +968,23 @@ Since we are using HAProxy as the router, we can cat the `routes.json` file:
 If you see some content that looks like:
 
     "demo/hello-openshift-service": {
-      "Name": "demo/hello-openshift-service",
-      "EndpointTable": {
-        "10.1.0.4:8080": {
-          "ID": "10.1.0.4:8080",
-          "IP": "10.1.0.4",
-          "Port": "8080"
-        }
-      },
-      "ServiceAliasConfigs": {
-        "hello-openshift.cloudapps.example.com-": {
-          "Host": "hello-openshift.cloudapps.example.com",
-          "Path": "",
-          "TLSTermination": "",
-          "Certificates": null
+        "Name": "demo/hello-openshift-service",
+        "EndpointTable": {
+          "10.1.2.2:8080": {
+            "ID": "10.1.2.2:8080",
+            "IP": "10.1.2.2",
+            "Port": "8080"
+          }
+        },
+        "ServiceAliasConfigs": {
+          "hello-openshift.cloudapps.example.com-": {
+            "Host": "hello-openshift.cloudapps.example.com",
+            "Path": "",
+            "TLSTermination": "",
+            "Certificates": null
+          }
         }
       }
-    }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
@@ -1000,7 +1022,7 @@ into. Grab the project definition and create it:
 
     openshift ex new-project sinatra --display-name="Ruby/Sinatra" \
     --description="Our Simple Sintra STI Example" \
-    --admin=htpasswd:joe
+    --admin=joe
 
 At this point, if you click the OpenShift image on the web console you should be
 returned to the project overview page where you will see the new project show
@@ -1082,10 +1104,18 @@ You'll see some output to indicate the build:
 
     simple-openshift-sinatra-sti-1
 
-That's the UUID of our build. We can check on its status (it will switch to
-"Running" in a few moments):
+OpenShift v3 is in a bit of a transtiion period between authentication
+paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
+performed by "normal" users, even if it makes sense that they should. Don't
+worry, we'll get there.
 
-    osc get builds
+In order to watch the build logs, you actually need to be a cluster
+administratior right now. So, as `root`, you can do the following things:
+
+We can check on the status of a build (it will switch to "Running" in a few
+moments):
+
+    osc get builds -n sinatra
     NAME                             TYPE                STATUS    POD
     simple-openshift-sinatra-sti-1   STI                 Pending   simple-openshift-sinatra-sti-1
 
@@ -1098,7 +1128,7 @@ Almost immediately, the web console would've updated the *Overview* tab for the
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs simple-openshift-sinatra-sti-1
+    osc build-logs simple-openshift-sinatra-sti-1 -n sinatra
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
@@ -1143,6 +1173,8 @@ services from the service output you looked at above.
 
 **Hint:** You will need to use `osc get services` to find it.
 
+**Hint:** Do this as `joe`.
+
 When you are done, create your route:
 
     osc create -f sinatra-route.json
@@ -1178,7 +1210,7 @@ As the `root` user, first we'll create a new project:
 
     openshift ex new-project integrated --display-name="Frontend/Backend" \
     --description='A demonstration of a "quickstart/template"' \
-    --admin=htpasswd:joe
+    --admin=joe
 
 As the `joe` user, we'll set our context to use the corresponding namespace:
 
@@ -1208,7 +1240,7 @@ This portion of the template's JSON tells OpenShift to generate an expression
 using a regex-like string that will be presnted as ADMIN_USERNAME.
 
 ### Adding the Template
-Go ahead and do the following as `joe`:
+Go ahead and do the following as `root`:
 
     osc create -f integrated-template.json
 
