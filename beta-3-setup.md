@@ -1242,18 +1242,19 @@ using a regex-like string that will be presnted as ADMIN_USERNAME.
 ### Adding the Template
 Go ahead and do the following as `root`:
 
-    osc create -f integrated-template.json
+    osc create -f integrated-template.json -n openshift
 
 What did you just do? The `integrated-template.json` file defined a template. By
-"creating" it, you have added it to your project for use in the web console.
-Let's take a look at how that works.
+"creating" it, you have added it to the `openshift` project. What is the
+`openshift` project? This is a special project whose templates are accessible by
+all users of the OpenShift environment. Let's take a look at how that works.
 
 ### Create an Instance of the Template
 In the web console, find the "Frontend/Backend" project, and then hit the
 "Create +" button. You will be taken to a page that lists the current templates
 that are available for use.
 
-Click "ruby-helloworld-sample", and you'll see a modal pop-up that provides more
+Click "ruby-keyvalue-quickstart", and you'll see a modal pop-up that provides more
 information about the template.
 
 Click "Select template..."
@@ -1269,10 +1270,8 @@ insantiated.
 Leave all of the defaults and simply click "Create".
 
 ### The Template is Alive
-Once you hit the "Create" button, several things will start to happen:
-
-* The services and pods and replicationcontrollers and etc. will be instantiated
-* The build of the frontend application code will start
+Once you hit the "Create" button, the services and pods and
+replicationcontrollers and etc. will be instantiated
 
 The cool thing about the template is that it has a built-in route. The not so
 cool thing is that route is not configurable at the moment. But, it's there!
@@ -1282,10 +1281,16 @@ the *frontend* service:
 
     `integrated.cloudapps.example.com`
 
-Go ahead and click it!
+### Start Your Build
+You can start the build as the `joe` user from the commandline:
+
+    osc start-build ruby-sample-build
+
+**Note:** you can only view the build logs as a cluster admin (eg: the `root`
+user)
 
 ### Using Your App
-Now that the app is built, you should be able to visit the routed URL and
+Once the app is built, you should be able to visit the routed URL and
 actually use the application!
 
     http://integrated.cloudapps.example.com
