@@ -1,0 +1,166 @@
+{
+  "kind": "Config",
+  "apiVersion": "v1beta1",
+  "items": [
+    {
+        "kind": "Service",
+        "id": "basicauthurl",
+        "apiVersion": "v1beta1",
+        "namespace": "default",
+        "port": 443,
+        "protocol": "TCP",
+        "labels": {
+            "basicauthurl": "basicauthurl"
+        },
+        "selector": {
+            "basicauthurl": "basicauthurl"
+        },
+        "containerPort": 443,
+        "portalIP": "172.30.17.56",
+        "sessionAffinity": "None"
+    },
+    {
+        "apiVersion": "v1beta1",
+        "host": "basicauthurl.example.com",
+        "kind": "Route",
+        "metadata": {
+            "creationTimestamp": null,
+            "name": "basicauthurl"
+        },
+        "serviceName": "basicauthurl",
+        "tls": {
+            "termination": "passthrough"
+        }
+    },
+    {
+      "apiVersion": "v1beta1",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "basicauthurl"
+      }
+    },
+    {
+      "apiVersion": "v1beta1",
+      "kind": "BuildConfig",
+      "labels": {
+        "name": "basicauthurl-build"
+      },
+      "metadata": {
+        "name": "basicauthurl-build"
+      },
+      "parameters": {
+        "output": {
+          "to": {
+            "name": "basicauthurl"
+          }
+        },
+        "source": {
+          "git": {
+            "uri": "git://github.com/brenton/basicauthurl-example.git"
+          },
+          "type": "Git"
+        },
+        "strategy": {
+          "stiStrategy": {
+            "image": "docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/sti-basicauthurl"
+          },
+          "type": "STI"
+        }
+      },
+      "triggers": []
+    },
+    {
+        "kind": "DeploymentConfig",
+        "apiVersion": "v1beta1",
+        "metadata": {
+            "name": "basicauthurl",
+            "labels": {
+                "basicauthurl": "basicauthurl"
+            }
+        },
+        "triggers": [
+            {
+              "imageChangeParams": {
+                "automatic": true,
+                "containerNames": [
+                  "basicauthurl"
+                ],
+                "from": {
+                  "name": "basicauthurl"
+                },
+                "tag": "latest"
+              },
+              "type": "ImageChange"
+            }
+        ],
+        "template": {
+            "strategy": {
+                "type": "Recreate"
+            },
+            "controllerTemplate": {
+                "replicas": 1,
+                "replicaSelector": {
+                    "basicauthurl": "basicauthurl"
+                },
+                "podTemplate": {
+                    "desiredState": {
+                        "manifest": {
+                            "version": "v1beta2",
+                            "id": "",
+                            "volumes": null,
+                            "containers": [
+                                {
+                                    "name": "basicauthurl",
+                                    "image": "basicauthurl",
+                                    "ports": [
+                                        {
+                                            "containerPort": 443,
+                                            "protocol": "TCP"
+                                        }
+                                    ],
+                                    "env": [
+                                        {
+                                            "name": "OPENSHIFT_CA_DATA",
+                                            "key": "OPENSHIFT_CA_DATA",
+                                            "value": "-----BEGIN CERTIFICATE-----\nMIIC5jCCAdCgAwIBAgIBATALBgkqhkiG9w0BAQswJjEkMCIGA1UEAwwbb3BlbnNo\naWZ0LXNpZ25lckAxNDI4NDI2MzI0MB4XDTE1MDQwNzE3MDUyNloXDTE2MDQwNjE3\nMDUyN1owJjEkMCIGA1UEAwwbb3BlbnNoaWZ0LXNpZ25lckAxNDI4NDI2MzI0MIIB\nIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMZ9PePnVf9RpXKDHKiwu5Ba\ni6JGo/x7oQ/FLzEEQYG0okJVoupiLY5mPQVSyR75Lx2GodGnvY/SZ5H1yBjzxkB/\n2rZateSOYA4LdsYnmS9yDvxw7Jpf10a/7sC1kWXBVlEGg+cTBFFAb5YYSyNg2gqY\nEAXoK7QTk6QgaUmgEClvZTWW/ABa8oJBzWXDWeFxMT8cpWmaNPNJLaWYKm3SHCdR\nYibIS87T0kb3BjPsvsVxVcqrumM7AFAYeQcIyA5CfOMww/XT4RlGci7Xp1w3jdn3\nY+C3SckmixIuFKA/KV9zZP2b+DmghJR7KASwDYaJv1fxhrnAiHAXz7R52Axo7wID\nAQABoyMwITAOBgNVHQ8BAf8EBAMCAKQwDwYDVR0TAQH/BAUwAwEB/zALBgkqhkiG\n9w0BAQsDggEBALW4aIR096pcRJ59RpLMeiLR+11LFkH2FiPrQuMj4pgW622OQA/h\nTTZA4zniKlFWPVaX4FL7Tj4n8zpvdcqOux48c/N1h8I+u0/awEsfNeIt6Cwb9Nfa\nng2QtZsky0kQINXK919/JYUEWDcA/pV4YYoUWMe0pt5VwL10oJZGh/hdTujNLrUD\n7K6s4LprzeoYouMhOO4i0ayEXmMjkPyWAlVAsaVtLaZrYvxkGoAmq/isKsIHfk+2\n0bXhHxFqgrPjvXoYu3j7mNZN0aFtXWpvNsJrebpWW207AgdLsCg/gNwOsycolRmy\n50tze7hUjspUJtWUVWelJhOLlGcRIJ1/1+U=\n-----END CERTIFICATE-----"
+                                        },
+                                        {
+                                            "name": "OPENSHIFT_CERT_DATA",
+                                            "key": "OPENSHIFT_CERT_DATA",
+                                            "value": "-----BEGIN CERTIFICATE-----\nMIIDGjCCAgSgAwIBAgIBDjALBgkqhkiG9w0BAQswJjEkMCIGA1UEAwwbb3BlbnNo\naWZ0LXNpZ25lckAxNDI4NDI2MzI0MB4XDTE1MDQwNzE3MjQzNFoXDTE2MDQwNjE3\nMjQzNVowIzEhMB8GA1UEAxMYYmFzaWNhdXRodXJsLmV4YW1wbGUuY29tMIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8ZIylZjoruF8S4fprd3m50d2UDbs\nLrc2CZcMnmo5uVY8zxWVAM8Ajl7huygT6r5HWwGKUeKpJ1epg99QzW55i6HewHyn\nbM5YOUy4uJlt3ZBBO8OVx/7S/pMSzzxz2gu8x3KJFgyUUFHHOgwAflsw0lzhrSYV\nq2wFS3ykqIjgTkgbzLy77s2u3T5S/7vBICurAHzNoTx+TtBwGvG769DKsl0rhCmc\ncbLFCytl16akHf8g7ZSwjKBmkhhDXD7VNoL85lZjhFuLTE5F63WK+C0WPJkU0nri\nqZyVQuLqiX+WTHFAEIQACaW711ifaQQknU/pYZ1Cb2Y7n3J1GVmG36akXwIDAQAB\no1owWDAOBgNVHQ8BAf8EBAMCAKAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDAYDVR0T\nAQH/BAIwADAjBgNVHREEHDAaghhiYXNpY2F1dGh1cmwuZXhhbXBsZS5jb20wCwYJ\nKoZIhvcNAQELA4IBAQB6r1gxpHuWfqB1CrL1kScQM8TybY7Lk2D4I2tVBu7Ru6h6\nDpxa5ph4uDFFaQmJhqtHRMPRaGXgCJ11C0TrR62c0ylspNgqVHSjNPcdfRTZzAcn\n/koqStik18S12ZXgMQr3+qMiWvRC/A7D9RiKuOc3WEx+scI8/UBRRAQ/vejOw5RU\n1k4iE+zFME+zL6nX985vPU/VzG9klBmgzQyp+l0WnK64MWN87VdLaa2e+KV3sNOY\noKSrwkPE8ZeY6ryKVCLQHoaXH6YiWhllfO2VXqrfu6ZKc0CoqolTeM0xdckQ0rYg\ntwuJFGYvLRIFkVQtO5BIjGbIbWn43NbithMUZnj5\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIC5jCCAdCgAwIBAgIBATALBgkqhkiG9w0BAQswJjEkMCIGA1UEAwwbb3BlbnNo\naWZ0LXNpZ25lckAxNDI4NDI2MzI0MB4XDTE1MDQwNzE3MDUyNloXDTE2MDQwNjE3\nMDUyN1owJjEkMCIGA1UEAwwbb3BlbnNoaWZ0LXNpZ25lckAxNDI4NDI2MzI0MIIB\nIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMZ9PePnVf9RpXKDHKiwu5Ba\ni6JGo/x7oQ/FLzEEQYG0okJVoupiLY5mPQVSyR75Lx2GodGnvY/SZ5H1yBjzxkB/\n2rZateSOYA4LdsYnmS9yDvxw7Jpf10a/7sC1kWXBVlEGg+cTBFFAb5YYSyNg2gqY\nEAXoK7QTk6QgaUmgEClvZTWW/ABa8oJBzWXDWeFxMT8cpWmaNPNJLaWYKm3SHCdR\nYibIS87T0kb3BjPsvsVxVcqrumM7AFAYeQcIyA5CfOMww/XT4RlGci7Xp1w3jdn3\nY+C3SckmixIuFKA/KV9zZP2b+DmghJR7KASwDYaJv1fxhrnAiHAXz7R52Axo7wID\nAQABoyMwITAOBgNVHQ8BAf8EBAMCAKQwDwYDVR0TAQH/BAUwAwEB/zALBgkqhkiG\n9w0BAQsDggEBALW4aIR096pcRJ59RpLMeiLR+11LFkH2FiPrQuMj4pgW622OQA/h\nTTZA4zniKlFWPVaX4FL7Tj4n8zpvdcqOux48c/N1h8I+u0/awEsfNeIt6Cwb9Nfa\nng2QtZsky0kQINXK919/JYUEWDcA/pV4YYoUWMe0pt5VwL10oJZGh/hdTujNLrUD\n7K6s4LprzeoYouMhOO4i0ayEXmMjkPyWAlVAsaVtLaZrYvxkGoAmq/isKsIHfk+2\n0bXhHxFqgrPjvXoYu3j7mNZN0aFtXWpvNsJrebpWW207AgdLsCg/gNwOsycolRmy\n50tze7hUjspUJtWUVWelJhOLlGcRIJ1/1+U=\n-----END CERTIFICATE-----"
+                                        },
+                                        {
+                                            "name": "OPENSHIFT_KEY_DATA",
+                                            "key": "OPENSHIFT_KEY_DATA",
+                                            "value": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA8ZIylZjoruF8S4fprd3m50d2UDbsLrc2CZcMnmo5uVY8zxWV\nAM8Ajl7huygT6r5HWwGKUeKpJ1epg99QzW55i6HewHynbM5YOUy4uJlt3ZBBO8OV\nx/7S/pMSzzxz2gu8x3KJFgyUUFHHOgwAflsw0lzhrSYVq2wFS3ykqIjgTkgbzLy7\n7s2u3T5S/7vBICurAHzNoTx+TtBwGvG769DKsl0rhCmccbLFCytl16akHf8g7ZSw\njKBmkhhDXD7VNoL85lZjhFuLTE5F63WK+C0WPJkU0nriqZyVQuLqiX+WTHFAEIQA\nCaW711ifaQQknU/pYZ1Cb2Y7n3J1GVmG36akXwIDAQABAoIBAQDrhMTqkwzwS4ia\nPyU1zS2s+UBBjnqQRTFbAjhcTmZ+6rQYlgsSob8CD0F27ekVKXR6JrNLiHewksgD\nePrXfsjjuOpqsl2tODRNkR5bY8L4jAb9lH94YFontw5Um7S7tkvUDDfZFmSXNlPN\npRvqFVAxGDsyS/o+ie9TnG8QnXpK9h+ItIRDIoFjmlPQQckUeiBAgiXnXApzWkr/\nVaG6NbH0a6BCor5jsxA6RVjYu9KcHwC93f+mUMD/vNSyA6d6yFGawZeA/olARuCj\nhCRRk2Wbk4BT8kX7XqF+O4RQ2rwh480yUXNOf5QQ3ghnLEXJJdpcDwCtUIE8PdCU\njWmPz4zBAoGBAP9VFQG/kTTKqKFMhWZbd2ZSSd+3skHKr125J4nw0aKp20A6PTWy\n6PlAszw2az8biLF6N2EWWr5kRxQp6s8Hy0ajsLvn6h8f27RZg22rU2ZaffF7rvNW\nfkMcZa6IN7eGxElSVLn6phGC89Z1dS4UCpfU840znHEtgw3qbMiYzhthAoGBAPIz\n52E9b7we2qAlGMXOk1bfLHcQMQ4JzjbnRTJgs64NejIZknUqyqlpxLhBZ3QXMLCB\ngjymXpCGtSgaAL7cF0NfHfR+sa/fmddmKrQ2gb777pPLM4FML0Lgugk0RKgwKJoy\n12o/BJdXOddoAsPjLwk1BpPOMRP7k6hBsAXv+pe/AoGBANZkpZfrN8zhIgkWTKju\nwmoLTHZqM2Zk/y0uTBHaQNxZzXy3qi/NwyuPdTBo7VJ3FycW3StLbvSRFNHMhJpE\nDB6LUdnl2MM7p+pegynyArxd3YSH+xXeGXTWglazkD0tDuIWHIhw+0KW95Gq3LLN\nJzvoFn0IyiKKOZHUtnUVQXLhAoGAX2CxLUnURnCgB5CUQNEolH0uNXTa3HxgCJ7q\nUPxjxZbpF/GaCynexPgxz51x7/Vx5xAZCWk6tA9YJ4KV6JMjVhSO50k9D9Ut7/T7\nvBv63Aq52NmcXr5xnhSBLj63CsRsOMzsp5pJZI+k536+GAXO8AFBpdL84LGhZBD6\nEFyAgmECgYA5uYiTE1R/UJwdWVig9H8aNsWXsJ03L+FOCbohlCbbqwVF8S8KcJt6\nWx8ljOydY2ydN5ZX+h3nfUWQtVJTnVjXM9AZ0Z8k0uDi3P34I7Jf/l41jvyRo3eH\n9ladJrXZkGRxnswRpezte1di6XnDZyRP5SuU45y5Xsv/ppJGSIUSvA==\n-----END RSA PRIVATE KEY-----"
+                                        }
+                                    ],
+                                    "resources": {},
+                                    "livenessProbe": {
+                                        "tcpSocket": {
+                                            "port": 443
+                                        },
+                                        "timeoutSeconds": 100,
+                                        "initialDelaySeconds": 10000
+                                    },
+                                    "terminationMessagePath": "/dev/termination-log",
+                                    "imagePullPolicy": "PullIfNotPresent",
+                                    "capabilities": {}
+                                }
+                            ],
+                            "restartPolicy": {
+                                "always": {}
+                            },
+                            "dnsPolicy": "ClusterFirst"
+                        }
+                    },
+                    "labels": {
+                        "basicauthurl": "basicauthurl"
+                    }
+                }
+            }
+        },
+        "latestVersion": 1
+    }
+  ]
+}
