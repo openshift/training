@@ -164,7 +164,7 @@ It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
     docker pull openshift/ruby-20-centos7
-    docker pull mysql
+    docker pull openshift/mysql-55-centos7
     docker pull openshift/hello-openshift
     docker pull centos:centos7
 
@@ -322,6 +322,12 @@ few moments (it may take up to a few minutes):
 
 Note: You may or may not see the deploy pod, depending on when you run this
 command.
+
+**Bug Fix:** There is a problem with the router right now. We have to remove the
+"liveness probe" from the replication controller. We'll get into more about what
+that means later, but, for now, do this:
+
+    osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' -e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
 
 ## Preparing for STI and Other Things
 One of the really interesting things about OpenShift v3 is that it will build
@@ -533,7 +539,6 @@ If you want to see that it was created:
     test-quota
 
 And if you want to verify limits or examine usage:
-**note: currently hangs**
 
     osc describe -n demo quota test-quota
     Name:                   test-quota
@@ -747,7 +752,203 @@ Then, run the ansible playbook again:
     ansible-playbook playbooks/byo/config.yml
 
 Now that we have a larger OpenShift environment, let's examine more complicated
-application paradigms.
+application and deployment paradigms.
+
+## Regions and Zones
+If you think you're about to learn how to configure regions and zones in
+OpenShift 3, you're only partially correct.
+
+In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
+enable organizations to provide some topologies for application resiliency. Apps
+would be spread throughout the zones in a region and, depending on the way you
+configured OpenShift, you could make different regions accessible to users.
+
+The reason that you're only "partially" correct in your assumption is that, for
+OpenShift 3, Kubernetes doesn't actually care about your topology. In other
+words, OpenShift is "topology agnostic". In fact, OpenShift 3 provides advanced
+controls for implementing whatever topologies you can dream up, leveraging
+filtering and affinity rules to ensure that parts of applications (pods) are
+either grouped together or spread apart.
+
+For the purposes of a simple example, we'll be sticking with the "regions" and
+"zones" theme. But, as you go through these examples, think about what other
+complex topologies you could implement.
+
+And, for an extremely detailed explanation about what these various
+configuration flags are doing, check out:
+
+    https://github.com/openshift/openshift-docs/blob/master/using_openshift/scheduler.adoc
+
+First, we need to talk about the "scheduler" and its default configuration.
+
+### Scheduler and Defaults
+The "scheduler" is essentially the OpenShift master. Any time a pod needs to be
+created (instantiated) somewhere, the master needs to figure out where to do
+this. This is called "scheduling". The default configuration for the scheduler
+looks like the following JSON (although this is embedded in the OpenShift code
+and you won't find this in a file):
+
+    {
+      "predicates" : [
+        {"name" : "PodFitsResources"},
+        {"name" : "MatchNodeSelector"},
+        {"name" : "HostName"},
+        {"name" : "PodFitsPorts"},
+        {"name" : "NoDiskConflict"}
+      ],"priorities" : [
+        {"name" : "LeastRequestedPriority", "weight" : 1},
+        {"name" : "ServiceSpreadingPriority", "weight" : 1}
+      ]
+    }
+
+When the scheduler tries to make a decision about pod placement, first it goes
+through "predicates", which essentially filter out the possible nodes we can
+choose. Note that, depending on your predicate configuration, you might end up
+with no possible nodes to choose. This is totally OK (although generally not
+desired).
+
+These default options are documented in the link above, but the quick overview
+is:
+
+* Place pod on a node that has enough resources for it (duh)
+* Place pod on a node that doesn't have a port conflict (duh)
+* Place pod on a node that doesn't have a storage conflict (duh)
+
+And some more obscure ones:
+
+* Place pod on a node whose `NodeSelector` matches
+* Place pod on a node whose hostname matches the `Host` attribute value
+
+The next thing is, of the available nodes after the filters are applied, how do
+we select the "best" one. This is where "priorities" come in. Long story short,
+the various priority functions each get a score, multiplied by the weight, and
+the node with the highest score is selected to host the pod.
+
+Again, the defaults are:
+
+* Choose the node that is "least requested" (the least busy)
+* Spread services around - minimize the number of pods in the same service on
+    the same node
+
+Again, please refer to the documentation link above for deeper details on the
+defaults.
+
+In a small environment, these defaults are pretty sane. Let's look at one of the
+important predicates (filters) before we move on to "regions" and "zones".
+
+### The NodeSelector
+`NodeSelector` is a part of the Pod data model. And, if we think back to our pod
+definition, there was a "label", which is just a key:value pair. In the case of
+a `NodeSelector`, our labels (key:value pairs) are used to help us try to find
+nodes that match, assuming that:
+
+* The scheduler is configured to MatchNodeSelector
+* The end user creating the pod knows which labels are out there
+
+But this use case is also pretty simplistic. It doesn't really allow for a
+topology, and there's not a lot of logic behind it. Also, if I specify a
+NodeSelector label when using MatchNodeSelector and there are no matching nodes,
+my workload will never get scheduled. Bummer.
+
+How can we make this more intelligent? We'll finally use "regions" and "zones".
+
+### Customizing the Scheduler Configuration
+The first step is to edit the OpenShift master's configuration to tell it to
+look for a specific scheduler config file. Edit `/etc/openshift/master.yml` and
+find the line with `schedulerConfigFile`. Change it to:
+
+    schedulerConfigFile: "/etc/openshift/scheduler.json"
+
+Then, create `/etc/openshift/scheduler.json` with the following content:
+
+    {
+      "predicates" : [
+        {"name" : "PodFitsResources"},
+        {"name" : "PodFitsPorts"},
+        {"name" : "NoDiskConflict"},
+        {"name" : "Region", "argument" : {"serviceAffinity" : { "label" : "region"}}}
+      ],"priorities" : [
+        {"name" : "LeastRequestedPriority", "weight" : 1},
+        {"name" : "ServiceSpreadingPriority", "weight" : 1},
+        {"name" : "Zone", "weight" : 1, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
+      ]
+    }
+
+To quickly review the above (this explanation sort of assumes that you read the
+scheduler documentation, but it's not critically important):
+
+* Filter out nodes that don't fit the resources, don't have the ports, or have
+    disk conflicts
+* If the pod specifies a label with the key "region", filter nodes by the value.
+
+So, if we have the following nodes and the following labels:
+
+* Node 1 -- "region":"primary"
+* Node 2 -- "region":"primary"
+* Node 3 -- "region":"infra"
+
+If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
+then only Node 1 and Node 2 would be considered.
+
+OK, that takes care of the "region" part. What about the "zone" part?
+
+Our priorities tell us to:
+
+* Score the least-busy node higher
+* Score any nodes who don't already have a pod in this service higher
+* Score any nodes whose zone label's value **does not** match higher
+
+Why do we score a zone that **doesn't** match higher? Note that the definition
+for the Zone priority is a `serviceAntiAffinity` -- anti affinity. In this case,
+our anti affinity rule helps to ensure that we try to get nodes from *different*
+zones to take our pod.
+
+If we consider that our "primary" region might be a certain datacenter, and that
+each "zone" in that datacenter might be on its own power system with its own
+dedicated networking, this would ensure that, within the datacenter, pods of an
+application would be spread across power/network segments.
+
+The documentation link has some more complicated examples. The topoligical
+possibilities are endless!
+
+### Restart the Master
+Go ahead and restart the master. This will make the new scheduler take effect.
+As `root` on your master:
+
+    systemctl restart openshift-master
+
+### Label Your Nodes
+Just before configuring the scheduler, we added more nodes. If you perform the
+following as the `root` user:
+
+    osc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
+
+You will have the JSON output of the definition of all of your nodes. Go ahead
+and edit this file. After the `hostIP` line for the block that defines your
+master, add the following:
+
+    "labels" : {
+      "region" : "infra",
+      "zone" : "NA"
+    },
+
+For your node1, add the following:
+
+    "labels" : {
+      "region" : "primary",
+      "zone" : "east"
+    },
+
+For your node2, add the following:
+
+    "labels" : {
+      "region" : "primary",
+      "zone" : "west"
+    },
+
+Then, update your nodes using the following:
+
+    osc update node -f ~/nodes.json
 
 ## Services
 From the [Kubernetes

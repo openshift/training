@@ -25,13 +25,13 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.2.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.2.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.2.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.2.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.2.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.2.4 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.2.4 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.2.4
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.2.5
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.2.5
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.2.5
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.2.5
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.2.5
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.2.5 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.2.5 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.2.5
 
 cd
 git clone https://github.com/openshift/training.git -b beta3
@@ -46,7 +46,7 @@ cd
 git clone https://github.com/openshift/training.git -b beta3
 cd
 rm -rf openshift-ansible
-git clone https://github.com/detiber/openshift-ansible.git -b openshiftFactsEnterprise
+git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
@@ -55,6 +55,8 @@ useradd alice
 openshift ex router --create \
 --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+sleep 2
+osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' -e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
 openshift ex registry --create \
 --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
