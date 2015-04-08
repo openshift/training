@@ -1447,7 +1447,7 @@ For example, take a look at the following JSON:
       },
 
 This portion of the template's JSON tells OpenShift to generate an expression
-using a regex-like string that will be presnted as ADMIN_USERNAME.
+using a regex-like string that will be presented as ADMIN_USERNAME.
 
 ### Adding the Template
 Go ahead and do the following as `root`:
