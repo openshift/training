@@ -153,12 +153,12 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.1
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.1
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.1
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.1
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.1
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.1
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.2.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.2.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.2.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.2.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.2.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.2.4
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -375,6 +375,15 @@ And you will eventually see something like:
 
 Once there is an endpoint listed, the curl should work.
 
+### Status Report, Captain!
+OpenShift provides a handy tool, `status`, to tell you a bit about the
+project/namespace you're operating in. As the `root` user, we can run this to
+learn about the *default* project:
+
+    osc status
+
+What's a project? Glad that you asked!
+
 ## Auth, Projects, and the Web Console
 ### Configuring htpasswd Authentication
 OpenShift v3 supports a number of mechanisms for authentication. The simplest
@@ -587,11 +596,11 @@ our server lives, our project, and etc.
 
 If we now do something like:
 
-    osc get pod
+    osc status
 
-We should get a response, but not see anything. That's because the core
-infrastructure, again, lives in the *default* project, which we're not
-accessing.
+We should get a response that basically tells us there's nothing to see here.
+That's because the core infrastructure, again, lives in the *default* project,
+which we're not accessing.
 
 **Note:** See the [troubleshooting guide](#appendix---troubleshooting) for
 details on how to fetch a new token once this once expires.  The installer sets
@@ -1119,8 +1128,8 @@ moments):
     NAME                             TYPE                STATUS    POD
     simple-openshift-sinatra-sti-1   STI                 Pending   simple-openshift-sinatra-sti-1
 
-Almost immediately, the web console would've updated the *Overview* tab for the
-*Sinatra* project to say:
+The web console would've updated the *Overview* tab for the *Sinatra* project to
+say:
 
     A build of simple-openshift-sinatra-sti is pending. A new deployment will be
     created automatically once the build completes.
@@ -1309,23 +1318,17 @@ time we'll make it belong to `alice`:
 
     openshift ex new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
-    --admin=htpasswd:alice
+    --admin=alice
 
-As `alice`, let's set up our `.kubeconfig`. Open a terminal as `alice`:
+Open a terminal as `alice`:
 
     # su - alice
 
-Make a `.kube` folder:
+Then:
 
-    mkdir .kube
-
-Then, change to that folder and login:
-
-    cd ~/.kube
-    openshift ex login \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
-    --cluster=master --server=https://ose3-master.example.com:8443 \
-    --namespace=wiring
+    osc login -n demo \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --server=https://ose3-master.example.com:8443
 
 Remember, your password was probably "redhat". 
 
