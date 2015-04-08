@@ -1203,7 +1203,7 @@ Currently the STI process involves a pod that is created to build your code
 Right now, OpenShift doesn't "clean up" after the build process - pods that were
 generated to build your application code will stick around. If you do a few
 builds, and go to the *Settings* tab for the *Sinatra* project, you'll see that
-you can reach or exceed your pod quote (3). These issues are understood and will
+you can reach or exceed your pod quota (3). These issues are understood and will
 be fixed.
 
 Since we are not doing anything else with the *Sinatra* project, we can ignore
@@ -1260,7 +1260,7 @@ For example, take a look at the following JSON:
       },
 
 This portion of the template's JSON tells OpenShift to generate an expression
-using a regex-like string that will be presnted as ADMIN_USERNAME.
+using a regex-like string that will be presented as ADMIN_USERNAME.
 
 Go ahead and do the following as `joe`:
 
@@ -1272,7 +1272,7 @@ parameters are placed into the actual processable config. If you look closely,
 you'll see that some of these items are passed into the "env" of the container
 -- they're passed in as environment variables inside the Docker container.
 
-If the application or container is built correctly, it's various processes will
+If the application or container is built correctly, its various processes will
 use these environment variables. In this example, the front-end will use the
 information about where the back-end is, as well as user and password
 information that was generated.
