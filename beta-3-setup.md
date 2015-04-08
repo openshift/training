@@ -97,17 +97,36 @@ You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
 in the labs.
 
-### Preparing Each VM
+### OpenShift 3 Components
+OpenShift 3, like OpenShift 2, has two primary components:
 
-You will need 3 virtual machines to follow this beta documentation exactly. Each
-of the virtual machines should have 4+ GB of memory, 20+ GB of disk space, and
-the following configuration:
+* masters - the orchestration engines. They figure out where to run workloads
+    and do all of the fancy policy things around controlling it
+* nodes - where workloads actually run
+
+### Your Environment
+The environment for the beta testing as documented is pretty simple. You will
+need 3 virtual machines to follow this beta documentation exactly. Each of the
+virtual machines should have 4+ GB of memory, 20+ GB of disk space, and the
+following configuration: 
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
 * NetworkManager **disabled**
-* Attach the *OpenShift Enterprise High Touch Beta* subscription with subscription-manager
-* Then configure yum as follows:
+
+As part of signing up for the beta program, you should have received an
+evaluation subscription. This subscription gave you access to the beta software.
+You will need to use subscription manager to both register your VMs, and attach
+them to the   *OpenShift Enterprise High Touch Beta* subscription.
+
+All of your VMs should be on the same logical network and be able to access one
+another.
+
+### Preparing Each VM
+Once your VMs are built and you have verified DNS and network connectivity you
+can:
+
+* Configure yum as follows:
 
         subscription-manager repos --disable="*"
         subscription-manager repos \
@@ -120,7 +139,7 @@ the following configuration:
 
         rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
 
-Once you have prepared your VMs, you can do the following on **each** VM:
+Onn **each** VM:
 
 1. Install deltarpm to make package updates a little faster:
 
@@ -153,12 +172,12 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.2.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.2.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.2.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.2.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.2.4
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.2.4
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.2.5
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.2.5
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.2.5
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.2.5
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.2.5
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.2.5
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -240,11 +259,24 @@ Now we can simply run the Ansible installer:
 
     ansible-playbook playbooks/byo/config.yml
 
+If you looked at the Ansible hosts file, you'll note that our master
+(ose3-master.example.com) was present in both the `master` and the `node`
+section.
+
+Effectively, Ansible is going to install and configure both the master and node
+software on `ose3-master.example.com`. Later, we'll modify the Ansible
+configuration to add the extra nodes.
+
+**Note:** Don't get fancy and try to do it now. Trust us, something will break.
+You've been warned, but we promise an explanation about *why* it will break soon
+enough.
+
 ### Add Development Users
 In the "real world" your developers would likely be using the OpenShift tools on
 their own machines (`osc` and `openshift` and etc). For the Beta training, we
 will create user accounts for two non-privileged users of OpenShift, *joe* and
-*alice*.
+*alice*, on the master. This is done for convenience and because we'll be using
+`htpasswd` for authentication.
 
     useradd joe
     useradd alice
