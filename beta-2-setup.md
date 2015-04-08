@@ -1733,9 +1733,8 @@ image:
 
     https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
 
-We've taken the content of this subfolder and placed it in the `beta2/wordpress`
-folder in the `training` repository. Let's run `ex generate` and see what
-happens:
+We've taken the content of this subfolder and created a new Github repository
+for it. Let's run `ex generate` and see what happens:
 
     openshift ex generate --name=wordpress \
     https://github.com/openshift/centos7-wordpress.git | python -m json.tool
