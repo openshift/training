@@ -359,7 +359,13 @@ command.
 "liveness probe" from the replication controller. We'll get into more about what
 that means later, but, for now, do this:
 
-    osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' -e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
+    osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' \
+    -e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
+    osc get pod | grep router-1 | awk '{print $1}' | xargs osc delete pod
+
+If you're interested: This will update the settings for the router pod (as far
+as the replication controller is concerned) and then will delete the existing
+pod so that the RC recreates it.
 
 ## Preparing for STI and Other Things
 One of the really interesting things about OpenShift v3 is that it will build

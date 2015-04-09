@@ -55,8 +55,7 @@
         },
         "source": {
           "git": {
-            "uri": "git://github.com/openshift/ruby-hello-world.git",
-            "ref": "beta3"
+            "uri": "git://github.com/openshift/ruby-hello-world.git"
           },
           "type": "Git"
         },
@@ -240,9 +239,9 @@
   "kind": "Template",
   "metadata": {
     "annotations": {
-      "description": "This example shows using quickstarts/templates in OpenShift 3"
+      "description": "This example shows using quickstarts in OpenShift 3"
     },
-    "name": "ruby-keyvalue-quickstart"
+    "name": "quickstart-keyvalue-application"
   },
   "parameters": [
     {
