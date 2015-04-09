@@ -1182,7 +1182,7 @@ Hint: you need to edit the `serviceName` field.
 When you are done, create your route:
 
     osc create -f sinatra-route.json
-    a8b8c72b-b07c-11e4-b390-525400b33d1d
+    sinatra-route
 
 Check to make sure it was created:
 
