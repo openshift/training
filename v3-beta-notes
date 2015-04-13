@@ -17,7 +17,7 @@ osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 #beta3
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*'
-docker images | grep 0.4.2 | awk {'print $3'} | xargs docker rmi -f
+docker images | grep 0.4.3.0 | awk {'print $3'} | xargs docker rmi -f
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder
@@ -25,13 +25,13 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.0
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.0
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.0
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.3.0
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.0
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.0 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.3.0 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.3.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.1
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.1 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.3.1 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.1
 
 cd
 git clone https://github.com/openshift/training.git -b beta3
@@ -56,17 +56,13 @@ useradd alice
 openshift ex router --create \
 --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
-sleep 10
-osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' \
--e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
-osc get pod | grep router-1 | awk '{print $1}' | xargs osc delete pod
 openshift ex registry --create \
 --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 sed -i -e 's/name: anypassword/name: apache_auth/' \
 -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
 -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift-passwd' \
-/var/lib/openshift/master.yaml
+/etc/openshift/master.yaml
 yum -y install httpd-tools
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat

@@ -394,7 +394,7 @@ and that is running on one of your nodes.
 
 To quickly test your Docker registry, you can do the following:
 
-    curl `osc get services | grep registry | awk '{print $4":"$5}'`
+    curl `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
 
 And you should see:
 
@@ -467,7 +467,7 @@ If you're feeling lazy, use your friend `sed`:
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
     -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift-passwd' \
-    /var/lib/openshift/master.yaml
+    /etc/openshift/master.yaml
 
 Restart `openshift-master`:
 
@@ -580,14 +580,13 @@ If you want to see that it was created:
 
 And if you want to verify limits or examine usage:
 
-    osc describe -n demo quota test-quota
     Name:                   test-quota
     Resource                Used    Hard
     --------                ----    ----
-    cpu                     0m      3
-    memory                  0       500000Ki
+    cpu                     0m      2
+    memory                  0       512Mi
     pods                    0       3
-    replicationcontrollers  0       4
+    replicationcontrollers  0       3
     resourcequotas          1       1
     services                0       3
 
@@ -700,14 +699,14 @@ To create the pod from our JSON file, execute the following:
 Remember, we've "logged in" to OpenShift and our project, so this will create
 the pod inside of it. The command should display the ID of the pod:
 
-    hello-openshift
+    pods/hello-openshift
 
 Issue a `get pods` to see that it was, in fact, defined, and to check its
 status:
 
     osc get pods
-    POD             IP       CONTAINER(S)                     IMAGE(S)                           HOST                                  LABELS                 STATUS
-    hello-openshift 10.1.0.4 hello-openshift                  openshift/hello-openshift          ose3-master.example.com/192.168.133.2 name=hello-openshift   Pending
+    POD               IP         CONTAINER(S)      IMAGE(S)                    HOST                                    LABELS                 STATUS    CREATED
+    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
 
 Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
 see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
@@ -766,10 +765,10 @@ fourth, because the quota on this project limits us to three total pods.
 Go ahead and use `osc create` and you will see the following:
 
     osc create -f hello-quota.json 
-    1-hello-openshift
-    2-hello-openshift
-    3-hello-openshift
-    F0331 12:06:29.927989    7202 create.go:50] Client error processing command: pods "4-hello-openshift" is forbidden: Limited to 3 pods
+    pods/1-hello-openshift
+    pods/2-hello-openshift
+    pods/3-hello-openshift
+    Error: pods "4-hello-openshift" is forbidden: Limited to 3 pods
 
 Let's delete these pods quickly. As `joe` again:
 
@@ -1149,27 +1148,25 @@ If we work from the route down to the pod:
 
 Logged in as `joe`, edit `test-complete.json` and change the `host` stanza for
 the route to have the correct domain, matching the DNS configuration for your
-environment. Once this is done, go ahead and use `osc` to apply it. You should
-see something like the following:
+environment. Once this is done, go ahead and use `osc` to apply it:
 
         osc create -f test-complete.json
-        hello-openshift-pod
-        hello-openshift-service
-        hello-openshift-route
+
+ You should see something like the following:
+
+    pods/hello-openshift-pod
+    services/hello-openshift-service
+    routes/hello-openshift-route
 
 You can verify this with other `osc` commands:
 
     osc get pods
-    ...
-    hello-openshift-pod/10.X.X.X ...
 
     osc get services
-    ...
-    hello-openshift-service ...
 
     osc get routes
-    ...
-    cd0dba9a-a1a5-11e4-bf82-525400b33d1d hello-openshift.cloudapps.example.com ...
+
+Don't forget about `osc status`.
 
 ### Verifying the Service
 Services are not externally accessible without a route being defined, because
@@ -1177,14 +1174,14 @@ they always listen on "local" IP addresses (eg: 172.x.x.x). However, if you have
 access to the OpenShift environment, you can still test a service.
 
     osc get services
-    NAME                      LABELS              SELECTOR                     IP                  PORT
-    hello-openshift-service   <none>              name=hello-openshift-label   172.30.17.230       27017
+    NAME                      LABELS    SELECTOR                     IP              PORT(S)
+    hello-openshift-service   <none>    name=hello-openshift-label   172.30.17.229   27017/TCP
 
 We can see that the service has been defined based on the JSON we used earlier.
 If the output of `osc get pods` shows that our pod is running, we can try to
 access the service:
 
-    curl `osc get services | grep hello-openshift | awk '{print $4":"$5}'`
+    curl `osc get services | grep hello-openshift | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
     Hello OpenShift!
 
 This is a good sign! It means that, if the router is working, we should be able
@@ -1336,17 +1333,20 @@ Let's go ahead and get everything fired up:
 
     osc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git
 
-As soon as you execute this command, go back to the web console and see if you
-can figure out what is different.
+You'll see a bunch of output:
 
-To learn a little more about what happened, run the following:
+    services/simple-openshift-sinatra
+    imageStreams/simple-openshift-sinatra-sti
+    buildConfigs/simple-openshift-sinatra-sti
+    deploymentConfigs/simple-openshift-sinatra-sti
+    Service "simple-openshift-sinatra" created at 172.30.17.127:8080 to talk to pods over port 8080.
+    A build was created - you can run `osc start-build simple-openshift-sinatra-sti` to start it.
 
-    for i in imagerepository buildconfig deploymentconfig service; do \
-    echo $i; osc get $i; echo -e "\n\n"; done
+Take a look at the web console, too. Do you see everything that was created?
 
-Based on the JSON from `new-app`, we have created:
+Based on using `new-app` against a Git repository, we have created:
 
-* An ImageRepository entry
+* An ImageStream
 * A BuildConfig
 * A DeploymentConfig
 * A Service
@@ -1421,7 +1421,7 @@ What were they?
 Using the information you found in the web console, try to see if your service
 is working:
 
-    curl `osc get services | grep sin | awk '{print $4":"$5}'`
+    curl `osc get service | grep sin | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
     Hello, Sinatra!
 
 So, from a simple code repository with a few lines of Ruby, we have successfully
@@ -1445,13 +1445,12 @@ services from the service output you looked at above.
 When you are done, create your route:
 
     osc create -f sinatra-route.json
-    sinatra-route
 
 Check to make sure it was created:
 
     osc get route
-    NAME                HOST/PORT                             PATH                SERVICE                  LABELS
-    sinatra-route       hello-sinatra.cloudapps.example.com                       simple-openshift-sinatra
+    NAME            HOST/PORT                             PATH      SERVICE                    LABELS
+    sinatra-route   hello-sinatra.cloudapps.example.com             simple-openshift-sinatra
 
 And now, you should be able to verify everything is working right:
 
