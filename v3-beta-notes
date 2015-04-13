@@ -50,6 +50,7 @@ git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
+sleep 90
 useradd joe
 useradd alice
 openshift ex router --create \

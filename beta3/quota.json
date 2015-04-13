@@ -1,16 +1,17 @@
-    {
-      "id": "test-quota",
-      "kind": "ResourceQuota",
-      "apiVersion": "v1beta1",
-      "spec": {
-        "hard": {
-          "memory": "512000000",
-          "cpu": "3",
-          "pods": "3",
-          "services": "3",
-          "replicationcontrollers":"4",
-          "resourcequotas":"1"
-        }
-      }
+{
+  "apiVersion": "v1beta3",
+  "kind": "ResourceQuota",
+  "metadata": {
+    "name": "test-quota"
+  },
+  "spec": {
+    "hard": {
+      "memory": "512Mi",
+      "cpu": "2",
+      "pods": "3",
+      "services": "3",
+      "replicationcontrollers": "3",
+      "resourcequotas": "1"
     }
-
+  }
+}

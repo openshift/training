@@ -473,17 +473,18 @@ Restart `openshift-master`:
     systemctl restart openshift-master
 
 ### A Project for Everything
-V3 has a concept of "projects" to contain a number of different services and
-their pods, builds and etc. They are somewhat similar to "namespaces" in
-OpenShift v2. We'll explore what this means in more details throughout the rest
-of the labs. Let's create a project for our first application. 
+V3 has a concept of "projects" to contain a number of different resources:
+services and their pods, builds and etc. They are somewhat similar to
+"namespaces" in OpenShift v2. We'll explore what this means in more details
+throughout the rest of the labs. Let's create a project for our first
+application. 
 
 We also need to understand a little bit about users and administration. The
 default configuration for CLI operations currently is to be the `master-admin`
-user, which is allowed to create projects. We can use the "experimental"
+user, which is allowed to create projects. We can use the "admin"
 OpenShift command to create a project, and assign an administrative user to it:
 
-    openshift ex new-project demo --display-name="OpenShift 3 Demo" \
+    openshift admin new-project demo --display-name="OpenShift 3 Demo" \
     --description="This is the first demo project with OpenShift v3" \
     --admin=joe
 
@@ -769,12 +770,12 @@ Go ahead and use `osc create` and you will see the following:
     3-hello-openshift
     F0331 12:06:29.927989    7202 create.go:50] Client error processing command: pods "4-hello-openshift" is forbidden: Limited to 3 pods
 
-Go ahead and clean up:
+Let's delete these pods quickly. As `joe` again:
 
     osc delete pod --all
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
-check*. Be careful.
+check*. Be careful. 
 
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment. Return
@@ -1255,6 +1256,23 @@ And, while you're at it, you can verify that visiting your app with HTTPS will
 also work (albeit with a self-signed certificate):
 
     https://hello-openshift.cloudapps.example.com
+
+### Deleting a Project
+Since we are done with this "demo" project, and since the `joe` user is a
+project administrator, let's go ahead and delete the project. This should also
+end up deleting all the pods.
+
+As the `joe` user:
+
+    osc delete project demo
+
+If you switch to the `root` user and issue `osc get project` you will see that
+the demo project's status is "Terminating". If you do an `osc get pod -n demo`
+you may see the pods, still. It takes about 60 seconds for the project deletion
+cleanup routine to finish.
+
+Once the project disappears from `osc get project`, doing `osc get pod -n demo`
+should return no results.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
