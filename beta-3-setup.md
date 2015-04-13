@@ -60,6 +60,7 @@
 * [Cleaning Up](#appendix---cleaning-up)
 * [Pretty Output](#appendix---pretty-output)
 * [Troubleshooting](#appendix---troubleshooting)
+* [Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
 
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
@@ -2228,3 +2229,68 @@ to limit some of what it returns:
     To find out if the endpoints have been updated you can run:
 
     `osc describe service $name_of_service` and check the value of `Endpoints:`
+
+# APPENDIX - Infrastructure Log Aggregation
+Given the distributed nature of OpenShift you may find it beneficial to
+aggregate logs from your OpenShift infastructure services. By default, openshift
+services log to the systemd journal and rsyslog persists those log messages to
+/var/log/messages. We''ll reconfigure rsyslog to write these entries to
+/var/log/openshift and configure the master host to accept log data from the
+other hosts.
+
+Uncomment the following lines in your master''s /etc/rsyslog.conf to enable
+remote logging services.
+
+```
+$ModLoad imtcp
+$InputTCPServerRun 514
+```
+
+On your master update the filters in /etc/rsyslog.conf to divert openshift logs to /var/log/openshift
+
+```
+# Log openshift processes to /var/log/openshift
+:programname, contains, "openshift"                     /var/log/openshift
+
+# Log anything (except mail) of level info or higher.
+# Don't log private authentication messages!
+# Don't log openshift processes to /var/log/messages either
+:programname, contains, "openshift" ~
+*.info;mail.none;authpriv.none;cron.none                /var/log/messages
+```
+Restart rsyslogd
+```
+systemctl restart rsyslogd
+```
+
+On your other hosts send openshift logs to your master by adding this line to
+/etc/rsyslog.conf
+
+```
+:programname, contains, "openshift" @@ose3-master.example.com
+```
+
+Restart rsyslogd
+```
+systemctl restart rsyslogd
+```
+
+Now all your openshift related logs will end up in /var/log/openshift on your
+master.
+
+You can also configure rsyslog to store logs in a different location
+based on the source host. On your master, add these lines immediately prior to
+$$InputTCPServerRun 514
+
+```
+$template TmplMsg, "/var/log/remote/%HOSTNAME%/%PROGRAMNAME:::secpath-replace%.log"
+$RuleSet remote1
+authpriv.*   ?TmplAuth
+*.info;mail.none;authpriv.none;cron.none   ?TmplMsg
+$RuleSet RSYSLOG_DefaultRuleset   #End the rule set by switching back to the default rule set
+$InputTCPServerBindRuleset remote1  #Define a new input and bind it to the "remote1" rule set
+```
+
+See these documentation sources for additional rsyslog configuration information
+https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/s1-basic_configuration_of_rsyslog.html
+http://www.rsyslog.com/doc/v7-stable/configuration/filters.html
