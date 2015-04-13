@@ -1506,7 +1506,7 @@ This portion of the template's JSON tells OpenShift to generate an expression
 using a regex-like string that will be presented as ADMIN_USERNAME.
 
 ### Adding the Template
-Go ahead and do the following as `root`:
+Go ahead and do the following as `root` in the `~/training/beta3` folder:
 
     osc create -f integrated-template.json -n openshift
 
@@ -1516,12 +1516,16 @@ What did you just do? The `integrated-template.json` file defined a template. By
 all users of the OpenShift environment. Let's take a look at how that works.
 
 ### Create an Instance of the Template
-In the web console, find the "Frontend/Backend" project, and then hit the
-"Create +" button. You will be taken to a page that lists the current templates
-that are available for use.
+In the web console, logged in as `joe`, find the "Frontend/Backend" project, and
+then hit the "Create +" button. 
 
-Click "ruby-keyvalue-quickstart", and you'll see a modal pop-up that provides more
-information about the template.
+Click the "Browse all templates..." button.
+
+You will be taken to a page that lists the current templates that are available
+for use.
+
+Click "quickstart-keyvalue-application", and you'll see a modal pop-up that
+provides more information about the template.
 
 Click "Select template..."
 
@@ -1535,7 +1539,7 @@ insantiated.
 
 Leave all of the defaults and simply click "Create".
 
-### The Template is Alive
+### The Template is Alive!
 Once you hit the "Create" button, the services and pods and
 replicationcontrollers and etc. will be instantiated
 
@@ -1547,13 +1551,10 @@ the *frontend* service:
 
     `integrated.cloudapps.example.com`
 
-### Start Your Build
-You can start the build as the `joe` user from the commandline:
+The build was started for us immediately after creating an instance of the
+template, so you can wait for it to finish. Feel free to check the build logs.
 
-    osc start-build ruby-sample-build
-
-**Note:** you can only view the build logs as a cluster admin (eg: the `root`
-user)
+Once the build is complete, you can go on to the next step.
 
 ### Using Your App
 Once the app is built, you should be able to visit the routed URL and
