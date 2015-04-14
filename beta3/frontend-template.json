@@ -19,7 +19,7 @@
       "metadata": {
         "name": "route-edge"
       },
-      "serviceName": "frontend",
+      "serviceName": "frontend"
     },
     {
       "apiVersion": "v1beta1",
