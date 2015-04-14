@@ -174,12 +174,12 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.2.5
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.2.5
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.2.5
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.2.5
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.2.5
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.2.5
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
