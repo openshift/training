@@ -56,6 +56,7 @@
 
 * [Extra STI code examples](#appendix---extra-sti-code-examples)
 * [DNSMasq setup](#appendix---dnsmasq-setup)
+* [LDAP Authentication](#appendix---ldap-authentication)
 * [Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
 * [Cleaning Up](#appendix---cleaning-up)
 * [Pretty Output](#appendix---pretty-output)
@@ -2121,6 +2122,103 @@ wildcard space:
     ;; ANSWER SECTION:
     foo.cloudapps.example.com 0 IN A 192.168.133.2
     ...
+
+# APPENDIX - LDAP Authentication
+OpenShift currently supports several authentication methods for obtaining API
+tokens.  While OpenID or one of the supported Oauth providers are preferred,
+support for services such as LDAP is possible today using either the [Basic Auth
+Remote](http://docs.openshift.org/latest/architecture/authentication.html#BasicAuthPasswordIdentityProvider)
+identity provider or the [Request
+Header](http://docs.openshift.org/latest/architecture/authentication.html#RequestHeaderIdentityProvider)
+Identity provider.  This example while demonstrate the ease of running a
+`BasicAuthPasswordIdentityProvider` on OpenShift.
+
+For full documentation on the other authentication options please refer to the
+[Official
+Documentation](http://docs.openshift.org/latest/architecture/authentication.html#authentication-integrations)
+
+### Prerequirements:
+
+* A working Router with a wildcard DNS entry pointed to it
+* A working Registry
+
+### Setting up an example LDAP server:
+
+For purposes of this training it is possible to use a preexisting LDAP server
+or the example ldap server that comes preconfigured with the users referenced
+in this document.  The decision does not need to be made up front.  It is
+possible to change the ldap server that is used at any time.
+
+For convenience the example LDAP server can be deployed on OpenShift as
+follows:
+
+    osc create -f openldap-example.json
+
+That will create a pod from an OpenLDAP image hosted externally on the Docker
+Hub.  You can find the source for it [here](beta3/images/openldap-example/).
+
+To test the example LDAP service you can run the following:
+
+    yum install openldap-clients
+    ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" -s sub "(objectclass=*)" -h 172.30.17.40 -w redhat
+
+You should see ldif output that shows the example.com users.
+
+### Creating the Basic Auth service
+
+While the example OpenLDAP service is itself mostly a toy, the Basic Auth
+service created below can easily be made highly available using OpenShift
+features.  It's a normal web service that happens to speak the [API required by
+the
+master](http://docs.openshift.org/latest/architecture/authentication.html#BasicAuthPasswordIdentityProvider)
+and talk to an LDAP server.  Since it's stateless simply increasing the
+replicas in the replication controller is all that is needed to make the
+application highly available.
+
+To make this as easy as possible for the beta training a helper script has been
+provided to create a Route, Service, Build Config and Deployment Config.  The
+Basic Auth service will be configured to use TLS all the way to the pod by
+means of the [Router's SNI
+capabilities](http://docs.openshift.org/latest/architecture/routing.html#passthrough-termination).
+Since TLS is used this helper script will also generated the required
+certificates using OpenShift default CA.
+
+    ./basicauthurl.sh -h
+
+No arguments are required but the help output will show you the defaults:
+
+    --route    basicauthurl.example.com
+    --git-repo git://github.com/brenton/basicauthurl-example.git
+
+Once you run the helper script it will output the configuration changes
+required for `/etc/openshift/master.yaml` as well as create
+`basicauthurl.json`.  You can now feed that to `osc`:
+
+    osc create -f basicauthurl.json
+
+At this point everything is in place to start the build which will trigger the
+deployment.
+
+    osc start-build basicauthurl-build
+
+When the build finished you can run the following command to test that the
+Service is responding correctly:
+
+    curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt --resolve basicauthurl.example.com:443:172.30.17.56 https://basicauthurl.example.com/validate
+
+In that case in order for SNI to work correctly we had to trick curl with the `--resolve` flag.  If wildcard DNS is set up in your environment to point to the router then the following should test the service end to end:
+
+   curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt https://basicauthurl.example.com/validate
+
+If you've made the required changes to `/etc/openshift/mmaster.yaml` and
+restarted `openshift-master` then you should now be able to log it with the
+example users `joe` and `alice` with the password `redhat`.
+
+### Using an LDAP server external to OpenShift
+
+For more advanced usage it's best to refer to the
+[README](https://github.com/openshift/sti-basicauthurl) for now.  All
+mod_authnz_ldap directives are available.
 
 # APPENDIX - Import/Export of Docker Images (Disconnected Use)
 Docker supports import/save of Images via tarball. You can do something like the
