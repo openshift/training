@@ -1325,6 +1325,9 @@ a Docker image.
 1. OpenShift will then deploy the built Docker image as a Pod with an associated
 Service.
 
+**Note:** I am wondering if we want to do this via the console now, except for a
+bug with services not being created.
+
 ### Create the Build Process
 Let's go ahead and get everything fired up:
 
@@ -1617,9 +1620,16 @@ Go ahead and create the configuration:
 
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
-before continuing.
+before continuing. It may take about 20-40 seconds for the automatic build to
+start:
+
+    https://github.com/openshift/origin/issues/1738
 
 ### Webhooks
+
+**Note**: Since the build auto starts, we may want to move this to a later
+example.
+
 Webhooks are a way to integrate external systems into your OpenShift
 environment. They can be used to fire off builds. Generally speaking, one would
 make code changes, update the code repository, and then some process would hit
