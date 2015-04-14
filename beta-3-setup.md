@@ -356,18 +356,6 @@ few moments (it may take up to a few minutes):
 Note: You may or may not see the deploy pod, depending on when you run this
 command.
 
-**Bug Fix:** There is a problem with the router right now. We have to remove the
-"liveness probe" from the replication controller. We'll get into more about what
-that means later, but, for now, do this:
-
-    osc get -o json rc router-1 | sed -e 's/"timeoutSeconds": 1/"timeoutSeconds": 10/' \
-    -e '/"timeoutSeconds":/i \"initialDelaySeconds": 10,' | osc update -f -
-    osc get pod | grep router-1 | awk '{print $1}' | xargs osc delete pod
-
-If you're interested: This will update the settings for the router pod (as far
-as the replication controller is concerned) and then will delete the existing
-pod so that the RC recreates it.
-
 ## Preparing for STI and Other Things
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code and deploy and manage their lifecycle. In
