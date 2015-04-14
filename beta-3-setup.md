@@ -1280,8 +1280,8 @@ for you).
 As the `root` user, we will create a new project to put our first STI example
 into. Grab the project definition and create it:
 
-    openshift ex new-project sinatra --display-name="Ruby/Sinatra" \
-    --description="Our Simple Sintra STI Example" \
+    openshift admin new-project sinatra --display-name="OpenShift 3 Demo" \
+    --description="This is the first demo project with OpenShift v3" \
     --admin=joe
 
 At this point, if you click the OpenShift image on the web console you should be
@@ -1470,7 +1470,7 @@ comes in a template that you can just fire up and start using or hacking on.
 ### A Project for the Quickstart
 As the `root` user, first we'll create a new project:
 
-    openshift ex new-project quickstart --display-name="Quickstart" \
+    openshift admin new-project quickstart --display-name="Quickstart" \
     --description='A demonstration of a "quickstart/template"' \
     --admin=joe
 
@@ -1570,7 +1570,7 @@ separate "applications" that we want to wire together.
 As the `root` user, create another new project for this "wiring" example. This
 time we'll make it belong to `alice`:
 
-    openshift ex new-project wiring --display-name="Exploring Parameters" \
+    openshift admin new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
     --admin=alice
 
@@ -1614,6 +1614,10 @@ Go ahead and create the configuration:
    
     osc create -f frontend-config.json
 
+As soon as you create this, all of the resources will be created *and* a build
+will be started for you. Let's go ahead and wait until this build completes
+before continuing.
+
 ### Webhooks
 Webhooks are a way to integrate external systems into your OpenShift
 environment. They can be used to fire off builds. Generally speaking, one would
@@ -1638,7 +1642,7 @@ First, look at the list of builds:
 
     osc get build
 
-You should see that there aren't any. Then, `curl`:
+You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
@@ -1647,16 +1651,17 @@ You should see that there aren't any. Then, `curl`:
 And now `get build` again:
 
     osc get build
-    NAME                                                   TYPE STATUS  POD
-    ruby-sample-build-9ae35312-c687-11e4-a4a6-525400b33d1d STI  Running build-ruby-sample-build-9ae35312-c687-11e4-a4a6-525400b33d1d
+    NAME                  TYPE      STATUS     POD
+    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
+    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
 
 You can see that this could have been part of some CI/CD workflow that
 automatically called our webhook once the code was tested.
 
 ### Visit Your Application
-Once the build is finished and the frontend service's endpoint has been updated,
-visit your application. The frontend configuration contained a route for
-`wiring.cloudapps.example.com`. You should see a note that the database is
+Once the new build is finished and the frontend service's endpoint has been
+updated, visit your application. The frontend configuration contained a route
+for `wiring.cloudapps.example.com`. You should see a note that the database is
 missing. So, let's create it!
 
 ### Create the Database Config
