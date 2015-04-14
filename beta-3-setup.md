@@ -2238,6 +2238,7 @@ services log to the systemd journal and rsyslog persists those log messages to
 /var/log/openshift and configure the master host to accept log data from the
 other hosts.
 
+## Enable Remote Logging on Master
 Uncomment the following lines in your master''s /etc/rsyslog.conf to enable
 remote logging services.
 
@@ -2245,7 +2246,13 @@ remote logging services.
 $ModLoad imtcp
 $InputTCPServerRun 514
 ```
+Restart rsyslogd
+```
+systemctl restart rsyslogd
+```
 
+
+## Enable logging to /var/log/openshift
 On your master update the filters in /etc/rsyslog.conf to divert openshift logs to /var/log/openshift
 
 ```
@@ -2263,6 +2270,7 @@ Restart rsyslogd
 systemctl restart rsyslogd
 ```
 
+## Configure nodes to send openshift logs to your master
 On your other hosts send openshift logs to your master by adding this line to
 /etc/rsyslog.conf
 
@@ -2278,9 +2286,10 @@ systemctl restart rsyslogd
 Now all your openshift related logs will end up in /var/log/openshift on your
 master.
 
+## Optionally Log Each Node to a unique directory
 You can also configure rsyslog to store logs in a different location
 based on the source host. On your master, add these lines immediately prior to
-$$InputTCPServerRun 514
+$InputTCPServerRun 514
 
 ```
 $template TmplMsg, "/var/log/remote/%HOSTNAME%/%PROGRAMNAME:::secpath-replace%.log"
@@ -2290,6 +2299,13 @@ authpriv.*   ?TmplAuth
 $RuleSet RSYSLOG_DefaultRuleset   #End the rule set by switching back to the default rule set
 $InputTCPServerBindRuleset remote1  #Define a new input and bind it to the "remote1" rule set
 ```
+Restart rsyslogd
+```
+systemctl restart rsyslogd
+```
+
+
+Now logs from remote hosts will go to /var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log
 
 See these documentation sources for additional rsyslog configuration information
 https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/s1-basic_configuration_of_rsyslog.html
