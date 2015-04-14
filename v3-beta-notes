@@ -40,6 +40,7 @@ cd ~/training/beta3
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 systemctl start dnsmasq
+iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 cd

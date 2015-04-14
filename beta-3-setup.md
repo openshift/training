@@ -397,12 +397,16 @@ endpoints with:
 
 And you will eventually see something like:
 
+    W0414 10:28:57.561516    5829 request.go:288] field selector: v1beta1 - events - involvedObject.namespace - default: need to check if this is versioned correctly.
+    W0414 10:28:57.561581    5829 request.go:288] field selector: v1beta1 - events - involvedObject.kind - Service: need to check if this is versioned correctly.
+    W0414 10:28:57.561587    5829 request.go:288] field selector: v1beta1 - events - involvedObject.uid - 1f41e96d-e2b2-11e4-bf25-525400b33d1d: need to check if this is versioned correctly.
+    W0414 10:28:57.561591    5829 request.go:288] field selector: v1beta1 - events - involvedObject.id - docker-registry: need to check if this is versioned correctly.
     Name:                   docker-registry
     Labels:                 docker-registry=default
     Selector:               docker-registry=default
-    IP:                     172.30.17.154
-    Port:                   5000
-    Endpoints:              10.1.0.7:5000
+    IP:                     172.30.17.64
+    Port:                   <unnamed>       5000/TCP
+    Endpoints:              10.1.0.5:5000
     Session Affinity:       None
     No events.
 
@@ -636,7 +640,7 @@ which we're not accessing.
 
 **Note:** See the [troubleshooting guide](#appendix---troubleshooting) for
 details on how to fetch a new token once this once expires.  The installer sets
-the default token lifetime to 48 hours.
+the default token lifetime to 4 hours.
 
 ### Grab the Training Repo Again
 Since Joe and Alice can't access the training folder in root's home directory,
@@ -1246,11 +1250,15 @@ also work (albeit with a self-signed certificate):
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `joe` user is a
 project administrator, let's go ahead and delete the project. This should also
-end up deleting all the pods.
+end up deleting all the pods, and other resources, too.
 
 As the `joe` user:
 
     osc delete project demo
+
+If you quickly go to the web console and return to the top page, you'll see a
+warning icon that will pop-up a hover tip saying the project is marked for
+deletion.
 
 If you switch to the `root` user and issue `osc get project` you will see that
 the demo project's status is "Terminating". If you do an `osc get pod -n demo`
@@ -1462,13 +1470,13 @@ comes in a template that you can just fire up and start using or hacking on.
 ### A Project for the Quickstart
 As the `root` user, first we'll create a new project:
 
-    openshift ex new-project integrated --display-name="Frontend/Backend" \
+    openshift ex new-project quickstart --display-name="Quickstart" \
     --description='A demonstration of a "quickstart/template"' \
     --admin=joe
 
 As the `joe` user, we'll set our context to use the corresponding namespace:
 
-    osc project integrated
+    osc project quickstart
 
 ### A Quick Aside on Templates
 From the [OpenShift
@@ -1504,7 +1512,7 @@ What did you just do? The `integrated-template.json` file defined a template. By
 all users of the OpenShift environment. Let's take a look at how that works.
 
 ### Create an Instance of the Template
-In the web console, logged in as `joe`, find the "Frontend/Backend" project, and
+In the web console, logged in as `joe`, find the "Quickstart" project, and
 then hit the "Create +" button. 
 
 Click the "Browse all templates..." button.
@@ -1572,7 +1580,7 @@ Open a terminal as `alice`:
 
 Then:
 
-    osc login -n demo \
+    osc login -n wiring \
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
     --server=https://ose3-master.example.com:8443
 
@@ -2153,7 +2161,7 @@ now. The following command will show you just about everything you might need to
 delete. Be sure to change your context across all the namespaces and the
 master-admin to find everything:
 
-    for resource in build buildconfig images imagerepository deploymentconfig \
+    for resource in build buildconfig images imagestream deploymentconfig \
     route replicationcontroller service pod; do echo -e "Resource: $resource"; \
     osc get $resource; echo -e "\n\n"; done
 
