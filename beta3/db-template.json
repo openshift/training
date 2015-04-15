@@ -24,7 +24,7 @@
               "manifest": {
 		"volumes": [
 		  {
-		    "name": "var-lib-mysql",
+		    "name": "var-lib-mysql-data",
 		      "source": {
 			"hostDir": null,
 			"emptyDir": {},
@@ -45,7 +45,7 @@
                         "value": "${MYSQL_DATABASE}"
                       }
                     ],
-                    "image": "mysql",
+                    "image": "openshift/mysql-55-centos7",
                     "name": "ruby-helloworld-database",
                     "ports": [
                       {
@@ -54,9 +54,9 @@
                     ],
  		    "volumeMounts": [
 		      {
-			"name": "var-lib-mysql",
-			"mountPath": "/var/lib/mysql",
-			"path": "/var/lib/mysql"
+			"name": "var-lib-mysql-data",
+			"mountPath": "/var/lib/mysql/data",
+			"path": "/var/lib/mysql/data"
 		      }
 		    ]
                   }
@@ -87,9 +87,9 @@
   "kind": "Template",
   "metadata": {
     "annotations": {
-      "description": "This example shows how to create a simple ruby application in openshift origin v3"
+      "description": "This example shows how to hand-wire a database in OpenShift 3"
     },
-    "name": "ruby-helloworld-sample"
+    "name": "mysql-wiring-example"
   },
   "parameters": [
     {

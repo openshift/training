@@ -165,7 +165,7 @@ environment happen **faster**, you'll need to first install Docker:
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.5.0-27.el7.x86_64`.
+Make sure that you are running at least `docker-1.6.0-1.el7.x86_64`.
 
 You'll need to add `--insecure-registry 0.0.0.0/0` to your
 `/etc/sysconfig/docker` `OPTIONS`. Then:
@@ -1744,13 +1744,13 @@ gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
 which means it will be able to connect to the DB, which means that we should no
 longer see these errors!
 
-Go ahead and find your frontend pod, and then kill it:
+As `alice`, go ahead and find your frontend pod, and then kill it:
 
     osc delete pod `osc get pod | grep front | awk '{print $1}'`
 
 You'll see something like:
 
-    frontend-1-hvxiy
+    pods/frontend-1-b6bgy
 
 That was the generated name of the pod when the replication controller stood it
 up the first time. After a few moments, we can look at the list of pods again:
@@ -1764,7 +1764,7 @@ And we should see a different name for the pod this time:
 This shows that, underneath the covers, the RC restarted our pod. Since it was
 restarted, it should have a value for the `DATABASE_SERVICE_HOST` environment
 variable. Go to the node where the pod is running, and find the Docker container
-id:
+id as `root`:
 
     docker inspect `docker ps | grep wiring | grep front | grep run | awk \
     '{print $1}'` | grep DATABASE
