@@ -37,12 +37,16 @@
                   {
                     "env": [
                       {
-                        "name": "MYSQL_ROOT_PASSWORD",
-                        "value": "${MYSQL_ROOT_PASSWORD}"
+                        "name": "MYSQL_PASSWORD",
+                        "value": "copy-this-from-frontend"
                       },
                       {
                         "name": "MYSQL_DATABASE",
-                        "value": "${MYSQL_DATABASE}"
+                        "value": "example"
+                      },
+                      {
+                        "name": "MYSQL_USER",
+                        "value": "example"
                       }
                     ],
                     "image": "openshift/mysql-55-centos7",
@@ -93,27 +97,19 @@
   },
   "parameters": [
     {
-      "description": "administrator username",
-      "from": "admin[A-Z0-9]{3}",
-      "generate": "expression",
-      "name": "ADMIN_USERNAME"
-    },
-    {
-      "description": "administrator password",
-      "from": "[a-zA-Z0-9]{8}",
-      "generate": "expression",
-      "name": "ADMIN_PASSWORD"
-    },
-    {
       "description": "database password",
       "from": "[a-zA-Z0-9]{8}",
       "generate": "expression",
-      "name": "MYSQL_ROOT_PASSWORD"
+      "name": "MYSQL_PASSWORD"
     },
     {
       "description": "database name",
       "name": "MYSQL_DATABASE",
-      "value": "root"
+      "value": "example"
+    },
+    { "description": "database user",
+      "name": "MYSQL_USER",
+      "value": "example"
     }
   ],
   "labels": {
