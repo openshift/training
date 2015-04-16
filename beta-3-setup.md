@@ -2231,6 +2231,15 @@ For more advanced usage it's best to refer to the
 [README](https://github.com/openshift/sti-basicauthurl) for now.  All
 mod_authnz_ldap directives are available.
 
+### Upcoming changes
+
+We've recently worked with Kubernetes upstream to add API support for Secrets.
+Before GA the need for STI builds in this authentication approach may go away.
+What this would mean is that admins would run a script to import an Apache
+configuration in to a Secret and the Pod could use this on start up.  In this
+case the Build Config would go away and only a Deployment Config would be
+needed.
+
 # APPENDIX - Import/Export of Docker Images (Disconnected Use)
 Docker supports import/save of Images via tarball. You can do something like the
 following on your connected machine:
