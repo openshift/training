@@ -112,8 +112,12 @@
                         "value": "${ADMIN_PASSWORD}"
                       },
                       {
-                        "name": "MYSQL_ROOT_PASSWORD",
-                        "value": "${MYSQL_ROOT_PASSWORD}"
+                        "name": "MYSQL_USER",
+                        "value": "${MYSQL_USER}"
+                      },
+                      {
+                        "name": "MYSQL_PASSWORD",
+                        "value": "${MYSQL_PASSWORD}"
                       },
                       {
                         "name": "MYSQL_DATABASE",
@@ -186,12 +190,16 @@
       "description": "database password",
       "from": "[a-zA-Z0-9]{8}",
       "generate": "expression",
-      "name": "MYSQL_ROOT_PASSWORD"
+      "name": "MYSQL_PASSWORD"
     },
     {
       "description": "database name",
       "name": "MYSQL_DATABASE",
-      "value": "root"
+      "value": "example"
+    },
+    { "description": "database user",
+      "name": "MYSQL_USER",
+      "value": "example"
     }
   ],
   "labels": {

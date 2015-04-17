@@ -111,7 +111,7 @@ OpenShift 3, like OpenShift 2, has two primary components:
 The environment for the beta testing as documented is pretty simple. You will
 need 3 virtual machines to follow this beta documentation exactly. Each of the
 virtual machines should have 4+ GB of memory, 20+ GB of disk space, and the
-following configuration: 
+following configuration:
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
@@ -219,7 +219,7 @@ Disable EPEL so that it is not accidentally used later:
 
 Install the packages for Ansible:
 
-    yum --enablerepo=epel -y install ansible 
+    yum --enablerepo=epel -y install ansible
 
 ### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
@@ -472,7 +472,7 @@ V3 has a concept of "projects" to contain a number of different resources:
 services and their pods, builds and etc. They are somewhat similar to
 "namespaces" in OpenShift v2. We'll explore what this means in more details
 throughout the rest of the labs. Let's create a project for our first
-application. 
+application.
 
 We also need to understand a little bit about users and administration. The
 default configuration for CLI operations currently is to be the `master-admin`
@@ -486,7 +486,7 @@ OpenShift command to create a project, and assign an administrative user to it:
 This command creates a project:
 * with the id `demo`
 * with a display name
-* with a description 
+* with a description
 * with an administrative user `joe` who can login with the password defined by
     htpasswd
 
@@ -503,7 +503,7 @@ Open your browser and visit the following URL:
 
 It may take up to 90 seconds for the web console to be available after
 restarting the master (when you changed the authentication settings).
-    
+
 You will first need to accept the self-signed SSL certificate. You will then be
 asked for a username and a password. Remembering that we created a user
 previously, `joe`, go ahead and enter that and use the password (redhat) you set
@@ -604,7 +604,7 @@ Then, execute:
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
-our tool at the CA file. 
+our tool at the CA file.
 
 This created a file called `.config` in the `~/.config/openshift` folder. Take a
 look at it, and you'll see something like the following:
@@ -630,7 +630,7 @@ look at it, and you'll see something like the following:
         token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
 
 This configuration file has an authorization token, some information about where
-our server lives, our project, and etc. 
+our server lives, our project, and etc.
 
 If we now do something like:
 
@@ -656,7 +656,7 @@ go ahead and grab it inside Joe's home folder:
 In the beta3 training folder, you can see the contents of our pod definition by using
 `cat`:
 
-    cat hello-pod.json 
+    cat hello-pod.json
     {
       "id": "hello-openshift",
       "kind": "Pod",
@@ -758,7 +758,7 @@ fourth, because the quota on this project limits us to three total pods.
 
 Go ahead and use `osc create` and you will see the following:
 
-    osc create -f hello-quota.json 
+    osc create -f hello-quota.json
     pods/1-hello-openshift
     pods/2-hello-openshift
     pods/3-hello-openshift
@@ -769,7 +769,7 @@ Let's delete these pods quickly. As `joe` again:
     osc delete pod --all
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
-check*. Be careful. 
+check*. Be careful.
 
 ## Adding Nodes
 It is extremely easy to add nodes to an existing OpenShift environment. Return
@@ -1306,7 +1306,7 @@ As the `joe` user, let's switch to the `sinatra` project:
     osc project sinatra
 
 You should see:
-   
+
     Now using project "sinatra" on server "https://ose3-master.example.com:8443".
 
 ### A Simple STI Build
@@ -1528,7 +1528,7 @@ all users of the OpenShift environment. Let's take a look at how that works.
 
 ### Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and
-then hit the "Create +" button. 
+then hit the "Create +" button.
 
 Click the "Browse all templates..." button.
 
@@ -1599,7 +1599,7 @@ Then:
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
     --server=https://ose3-master.example.com:8443
 
-Remember, your password was probably "redhat". 
+Remember, your password was probably "redhat".
 
 Log into the web console as `alice`. Can you see `joe`'s projects and content?
 
@@ -1626,7 +1626,7 @@ In the config, you will see that a DB password and other parameters have been
 generated (remember the template and parameter info from earlier?).
 
 Go ahead and create the configuration:
-   
+
     osc create -f frontend-config.json
 
 As soon as you create this, all of the resources will be created *and* a build
@@ -1705,9 +1705,9 @@ In the future, you'll be able to pass values into the template when it is
 processed, or things will be auto-populated (like in OpenShift v2).
 
 So, look at the frontend configuration (`frontend-config.json`) and find the
-value for `MYSQL_ROOT_PASSWORD`. For example, `mugX5R2B`.
+value for `MYSQL_PASSWORD`. For example, `mugX5R2B`.
 
-Edit `db-config.json` and set the value for `MYSQL_ROOT_PASSWORD` to match
+Edit `db-config.json` and set the value for `MYSQL_PASSWORD` to match
 whatever is in your `frontend-config.json`. Once you are finished, you can
 create the backend:
 
@@ -1967,7 +1967,7 @@ scripts. If so, it will execute the repository script instead.
 ### Add a Script
 You will find a script called `custom-build.sh` in the `beta2` folder. Go to
 your Github repository for your application from the previous lab, and find the
-`.sti/bin` folder. 
+`.sti/bin` folder.
 
 * Click the "+" button at the top (to the right of `bin` in the
     breadcrumbs).
@@ -2128,12 +2128,12 @@ You can query the local DNS on the master using `dig` (provided by the
 `bind-utils` package) to make sure it returns the correct records:
 
     dig ose3-master.example.com
-    
+
     ...
     ;; ANSWER SECTION:
     ose3-master.example.com. 0  IN  A 192.168.133.2
     ...
-   
+
 The returned IP should be the public interface's IP on the master. Repeat for
 your nodes. To verify the wildcard entry, simply dig an arbitrary domain in the
 wildcard space:
@@ -2307,11 +2307,11 @@ to limit some of what it returns:
 # APPENDIX - Troubleshooting
 * All of a sudden authentication seems broken for non-admin users.  Whenever I run osc commands I see output such as:
 
-        F0310 14:59:59.219087   30319 get.go:164] request 
+        F0310 14:59:59.219087   30319 get.go:164] request
         [&{Method:GET URL:https://ose3-master.example.com:8443/api/v1beta1/pods?namespace=demo
-        Proto:HTTP/1.1 ProtoMajor:1 ProtoMinor:1 Header:map[] Body:<nil> ContentLength:0 TransferEncoding:[] 
-        Close:false Host:ose3-master.example.com:8443 Form:map[] PostForm:map[] 
-        MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}] 
+        Proto:HTTP/1.1 ProtoMajor:1 ProtoMinor:1 Header:map[] Body:<nil> ContentLength:0 TransferEncoding:[]
+        Close:false Host:ose3-master.example.com:8443 Form:map[] PostForm:map[]
+        MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}]
         failed (401) 401 Unauthorized: Unauthorized
 
     In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
