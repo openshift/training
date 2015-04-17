@@ -62,6 +62,7 @@
 * [Pretty Output](#appendix---pretty-output)
 * [Troubleshooting](#appendix---troubleshooting)
 * [Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
+* [JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
 
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
@@ -2422,3 +2423,44 @@ $InputTCPServerBindRuleset remote1  #Define a new input and bind it to the "remo
 See these documentation sources for additional rsyslog configuration information
 https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/s1-basic_configuration_of_rsyslog.html
 http://www.rsyslog.com/doc/v7-stable/configuration/filters.html
+
+# APPENDIX - JBoss Tools for Eclipse
+Support for OpenShift development using Eclipse is provided through the JBoss Tools plugin.  The plugin is available
+from the Jboss Tools nightly build of the Eclipse Mars.  
+
+### Features
+Development is ongoing but current features include:
+
+- Connecting to an OpenShift server using Oauth
+    - Connections to multiple servers using multiple user names
+- OpenShift Explorer
+    - Browsing user projects
+    - Browsing project resources
+- Display of resource properties
+
+### Installation
+1. Install the Mars release of Eclipse from the [Eclipse Download site](http://www.eclipse.org/downloads/)
+1. Add the update site
+  1. Click from the toolbar 'Help > Install New Sofware'
+  1. Click the 'Add' button and a dialog appears
+  1. Enter a value for the name
+  1. Enter 'http://download.jboss.org/jbosstools/updates/nightly/mars/' for the location.  **Note:** Alternative updates are available from
+     the [JBoss Tools Downloads](http://tools.jboss.org/downloads/jbosstools/mars/index.html).  The various releases and code
+     freeze dates are listed on the [JBoss JIRA site](https://issues.jboss.org/browse/JBIDE/?selectedTab=com.atlassian.jira.jira-projects-plugin:versions-panel)
+  1. Click 'OK' to add the update site
+1. Type 'OpenShift' in the text input box to filter the choices
+1. Check 'JBoss OpenShift v3 Tools' and click 'Next'
+1. Click 'Next' again, accept the license agreement, and click 'Finish'
+
+After installation, open the OpenShift explorer view by clicking from the toolbar 'Window > Show View > Other' and typing 'OpenShift'
+in the dialog box that appears.
+
+### Connecting to the server
+1. Click 'New Connection Wizard' and a dialog appears
+1. Select a v3 connection type
+1. Uncheck default server
+1. Enter the URL to the OpenShift server instance
+1. Enter the username and password for the connection
+
+A successful connection will allow you to expand the OpenShift explorer tree and browse the projects associated with the account
+and the resources associated with each project.
