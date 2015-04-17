@@ -988,8 +988,8 @@ Check to the results to ensure the labels were applied:
      
     NAME                       LABELS                     STATUS
     ose3-master.example.com    region=infra,zone=NA       Ready
-    node1-master.example.com   region=primary,zone=east   Ready
-    node2-master.example.com   region=primary,zone=west   Ready
+    ose3-node1.example.com     region=primary,zone=east   Ready
+    ose3-node2.example.com     region=primary,zone=west   Ready
 
 
 ## Services
