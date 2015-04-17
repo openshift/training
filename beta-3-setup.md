@@ -898,7 +898,7 @@ Then, create `/etc/openshift/scheduler.json` with the following content:
         {"name" : "PodFitsResources"},
         {"name" : "PodFitsPorts"},
         {"name" : "NoDiskConflict"},
-        {"name" : "Region", "argument" : {"serviceAffinity" : { "label" : "region"}}}
+        {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
       ],"priorities" : [
         {"name" : "LeastRequestedPriority", "weight" : 1},
         {"name" : "ServiceSpreadingPriority", "weight" : 1},
@@ -956,7 +956,7 @@ following as the `root` user:
     osc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
 
 You will have the JSON output of the definition of all of your nodes. Go ahead
-and edit this file. After the `hostIP` line for the block that defines your
+and edit this file. After the `"metadata": {` line for the block that defines your
 master, add the following:
 
     "labels" : {
@@ -981,6 +981,16 @@ For your node2, add the following:
 Then, update your nodes using the following:
 
     osc update node -f ~/nodes.json
+
+Check to the results to ensure the labels were applied:
+
+    osc get nodes
+     
+    NAME                       LABELS                     STATUS
+    ose3-master.example.com    region=infra,zone=NA       Ready
+    ose3-node1.example.com     region=primary,zone=east   Ready
+    ose3-node2.example.com     region=primary,zone=west   Ready
+
 
 ## Services
 From the [Kubernetes
