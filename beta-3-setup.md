@@ -2234,7 +2234,8 @@ Service is responding correctly:
 
 In that case in order for SNI to work correctly we had to trick curl with the `--resolve` flag.  If wildcard DNS is set up in your environment to point to the router then the following should test the service end to end:
 
-   curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt https://basicauthurl.example.com/validate
+    curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+        https://basicauthurl.example.com/validate
 
 If you've made the required changes to `/etc/openshift/mmaster.yaml` and
 restarted `openshift-master` then you should now be able to log it with the
