@@ -56,13 +56,12 @@ git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
-sleep 90
 useradd joe
 useradd alice
-openshift ex router --create \
+osadm router --create \
 --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
-openshift ex registry --create \
+osadm registry --create \
 --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 sed -i -e 's/name: anypassword/name: apache_auth/' \

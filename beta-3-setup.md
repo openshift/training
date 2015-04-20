@@ -274,6 +274,14 @@ configuration to add the extra nodes.
 You've been warned, but we promise an explanation about *why* it will break soon
 enough.
 
+**Note:** The installer will fail. After it fails the first time, run the
+following:
+
+    mkdir -p /root/.config/openshift
+    ln -s /root/.kube/.kubeconfig /root/.config/openshift/.config 
+
+Then run the installer again.
+
 ### Add Development Users
 In the "real world" your developers would likely be using the OpenShift tools on
 their own machines (`osc` and `openshift` and etc). For the Beta training, we
@@ -341,8 +349,8 @@ upstream/origin:
 
 If this works, you'll see some output:
 
-    router
-    router
+    services/router
+    deploymentConfigs/router
 
 Let's check the pods with the following:
 
@@ -574,6 +582,7 @@ If you want to see that it was created:
 
 And if you want to verify limits or examine usage:
 
+    osc describe quota test-quota -n demo
     Name:                   test-quota
     Resource                Used    Hard
     --------                ----    ----
@@ -783,6 +792,14 @@ Then, run the ansible playbook again:
 
     cd ~/openshift-ansible/
     ansible-playbook playbooks/byo/config.yml
+
+Once the installer is finished, you can check the status of your environment
+(nodes) with `osc get node`. You'll see something like:
+
+    NAME                      LABELS        STATUS
+    ose3-master.example.com   Schedulable   <none>    Ready
+    ose3-node1.example.com    Schedulable   <none>    Ready
+    ose3-node2.example.com    Schedulable   <none>    Ready
 
 Now that we have a larger OpenShift environment, let's examine more complicated
 application and deployment paradigms.
@@ -1292,8 +1309,8 @@ for you).
 As the `root` user, we will create a new project to put our first STI example
 into. Grab the project definition and create it:
 
-    openshift admin new-project sinatra --display-name="OpenShift 3 Demo" \
-    --description="This is the first demo project with OpenShift v3" \
+    openshift admin new-project sinatra --display-name="Sinatra Example" \
+    --description="This is your first build on OpenShift 3" \
     --admin=joe
 
 At this point, if you click the OpenShift image on the web console you should be
@@ -2252,8 +2269,9 @@ case the Build Config would go away and only a Deployment Config would be
 needed.
 
 # APPENDIX - Import/Export of Docker Images (Disconnected Use)
-Docker supports import/save of Images via tarball. You can do something like the
-following on your connected machine:
+Docker supports import/save of Images via tarball. These instructions are
+general and may not be 100% accurate for the current release. You can do
+something like the following on your connected machine:
 
     docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
     docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
@@ -2262,8 +2280,9 @@ following on your connected machine:
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
     docker pull openshift/ruby-20-centos7
-    docker pull mysql
+    docker pull openshift/mysql-55-centos7
     docker pull openshift/hello-openshift
+    docker pull centos:centos7
 
 This will fetch all of the images. You can then save them to a tarball:
 
@@ -2275,8 +2294,9 @@ This will fetch all of the images. You can then save them to a tarball:
     registry.access.redhat.com/openshift3_beta/ose-pod \
     registry.access.redhat.com/openshift3_beta/ose-docker-registry \
     openshift/ruby-20-centos7 \
-    mysql \
-    openshift/hello-openshift
+    openshift/mysql-55-centos7 \
+    openshift/hello-openshift \
+    centos:centos7
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
 space**
@@ -2297,6 +2317,10 @@ master-admin to find everything:
     for resource in build buildconfig images imagestream deploymentconfig \
     route replicationcontroller service pod; do echo -e "Resource: $resource"; \
     osc get $resource; echo -e "\n\n"; done
+
+Deleting a project with `osc delete project` should delete all of its resources,
+but you may need help finding things in the default project (where
+infrastructure items are). Deleting the default project is not recommended.
 
 # APPENDIX - Pretty Output
 If the output of `osc get pods` is a little too busy, you can use the following
