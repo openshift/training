@@ -219,7 +219,7 @@ Disable EPEL so that it is not accidentally used later:
 
 Install the packages for Ansible:
 
-    yum --enablerepo=epel -y install ansible
+    yum --enablerepo=epel -y install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm
 
 ### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
