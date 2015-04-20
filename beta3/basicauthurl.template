@@ -16,7 +16,6 @@
             "basicauthurl": "basicauthurl"
         },
         "containerPort": 443,
-        "portalIP": "172.30.17.56",
         "sessionAffinity": "None"
     },
     {
