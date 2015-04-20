@@ -827,7 +827,7 @@ complex topologies you could implement.
 And, for an extremely detailed explanation about what these various
 configuration flags are doing, check out:
 
-    https://github.com/openshift/openshift-docs/blob/master/using_openshift/scheduler.adoc
+    https://github.com/openshift/openshift-docs/blob/master/dev_guide/scheduler.adoc
 
 First, we need to talk about the "scheduler" and its default configuration.
 
@@ -1326,7 +1326,7 @@ You should see:
 
     Now using project "sinatra" on server "https://ose3-master.example.com:8443".
 
-### A Simple STI Build
+### A Simple Code Example
 We'll be using a pre-build/configured code repository. This repository is an
 extremely simple "Hello World" type application that looks very much like our
 previous example, except that it uses a Ruby/Sinatra application instead of a Go
@@ -1356,23 +1356,49 @@ Service.
 **Note:** I am wondering if we want to do this via the console now, except for a
 bug with services not being created.
 
-### Create the Build Process
-Let's go ahead and get everything fired up:
+### CLI versus Console
+There are currently two ways to get from source code to components on OpenShift.
+The CLI has a tool (`new-app`) that can take a source code repository as an
+input and then configure OpenShift to do what we need. You looked at that
+already. You can also just run `osc new-app --help` to see other things that
+`new-app` can help you achieve.
 
-    osc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git
+The web console also lets you point directly at a source code repository, but
+requires a little bit more input to get things running. Let's go through an
+example of pointing to code via the web console. Later examples will use the CLI
+tools.
 
-You'll see a bunch of output:
+### Adding the Builder ImageStreams
+While `new-app` has some built-in logic to help automatically determine the
+correct builder ImageStream, the web console currently does not have that
+capability. The user will have to first target the code repository, and then
+select the appropriate builder image.
 
-    services/simple-openshift-sinatra
-    imageStreams/simple-openshift-sinatra-sti
-    buildConfigs/simple-openshift-sinatra-sti
-    deploymentConfigs/simple-openshift-sinatra-sti
-    Service "simple-openshift-sinatra" created at 172.30.17.127:8080 to talk to pods over port 8080.
-    A build was created - you can run `osc start-build simple-openshift-sinatra-sti` to start it.
+To make builder images available to all users, we can add them to the
+`openshift` namespace. Perform the following command as `root` in the
+`beta3`folder in order to add all of the builder images:
 
-Take a look at the web console, too. Do you see everything that was created?
+    osc create -f image-streams.json
 
-Based on using `new-app` against a Git repository, we have created:
+You will see the following:
+
+    imageStreams/ruby-20-centos7
+    imageStreams/nodejs-010-centos7
+    imageStreams/perl-516-centos7
+    imageStreams/python-33-centos7
+    imageStreams/wildfly-8-centos
+
+There's not a whole lot for the user to do with these right now, so we'll go to
+the web console to create our "application".
+
+### Adding Code Via the Web Console
+If you go to the web console and then select the "Sinatra Example" project,
+you'll see a "Create +" button in the upper right hand corner. Click that
+button, and you will see two options. The second option is to create an
+application from a template. We will explore that later.
+
+The first option you see is a text area where you can type a URL for source
+code.
 
 * An ImageStream
 * A BuildConfig
