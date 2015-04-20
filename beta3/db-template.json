@@ -22,17 +22,7 @@
           "podTemplate": {
             "desiredState": {
               "manifest": {
-		"volumes": [
-		  {
-		    "name": "var-lib-mysql-data",
-		      "source": {
-			"hostDir": null,
-			"emptyDir": {},
-			"persistentDisk": null,
-			"gitRepo": null
-		      }
-		   }
-		],
+              "volumes": [ ],
                 "containers": [
                   {
                     "env": [
@@ -56,13 +46,7 @@
                         "containerPort": 3306
                       }
                     ],
- 		    "volumeMounts": [
-		      {
-			"name": "var-lib-mysql-data",
-			"mountPath": "/var/lib/mysql/data",
-			"path": "/var/lib/mysql/data"
-		      }
-		    ]
+                    "volumeMounts": [ ]
                   }
                 ],
                 "version": "v1beta1"
