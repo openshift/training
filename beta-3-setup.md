@@ -2199,7 +2199,9 @@ Hub.  You can find the source for it [here](beta3/images/openldap-example/).
 To test the example LDAP service you can run the following:
 
     yum install openldap-clients
-    ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" -s sub "(objectclass=*)" -h 172.30.17.40 -w redhat
+    ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" \
+               -s sub "(objectclass=*)" -w redhat \
+               -h `osc get services | grep openldap-example-service | awk '{print $4}'`
 
 You should see ldif output that shows the example.com users.
 
@@ -2243,11 +2245,14 @@ deployment.
 When the build finished you can run the following command to test that the
 Service is responding correctly:
 
-    curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt --resolve basicauthurl.example.com:443:172.30.17.56 https://basicauthurl.example.com/validate
+    curl -v -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+        --resolve basicauthurl.example.com:443:`osc get services | grep basicauthurl | awk '{print $4}'` \
+        https://basicauthurl.example.com/validate
 
 In that case in order for SNI to work correctly we had to trick curl with the `--resolve` flag.  If wildcard DNS is set up in your environment to point to the router then the following should test the service end to end:
 
-   curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt https://basicauthurl.example.com/validate
+    curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+        https://basicauthurl.example.com/validate
 
 If you've made the required changes to `/etc/openshift/mmaster.yaml` and
 restarted `openshift-master` then you should now be able to log it with the
