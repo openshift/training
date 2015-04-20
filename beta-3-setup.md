@@ -2182,7 +2182,9 @@ Hub.  You can find the source for it [here](beta3/images/openldap-example/).
 To test the example LDAP service you can run the following:
 
     yum install openldap-clients
-    ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" -s sub "(objectclass=*)" -h 172.30.17.40 -w redhat
+    ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" \
+               -s sub "(objectclass=*)" -w redhat \
+               -h `osc get services | grep openldap-example-service | awk '{print $4}'`
 
 You should see ldif output that shows the example.com users.
 
