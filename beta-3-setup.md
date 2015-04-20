@@ -1398,32 +1398,44 @@ button, and you will see two options. The second option is to create an
 application from a template. We will explore that later.
 
 The first option you see is a text area where you can type a URL for source
-code.
+code. We are going to use the Git repository for the Sinatra application
+referenced earlier. Enter this repo in the box:
 
-* An ImageStream
-* A BuildConfig
-* A DeploymentConfig
-* A Service
+    https://github.com/openshift/simple-openshift-sinatra-sti
 
-If you run:
+When you hit "Next" you will then be asked which builder image you want to use.
+This application uses the Ruby language, so make sure to click
+`ruby-20-centos7:latest`. You'll see a pop-up with some more details asking for
+confirmation. Click "Select image..."
+
+The next screen you see lets you begin to customize the information a little
+bit. The only default setting we have to change is the name, because it is too
+long. Enter something sensible like "ruby-example", then scroll to the bottom
+and click "Create".
+
+At this point, OpenShift has created several things for you. Use the "Browse"
+tab to poke around and find them. You can also use `osc status` as the `joe`
+user, too.
+
+If you run (as `joe`):
 
     osc get pods
 
 You will see that there are currently no pods. That is because we have not
 actually gone through a build yet. While OpenShift has the capability of
 automatically triggering builds based on source control pushes (eg: Git(hub)
-webhooks, etc), we will be triggering builds manually.
+webhooks, etc), we will have to trigger our build manually in this example.
 
 By the way, most of these things can (SHOULD!) also be verified in the web
 console. If anything, it looks prettier!
 
-To start our build, execute the following:
+To start our build, as `joe`, execute the following:
 
-    osc start-build simple-openshift-sinatra-sti
+    osc start-build ruby-example
 
 You'll see some output to indicate the build:
 
-    simple-openshift-sinatra-sti-1
+    ruby-example-1
 
 OpenShift v3 is in a bit of a transtiion period between authentication
 paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
@@ -1437,13 +1449,13 @@ We can check on the status of a build (it will switch to "Running" in a few
 moments):
 
     osc get builds -n sinatra
-    NAME                             TYPE                STATUS    POD
-    simple-openshift-sinatra-sti-1   STI                 Pending   simple-openshift-sinatra-sti-1
+    NAME             TYPE      STATUS     POD
+    ruby-example-1   STI       Running   ruby-example-1
 
 The web console would've updated the *Overview* tab for the *Sinatra* project to
 say:
 
-    A build of simple-openshift-sinatra-sti is pending. A new deployment will be
+    A build of ruby-example is pending. A new deployment will be
     created automatically once the build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
