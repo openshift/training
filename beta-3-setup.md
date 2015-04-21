@@ -322,9 +322,9 @@ extra. This extra thing is the routing layer. The router is the ingress point
 for all traffic destined for OpenShift v3 services. It currently supports only
 HTTP(S) traffic (and "any" TLS-enabled traffic via SNI).
 
-OpenShift's admin command set enables you to install the router
-automatically. Try running it with no options and you should see the note that a
-router is needed:
+OpenShift's admin command set (`openshift admin` or just `osadm`) enables you to
+install the router automatically. Try running it with no options and you should
+see the note that a router is needed:
 
     osadm router
     F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
@@ -488,7 +488,7 @@ default configuration for CLI operations currently is to be the `master-admin`
 user, which is allowed to create projects. We can use the "admin"
 OpenShift command to create a project, and assign an administrative user to it:
 
-    openshift admin new-project demo --display-name="OpenShift 3 Demo" \
+    osadm new-project demo --display-name="OpenShift 3 Demo" \
     --description="This is the first demo project with OpenShift v3" \
     --admin=joe
 
@@ -1327,7 +1327,7 @@ for you).
 As the `root` user, we will create a new project to put our first STI example
 into. Grab the project definition and create it:
 
-    openshift admin new-project sinatra --display-name="Sinatra Example" \
+    osadm new-project sinatra --display-name="Sinatra Example" \
     --description="This is your first build on OpenShift 3" \
     --admin=joe
 
@@ -1503,20 +1503,21 @@ What were they?
 
 ### Testing the Application
 Using the information you found in the web console, try to see if your service
-is working:
+is working (as the `joe` user):
 
-    curl `osc get service | grep sin | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl `osc get service | grep example | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
     Hello, Sinatra!
 
 So, from a simple code repository with a few lines of Ruby, we have successfully
 built a Docker image and OpenShift has deployed it for us.
 
-The last step will be to add a route to make it publicly accessible.
+The last step will be to add a route to make it publicly accessible. You might
+have noticed that adding the application code via the web console resulted in a
+route being created. Currently that route doesn't have a corresponding DNS
+entry, so it is unusable. The default domain is also not currently configurable,
+so it's not very useful at the moment.
 
 ### Adding a Route to Our Application
-When we used `new-app`, the only thing that was not created was a route for
-our application.
-
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 

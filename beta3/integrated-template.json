@@ -19,7 +19,7 @@
       "metadata": {
         "name": "route-edge"
       },
-      "serviceName": "frontend"
+      "serviceName": "frontend",
     },
     {
       "apiVersion": "v1beta1",
@@ -55,7 +55,8 @@
         },
         "source": {
           "git": {
-            "uri": "git://github.com/openshift/ruby-hello-world.git"
+            "uri": "git://github.com/openshift/ruby-hello-world.git",
+            "ref": "beta3"
           },
           "type": "Git"
         },
@@ -148,7 +149,39 @@
           "replicas": 1
         },
         "strategy": {
-          "type": "Recreate"
+          "type": "Recreate",
+          "recreateParams": {
+            "pre": {
+              "failurePolicy": "Abort",
+              "execNewPod": {
+                "containerName": "ruby-helloworld",
+                "command": [
+                  "/bin/true"
+                ],
+                "env": [
+                  {
+                    "name": "CUSTOM_VAR1",
+                    "value": "custom_value1"
+                  }
+                ]
+              }
+            },
+            "post": {
+              "failurePolicy": "Ignore",
+              "execNewPod": {
+                "containerName": "ruby-helloworld",
+                "command": [
+                  "/bin/false"
+                ],
+                "env": [
+                  {
+                    "name": "CUSTOM_VAR2",
+                    "value": "custom_value2"
+                  }
+                ]
+              }
+            }
+          }
         }
       },
       "triggers": [
@@ -239,9 +272,11 @@
   "kind": "Template",
   "metadata": {
     "annotations": {
-      "description": "This example shows using quickstarts in OpenShift 3"
+      "description": "This is an example of a Ruby and MySQL application on OpenShift 3",
+      "tags": "instant-app,ruby,mysql",
+      "iconClass" : "icon-ruby"
     },
-    "name": "quickstart-keyvalue-application"
+    "name": "ruby-helloworld-sample"
   },
   "parameters": [
     {
