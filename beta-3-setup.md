@@ -1119,58 +1119,118 @@ Don't forget -- the materials are in `~/training/beta3`.
 
 ### Creating the Definition
 The following is a complete definition for a pod with a corresponding service
-with a corresponding route:
+and a corresponding route. It also includes a deployment configuration.
 
     {
       "metadata":{
-        "name":"hello-complete-definition"
+        "name":"hello-service-pod-meta"
       },
       "kind":"Config",
       "apiVersion":"v1beta1",
       "creationTimestamp":"2014-09-18T18:28:38-04:00",
       "items":[
         {
-          "id": "hello-openshift-pod",
-          "kind": "Pod",
-          "apiVersion":"v1beta2",
-          "labels": {
-            "name": "hello-openshift-label"
-          },
-          "nodeSelector": {
-            "region": "primary"
-          },
-          "desiredState": {
-            "manifest": {
-              "version": "v1beta1",
-              "id": "hello-openshift-manifest-id",
-              "containers": [{
-                "name": "hello-openshift-container",
-                "image": "openshift/hello-openshift",
-                "ports": [{
-                  "containerPort": 8080
-                }]
-              }]
-            }
-          },
-        },
-        {
+          "id": "hello-openshift-service",
           "kind": "Service",
           "apiVersion": "v1beta1",
-          "id": "hello-openshift-service",
           "port": 27017,
+          "containerPort": 8080,
           "selector": {
-            "name": "hello-openshift-label"
+            "name": "hello-openshift"
           }
         },
         {
           "kind": "Route",
           "apiVersion": "v1beta1",
           "metadata": {
-              "name": "hello-openshift-route"
+            "name": "hello-openshift-route"
           },
           "id": "hello-openshift-route",
           "host": "hello-openshift.cloudapps.example.com",
           "serviceName": "hello-openshift-service"
+        },
+        {
+          "apiVersion": "v1beta1",
+          "kind": "ImageStream",
+          "metadata": {
+            "name": "openshift/hello-openshift"
+          }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "hello-openshift"
+            },
+            "triggers": [
+                {
+                  "imageChangeParams": {
+                    "automatic": true,
+                    "containerNames": [
+                      "hello-openshift"
+                    ],
+                    "from": {
+                      "name": "hello-openshift"
+                    },
+                    "tag": "latest"
+                  },
+                  "type": "ImageChange"
+                }
+            ],
+            "template": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "controllerTemplate": {
+                    "replicas": 1,
+                    "replicaSelector": {
+                        "name": "hello-openshift"
+                    },
+                    "podTemplate": {
+                        "desiredState": {
+                            "manifest": {
+                                "version": "v1beta2",
+                                "id": "",
+                                "volumes": null,
+                                "containers": [
+                                    {
+                                        "name": "hello-openshift",
+                                        "image": "openshift/hello-openshift",
+                                        "ports": [
+                                            {
+                                                "containerPort": 8080,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "resources": {},
+                                        "livenessProbe": {
+                                            "tcpSocket": {
+                                                "port": 8080
+                                            },
+                                            "timeoutSeconds": 1,
+                                            "initialDelaySeconds": 10
+                                        },
+                                        "terminationMessagePath": "/dev/termination-log",
+                                        "imagePullPolicy": "PullIfNotPresent",
+                                        "capabilities": {}
+                                    }
+                                ],
+                                "restartPolicy": {
+                                    "always": {}
+                                },
+                                "dnsPolicy": "ClusterFirst"
+                            }
+                        },
+                        "nodeSelector": {
+                          "region": "primary"
+                        },
+                        "labels": {
+                            "name": "hello-openshift"
+                        }
+                    }
+                }
+            },
+            "latestVersion": 1
         }
       ]
     }
