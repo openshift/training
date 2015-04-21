@@ -67,6 +67,7 @@
 * [Troubleshooting](#appendix---troubleshooting)
 * [Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
 * [JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
+* [Working with HTTP proxies](#appendix---working-with-http-proxies)
 
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
@@ -2755,3 +2756,95 @@ in the dialog box that appears.
 
 A successful connection will allow you to expand the OpenShift explorer tree and browse the projects associated with the account
 and the resources associated with each project.
+
+# APPENDIX - Working with HTTP Proxies
+
+In many production environments direct access to the web is not allowed.  In
+these situations there is typically an HTTP(S) proxy available.  Configuring
+OpenShift builds and deployments to use these proxies is as simple as setting
+standard environment variables.  The trick is knowing where to place them.
+
+### STI Builds
+
+Let's take the sinatra example.  That build uses fetches gems from
+rubygems.org.  The first thing we'll want to do is fork that codebase and
+create a file called `.sti/environment`.  The contents of the file are simple
+shell variables.  Most libraries will look for `NO_PROXY`, `HTTP_PROXY`, and
+`HTTPS_PROXY` variables and react accordingly.
+
+~~~
+NO_PROXY=mycompany.com
+HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
+~~~
+
+### Setting environment variables in Pods
+
+It's not only at build time that proxies are required.  Many applications will
+need them too.  In previous examples we used environment variables in
+`DeploymentConfig`s to pass in database connection information.  The same can
+be done for configuring a `Pod`'s proxy at runtime:
+
+~~~
+   {
+      "apiVersion": "v1beta1",
+      "kind": "DeploymentConfig",
+      "metadata": {
+        "name": "frontend"
+      },
+      "template": {
+        "controllerTemplate": {
+          "podTemplate": {
+            "desiredState": {
+              "manifest": {
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "HTTP_PROXY",
+                        "value": "http://USER:PASSWORD@IPADDR:PORT"
+                      },
+...
+~~~
+
+### Git repository access
+
+In most of the beta examples code has been hosted on GitHub.  This is strictly
+for convenience and in the near future documentation will be published to show
+how best to integrate with GitLab as well as corporate git servers.  For now if
+you wish to use GitHub behind a proxy you can set an environment variable on
+the `stiStrategy`:
+
+~~~
+{
+  "stiStrategy": {
+    ...
+    "env": [
+      {
+        "Name": "HTTP_PROXY",
+        "Value": "http://USER:PASSWORD@IPADDR:PORT"
+      }
+    ]
+  }
+}
+~~~
+
+It's worth noting that if the variable is set on the `stiStrategy` it's not
+necessary to use the `.sti/environment` file.
+
+### Proxying Docker pull
+
+This is yet another case where it may be necessary to tunnel traffic through a
+proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
+in shell format:
+
+~~~
+NO_PROXY=mycompany.com
+HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
+~~~
+
+### Future considerations
+
+We're working to have a single place that administrators can set proxies for
+all network traffic.
