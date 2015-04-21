@@ -683,10 +683,8 @@ Once the installer is finished, you can check the status of your environment
 
 ## Regions and Zones
 Now that we have a larger OpenShift environment, let's examine more complicated
-application and deployment paradigms.
-
-If you think you're about to learn how to configure regions and zones in
-OpenShift 3, you're only partially correct.
+application and deployment paradigms. If you think you're about to learn how to
+configure regions and zones in OpenShift 3, you're only partially correct.
 
 In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
 enable organizations to provide some topologies for application resiliency. Apps
