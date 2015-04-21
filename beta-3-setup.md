@@ -702,11 +702,6 @@ For the purposes of a simple example, we'll be sticking with the "regions" and
 "zones" theme. But, as you go through these examples, think about what other
 complex topologies you could implement.
 
-And, for an extremely detailed explanation about what these various
-configuration flags are doing, check out:
-
-    https://github.com/openshift/openshift-docs/blob/master/dev_guide/scheduler.adoc
-
 First, we need to talk about the "scheduler" and its default configuration.
 
 ### Scheduler and Defaults
@@ -758,8 +753,10 @@ Again, the defaults are:
 * Spread services around - minimize the number of pods in the same service on
     the same node
 
-Again, please refer to the documentation link above for deeper details on the
-defaults.
+And, for an extremely detailed explanation about what these various
+configuration flags are doing, check out:
+
+    http://docs.openshift.org/latest/dev_guide/scheduler.html
 
 In a small environment, these defaults are pretty sane. Let's look at one of the
 important predicates (filters) before we move on to "regions" and "zones".
@@ -950,8 +947,8 @@ Now, let's look at a *service* definition:
     }
 
 The *service* has a `selector` element. In this case, it is a key:value pair of
-`name:hello-openshift`. If you look at the output of `osc get pods` on your
-master, you see that the `hello-openshift` pod has a label:
+`name:hello-openshift`. If you looked at the output of `osc get pods` on your
+master, you saw that the `hello-openshift` pod has a label:
 
     name=hello-openshift
 
@@ -963,17 +960,15 @@ speaking, pod containers should not bind directly to ports on the host. We'll
 see more about this later.
 
 But, to really be useful, we want to make our application accessible via a FQDN,
-and that is where the router comes in.
+and that is where the routing tier comes in.
 
 ## Routing
-Routes allow FQDN-destined traffic to ultimately reach the Kubernetes service,
-and then the pods/containers.
-
-In a simplification of the process, the
-`openshift3_beta/ose-haproxy-router` container we will create below is
-a pre-configured instance of HAProxy as well as some of the OpenShift
-framework. The OpenShift instance running in this container watches for
-routes resources on the OpenShift master.
+The OpenShift routing tier is how FQDN-destined traffic enters the OpenShift
+environment so that it can ultimately reach pods. In a simplification of the
+process, the `openshift3_beta/ose-haproxy-router` container we will create below
+is a pre-configured instance of HAProxy as well as some of the OpenShift
+framework. The OpenShift instance running in this container watches for route
+resources on the OpenShift master.
 
 Here is an example route resource JSON definition:
 
@@ -989,28 +984,31 @@ Here is an example route resource JSON definition:
     }
 
 When the `osc` command is used to create this route, a new instance of a route
-*resource* is created inside OpenShift. The HAProxy/Router is watching for
-changes in route resources. When a new route is detected, an HAProxy pool is
-created.
+*resource* is created inside OpenShift's data store. This route resource is
+affiliated with a service.
 
-This HAProxy pool contains all pods that are in a service. Which service? The
-service that corresponds to the `serviceName` directive.
+The HAProxy/Router is watching for changes in route resources. When a new route
+is detected, an HAProxy pool is created. When a change in a route is detected,
+the pool is updated.
 
+This HAProxy pool ultimately contains all pods that are in a service. Which
+service? The service that corresponds to the `serviceName` directive that you
+see above.
 
-### Creating the router
-
+### Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
 v3 services. It currently supports only HTTP(S) traffic (and "any"
-TLS-enabled traffic via SNI).
+TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
+proxy.
 
-The `openshift3_beta/ose-haproxy-router` container listens on the host
-network interface (unlike most containers that listen only on private
-IPs), translating external requests for route names into the IPs of
-actual pods identified by the service associated with the route.
+The `openshift3_beta/ose-haproxy-router` container listens on the host network
+interface unlike most containers that listen only on private IPs. The router
+proxies external requests for route names to the IPs of actual pods identified
+by the service associated with the route.
 
-OpenShift's admin command set enables you to deploy router pods
-automatically. As the `root` user, try running it with no options and
-you should see the note that a router is needed:
+OpenShift's admin command set enables you to deploy router pods automatically.
+As the `root` user, try running it with no options and you should see the note
+that a router is needed:
 
     osadm router
     F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
@@ -1047,37 +1045,47 @@ few moments (it may take up to a few minutes):
 
     POD                   CONTAINER(S)  HOST                                   STATUS
     deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
-    router-1-58u3j        router        ose3-master.example.com/192.168.133.2  Running
+    router-1-ats7z        router        ose3-node2.example.com/192.168.133.4   Running
 
 Note: You may or may not see the deploy pod, depending on when you run this
 command. Also the router may not end up on the master.
 
-### Router placement by region
+### Router Placement By Region
+In the very beginning of the documentation, we indicated that a wildcard DNS
+entry is required and should point at the master. When the router receives a
+request for an FQDN that it knows about, it will proxy the request to a pod for
+a service. But, for that FQDN request to actually reach the router, the FQDN has
+to resolve to whatever the host is where the router is running. Remember, the
+router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
+DNS entry points to the public IP address of the master, we need to ensure that
+the router runs *on* the master. 
 
-In order for external requests to reach the router, it needs to be
-placed on the right node (or set of nodes); specifically, the node(s)
-that DNS points at for route records -- in our setup, the master, which
-we labeled with the "infra" region. In our deployment above, the pod
-had an equal chance of ending up on any node, but we can ensure that it
-lands in the "infra" region (thus, the master) using a NodeSelector.
+Remember how we set up regions and zones earlier? In our setup we labeled the
+master with the "infra" region. Without specifying a region or a zone in our
+environment, the router pod had an equal chance of ending up on any node, but we
+can ensure that it always and only lands in the "infra" region (thus, on the
+master) using a NodeSelector.
 
-To do this, use `osc edit` to edit the created router DeploymentConfig
-definition that was created above:
+To do this, we will modify the `deploymentConfig` for the router. If you recall,
+when we created the router we saw both a `deploymentConfig` and `service`
+resource. 
+
+We have not discussed DeploymentConfigs (or even Deployments) yet. The brief
+summary is that a DeploymentConfig defines not only the pods (and containers)
+but also how many pods should be created and also transitioning from one pod
+definition to another.  We'll learn a little bit more about deployment
+configurations later.  For now, as `root`, we will use `osc edit` to manipulate
+the router DeploymentConfig and modify the router's pod definition to add a
+NodeSelector, so that router pods will be placed where we want them.  Whew!
 
     osc edit deploymentConfigs/router
 
-This will bring up a YAML representation of the router in an editor, vi by default.
+`osc edit` will bring up the default system editor (vi) with a YAML
+representation of the resource, in this case the router's `deploymentConfig`.
 You could also edit it as JSON or use a different editor; see `osc edit --help`.
 
-We have not discussed DeploymentConfigs (or even Deployments) yet, but the
-brief summary is that a DeploymentConfig defines not just a single pod,
-but a pod deployment. It defines how many pods should be deployed from
-an image and also transitioning from one pod definition to another. We
-are going to modify the pod definition to add a NodeSelector, so that
-router pods will be placed where we want them.
-
-Note: In future releases, we should be able to supply NodeSelector labels
-at creation time rather than editing the object after the fact.
+Note: In future releases, you will be able to supply NodeSelector and other
+labels at creation time rather than editing the object after the fact.
 
 We will specify our NodeSelector within the `podTemplate:` block that
 defines the pods to create. It is easiest to just place it right after
@@ -1093,20 +1101,17 @@ that line, like this: (indentation *is* significant in YAML)
             manifest:
     [...]
 
+Once you save this file and exit the editor, the DeploymentConfig will be
+updated in OpenShift's data store and a new router deployment will be created
+based on the new definition.  It will take at least a few seconds for this to
+happen (possibly longer if the router image has not been pulled to the master
+yet).  Watch `osc get pods` until the router pod has been recreated and assigned
+to the master host.
 
-Once you save this file, the DeploymentConfig will be updated and a new
-router deployment should be created with the new definition. It will
-take at least a few seconds for this to happen (possibly longer if the
-router image has not been pulled to the master yet). Watch `osc get pods`
-until the router pod has been recreated and assigned to the master host.
-
-**Note:** For a properly HA routing layer, we would label multiple
-nodes for infrastructure, have `osadm router` create multiple routers,
-and define a VIP to load-balance between the pods. This is out of scope
-of this document for now.
+For a true HA implementation, one would want multiple "infra" nodes and
+multiple, clustered router instances. Look for this to be described in beta4.
 
 ## The Complete Pod-Service-Route
-
 With a router now available, let's take a look at an entire
 Pod-Service-Route definition template and put all the pieces together.
 
