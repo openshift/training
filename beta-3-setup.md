@@ -1403,9 +1403,10 @@ should return no results.
 
 ## Preparing for STI and Other Things
 One of the really interesting things about OpenShift v3 is that it will build
-Docker images from your source code and deploy and manage their lifecycle. In
-order to do this, OpenShift can host its own Docker registry in
-order to manage images "locally". Let's take a moment to set that up.
+Docker images from your source code, deploy them, and manage their lifecycle.
+OpenShift 3 will provide a Docker registry that administrators may run inside
+the OpenShift environment that will manage images "locally". Let's take a moment
+to set that up.
 
 `osadm` again comes to our rescue with a handy installer for the
 registry. As the `root` user, run the following:
@@ -1440,13 +1441,14 @@ as root:
         #2 deployed 8 minutes ago
         #1 deployed 7 minutes ago
 
-Note that the project we have been working in as root is "default"; this is a special project
-that always exists (you can delete it but OpenShift will re-create it) and that the
-administrative user uses by default. One interesting feature of `osc status` is to list
-recent deployments (which osadm creates automatically for us; we will explain these soon).
-When we created the router and adjusted it, that adjustment resulted in a second deployment.
+The project we have been working in when using the `root` user is called
+"default". This is a special project that always exists (you can delete it, but
+OpenShift will re-create it) and that the administrative user uses by default.
+One interesting feature of `osc status` is that it lists recent deployments.
+When we created the router and adjusted it, that adjustment resulted in a second
+deployment. We will talk more about deployments when we get into builds.
 
-Ultimately, you will have a Docker registry that is being hosted by OpenShift
+Anyway, ultimately you will have a Docker registry that is being hosted by OpenShift
 and that is running on one of your nodes.
 
 To quickly test your Docker registry, you can do the following:
@@ -1477,11 +1479,10 @@ And you will eventually see something like:
 
 Once there is an endpoint listed, the curl should work.
 
-### Registry placement by region (optional)
-
-There is no real reason for the registry to land on any particular
-node. However, for consistency, you might want to keep OpenShift
-"infrastructure" components on dedicated nodes. We can use our
+### Registry Placement By Region (optional)
+In the beta environment, as architected, there is no real need for the registry
+to land on any particular node. However, for consistency, you might want to keep
+OpenShift "infrastructure" components on the master's node. We can use our
 previously-defined "infra" region for this purpose.
 
 To do this, edit the created DeploymentConfig definition with `osc edit`:
@@ -1506,10 +1507,10 @@ that line, like this: (indentation *is* significant in YAML)
 Once you save this file and exit, the DeploymentConfig will be updated and
 a new registry deployment will soon be created with the new definition.
 
-If you are going to do this, do it before proceeding; when your registry
-container is recreated, it starts from scratch each time, meaning
-any images built in the following steps will be lost. Tools to define
-persistent or shared storage for pods did not quite make it into beta3.
+If you are going to move the registry, do it now or don't do it all. As
+dedicated storage volumes did not make the beta3 drop, restarting the registry
+pod will result in an empty registry -- all the images will be lost. This will
+be a Very.Bad.Thing.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
@@ -2377,12 +2378,12 @@ You will need to ensure the following, or fix the following:
 
 * Your IP addresses match the entries in `/etc/hosts`
 * Your hostnames for your machines match the entries in `/etc/hosts`
-* Your `cloudapps` domain points to the correct ip in `dnsmasq.conf`
+* Your `cloudapps` domain points to the correct ip (master) in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
-* Your master and nodes `/etc/resolv.conf` points to the master IP address as
-    the first nameserver
-* The second nameserver in `/etc/resolv.conf` on master points to your corporate
-    or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
+* Your master and nodes `/etc/resolv.conf` points to the IP address of a node as
+  the first nameserver
+* The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
+  to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
 * That you also open port 53 (UDP) to allow DNS queries to hit the master
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
