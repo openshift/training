@@ -1597,12 +1597,12 @@ What did you just do? The `integrated-template.json` file defined a template. By
 
 ### Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and
-then hit the "Create +" button.
-
-Click the "Browse all templates..." button.
-
-You will be taken to a page that lists the current templates that are available
-for use.
+then hit the "Create +" button. We've seen this page before, but now it contains
+something new -- an "instant app(lication)". An instant app is a "special" kind
+of template (relaly, it just has the "instant-app" tag). The idea behind an
+"instant app" is that, when creating an instance of the template, you will have
+a fully functional application. in this example, our "instant" app is just a
+simple key-value storage and retrieval webpage.
 
 Click "quickstart-keyvalue-application", and you'll see a modal pop-up that
 provides more information about the template.
