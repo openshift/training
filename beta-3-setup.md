@@ -217,7 +217,8 @@ Disable EPEL so that it is not accidentally used later:
 
     sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
 
-Install the packages for Ansible:
+There's currently a bug in the latest Ansible version, so we need to use a
+slightly older one. Install the packages for Ansible:
 
     yum --enablerepo=epel -y install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm
 
