@@ -4,8 +4,8 @@
       "metadata": {
         "name": "sinatra-route"
       },
-  "id": "sinatra-route",
+  "id": "ruby-example-route",
   "host": "hello-sinatra.cloudapps.example.com",
-  "serviceName": "simple-openshift-sinatra"
+  "serviceName": "ruby-example"
 }
 

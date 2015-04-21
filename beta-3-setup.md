@@ -556,18 +556,32 @@ to look at some example JSON for project resource quota might look like:
       }
     }
 
-The above quota (simply called *quota*) defines limits for several resources. In
-other words, within a project, users cannot "do stuff" that will cause these
-resource limits to be exceeded.
+The above quota (simply called *test-quota*) defines limits for several
+resources. In other words, within a project, users cannot "do stuff" that will
+cause these resource limits to be exceeded. Since quota is enforced at the
+project level, it is up to the users to allocate resources (more specifically,
+memory and CPU) to their pods/containers. OpenShift will soon provide sensible
+defaults.
 
-The memory figure is in bytes, and it and CPU are somewhat self explanatory. We
-will get into a description of what pods, services and replication controllers
-are over the next few labs. Lastly, we can ignore "resourcequotas", as it is a
-bit of a trick so that Kubernetes doesn't accidentally try to apply two quotas
-to the same namespace.
+* Memory
 
-**Note: CPU is not really all that self-explanatory. But we'll explain it
-eventually**
+    The memory figure is in bytes, but various other suffixes are supported (eg:
+    Mi (mebibytes), Gi (gibibytes), etc.
+
+* CPU
+
+    CPU is a little tricky to understand. The unit of measure is actually a
+    "Kubernetes Compute Unit" (KCU, or "kookoo"). The KCU is a "normalized" unit
+    that should be roughly equivalent to a single hyperthreaded CPU core.
+    Fractional assignment is allowed. For fractional assignment, the
+    **m**illicore may be used (eg: 200m = 0.2 KCU)
+
+More details on CPU will come in later betas and documentation.
+
+We will get into a description of what pods, services and replication
+controllers are over the next few labs. Lastly, we can ignore "resourcequotas",
+as it is a bit of a trick so that Kubernetes doesn't accidentally try to apply
+two quotas to the same namespace.
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
@@ -587,7 +601,7 @@ And if you want to verify limits or examine usage:
     Name:                   test-quota
     Resource                Used    Hard
     --------                ----    ----
-    cpu                     0m      2
+    cpu                     0m      200m
     memory                  0       512Mi
     pods                    0       3
     replicationcontrollers  0       3
@@ -1001,6 +1015,10 @@ Then, update your nodes using the following:
 
     osc update node -f ~/nodes.json
 
+Then, go to the master and each node and, as `root`:
+
+    systemctl restart openshift-sdn-node
+
 Check to the results to ensure the labels were applied:
 
     osc get nodes
@@ -1009,7 +1027,6 @@ Check to the results to ensure the labels were applied:
     ose3-master.example.com    region=infra,zone=NA       Ready
     ose3-node1.example.com     region=primary,zone=east   Ready
     ose3-node2.example.com     region=primary,zone=west   Ready
-
 
 ## Services
 From the [Kubernetes
@@ -1379,7 +1396,7 @@ To make builder images available to all users, we can add them to the
 `openshift` namespace. Perform the following command as `root` in the
 `beta3`folder in order to add all of the builder images:
 
-    osc create -f image-streams.json
+    osc create -f image-streams.json -n openshift
 
 You will see the following:
 
@@ -1411,7 +1428,7 @@ confirmation. Click "Select image..."
 
 The next screen you see lets you begin to customize the information a little
 bit. The only default setting we have to change is the name, because it is too
-long. Enter something sensible like "ruby-example", then scroll to the bottom
+long. Enter something sensible like "*ruby-example*", then scroll to the bottom
 and click "Create".
 
 At this point, OpenShift has created several things for you. Use the "Browse"
@@ -1462,7 +1479,7 @@ say:
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs simple-openshift-sinatra-sti-1 -n sinatra
+    osc build-logs ruby-example-1 -n sinatra
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
