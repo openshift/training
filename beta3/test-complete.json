@@ -30,7 +30,7 @@
       "apiVersion": "v1beta1",
       "kind": "ImageStream",
       "metadata": {
-        "name": "openshift/hello-openshift"
+        "name": "hello-openshift"
       }
     },
     {
@@ -52,6 +52,9 @@
                 "tag": "latest"
               },
               "type": "ImageChange"
+            },
+            {
+              "type": "ConfigChange"
             }
         ],
         "template": {

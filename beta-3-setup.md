@@ -1281,11 +1281,12 @@ OpenShift provides a handy tool, `osc status`, to give you a summary of
 common resources existing in the current project:
 
     osc status
-     
     In project OpenShift 3 Demo (demo)
-     
-    service hello-openshift-service (172.30.17.203:27017 -> 8080)
-     
+    
+    service hello-openshift-service (172.30.17.237:27017 -> 8080)
+      hello-openshift deploys hello-openshift:latest
+        #1 deployed about a minute ago
+    
     To see more information about a service or deployment config, use 'osc describe service <name>' or 'osc describe dc <name>'.
     You can use 'osc get pods,svc,dc,bc,builds' to see lists of each of the types described above.
 
