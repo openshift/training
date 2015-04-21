@@ -408,10 +408,6 @@ endpoints with:
 
 And you will eventually see something like:
 
-    W0414 10:28:57.561516    5829 request.go:288] field selector: v1beta1 - events - involvedObject.namespace - default: need to check if this is versioned correctly.
-    W0414 10:28:57.561581    5829 request.go:288] field selector: v1beta1 - events - involvedObject.kind - Service: need to check if this is versioned correctly.
-    W0414 10:28:57.561587    5829 request.go:288] field selector: v1beta1 - events - involvedObject.uid - 1f41e96d-e2b2-11e4-bf25-525400b33d1d: need to check if this is versioned correctly.
-    W0414 10:28:57.561591    5829 request.go:288] field selector: v1beta1 - events - involvedObject.id - docker-registry: need to check if this is versioned correctly.
     Name:                   docker-registry
     Labels:                 docker-registry=default
     Selector:               docker-registry=default
