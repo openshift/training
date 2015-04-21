@@ -1388,9 +1388,8 @@ correct builder ImageStream, the web console currently does not have that
 capability. The user will have to first target the code repository, and then
 select the appropriate builder image.
 
-To make builder images available to all users, we can add them to the
-`openshift` namespace. Perform the following command as `root` in the
-`beta3`folder in order to add all of the builder images:
+Perform the following command as `root` in the `beta3`folder in order to add all
+of the builder images:
 
     osc create -f image-streams.json -n openshift
 
@@ -1402,8 +1401,10 @@ You will see the following:
     imageStreams/python-33-centos7
     imageStreams/wildfly-8-centos
 
-There's not a whole lot for the user to do with these right now, so we'll go to
-the web console to create our "application".
+What is the `openshift` project where we added these builders? This is a special
+project that can contain various elements that should be available to all users
+of the OpenShift environment. There's not a whole lot for the user to do with
+these right now, so we'll go to the web console to create our "application".
 
 ### Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
@@ -1592,9 +1593,7 @@ Go ahead and do the following as `root` in the `~/training/beta3` folder:
     osc create -f integrated-template.json -n openshift
 
 What did you just do? The `integrated-template.json` file defined a template. By
-"creating" it, you have added it to the `openshift` project. What is the
-`openshift` project? This is a special project whose templates are accessible by
-all users of the OpenShift environment. Let's take a look at how that works.
+"creating" it, you have added it to the `openshift` project.
 
 ### Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and

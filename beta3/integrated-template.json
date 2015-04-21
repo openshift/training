@@ -276,7 +276,7 @@
       "tags": "instant-app,ruby,mysql",
       "iconClass" : "icon-ruby"
     },
-    "name": "ruby-helloworld-sample"
+    "name": "quickstart-keyvalue-application"
   },
   "parameters": [
     {
