@@ -204,7 +204,7 @@
   "kind": "Template",
   "metadata": {
     "annotations": {
-      "description": "This is a hand-wiring example for an application",
+      "description": "This is a hand-wiring example for an application"
     },
     "name": "wiring-frontend-example"
   },
