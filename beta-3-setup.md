@@ -1189,9 +1189,10 @@ environment. Once this is done, go ahead and use `osc` to apply it:
 
  You should see something like the following:
 
-    pods/hello-openshift-pod
     services/hello-openshift-service
     routes/hello-openshift-route
+    imageStreams/openshift/hello-openshift
+    deploymentConfigs/hello-openshift
 
 You can verify this with other `osc` commands:
 
