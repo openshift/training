@@ -1023,7 +1023,7 @@ So, go ahead and do what it says:
 
 Just about every form of communication with OpenShift components is secured by
 SSL and uses various certificates and authentication methods. Even though we set
-up our `.kubeconfig` for the root user, `ex router` is asking us what
+up our `.kubeconfig` for the root user, `osadm router` is asking us what
 credentials the *router* should use to communicate. We also need to specify the
 router image, since the tooling defaults to upstream/origin:
 
