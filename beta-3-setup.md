@@ -779,7 +779,7 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
-look for a specific scheduler config file. Edit `/etc/openshift/master.yml` and
+look for a specific scheduler config file. Edit `/etc/openshift/master.yaml` and
 find the line with `schedulerConfigFile`. Change it to:
 
     schedulerConfigFile: "/etc/openshift/scheduler.json"
@@ -1977,9 +1977,9 @@ processed, or things will be auto-populated (like in OpenShift v2).
 So, look at the frontend configuration (`frontend-config.json`) and find the
 value for `MYSQL_PASSWORD`. For example, `mugX5R2B`.
 
-Edit `db-config.json` and set the value for `MYSQL_PASSWORD` to match
-whatever is in your `frontend-config.json`. Once you are finished, you can
-create the backend:
+Edit `db-config.json` and set the values for `MYSQL_PASSWORD`,
+`MYSQL_DATABASE`, and `MYSQL_USER` to match whatever is in your
+`frontend-config.json`. Once you are finished, you can create the backend:
 
     osc create -f db-config.json
 
