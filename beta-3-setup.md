@@ -159,7 +159,7 @@ Onn **each** VM:
 
 1. Install missing packages:
 
-        yum install wget vim-enhanced net-tools bind-utils tmux git
+        yum -y install wget vim-enhanced net-tools bind-utils tmux git
 
 1. Update:
 
@@ -225,7 +225,7 @@ Disable EPEL so that it is not accidentally used later:
 There's currently a bug in the latest Ansible version, so we need to use a
 slightly older one. Install the packages for Ansible:
 
-    yum --enablerepo=epel -y install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm
+    yum -y --enablerepo=epel install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm
 
 ### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
@@ -266,7 +266,7 @@ lines (`#`) at this time.
 ### Run the Ansible Installer
 Now we can simply run the Ansible installer:
 
-    ansible-playbook playbooks/byo/config.yml
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 If you looked at the Ansible hosts file, note that our master
 (ose3-master.example.com) was present in both the `master` and the `node`
@@ -671,8 +671,7 @@ add them as appropriate for your DNS/hostnames.
 
 Then, run the ansible playbook again:
 
-    cd ~/openshift-ansible/
-    ansible-playbook playbooks/byo/config.yml
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 Once the installer is finished, you can check the status of your environment
 (nodes) with `osc get nodes`. You'll see something like:
@@ -2452,7 +2451,7 @@ Hub.  You can find the source for it [here](beta3/images/openldap-example/).
 
 To test the example LDAP service you can run the following:
 
-    yum install openldap-clients
+    yum -y install openldap-clients
     ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" \
                -s sub "(objectclass=*)" -w redhat \
                -h `osc get services | grep openldap-example-service | awk '{print $4}'`
