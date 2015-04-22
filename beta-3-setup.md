@@ -779,7 +779,7 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
-look for a specific scheduler config file. Edit `/etc/openshift/master.yml` and
+look for a specific scheduler config file. Edit `/etc/openshift/master.yaml` and
 find the line with `schedulerConfigFile`. Change it to:
 
     schedulerConfigFile: "/etc/openshift/scheduler.json"
