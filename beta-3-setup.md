@@ -2235,7 +2235,7 @@ OpenShift builds your code, it checks to see if any of the scripts in the
 scripts. If so, it will execute the repository script instead.
 
 ### Add a Script
-You will find a script called `custom-build.sh` in the `beta2` folder. Go to
+You will find a script called `custom-build.sh` in the `beta3` folder. Go to
 your Github repository for your application from the previous lab, and find the
 `.sti/bin` folder.
 
