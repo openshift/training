@@ -1977,9 +1977,9 @@ processed, or things will be auto-populated (like in OpenShift v2).
 So, look at the frontend configuration (`frontend-config.json`) and find the
 value for `MYSQL_PASSWORD`. For example, `mugX5R2B`.
 
-Edit `db-config.json` and set the value for `MYSQL_PASSWORD` to match
-whatever is in your `frontend-config.json`. Once you are finished, you can
-create the backend:
+Edit `db-config.json` and set the values for `MYSQL_PASSWORD`,
+`MYSQL_DATABASE`, and `MYSQL_USER` to match whatever is in your
+`frontend-config.json`. Once you are finished, you can create the backend:
 
     osc create -f db-config.json
 
