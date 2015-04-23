@@ -916,7 +916,7 @@ and there should be better tools for changing them afterward.
 Check the results to ensure the labels were applied:
 
     osc get nodes
-     
+
     NAME                       LABELS                     STATUS
     ose3-master.example.com    region=infra,zone=NA       Ready
     ose3-node1.example.com     region=primary,zone=east   Ready
@@ -1035,7 +1035,7 @@ So, go ahead and do what it says:
 
 Just about every form of communication with OpenShift components is secured by
 SSL and uses various certificates and authentication methods. Even though we set
-up our `.kubeconfig` for the root user, `ex router` is asking us what
+up our `.kubeconfig` for the root user, `osadm router` is asking us what
 credentials the *router* should use to communicate. We also need to specify the
 router image, since the tooling defaults to upstream/origin:
 
@@ -1070,7 +1070,7 @@ a service. But, for that FQDN request to actually reach the router, the FQDN has
 to resolve to whatever the host is where the router is running. Remember, the
 router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
 DNS entry points to the public IP address of the master, we need to ensure that
-the router runs *on* the master. 
+the router runs *on* the master.
 
 Remember how we set up regions and zones earlier? In our setup we labeled the
 master with the "infra" region. Without specifying a region or a zone in our
@@ -1080,7 +1080,7 @@ master) using a NodeSelector.
 
 To do this, we will modify the `deploymentConfig` for the router. If you recall,
 when we created the router we saw both a `deploymentConfig` and `service`
-resource. 
+resource.
 
 We have not discussed DeploymentConfigs (or even Deployments) yet. The brief
 summary is that a DeploymentConfig defines not only the pods (and containers)
@@ -1294,11 +1294,11 @@ common resources existing in the current project:
 
     osc status
     In project OpenShift 3 Demo (demo)
-    
+
     service hello-openshift-service (172.30.17.237:27017 -> 8080)
       hello-openshift deploys hello-openshift:latest
         #1 deployed about a minute ago
-    
+
     To see more information about a service or deployment config, use 'osc describe service <name>' or 'osc describe dc <name>'.
     You can use 'osc get pods,svc,dc,bc,builds' to see lists of each of the types described above.
 
@@ -1437,17 +1437,17 @@ to see what happened. This would also be a good time to try out `osc status`
 as root:
 
     osc status
-    
+
     In project default
-    
+
     service docker-registry (172.30.17.196:5000 -> 5000)
       docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
         #1 deployed about a minute ago
-    
+
     service kubernetes (172.30.17.2:443 -> 443)
-    
+
     service kubernetes-ro (172.30.17.1:80 -> 80)
-    
+
     service router (172.30.17.129:80 -> 80)
       router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
         #2 deployed 8 minutes ago
@@ -2679,7 +2679,7 @@ On your master update the filters in `/etc/rsyslog.conf` to divert openshift log
 
     # Log openshift processes to /var/log/openshift
     :programname, contains, "openshift"                     /var/log/openshift
-    
+
     # Log anything (except mail) of level info or higher.
     # Don't log private authentication messages!
     # Don't log openshift processes to /var/log/messages either
@@ -2687,7 +2687,7 @@ On your master update the filters in `/etc/rsyslog.conf` to divert openshift log
     *.info;mail.none;authpriv.none;cron.none                /var/log/messages
 
 Restart rsyslogd
-    
+
     systemctl restart rsyslogd
 
 ## Configure nodes to send openshift logs to your master
@@ -2729,7 +2729,7 @@ See these documentation sources for additional rsyslog configuration information
 
 # APPENDIX - JBoss Tools for Eclipse
 Support for OpenShift development using Eclipse is provided through the JBoss Tools plugin.  The plugin is available
-from the Jboss Tools nightly build of the Eclipse Mars.  
+from the Jboss Tools nightly build of the Eclipse Mars.
 
 ### Features
 Development is ongoing but current features include:
