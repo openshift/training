@@ -69,6 +69,7 @@
 * [Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
 * [JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
 * [Working with HTTP proxies](#appendix---working-with-http-proxies)
+* [Lifecycle pre and post deployment hooks](#appendix---lifecycle-pre-and-post-deployment-hooks)
 
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
@@ -2922,3 +2923,248 @@ HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 
 We're working to have a single place that administrators can set proxies for
 all network traffic.
+
+# APPENDIX - Lifecycle Pre and Post Deployment Hooks
+
+## Set up app template
+
+For this, `training/beta3/integrated-template.json` works fine
+
+    cd
+    cp training/beta3/integrated-template.json ./my-template.json
+
+### Modify the BuildConfig source to point to your fork
+
+It should end up looking something like this:
+
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1beta1",
+    ...
+          "parameters": {
+            "source": {
+              "type": "Git"
+              "git": {
+                "uri": "git://github.com/YOUR_GITHUB_USER/ruby-hello-world.git",
+                "ref": "beta3"
+              },
+            },
+            "strategy": {
+              "type": "STI",
+              "stiStrategy": {
+                "builderImage": "openshift/ruby-20-centos7",
+                "image": "openshift/ruby-20-centos7"
+              }
+            },
+            "output": {
+              "to": {
+                "kind": "ImageStream",
+                "name": "origin-ruby-sample"
+              }
+            }
+          }
+    ...
+    }
+
+## Create a new project for your app
+
+Modify `--admin=` to reference the user you want to own the project.
+
+    osadm new-project myapp \
+      --display-name="My App" \
+      --description="My test app template" \
+      --admin=admin
+
+## As the project owner, switch to the new project
+
+    osc project myapp
+
+## Create the template
+
+    osc create -f ./my-template.json
+
+## Create an app from the template
+
+In the web console, as the project owner user:
+-   click "+Create"
+-   select `quickstart-keyvalue-application` or whatever
+-   click "Select template..."
+-   click "Create"
+-   watch the tiny computer men build an application!
+
+## Verify the app is up and running
+
+## Create a branch in your fork of the `ruby-hello-world` app
+
+    git checkout -b newtable my_remote/beta3
+
+## Add a new table by creating a new migration in `db/migrate`
+
+We should probably use a more practical example than `cat_names`...
+
+    cat <<EOF > db/migrate/1_cat_names.rb
+
+    class CatNames < ActiveRecord::Migration
+      def up
+        create_table :cat_names do |t|
+          t.column :name, :string, :null => false
+        end
+      end
+      def down
+        drop_table :cat_names
+      end
+    end
+
+    EOF
+
+## Push the changes to your github account
+
+    git push my_remote newtable:newtable
+
+## Modify the buildConfig to reference the new branch
+
+    osc edit -ojson bc/ruby-sample-build
+
+### update the `git` `ref` parameter
+
+You should wind up with a section that looks like:
+
+    ...
+            "source": {
+              "git": {
+                "uri": "git://github.com/YOUR_GITHUB_USER/ruby-hello-world.git",
+                "ref": "newtable"
+              },
+              "type": "Git"
+            },
+    ...
+
+## Get the MySQL/MariaDB parameters from the `database` `deploymentConfig`
+
+The `database` deployment configuration will contain the correct
+MariaDB parameters and credentials. Copy these out for use in the
+lifecycle hook definition later:
+
+    # osc get dc database -ojson | grep -C2 '"key": "MYSQL' | grep -v '"key":' > env.json
+
+## Modify the deploymentConfig to run the database migration as a post-deployment lifecycle hook
+
+    osc edit -ojson dc/frontend
+
+### Add the desired lifecycle hook
+
+The hook should run the command with the appropriate environment in
+the correct directory, like:
+
+    /usr/bin/scl enable ruby200 ror40 'cd /opt/openshift/src ; bundle exec rake db:migrate'
+
+...but expressed as a string array in `json`:
+
+    "command": [
+        "/usr/bin/scl",
+        "enable",
+        "ruby200",
+        "ror40",
+        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+    ]
+
+#### create/modify the `recreateParams` `post` hook definition for the template strategy
+
+Don't forget to copy & paste the `env` variable definitions from
+the `env.json` file you created earlier. You should end up with a
+section that looks like:
+
+    ...
+        "template": {
+            "strategy": {
+                "type": "Recreate",
+                "recreateParams": {
+    
+    ...
+                    "post": {
+                        "failurePolicy": "Ignore",
+                        "execNewPod": {
+                            "command": [
+                                "/usr/bin/scl",
+                                "enable",
+                                "ruby200",
+                                "ror40",
+                                "cd /opt/openshift/src ; bundle exec rake db:migrate"
+                            ],
+                            "env": [
+                                {
+                                    "name": "MYSQL_USER",
+                                    "value": "userJKL"
+                                },
+                                {
+                                    "name": "MYSQL_PASSWORD",
+                                    "value": "5678efgh"
+                                },
+                                {
+                                    "name": "MYSQL_DATABASE",
+                                    "value": "root"
+                                }
+                            ],
+                            "containerName": "ruby-helloworld"
+                        }
+                    }
+    ...
+
+## Kick off the new build:
+
+    osc start-build ruby-sample-build
+
+Monitor the build logs, and note the docker image tag, which should
+be output towards the end of the build on a line similar to this:
+
+    2015-04-23T19:59:34.304730547Z I0423 15:59:34.303984       1 sti.go:236] Tagged e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 as 172.30.17.99:5000/myapp2/origin-ruby-sample
+
+Check for that image tag in the output of `docker images`:
+
+    # docker images | grep e696bbc88d89
+    172.30.17.43:5000/myapp2/origin-ruby-sample                                        e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   e696bbc88d89        37 seconds ago      449.2 MB
+
+**Note:** It may take a few seconds/minutes for the image to appear,
+ and it may disappear again for a moment then reappear again. I
+ don't know why, but once it reappears, you're good to go.
+
+## Verify that the database migration happened
+
+Find the deployment hook in the output from `osc get pods` and
+inspect it with `osc log`:
+
+    # osc get pods | grep 'deployment-frontend-2'
+    deployment-frontend-2-hook-hejef               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:ca8f5e217dbb58bd9d4ea966443855a8b9b4d609bc110caa17846a80a747c01c   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   17 seconds
+    # osc log deployment-frontend-2-hook-hejef
+    2015-04-23T17:48:41.588240012Z == 1 CatNames: migrating ======================================================
+    2015-04-23T17:48:41.588312703Z -- create_table(:cat_names)
+    2015-04-23T17:48:41.588318626Z    -> 0.2923s
+    2015-04-23T17:48:41.588322977Z == 1 CatNames: migrated (0.3026s) =============================================
+    2015-04-23T17:48:41.588326799Z
+
+Now use the MySQL credentials from `env.json` and the host IP/port
+for the database service to inspect the database (you may need to
+install the mysql client):
+
+    # osc get svc database
+    NAME       LABELS                                   SELECTOR        IP              PORT(S)
+    database   template=application-template-stibuild   name=database   172.30.17.208   5434/TCP
+    # mysql -u userJKL \
+      -p 5678efgh \
+      -h 172.30.17.208 \
+      -P 5434 \
+      -e 'show tables; describe cat_names;' \
+      root
+    +-------------------+
+    | Tables_in_root    |
+    +-------------------+
+    | cat_names         |
+    | key_pairs         |
+    | schema_migrations |
+    +-------------------+
+    +-------+--------------+------+-----+---------+----------------+
+    | Field | Type         | Null | Key | Default | Extra          |
+    +-------+--------------+------+-----+---------+----------------+
+    | id    | int(11)      | NO   | PRI | NULL    | auto_increment |
+    | name  | varchar(255) | NO   |     | NULL    |                |
+    +-------+--------------+------+-----+---------+----------------+
