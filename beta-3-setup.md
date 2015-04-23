@@ -28,6 +28,7 @@
  * [Creating the Definition](#creating-the-definition)
  * [Verifying the Service](#verifying-the-service)
  * [Verifying the Routing](#verifying-the-routing)
+* [Project Administration](#project-administration)
 * [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
 * [STI - What Is It?](#sti---what-is-it)
  * [Create a New Project](#create-a-new-project)
@@ -1392,12 +1393,71 @@ also work (albeit with a self-signed certificate):
 
     https://hello-openshift.cloudapps.example.com
 
+## Project Administration
+
+If `joe` now wants to let `alice` look at his project, with his project
+administrator rights he can add her using the `osadm policy` command:
+
+    [joe]$ osadm policy add-role-to-user view alice
+
+Now login at the command line as `alice` to see what is available:
+
+    osc login -u alice
+    Authentication required for https://ose3-master.example.com:8443 (openshift)
+    Password:  <redhat>
+    Login successful.
+    
+    Using project "demo"
+
+`alice` has no projects of her own yet, so she is automatically configured
+to look at the `demo` project. She has "view" access, so `osc status`
+and `osc get pods` and so forth should show her the same thing as
+`joe`. However, she cannot make changes:
+
+    [alice]$ osc get pods
+    POD                       IP         CONTAINER(S)      IMAGE(S)
+    hello-openshift-1-zdgmt   10.1.2.4   hello-openshift   openshift/hello-openshift
+    [alice]$ osc delete pod hello-openshift-1-zdgmt
+    Error from server: "/api/v1beta1/pods/hello-openshift-1-zdgmt?namespace=demo" is forbidden because alice cannot delete on pods with name "hello-openshift-1-zdgmt" in demo
+
+Also login as `alice` in the web console and confirm that she can view
+the `demo` project.
+
+`joe` could also give `alice` the role of `edit`, which gives her access
+to do nearly anything in the project except adjust access.
+
+    [joe]$ osadm policy add-role-to-user edit alice
+
+Now she can delete that pod if she wants, but she can not add access for
+another user or upgrade her own access. To allow that, `joe` could give
+`alice` the role of `admin`, which gives her the same access as himself.
+
+    [joe]$ osadm policy add-role-to-user admin alice
+
+There is no "owner" of a project, and projects can certainly be created
+without any administrator. `alice` or `joe` can remove the `admin`
+role (or all roles) from each other or themselves at any time without
+affecting the existing project.
+
+    [joe]$ osadm policy remove-user joe
+
+Check `osadm policy help` for a list of available commands to modify
+project permissions. OpenShift RBAC is extremely flexible; the roles
+mentioned here are simply defaults - they can be adjusted (per-project
+and per-resource if needed), more can be added, groups can be given
+access, etc. Check the documentation for more details:
+
+* http://docs.openshift.org/latest/dev_guide/authorization.html
+* https://github.com/openshift/origin/blob/master/docs/proposals/policy.md
+
+Of course, here be dragons. The basic roles should suffice for most uses.
+
 ### Deleting a Project
-Since we are done with this "demo" project, and since the `joe` user is a
+Since we are done with this "demo" project, and since the `alice` user is a
 project administrator, let's go ahead and delete the project. This should also
 end up deleting all the pods, and other resources, too.
 
-As the `joe` user:
+As the `alice` user:
 
     osc delete project demo
 
@@ -1412,6 +1472,9 @@ cleanup routine to finish.
 
 Once the project disappears from `osc get project`, doing `osc get pod -n demo`
 should return no results.
+
+Note: As of beta3, a user with the `edit` role can actually delete the project.
+[This will be fixed](https://github.com/openshift/origin/issues/1885).
 
 ## Preparing for STI and Other Things
 One of the really interesting things about OpenShift v3 is that it will build
