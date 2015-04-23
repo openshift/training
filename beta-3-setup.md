@@ -78,6 +78,40 @@ In most cases you will see references to "example.com" and other FQDNs related
 to it. If you choose not to use "example.com" in your configuration, that is
 fine, but remember that you will have to adjust files and actions accordingly.
 
+## Architecture and Requirememts
+### Architecture
+The documented architecture for the beta testing is pretty simple. There are
+three systems:
+
+* Master + Node
+* Node
+* Node
+
+The master is the scheduler/orchestrator and the API endpoint for all commands.
+This is similar to V2's "broker". We are also running the node software on the
+master.
+
+The "node" is just like in OpenShift 2 -- it hosts user applications. The main
+difference is that "gears" have been replaced with Docker container instances.
+You will learn much more about the inner workings of OpenShift throughout the
+rest of the document.
+
+### Requirements
+Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
+and the following configuration:
+
+* RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
+* "Minimal" installation option
+* NetworkManager **disabled**
+
+As part of signing up for the beta program, you should have received an
+evaluation subscription. This subscription gave you access to the beta software.
+You will need to use subscription manager to both register your VMs, and attach
+them to the *OpenShift Enterprise High Touch Beta* subscription.
+
+All of your VMs should be on the same logical network and be able to access one
+another.
+
 ## Setting Up the Environment
 ### DNS
 You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
@@ -105,36 +139,12 @@ You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
 in the labs.
 
-### OpenShift 3 Components
-OpenShift 3, like OpenShift 2, has two primary components:
-
-* masters - the orchestration engines. They figure out where to run workloads
-    and do all of the fancy policy things around controlling it
-* nodes - where workloads actually run
-
 ### Your Environment
-The environment for the beta testing as documented is pretty simple. You will
-need 3 virtual machines to follow this beta documentation exactly. Each of the
-virtual machines should have 4+ GB of memory, 20+ GB of disk space, and the
-following configuration:
-
-* RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
-* "Minimal" installation option
-* NetworkManager **disabled**
-
-As part of signing up for the beta program, you should have received an
-evaluation subscription. This subscription gave you access to the beta software.
-You will need to use subscription manager to both register your VMs, and attach
-them to the   *OpenShift Enterprise High Touch Beta* subscription.
-
-All of your VMs should be on the same logical network and be able to access one
-another.
-
 ### Preparing Each VM
 Once your VMs are built and you have verified DNS and network connectivity you
 can:
 
-* Configure yum as follows:
+* Configure yum / subscription manager as follows:
 
         subscription-manager repos --disable="*"
         subscription-manager repos \
@@ -142,6 +152,8 @@ can:
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
+    
+    **Note:** You will have had to register/attach your system first.
 
 * Import the GPG key for beta:
 
