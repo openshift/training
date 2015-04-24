@@ -36,7 +36,7 @@
 * [Project Administration](#project-administration)
  * [Deleting a Project](#deleting-a-project)
 * [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
- * [Registry Placement By Region (optional)](##registry-placement-by-region-optional)
+ * [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
 * [STI - What Is It?](#sti---what-is-it)
  * [Create a New Project](#create-a-new-project)
  * [Switch contexts](#switch-contexts)
