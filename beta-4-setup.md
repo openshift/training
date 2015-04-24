@@ -98,8 +98,9 @@ You will learn much more about the inner workings of OpenShift throughout the
 rest of the document.
 
 ### Requirements
-Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
-and the following configuration:
+Each of the virtual machines should have 4+ GB of memory, 10 GB of space for
+the root filesystem and 10+ GB for container storage dependent on the size and
+number of the containers you wish to run.
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
@@ -112,6 +113,56 @@ them to the *OpenShift Enterprise High Touch Beta* subscription.
 
 All of your VMs should be on the same logical network and be able to access one
 another.
+
+#### Docker Storage Setup
+**IMPORTANT:** The default docker storage configuration uses loopback devices
+and is not appropriate for production. Red Hat considers the dm.thinpooldev
+storage option to be the only appropriate configuration for production use.
+
+In order to use dm.thinpooldev you must have an LVM thinpool available, the
+`docker-storage-setup` package will assist you in configuring LVM however you
+must provision your host to fit one of these three scenarios :
+
+*  Root filesystem on LVM with free space remaining on the volume group. Run
+`docker-storage-setup` with no additional configuration, it will allocate the
+remaining space for the thinpool.
+
+*  A dedicated LVM volume group where you'd like to reate your thinpool
+
+   echo <<EOF > /etc/sysconfig/docker-storage-setup
+   VG=docker-vg
+   SETUP_LVM_THIN_POOL=yes
+   EOF
+   docker-storage-setup
+
+*  A dedicated block device, which will be used to create a volume group and
+thinpool
+
+   cat <<EOF > /etc/sysconfig/docker-storage-setup
+   DEVS=/dev/vdc
+   VG=docker-vg
+   SETUP_LVM_THIN_POOL=yes
+   EOF
+   docker-storage-setup
+
+Once complete you should have a thinpool named `docker-pool` and docker should
+be configured to use it in `/etc/sysconfig/docker-storage`.
+
+  # lvs
+  LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
+  docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
+
+  # cat /etc/sysconfig/docker-storage
+  DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
+
+**Note:** If you had previously used docker with loopback storage you should
+clean out `/var/lib/docker` This is a destructive operation and will delete all
+images and containers on the host.
+
+    systemctl stop docker
+    rm -rf /var/lib/docker/*
+    systemctl start docker
+
 
 ## Setting Up the Environment
 ### DNS
