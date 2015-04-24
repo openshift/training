@@ -30,7 +30,7 @@
  * [Verifying the Service](#verifying-the-service)
  * [Verifying the Routing](#verifying-the-routing)
 * [Project Administration](#project-administration)
-* [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
+* [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
 * [STI - What Is It?](#sti---what-is-it)
  * [Create a New Project](#create-a-new-project)
  * [Switch Projects](#switch-projects)
@@ -54,7 +54,6 @@
  * [Activate](#activate)
 * [Customized Build Process](#customized-build-process)
 * [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
- * [That Project Thing](#that-project-thing)
  * [Build Wordpress](#build-wordpress)
  * [Test Your Application](#test-your-application)
 
@@ -1404,9 +1403,12 @@ administrator rights he can add her using the `osadm policy` command:
 
     [joe]$ osadm policy add-role-to-user view alice
 
-Now login at the command line as `alice` to see what is available:
+Now login at the command line as `alice` to see what is available. `alice` hasn't logged in yet, so...
 
-    osc login -u alice
+    osc login -u alice \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --server=https://ose3-master.example.com:8443
+
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
     Login successful.
@@ -1480,7 +1482,7 @@ should return no results.
 Note: As of beta3, a user with the `edit` role can actually delete the project.
 [This will be fixed](https://github.com/openshift/origin/issues/1885).
 
-## Preparing for STI and Other Things
+## Preparing for STI: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
 OpenShift 3 will provide a Docker registry that administrators may run inside
@@ -1635,7 +1637,7 @@ Let's see some JSON:
     osc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
 
 Take a look at the JSON that was generated. You will see some familiar items at
-this point, and some new ones, like `BuildConfig`, `ImageRepository` and others.
+this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
 
 Essentially, the STI process is as follows:
 
@@ -1646,9 +1648,6 @@ a Docker image.
 
 1. OpenShift will then deploy the built Docker image as a Pod with an associated
 Service.
-
-**Note:** I am wondering if we want to do this via the console now, except for a
-bug with services not being created.
 
 ### CLI versus Console
 There are currently two ways to get from source code to components on OpenShift.
@@ -1668,7 +1667,7 @@ correct builder ImageStream, the web console currently does not have that
 capability. The user will have to first target the code repository, and then
 select the appropriate builder image.
 
-Perform the following command as `root` in the `beta3`folder in order to add all
+Perform the following command as `root` in the `beta3` folder in order to add all
 of the builder images:
 
     osc create -f image-streams.json -n openshift
@@ -2232,7 +2231,7 @@ frontend:
     parameters:
       output:
         to:
-          kind: ImageRepository
+          kind: ImageStream
           name: origin-ruby-sample
       source:
         git:
@@ -2329,7 +2328,7 @@ You can also see this information from the cli by doing:
 
 The semantics of this are that a `DeploymentConfig` ensures a
 `ReplicationController` is created to manage the deployment of the built `Image`
-from the `ImageRepository`.
+from the `ImageStream`.
 
 Simple, right?
 
@@ -2418,14 +2417,11 @@ As `root`, create a new project for Wordpress for `alice`:
 
     osadm new-project wordpress --display-name="Wordpress" \
     --description='Building an arbitrary Wordpress Docker image' \
-    --admin=htpasswd:alice
+    --admin=alice
 
 As `alice`:
 
-    cd ~/.kube
-    osc config set-context wordpress --cluster=ose3-master.example.com:8443 \
-    --namespace=wordpress --user=alice
-    osc config use-context wordpress
+    osc project wordpress
 
 ### Build Wordpress
 Let's choose the Wordpress example:
