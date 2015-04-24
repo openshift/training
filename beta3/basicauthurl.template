@@ -61,7 +61,7 @@
         },
         "strategy": {
           "stiStrategy": {
-            "image": "docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/sti-basicauthurl"
+            "image": "registry.access.redhat.com/openshift3_beta/sti-basicauthurl"
           },
           "type": "STI"
         }
