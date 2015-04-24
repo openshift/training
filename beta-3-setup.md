@@ -2235,6 +2235,7 @@ frontend:
       source:
         git:
           uri: git://github.com/openshift/ruby-hello-world.git
+          ref: beta3
         type: Git
       strategy:
         stiStrategy:
@@ -2264,7 +2265,7 @@ ahead and re-point our configuration. Assuming your github user is
 
     osc get buildconfig ruby-sample-build -o yaml | sed -e \
     's/openshift\/ruby-hello-world/alice\/ruby-hello-world/' \
-    -e '/ref: beta2/d' | osc update \
+    -e '/ref: beta3/d' | osc update \
     buildconfig ruby-sample-build -f -
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
