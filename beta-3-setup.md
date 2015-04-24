@@ -795,8 +795,9 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
-look for a specific scheduler config file. Edit `/etc/openshift/master.yaml` and
-find the line with `schedulerConfigFile`. Change it to:
+look for a specific scheduler config file. As `root` edit
+`/etc/openshift/master.yaml` and find the line with `schedulerConfigFile`.
+Change it to:
 
     schedulerConfigFile: "/etc/openshift/scheduler.json"
 
@@ -909,7 +910,7 @@ For your node2, add the following:
       "zone" : "west"
     },
 
-Then, update your nodes using the following:
+Then, as `root` update your nodes using the following:
 
     osc update node -f ~/nodes.json
 
