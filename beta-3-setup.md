@@ -54,7 +54,6 @@
  * [Activate](#activate)
 * [Customized Build Process](#customized-build-process)
 * [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
- * [That Project Thing](#that-project-thing)
  * [Build Wordpress](#build-wordpress)
  * [Test Your Application](#test-your-application)
 
@@ -1404,9 +1403,12 @@ administrator rights he can add her using the `osadm policy` command:
 
     [joe]$ osadm policy add-role-to-user view alice
 
-Now login at the command line as `alice` to see what is available:
+Now login at the command line as `alice` to see what is available. `alice` hasn't logged in yet, so...
 
-    osc login -u alice
+    osc login -u alice \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --server=https://ose3-master.example.com:8443
+
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
     Login successful.
@@ -2418,14 +2420,11 @@ As `root`, create a new project for Wordpress for `alice`:
 
     osadm new-project wordpress --display-name="Wordpress" \
     --description='Building an arbitrary Wordpress Docker image' \
-    --admin=htpasswd:alice
+    --admin=alice
 
 As `alice`:
 
-    cd ~/.kube
-    osc config set-context wordpress --cluster=ose3-master.example.com:8443 \
-    --namespace=wordpress --user=alice
-    osc config use-context wordpress
+    osc project wordpress
 
 ### Build Wordpress
 Let's choose the Wordpress example:
