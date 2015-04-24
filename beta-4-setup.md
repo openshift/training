@@ -129,39 +129,43 @@ remaining space for the thinpool.
 
 *  A dedicated LVM volume group where you'd like to reate your thinpool
 
+```
    echo <<EOF > /etc/sysconfig/docker-storage-setup
    VG=docker-vg
    SETUP_LVM_THIN_POOL=yes
    EOF
    docker-storage-setup
+```
 
 *  A dedicated block device, which will be used to create a volume group and
 thinpool
-
+```
    cat <<EOF > /etc/sysconfig/docker-storage-setup
    DEVS=/dev/vdc
    VG=docker-vg
    SETUP_LVM_THIN_POOL=yes
    EOF
    docker-storage-setup
-
+```
 Once complete you should have a thinpool named `docker-pool` and docker should
 be configured to use it in `/etc/sysconfig/docker-storage`.
-
+```
   # lvs
   LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
   docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
 
   # cat /etc/sysconfig/docker-storage
   DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
+```
 
 **Note:** If you had previously used docker with loopback storage you should
 clean out `/var/lib/docker` This is a destructive operation and will delete all
 images and containers on the host.
-
+```
     systemctl stop docker
     rm -rf /var/lib/docker/*
     systemctl start docker
+```
 
 
 ## Setting Up the Environment
