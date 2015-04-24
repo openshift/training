@@ -153,7 +153,7 @@ can:
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
-    
+
     **Note:** You will have had to register/attach your system first.
 
 * Import the GPG key for beta:
@@ -351,7 +351,7 @@ The OpenShift configuration is kept in a YAML file which currently lives at
 
 More information on these configuration settings can be found here:
 
-    http://docs.openshift.org/latest/architecture/authentication.html#HTPasswdPasswordIdentityProvider
+    http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
 
 If you're feeling lazy, use your friend `sed`:
 
@@ -769,7 +769,7 @@ Again, the defaults are:
 And, for an extremely detailed explanation about what these various
 configuration flags are doing, check out:
 
-    http://docs.openshift.org/latest/dev_guide/scheduler.html
+    http://docs.openshift.org/latest/admin_guide/scheduler.html
 
 In a small environment, these defaults are pretty sane. Let's look at one of the
 important predicates (filters) before we move on to "regions" and "zones".
@@ -1842,7 +1842,7 @@ As the `joe` user, we'll set our context to use the corresponding namespace:
 
 ### A Quick Aside on Templates
 From the [OpenShift
-documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/latest/using_openshift/templates.html):
+documentation](http://docs.openshift.org/latest/dev_guide/templates.html):
 
     A template describes a set of resources intended to be used together that
     can be customized and processed to produce a configuration. Each template
@@ -2494,15 +2494,15 @@ wildcard space:
 OpenShift currently supports several authentication methods for obtaining API
 tokens.  While OpenID or one of the supported Oauth providers are preferred,
 support for services such as LDAP is possible today using either the [Basic Auth
-Remote](http://docs.openshift.org/latest/architecture/authentication.html#BasicAuthPasswordIdentityProvider)
+Remote](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#BasicAuthPasswordIdentityProvider)
 identity provider or the [Request
-Header](http://docs.openshift.org/latest/architecture/authentication.html#RequestHeaderIdentityProvider)
+Header](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#RequestHeaderIdentityProvider)
 Identity provider.  This example while demonstrate the ease of running a
 `BasicAuthPasswordIdentityProvider` on OpenShift.
 
 For full documentation on the other authentication options please refer to the
 [Official
-Documentation](http://docs.openshift.org/latest/architecture/authentication.html#authentication-integrations)
+Documentation](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html)
 
 ### Prerequirements:
 
@@ -2539,7 +2539,7 @@ While the example OpenLDAP service is itself mostly a toy, the Basic Auth
 service created below can easily be made highly available using OpenShift
 features.  It's a normal web service that happens to speak the [API required by
 the
-master](http://docs.openshift.org/latest/architecture/authentication.html#BasicAuthPasswordIdentityProvider)
+master](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#BasicAuthPasswordIdentityProvider)
 and talk to an LDAP server.  Since it's stateless simply increasing the
 replicas in the replication controller is all that is needed to make the
 application highly available.
@@ -2548,7 +2548,7 @@ To make this as easy as possible for the beta training a helper script has been
 provided to create a Route, Service, Build Config and Deployment Config.  The
 Basic Auth service will be configured to use TLS all the way to the pod by
 means of the [Router's SNI
-capabilities](http://docs.openshift.org/latest/architecture/routing.html#passthrough-termination).
+capabilities](http://docs.openshift.org/latest/architecture/core_objects/routing.html#passthrough-termination).
 Since TLS is used this helper script will also generated the required
 certificates using OpenShift default CA.
 
