@@ -3120,22 +3120,41 @@ be output towards the end of the build on a line similar to this:
 
     2015-04-23T19:59:34.304730547Z I0423 15:59:34.303984       1 sti.go:236] Tagged e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 as 172.30.17.99:5000/myapp2/origin-ruby-sample
 
-Check for that image tag in the output of `docker images`:
+At this point the deployment should run, including your revised
+post-deploy lifecycle hook. You can verify this by looking for the
+deployment hook pods in the `osc get pods` output:
 
-    # docker images | grep e696bbc88d89
-    172.30.17.43:5000/myapp2/origin-ruby-sample                                        e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   e696bbc88d89        37 seconds ago      449.2 MB
+    # osc get pods | grep 'POD\|lifecycle'
+    POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                      HOST                                    LABELS                                                                                                                  STATUS      CREATED
+    deployment-frontend-1-hook-hgr3a               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   About an hour
+    deployment-frontend-1-hook-owy4k               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   About an hour
+    deployment-frontend-2-hook-im42n               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Pending     8 seconds
+    deployment-frontend-2-hook-hejef               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Pending     9 seconds
 
-**Note:** It may take a few seconds/minutes for the image to appear,
- and it may disappear again for a moment then reappear again. I
- don't know why, but once it reappears, you're good to go.
+The pods with the most recent `CREATED` time will be the lifecycle
+hook pods triggered by your build. It may take a few moments after the
+build completes for the pods to show up, so you will want to keep
+monitoring this command until the pods appear. You'll notice that the
+docker image tag from your build logs will appear in the `IMAGE(S)`
+field for your hook pods.
+
+Once the pods' `STATUS` move from `Pending` to `Succeeded`, you can
+inspect them to see the result.
 
 ## Verify that the database migration happened
 
-Find the deployment hook in the output from `osc get pods` and
-inspect it with `osc log`:
+Find the deployment hooks in the output from `osc get pods` and
+inspect them with `osc log`:
 
     # osc get pods | grep 'deployment-frontend-2'
-    deployment-frontend-2-hook-hejef               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:ca8f5e217dbb58bd9d4ea966443855a8b9b4d609bc110caa17846a80a747c01c   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   17 seconds
+    deployment-frontend-2-hook-im42n               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Pending     8 seconds
+    deployment-frontend-2-hook-hejef               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   17 seconds
+    # osc log deployment-frontend-2-hook-im42n
+
+Theres no output from this command; this probably means that this pod
+had run the pre-deployment lifecycle hook which (at the time of this
+writing) runs `/bin/true`. Let's check the next pod's logs:
+
     # osc log deployment-frontend-2-hook-hejef
     2015-04-23T17:48:41.588240012Z == 1 CatNames: migrating ======================================================
     2015-04-23T17:48:41.588312703Z -- create_table(:cat_names)
@@ -3143,9 +3162,12 @@ inspect it with `osc log`:
     2015-04-23T17:48:41.588322977Z == 1 CatNames: migrated (0.3026s) =============================================
     2015-04-23T17:48:41.588326799Z
 
+Pay dirt! Here we can see the output we'd expect from a successful
+rails database migration.
+
 Now use the MySQL credentials from `env.json` and the host IP/port
 for the database service to inspect the database (you may need to
-install the mysql client):
+install the `mysql` client):
 
     # osc get svc database
     NAME       LABELS                                   SELECTOR        IP              PORT(S)
