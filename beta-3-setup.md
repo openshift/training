@@ -1818,6 +1818,51 @@ And now, you should be able to verify everything is working right:
 
 If you want to be fancy, try it in your browser!
 
+#### Implications of Quota enforcement
+Quotas have implications one may not immediately realize. As `root` assign a
+quota to the sinatra project.
+
+    osc create -f quota.json -n sinatra
+
+As `Joe` scale your application up to three replicas by setting your Replication
+Controller's `replicas` value to 3.
+
+    osc get rc
+    CONTROLLER       CONTAINER(S)   REPLICAS
+    ruby-example-1   ruby-example   1
+
+    osc edit rc ruby-example-1
+
+Alter `replicas`
+
+    spec:
+      replicas: 3
+
+Wait a few seconds and you should see your application scaled up to 3 pods.
+
+    osc get pods
+    POD                    IP          CONTAINER(S) ... STATUS  CREATED
+    ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
+    ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
+    ruby-example-3-tzt0z   10.1.0.28   ruby-example ... Running About a minute
+
+Now start another build, wait a moment or two for your build to start.
+
+    osc start build ruby-example
+
+    osc get builds
+    NAME             TYPE      STATUS     POD
+    ruby-example-1   STI       Complete   ruby-example-1
+    ruby-example-2   STI       New        ruby-example-2
+
+The build never starts, what happened? The quota limits the number of pods in
+this project to three and this includes ephemeral pods like STI builders.
+Resize your application to just one replica and your new build will
+automatically start after a minute or two.
+
+**Note:** Once the build is complete a new replication controller is
+created and the old one is no longer used.
+
 ## A Fully-Integrated "Quickstart" Application
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
@@ -1829,6 +1874,7 @@ will come in a later lab.
 
 This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
+
 
 ### A Project for the Quickstart
 As the `root` user, first we'll create a new project:
