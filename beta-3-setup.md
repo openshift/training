@@ -2996,22 +2996,21 @@ In the web console, as the project owner user:
 
 ## Create a branch in your fork of the `ruby-hello-world` app
 
+    cd /path/to/ruby-hello-world
     git checkout -b newtable my_remote/beta3
 
 ## Add a new table by creating a new migration in `db/migrate`
 
-We should probably use a more practical example than `cat_names`...
+    cat <<EOF > db/migrate/1_sample_table.rb
 
-    cat <<EOF > db/migrate/1_cat_names.rb
-
-    class CatNames < ActiveRecord::Migration
+    class SampleTable < ActiveRecord::Migration
       def up
-        create_table :cat_names do |t|
+        create_table :sample_table do |t|
           t.column :name, :string, :null => false
         end
       end
       def down
-        drop_table :cat_names
+        drop_table :sample_table
       end
     end
 
@@ -3019,6 +3018,8 @@ We should probably use a more practical example than `cat_names`...
 
 ## Push the changes to your github account
 
+    git add db/migrate/1_sample_table.rb
+    git commit -m 'Add a new db migration'
     git push my_remote newtable:newtable
 
 ## Modify the buildConfig to reference the new branch
