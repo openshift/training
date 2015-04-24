@@ -1,0 +1,8 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta1",
+  "name": "ruby-example-route",
+  "host": "hello-sinatra.cloudapps.example.com",
+  "serviceName": "ruby-example"
+}
+
