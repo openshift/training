@@ -2455,7 +2455,7 @@ you allow it, developers can actually simply build Docker containers as their
 "apps" and run them directly on OpenShift.
 
 ## Conclusion
-This concludes the Beta 2 training. Look for more example applications to come!
+This concludes the Beta 3 training. Look for more example applications to come!
 
 # APPENDIX - Extra STI code examples
 ## Wildfly
