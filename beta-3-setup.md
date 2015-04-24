@@ -3156,10 +3156,10 @@ had run the pre-deployment lifecycle hook which (at the time of this
 writing) runs `/bin/true`. Let's check the next pod's logs:
 
     # osc log deployment-frontend-2-hook-hejef
-    2015-04-23T17:48:41.588240012Z == 1 CatNames: migrating ======================================================
-    2015-04-23T17:48:41.588312703Z -- create_table(:cat_names)
+    2015-04-23T17:48:41.588240012Z == 1 SampleTable: migrating ======================================================
+    2015-04-23T17:48:41.588312703Z -- create_table(:sample_table)
     2015-04-23T17:48:41.588318626Z    -> 0.2923s
-    2015-04-23T17:48:41.588322977Z == 1 CatNames: migrated (0.3026s) =============================================
+    2015-04-23T17:48:41.588322977Z == 1 SampleTable: migrated (0.3026s) =============================================
     2015-04-23T17:48:41.588326799Z
 
 Pay dirt! Here we can see the output we'd expect from a successful
@@ -3176,12 +3176,12 @@ install the `mysql` client):
       -p 5678efgh \
       -h 172.30.17.208 \
       -P 5434 \
-      -e 'show tables; describe cat_names;' \
+      -e 'show tables; describe sample_table;' \
       root
     +-------------------+
     | Tables_in_root    |
     +-------------------+
-    | cat_names         |
+    | sample_table      |
     | key_pairs         |
     | schema_migrations |
     +-------------------+
