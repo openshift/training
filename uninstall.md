@@ -17,15 +17,26 @@ yum erase "*openshift*" "docker*"
 systemctl reset-failed
 systemctl daemon-reload
 
-# Remove data and configuration
+# Remove data, config, and training materials
 rm -rf /var/lib/openshift/
 rm /etc/sysconfig/*openshift*
 rm /etc/sysconfig/docker*
 rm -rf /etc/openshift/*
 rm -rf /root/.config/openshift
+rm -rf /root/training
+rm -rf /root/openshift-ansible
 
 # In case this was still around from a previous install
 rm -rf /root/.kube/
+
+# Remove the user's that you created to ensure you get the latest training
+# materials in their home directories when you start again
+userdel -r alice
+userdel -r joe
+
+# Wherever you've deployed ansible clean it up, usually your master
+yum erase ansible
+rm -rf /etc/ansible
 
 # Make sure you're running the latest RHEL 7.1 release
 yum update
