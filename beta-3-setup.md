@@ -206,10 +206,9 @@ On all of your systems, grab the following docker images:
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull openshift/ruby-20-centos7
-    docker pull openshift/mysql-55-centos7
+    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
+    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
-    docker pull centos:centos7
 
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
@@ -1634,7 +1633,7 @@ For this example, we will be using the following application's source code:
 
 Let's see some JSON:
 
-    osc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
+    osc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
 
 Take a look at the JSON that was generated. You will see some familiar items at
 this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
@@ -1650,22 +1649,30 @@ a Docker image.
 Service.
 
 ### CLI versus Console
-There are currently two ways to get from source code to components on OpenShift.
-The CLI has a tool (`new-app`) that can take a source code repository as an
-input and then configure OpenShift to do what we need. You looked at that
-already. You can also just run `osc new-app --help` to see other things that
-`new-app` can help you achieve.
+Did you notice that the json returned from `new-app` defaulted to using a
+CentOS builder image?  That is simply a temporary convenience until more
+builder selection logic is baked in.  If we had wanted to use the RHEL image we
+could have run:
 
-The web console also lets you point directly at a source code repository, but
-requires a little bit more input to get things running. Let's go through an
-example of pointing to code via the web console. Later examples will use the CLI
-tools.
+    osc new-app openshift/ruby-20-rhel7~https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
+
+There are a few problems with this.  Namely:
+
+* The `~` syntax is weird
+* It won't even work until we've imported a `openshift/ruby-20-rhel7` `ImageStream`
+
+Over time `new-app` will get smarter so we'll overlook this for now and simply
+show how we can accomplish the same thing with the Console.  However, since the
+Console doesn't have the logic for defaulting to CentOS we have to first tell
+OpenShift about the `ImageStream`s we want to use.  From there we can show an
+example of pointing to code via the web console.  Later examples will use the
+CLI tools.
 
 ### Adding the Builder ImageStreams
-While `new-app` has some built-in logic to help automatically determine the
-correct builder ImageStream, the web console currently does not have that
-capability. The user will have to first target the code repository, and then
-select the appropriate builder image.
+While `new-app` has some built-in logic to help find a compatible builder
+ImageStream, the web console currently does not have that capability. The user
+will have to first target the code repository, and then select the appropriate
+builder image.
 
 Perform the following command as `root` in the `beta3` folder in order to add all
 of the builder images:
@@ -1674,16 +1681,32 @@ of the builder images:
 
 You will see the following:
 
+    imageStreams/ruby-20-rhel7
+    imageStreams/nodejs-010-rhel7
+    imageStreams/perl-516-rhel7
+    imageStreams/python-33-rhel7
+    imageStreams/mysql-55-rhel7
+    imageStreams/postgresql-92-rhel7
+    imageStreams/mongodb-24-rhel7
+    imageStreams/eap-openshift
+    imageStreams/tomcat7-openshift
+    imageStreams/tomcat8-openshift
     imageStreams/ruby-20-centos7
     imageStreams/nodejs-010-centos7
     imageStreams/perl-516-centos7
     imageStreams/python-33-centos7
     imageStreams/wildfly-8-centos
 
-What is the `openshift` project where we added these builders? This is a special
-project that can contain various elements that should be available to all users
-of the OpenShift environment. There's not a whole lot for the user to do with
-these right now, so we'll go to the web console to create our "application".
+What is the `openshift` project where we added these builders? This is a
+special project that can contain various elements that should be available to
+all users of the OpenShift environment.  You may notice that some streams have
+`rhel` in the name and others have `centos`.  These streams could technically
+come from anywhere but it's important to know that the supported ImageStreams
+come from the official Red Hat registry and the CentOS community ImageStreams
+are currently hosted on the DockerHub.  Feel free to look around
+`image-streams.json` for more details.  It's entirely expected that companies
+will have their own internal image streams as well.  That said, let's go move
+over to the web console to create our "application".
 
 ### Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
@@ -1699,7 +1722,7 @@ referenced earlier. Enter this repo in the box:
 
 When you hit "Next" you will then be asked which builder image you want to use.
 This application uses the Ruby language, so make sure to click
-`ruby-20-centos7:latest`. You'll see a pop-up with some more details asking for
+`ruby-20-rhel7:latest`. You'll see a pop-up with some more details asking for
 confirmation. Click "Select image..."
 
 The next screen you see lets you begin to customize the information a little
@@ -1731,7 +1754,7 @@ You'll see some output to indicate the build:
 
     ruby-example-1
 
-OpenShift v3 is in a bit of a transtiion period between authentication
+OpenShift v3 is in a bit of a transition period between authentication
 paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
 performed by "normal" users, even if it makes sense that they should. Don't
 worry, we'll get there.
@@ -2240,8 +2263,8 @@ frontend:
         type: Git
       strategy:
         stiStrategy:
-          builderImage: openshift/ruby-20-centos7
-          image: openshift/ruby-20-centos7
+          builderImage: openshift/ruby-20-rhel7
+          image: openshift/ruby-20-rhel7
         type: STI
     triggers:
     - github:
@@ -2252,10 +2275,10 @@ frontend:
       type: generic
     - imageChange:
         from:
-          name: ruby-20-centos7
-        image: openshift/ruby-20-centos7
+          name: ruby-20-rhel7
+        image: openshift/ruby-20-rhel7
         imageRepositoryRef:
-          name: ruby-20-centos7
+          name: ruby-20-rhel7
         tag: latest
       type: imageChange
 
@@ -2653,30 +2676,30 @@ Docker supports import/save of Images via tarball. These instructions are
 general and may not be 100% accurate for the current release. You can do
 something like the following on your connected machine:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
-    docker pull openshift/ruby-20-centos7
-    docker pull openshift/mysql-55-centos7
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
+    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
+    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
-    docker pull centos:centos7
 
 This will fetch all of the images. You can then save them to a tarball:
 
-    docker save -o beta1-images.tar \
-    registry.access.redhat.com/openshift3_beta/ose-haproxy-router \
-    registry.access.redhat.com/openshift3_beta/ose-deployer \
-    registry.access.redhat.com/openshift3_beta/ose-sti-builder \
-    registry.access.redhat.com/openshift3_beta/ose-docker-builder \
-    registry.access.redhat.com/openshift3_beta/ose-pod \
-    registry.access.redhat.com/openshift3_beta/ose-docker-registry \
-    openshift/ruby-20-centos7 \
-    openshift/mysql-55-centos7 \
-    openshift/hello-openshift \
-    centos:centos7
+    docker save -o beta3-images.tar \
+    registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest \
+    registry.access.redhat.com/openshift3_beta/ruby-20-rhel7 \
+    registry.access.redhat.com/openshift3_beta/mysql-55-rhel7 \
+    openshift/hello-openshift
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
 space**

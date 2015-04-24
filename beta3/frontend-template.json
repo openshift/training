@@ -32,10 +32,10 @@
       "apiVersion": "v1beta1",
       "kind": "ImageStream",
       "metadata": {
-        "name": "ruby-20-centos7"
+        "name": "ruby-20-rhel7"
       },
       "spec": {
-        "dockerImageRepository": "openshift/ruby-20-centos7"
+        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/ruby-20-rhel7"
       }
     },
     {
@@ -62,7 +62,7 @@
         },
         "strategy": {
           "stiStrategy": {
-            "image": "openshift/ruby-20-centos7"
+            "image": "openshift/ruby-20-rhel7"
           },
           "type": "STI"
         }
@@ -83,9 +83,9 @@
         {
           "imageChange": {
             "from": {
-              "name": "ruby-20-centos7"
+              "name": "ruby-20-rhel7"
             },
-            "image": "openshift/ruby-20-centos7",
+            "image": "openshift/ruby-20-rhel7",
             "tag": "latest"
           },
           "type": "imageChange"

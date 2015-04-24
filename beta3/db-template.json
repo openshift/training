@@ -39,7 +39,7 @@
                         "value": "example"
                       }
                     ],
-                    "image": "openshift/mysql-55-centos7",
+                    "image": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7",
                     "name": "ruby-helloworld-database",
                     "ports": [
                       {
