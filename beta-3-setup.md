@@ -2,11 +2,12 @@
 
 **Table of contents:**
 
+* [Architecture and Requirements](#architecture-and-requirememts)
 * [Setting Up the Environment](#setting-up-the-environment)
 * [Ansible-based Installer](#ansible-based-installer)
 * [Watching Logs](#watching-logs)
 * [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
- * [Configuring htpasswd Authentication](#auth-projects-and-the-web-console)
+ * [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
  * [A Project for Everything](#a-project-for-everything)
  * [Web Console](#web-console)
 * [Your First Application](#your-first-application)
@@ -23,7 +24,7 @@
 * [Services](#services)
 * [Routing](#routing)
  * [Creating the Router](#creating-the-router)
- * [Router placement by region](#router-placement-by-region)
+ * [Router Placement by Region](#router-placement-by-region)
 * [The Complete Pod-Service-Route](#the-complete-pod-service-route)
  * [Creating the Definition](#creating-the-definition)
  * [Verifying the Service](#verifying-the-service)
@@ -32,9 +33,9 @@
 * [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
 * [STI - What Is It?](#sti---what-is-it)
  * [Create a New Project](#create-a-new-project)
- * [Switch contexts](#switch-contexts)
- * [A Simple STI Build](#a-simple-sti-build)
- * [Create the Build Process](#create-the-build-process)
+ * [Switch Projects](#switch-projects)
+ * [A Simple Code Example](#a-simple-code-example)
+ * [Adding Code Via the Web Console](#adding-code-via-the-web-console)
  * [Adding a Route to Our Application](#adding-a-route-to-our-application)
 * [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
  * [A Project for the Quickstart](#a-project-for-the-quickstart)
@@ -71,16 +72,7 @@
 * [Working with HTTP proxies](#appendix---working-with-http-proxies)
 * [Lifecycle pre and post deployment hooks](#appendix---lifecycle-pre-and-post-deployment-hooks)
 
-## Use a Terminal Window Manager
-We **strongly** recommend that you use some kind of terminal window manager
-(Screen, Tmux).
-
-## Assumptions
-In most cases you will see references to "example.com" and other FQDNs related
-to it. If you choose not to use "example.com" in your configuration, that is
-fine, but remember that you will have to adjust files and actions accordingly.
-
-## Architecture and Requirememts
+## Architecture and Requirements
 ### Architecture
 The documented architecture for the beta testing is pretty simple. There are
 three systems:
@@ -115,6 +107,11 @@ All of your VMs should be on the same logical network and be able to access one
 another.
 
 ## Setting Up the Environment
+
+### Use a Terminal Window Manager
+We **strongly** recommend that you use some kind of terminal window manager
+(Screen, Tmux).
+
 ### DNS
 You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
 address of the OpenShift router. For this training, we will ensure that the
@@ -135,6 +132,11 @@ It is possible to use dnsmasq inside of your beta environment to handle these
 duties. See the [appendix on
 dnsmasq](#appendix---dnsmasq-setup) if you can't easily manipulate your existing
 DNS environment.
+
+### Assumptions
+In most cases you will see references to "example.com" and other FQDNs related
+to it. If you choose not to use "example.com" in your configuration, that is
+fine, but remember that you will have to adjust files and actions accordingly.
 
 ### Git
 You will either need internet access or read and write access to an internal
