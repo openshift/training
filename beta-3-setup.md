@@ -2066,15 +2066,18 @@ Processing the template for the db will generate some values for the DB root
 user and password, but they don't actually match what was previously generated
 when we set up the front-end. In the "quickstart" example, we generated these
 values and used them for both the frontend and the backend at the exact same
-time. Since we are processing them separately now, we need to do some manual
-intervention.
+time. Since we are processing them separately now, some manual intervention is
+required.
 
-All we are doing is leveraging the standard Dockerhub MySQL container, which
-knows to take some env-vars when it fires up (eg: the MySQL user / password).
+This template uses the OpenShift MySQL Docker container, which knows to take some
+env-vars when it fires up (eg: the MySQL user / password). More information on
+the specifics of this container can be found here:
 
-So, look at the frontend configuration (`frontend-config.json`) and find the
-value for `MYSQL_USER`. For example, `userMXG`. Then insert these values
-into the template using the `process` command and create the result:
+    https://github.com/openshift/mysql
+
+Take a look at the frontend configuration (`frontend-config.json`) and find the
+value for `MYSQL_USER`. For example, `userMXG`. Then insert these values into
+the template using the `process` command and create the result:
 
     grep -A 1 MYSQL_* frontend-config.json
                                                 "name": "MYSQL_USER",
@@ -2093,17 +2096,18 @@ into the template using the `process` command and create the result:
         -v MYSQL_USER=userMXG,MYSQL_PASSWORD=slDrggRv,MYSQL_DATABASE=root \
         | osc create -f -
 
-It may take a little while for the mysql container to download from the Docker
-Hub (if you didn't pre-fetch it), which can cause the frontend application to
-appear broken if it is restarted.  In reality it's simply polling for the
-database connection to become active.  It's a good idea to verify that the
-database is running at this point.  If you don't happen to have a mysql client
-installed you can verify it's running with curl:
+`osc process` can be passed values for parameters, which will override
+auto-generation.
+
+It may take a little while for the MySQL container to download (if you didn't
+pre-fetch it). It's a good idea to verify that the database is running before
+continuing.  If you don't happen to have a MySQL client installed you can still
+verify MySQL is running with curl:
 
     curl `osc get services | grep database | awk '{print $4}'`:5434
 
-Obviously mysql doesn't speak HTTP so you'll see garbled output like this
-(however, you'll know your database is running!):
+MySQL doesn't speak HTTP so you will see garbled output like this (however,
+you'll know your database is running!):
 
     5.6.2K\l-7mA<��F/T:emsy'TR~mysql_native_password!��#08S01Got packets out of order
 
@@ -2114,7 +2118,8 @@ there is no database?
 When the frontend was first built and created, there was no service called
 "database", so the environment variable `DATABASE_SERVICE_HOST` did not get
 populated with any values. Our database does exist now, and there is a service
-for it, but OpenShift did not "inject" those values into the running container.
+for it, but OpenShift could not "inject" those values into the frontend
+container.
 
 ### Replication Controllers
 The easiest way to get this going? Just nuke the existing pod. There is a
@@ -2122,15 +2127,16 @@ replication controller running for both the frontend and backend:
 
     osc get replicationcontroller
 
-The replication controller will ensure that we always have however many
-replicas (instances) running. We can look at how many that should be:
+The replication controller is configured to ensure that we always have the
+desired number of replicas (instances) running. We can look at how many that
+should be:
 
     osc describe rc frontend-1
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
 which means it will be able to connect to the DB, which means that we should no
-longer see these errors!
+longer see the database error!
 
 As `alice`, go ahead and find your frontend pod, and then kill it:
 
@@ -2157,7 +2163,7 @@ id as `root`:
     docker inspect `docker ps | grep wiring | grep front | grep run | awk \
     '{print $1}'` | grep DATABASE
 
-The output will look like:
+The output will look something like:
 
     "MYSQL_DATABASE=root",
     "DATABASE_PORT_5434_TCP_ADDR=172.30.17.106",
