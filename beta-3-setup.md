@@ -43,13 +43,12 @@
  * [Creating the Integrated Application](#creating-the-integrated-application)
 * [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
  * [Stand Up the Frontend](#stand-up-the-frontend)
- * [Webhooks](#webhooks)
  * [Create the Database Config](#create-the-database-config)
  * [Replication Controllers](#replication-controllers)
 * [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
  * [Update the BuildConfig](#update-the-buildconfig)
  * [Change the Code](#change-the-code)
- * [Kick Off Another Build](#kick-off-another-build)
+ * [Start a Build with a Webhook](#start-a-build-with-a-webhook)
  * [Rollback](#rollback)
  * [Activate](#activate)
 * [Customized Build Process](#customized-build-process)
@@ -2013,9 +2012,7 @@ Open a terminal as `alice`:
 
 Then:
 
-    osc login -n wiring \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
-    --server=https://ose3-master.example.com:8443
+    osc project wiring 
 
 Remember, your password was probably "redhat".
 
@@ -2054,50 +2051,6 @@ start:
 
     https://github.com/openshift/origin/issues/1738
 
-### Webhooks
-
-**Note**: Since the build auto starts, we may want to move this to a later
-example.
-
-Webhooks are a way to integrate external systems into your OpenShift
-environment. They can be used to fire off builds. Generally speaking, one would
-make code changes, update the code repository, and then some process would hit
-OpenShift's webhook URL in order to start a build with the new code.
-
-Visit the web console, click into the project, click on *Browse* and then on
-*Builds*. You'll see two webhook URLs. Copy the *Generic* one. It should look
-like:
-
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
-
-If you look at the `frontend-config.json` file that you created earlier, you'll
-notice these same "secrets". These are kind of like user/password combinations
-to secure the build. More access control will be added around these webhooks,
-but, for now, this is the simple way it is achieved.
-
-This time, in order to run a build for the frontend, we'll use `curl` to hit our
-webhook URL.
-
-First, look at the list of builds:
-
-    osc get build
-
-You should see that the first build had completed. Then, `curl`:
-
-    curl -i -H "Accept: application/json" \
-    -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
-
-And now `get build` again:
-
-    osc get build
-    NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
-    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
-
-You can see that this could have been part of some CI/CD workflow that
-automatically called our webhook once the code was tested.
-
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
 updated, visit your application. The frontend configuration contained a route
@@ -2109,35 +2062,41 @@ Remember, `osc process` will examine a template, generate any desired
 parameters, and spit out a JSON `config`uration that can be `create`d with
 `osc`.
 
-First, we will generate a config for the database:
-
-    osc process -f db-template.json > db-config.json
-
 Processing the template for the db will generate some values for the DB root
 user and password, but they don't actually match what was previously generated
 when we set up the front-end. In the "quickstart" example, we generated these
-values and used them for both the frontend and the back-end at the exact same
-time. In this case, we need to do some manual intervention.
-
-In the future, you'll be able to pass values into the template when it is
-processed, or things will be auto-populated (like in OpenShift v2).
-
-So, look at the frontend configuration (`frontend-config.json`) and find the
-value for `MYSQL_PASSWORD`. For example, `mugX5R2B`.
-
-Edit `db-config.json` and set the values for `MYSQL_PASSWORD`,
-`MYSQL_DATABASE`, and `MYSQL_USER` to match whatever is in your
-`frontend-config.json`. Once you are finished, you can create the backend:
-
-    osc create -f db-config.json
+values and used them for both the frontend and the backend at the exact same
+time. Since we are processing them separately now, we need to do some manual
+intervention.
 
 All we are doing is leveraging the standard Dockerhub MySQL container, which
-knows to take some env-vars when it fires up (eg: the MySQL root password).
+knows to take some env-vars when it fires up (eg: the MySQL user / password).
+
+So, look at the frontend configuration (`frontend-config.json`) and find the
+value for `MYSQL_USER`. For example, `userMXG`. Then insert these values
+into the template using the `process` command and create the result:
+
+    grep -A 1 MYSQL_* frontend-config.json
+                                                "name": "MYSQL_USER",
+                                                "key": "MYSQL_USER",
+                                                "value": "userMXG"
+    --
+                                                "name": "MYSQL_PASSWORD",
+                                                "key": "MYSQL_PASSWORD",
+                                                "value": "slDrggRv"
+    --
+                                                "name": "MYSQL_DATABASE",
+                                                "key": "MYSQL_DATABASE",
+                                                "value": "root"
+
+    osc process -f db-template.json \
+        -v MYSQL_USER=userMXG,MYSQL_PASSWORD=slDrggRv,MYSQL_DATABASE=root \
+        | osc create -f -
 
 It may take a little while for the mysql container to download from the Docker
 Hub (if you didn't pre-fetch it), which can cause the frontend application to
 appear broken if it is restarted.  In reality it's simply polling for the
-database connection to become active.  It's a good idea to verify that that
+database connection to become active.  It's a good idea to verify that the
 database is running at this point.  If you don't happen to have a mysql client
 installed you can verify it's running with curl:
 
@@ -2317,17 +2276,58 @@ You can edit code on Github by clicking the pencil icon which is next to the
 "History" button. Provide some nifty commit message like "Personalizing the
 application."
 
-### Kick Off Another Build
-Now that our code is changed, we can kick off another build process using the
-same webhook as before:
+### Start a Build with a Webhook
+
+Webhooks are a way to integrate external systems into your OpenShift
+environment so that they can fire off OpenShift builds. Generally
+speaking, one would make code changes, update the code repository, and
+then some process would hit OpenShift's webhook URL in order to start
+a build with the new code.
+
+Your GitHub account has the capability to configure a webhook to request
+whenever a commit is pushed to a specific branch; however, it would only
+be able to make a request against your OpenShift master if that master
+is exposed on the Internet, so you will probably need to simulate the
+request manually for now.
+
+To find the webhook URL, you can visit the web console, click into the
+project, click on *Browse* and then on *Builds*. You'll see two webhook
+URLs. Copy the *Generic* one. It should look like:
+
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+If you look at the `frontend-config.json` file that you created earlier,
+you'll notice the same "secret101" entries in triggers. These are
+basically passwords so that just anyone on the web can't trigger the
+build with knowledge of the name only. You could of course have adjusted
+the passwords or had the template generate randomized ones.
+
+This time, in order to run a build for the frontend, we'll use `curl` to hit our
+webhook URL.
+
+First, look at the list of builds:
+
+    osc get build
+
+You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
     https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
 
-As soon as you issue this curl, you can check the web interface (logged in as
-`alice`) and see that the build is running. Once it is complete, point your web
-browser at the application:
+And now `get build` again:
+
+    osc get build
+    NAME                  TYPE      STATUS     POD
+    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
+    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
+
+You can see that this could have been part of some CI/CD workflow that
+automatically called our webhook once the code was tested.
+
+You can also check the web interface (logged in as `alice`) and see
+that the build is running. Once it is complete, point your web browser
+at the application:
 
     http://wiring.cloudapps.example.com/
 
@@ -2742,14 +2742,11 @@ to limit some of what it returns:
         MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}]
         failed (401) 401 Unauthorized: Unauthorized
 
-    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
+    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the client config.
 
-        # The login command creates a .kubeconfig file in the CWD.
-        # But we need it to exist in ~/.kube
-        cd ~/.kube
 
-        # If a stale token exists it will prevent the beta2 login command from working
-        rm .kubeconfig
+        # If a stale token exists it will prevent the beta3 login command from working
+        rm ~/.config/openshift/.config
 
         osc login \
         --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
@@ -2763,15 +2760,10 @@ to limit some of what it returns:
         https://ose3-master.example.net:8443/api/v1beta1/pods?namespace=default:
         x509: certificate signed by unknown authority
 
-    Check the value of $KUBECONFIG:
-
-        echo $kubeconfig
-
-    If you don't see anything, you may have changed your `.bash_profile` but
-    have not yet sourced it. Make sure that you followed the step of adding
-    `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
-
-        source ~/.bash_profile
+    This generally means you do not have a client config file at all, as it should
+    supply the certificate authority for validating the master. You could also
+    have the wrong CA in your client config. You should probably regenerate
+    your client config as in the previous suggestion.
 
 * When issuing a `curl` to my service, I see `curl: (56) Recv failure:
     Connection reset by peer`

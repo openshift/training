@@ -27,16 +27,16 @@
                   {
                     "env": [
                       {
+                        "name": "MYSQL_USER",
+                        "value": "${MYSQL_USER}"
+                      },
+                      {
                         "name": "MYSQL_PASSWORD",
-                        "value": "copy-this-from-frontend"
+                        "value": "${MYSQL_PASSWORD}"
                       },
                       {
                         "name": "MYSQL_DATABASE",
-                        "value": "example"
-                      },
-                      {
-                        "name": "MYSQL_USER",
-                        "value": "example"
+                        "value": "${MYSQL_DATABASE}"
                       }
                     ],
                     "image": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7",
@@ -82,18 +82,17 @@
   "parameters": [
     {
       "description": "database password",
-      "from": "[a-zA-Z0-9]{8}",
-      "generate": "expression",
-      "name": "MYSQL_PASSWORD"
+      "name": "MYSQL_PASSWORD",
+      "value": "copy-this-from-frontend"
     },
     {
       "description": "database name",
       "name": "MYSQL_DATABASE",
-      "value": "example"
+      "value": "copy-this-from-frontend"
     },
     { "description": "database user",
       "name": "MYSQL_USER",
-      "value": "example"
+      "value": "copy-this-from-frontend"
     }
   ],
   "labels": {
