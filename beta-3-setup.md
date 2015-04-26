@@ -2062,35 +2062,41 @@ Remember, `osc process` will examine a template, generate any desired
 parameters, and spit out a JSON `config`uration that can be `create`d with
 `osc`.
 
-First, we will generate a config for the database:
-
-    osc process -f db-template.json > db-config.json
-
 Processing the template for the db will generate some values for the DB root
 user and password, but they don't actually match what was previously generated
 when we set up the front-end. In the "quickstart" example, we generated these
-values and used them for both the frontend and the back-end at the exact same
-time. In this case, we need to do some manual intervention.
-
-In the future, you'll be able to pass values into the template when it is
-processed, or things will be auto-populated (like in OpenShift v2).
-
-So, look at the frontend configuration (`frontend-config.json`) and find the
-value for `MYSQL_PASSWORD`. For example, `mugX5R2B`.
-
-Edit `db-config.json` and set the values for `MYSQL_PASSWORD`,
-`MYSQL_DATABASE`, and `MYSQL_USER` to match whatever is in your
-`frontend-config.json`. Once you are finished, you can create the backend:
-
-    osc create -f db-config.json
+values and used them for both the frontend and the backend at the exact same
+time. Since we are processing them separately now, we need to do some manual
+intervention.
 
 All we are doing is leveraging the standard Dockerhub MySQL container, which
-knows to take some env-vars when it fires up (eg: the MySQL root password).
+knows to take some env-vars when it fires up (eg: the MySQL user / password).
+
+So, look at the frontend configuration (`frontend-config.json`) and find the
+value for `MYSQL_USER`. For example, `userMXG`. Then insert these values
+into the template using the `process` command and create the result:
+
+    grep -A 1 MYSQL_* frontend-config.json
+                                                "name": "MYSQL_USER",
+                                                "key": "MYSQL_USER",
+                                                "value": "userMXG"
+    --
+                                                "name": "MYSQL_PASSWORD",
+                                                "key": "MYSQL_PASSWORD",
+                                                "value": "slDrggRv"
+    --
+                                                "name": "MYSQL_DATABASE",
+                                                "key": "MYSQL_DATABASE",
+                                                "value": "root"
+
+    osc process -f db-template.json \
+        -v MYSQL_USER=userMXG,MYSQL_PASSWORD=slDrggRv,MYSQL_DATABASE=root \
+        | osc create -f -
 
 It may take a little while for the mysql container to download from the Docker
 Hub (if you didn't pre-fetch it), which can cause the frontend application to
 appear broken if it is restarted.  In reality it's simply polling for the
-database connection to become active.  It's a good idea to verify that that
+database connection to become active.  It's a good idea to verify that the
 database is running at this point.  If you don't happen to have a mysql client
 installed you can verify it's running with curl:
 
