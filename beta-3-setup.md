@@ -1659,11 +1659,11 @@ Service.
 
 ### CLI versus Console
 Did you notice that the json returned from `new-app` defaulted to using a
-CentOS builder image?  That is simply a temporary convenience until more
+CentOS builder image?  That is simply a temporary inconvenience until more
 builder selection logic is baked in.  If we had wanted to use the RHEL image we
 could have run:
 
-    osc new-app openshift/ruby-20-rhel7~https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
+    osc new-app openshift3_beta/ruby-20-rhel7~https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
 
 There are a few problems with this.  Namely:
 
@@ -1766,7 +1766,8 @@ You'll see some output to indicate the build:
 OpenShift v3 is in a bit of a transition period between authentication
 paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
 performed by "normal" users, even if it makes sense that they should. Don't
-worry, we'll get there.
+worry, we'll get there. Feel free to try these things as a "normal" user - you
+will get a "forbidden" error.
 
 In order to watch the build logs, you actually need to be a cluster
 administratior right now. So, as `root`, you can do the following things:
@@ -1842,8 +1843,9 @@ When you are done, create your route:
 Check to make sure it was created:
 
     osc get route
-    NAME            HOST/PORT                             PATH      SERVICE                    LABELS
-    sinatra-route   hello-sinatra.cloudapps.example.com             simple-openshift-sinatra
+    NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
+    ruby-example         ruby-example-sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
+    ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
 
 And now, you should be able to verify everything is working right:
 
@@ -1851,6 +1853,13 @@ And now, you should be able to verify everything is working right:
     Hello, Sinatra!
 
 If you want to be fancy, try it in your browser!
+
+You'll note above that there is a route involving "router.default.local". If you
+remember, when creating the application from the web console, there was a
+section for "route". In the future the router will provide more configuration
+options for default domains and etc. Currently, the "default" domain for
+applications is "router.default.local", which is most likely unusable in your
+environment.
 
 #### Implications of Quota enforcement
 Quotas have implications one may not immediately realize. As `root` assign a
