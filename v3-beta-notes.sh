@@ -26,13 +26,13 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.3.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.3.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
 docker pull centos:centos7
 docker pull openshift/ruby-20-centos7
 docker pull openshift/mysql-55-centos7

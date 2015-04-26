@@ -498,6 +498,10 @@ If you go back into the web console and click into the "OpenShift 3 Demo"
 project, and click on the *Settings* tab, you'll see that the quota information
 is displayed.
 
+**Note:** Once creating the quota, it can take a few moments for it to be fully
+processed. If you get blank output from the `get` or `describe` commands, wait a
+few moments and try again.
+
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
 him, we can log into a terminal as *joe* and then set up the command line
@@ -509,15 +513,15 @@ Open a terminal as `joe`:
 
 Then, execute:
 
-    osc login -n demo \
+    osc login -u joe \
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
 our tool at the CA file.
 
-This created a file called `.config` in the `~/.config/openshift` folder. Take a
-look at it, and you'll see something like the following:
+The `login` process created a file called `.config` in the `~/.config/openshift`
+folder. Take a look at it, and you'll see something like the following:
 
     apiVersion: v1
     clusters:
@@ -1396,13 +1400,18 @@ also work (albeit with a self-signed certificate):
     https://hello-openshift.cloudapps.example.com
 
 ## Project Administration
-
-If `joe` now wants to let `alice` look at his project, with his project
-administrator rights he can add her using the `osadm policy` command:
+When we created the `demo` project, `joe` was made a project administrator. As
+an example of an administrative function, if `joe` now wants to let `alice` look
+at his project, with his project administrator rights he can add her using the
+`osadm policy` command:
 
     [joe]$ osadm policy add-role-to-user view alice
 
-Now login at the command line as `alice` to see what is available. `alice` hasn't logged in yet, so...
+**Note:** `osadm` will act, by default, on whatever project the user has
+selected. If you recall earlier, when we logged in as `joe` we ended up in the
+`demo` project. We'll see how to switch projects later.
+
+Open a new terminal window as the `alice` user and the login to OpenShift:
 
     osc login -u alice \
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
@@ -1414,10 +1423,11 @@ Now login at the command line as `alice` to see what is available. `alice` hasn'
     
     Using project "demo"
 
-`alice` has no projects of her own yet, so she is automatically configured
-to look at the `demo` project. She has "view" access, so `osc status`
-and `osc get pods` and so forth should show her the same thing as
-`joe`. However, she cannot make changes:
+`alice` has no projects of her own yet (she is not an administrator on
+anything), so she is automatically configured to look at the `demo` project
+since she has access to it. She has "view" access, so `osc status` and `osc get
+pods` and so forth should show her the same thing as `joe`. However, she cannot
+make changes:
 
     [alice]$ osc get pods
     POD                       IP         CONTAINER(S)      IMAGE(S)
@@ -1428,8 +1438,8 @@ and `osc get pods` and so forth should show her the same thing as
 Also login as `alice` in the web console and confirm that she can view
 the `demo` project.
 
-`joe` could also give `alice` the role of `edit`, which gives her access
-to do nearly anything in the project except adjust access.
+`joe` could also give `alice` the role of `edit`, which gives her access to all
+activities except for project administration. 
 
     [joe]$ osadm policy add-role-to-user edit alice
 
@@ -1439,15 +1449,14 @@ another user or upgrade her own access. To allow that, `joe` could give
 
     [joe]$ osadm policy add-role-to-user admin alice
 
-There is no "owner" of a project, and projects can certainly be created
-without any administrator. `alice` or `joe` can remove the `admin`
-role (or all roles) from each other or themselves at any time without
-affecting the existing project.
+There is no "owner" of a project, and projects can be created without any
+administrator. `alice` or `joe` can remove the `admin` role (or all roles) from
+each other, or themselves, at any time without affecting the existing project.
 
     [joe]$ osadm policy remove-user joe
 
 Check `osadm policy help` for a list of available commands to modify
-project permissions. OpenShift RBAC is extremely flexible; the roles
+project permissions. OpenShift RBAC is extremely flexible. The roles
 mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
@@ -1455,7 +1464,7 @@ access, etc. Check the documentation for more details:
 * http://docs.openshift.org/latest/dev_guide/authorization.html
 * https://github.com/openshift/origin/blob/master/docs/proposals/policy.md
 
-Of course, here be dragons. The basic roles should suffice for most uses.
+Of course, there be dragons. The basic roles should suffice for most uses.
 
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
