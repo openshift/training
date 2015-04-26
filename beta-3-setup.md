@@ -2736,14 +2736,11 @@ to limit some of what it returns:
         MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}]
         failed (401) 401 Unauthorized: Unauthorized
 
-    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
+    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the client config.
 
-        # The login command creates a .kubeconfig file in the CWD.
-        # But we need it to exist in ~/.kube
-        cd ~/.kube
 
-        # If a stale token exists it will prevent the beta2 login command from working
-        rm .kubeconfig
+        # If a stale token exists it will prevent the beta3 login command from working
+        rm ~/.config/openshift/.config
 
         osc login \
         --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
@@ -2757,15 +2754,10 @@ to limit some of what it returns:
         https://ose3-master.example.net:8443/api/v1beta1/pods?namespace=default:
         x509: certificate signed by unknown authority
 
-    Check the value of $KUBECONFIG:
-
-        echo $kubeconfig
-
-    If you don't see anything, you may have changed your `.bash_profile` but
-    have not yet sourced it. Make sure that you followed the step of adding
-    `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
-
-        source ~/.bash_profile
+    This generally means you do not have a client config file at all, as it should
+    supply the certificate authority for validating the master. You could also
+    have the wrong CA in your client config. You should probably regenerate
+    your client config as in the previous suggestion.
 
 * When issuing a `curl` to my service, I see `curl: (56) Recv failure:
     Connection reset by peer`
