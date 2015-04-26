@@ -43,13 +43,12 @@
  * [Creating the Integrated Application](#creating-the-integrated-application)
 * [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
  * [Stand Up the Frontend](#stand-up-the-frontend)
- * [Webhooks](#webhooks)
  * [Create the Database Config](#create-the-database-config)
  * [Replication Controllers](#replication-controllers)
 * [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
  * [Update the BuildConfig](#update-the-buildconfig)
  * [Change the Code](#change-the-code)
- * [Kick Off Another Build](#kick-off-another-build)
+ * [Start a Build with a Webhook](#start-a-build-with-a-webhook)
  * [Rollback](#rollback)
  * [Activate](#activate)
 * [Customized Build Process](#customized-build-process)
@@ -2013,9 +2012,7 @@ Open a terminal as `alice`:
 
 Then:
 
-    osc login -n wiring \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
-    --server=https://ose3-master.example.com:8443
+    osc project wiring 
 
 Remember, your password was probably "redhat".
 
@@ -2053,50 +2050,6 @@ before continuing. It may take about 20-40 seconds for the automatic build to
 start:
 
     https://github.com/openshift/origin/issues/1738
-
-### Webhooks
-
-**Note**: Since the build auto starts, we may want to move this to a later
-example.
-
-Webhooks are a way to integrate external systems into your OpenShift
-environment. They can be used to fire off builds. Generally speaking, one would
-make code changes, update the code repository, and then some process would hit
-OpenShift's webhook URL in order to start a build with the new code.
-
-Visit the web console, click into the project, click on *Browse* and then on
-*Builds*. You'll see two webhook URLs. Copy the *Generic* one. It should look
-like:
-
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
-
-If you look at the `frontend-config.json` file that you created earlier, you'll
-notice these same "secrets". These are kind of like user/password combinations
-to secure the build. More access control will be added around these webhooks,
-but, for now, this is the simple way it is achieved.
-
-This time, in order to run a build for the frontend, we'll use `curl` to hit our
-webhook URL.
-
-First, look at the list of builds:
-
-    osc get build
-
-You should see that the first build had completed. Then, `curl`:
-
-    curl -i -H "Accept: application/json" \
-    -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
-
-And now `get build` again:
-
-    osc get build
-    NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
-    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
-
-You can see that this could have been part of some CI/CD workflow that
-automatically called our webhook once the code was tested.
 
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
@@ -2317,17 +2270,58 @@ You can edit code on Github by clicking the pencil icon which is next to the
 "History" button. Provide some nifty commit message like "Personalizing the
 application."
 
-### Kick Off Another Build
-Now that our code is changed, we can kick off another build process using the
-same webhook as before:
+### Start a Build with a Webhook
+
+Webhooks are a way to integrate external systems into your OpenShift
+environment so that they can fire off OpenShift builds. Generally
+speaking, one would make code changes, update the code repository, and
+then some process would hit OpenShift's webhook URL in order to start
+a build with the new code.
+
+Your GitHub account has the capability to configure a webhook to request
+whenever a commit is pushed to a specific branch; however, it would only
+be able to make a request against your OpenShift master if that master
+is exposed on the Internet, so you will probably need to simulate the
+request manually for now.
+
+To find the webhook URL, you can visit the web console, click into the
+project, click on *Browse* and then on *Builds*. You'll see two webhook
+URLs. Copy the *Generic* one. It should look like:
+
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+If you look at the `frontend-config.json` file that you created earlier,
+you'll notice the same "secret101" entries in triggers. These are
+basically passwords so that just anyone on the web can't trigger the
+build with knowledge of the name only. You could of course have adjusted
+the passwords or had the template generate randomized ones.
+
+This time, in order to run a build for the frontend, we'll use `curl` to hit our
+webhook URL.
+
+First, look at the list of builds:
+
+    osc get build
+
+You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
     https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
 
-As soon as you issue this curl, you can check the web interface (logged in as
-`alice`) and see that the build is running. Once it is complete, point your web
-browser at the application:
+And now `get build` again:
+
+    osc get build
+    NAME                  TYPE      STATUS     POD
+    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
+    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
+
+You can see that this could have been part of some CI/CD workflow that
+automatically called our webhook once the code was tested.
+
+You can also check the web interface (logged in as `alice`) and see
+that the build is running. Once it is complete, point your web browser
+at the application:
 
     http://wiring.cloudapps.example.com/
 
