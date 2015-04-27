@@ -2106,10 +2106,7 @@ Go ahead and create the configuration:
 
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
-before continuing. It may take about 20-40 seconds for the automatic build to
-start:
-
-    https://github.com/openshift/origin/issues/1738
+before continuing. 
 
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
@@ -2204,10 +2201,15 @@ As `alice`, go ahead and find your frontend pod, and then kill it:
 
 You'll see something like:
 
+    pods/deployment-frontend-1-hook-gbnys
+    pods/deployment-frontend-1-hook-ot22m
     pods/frontend-1-b6bgy
 
 That was the generated name of the pod when the replication controller stood it
-up the first time. After a few moments, we can look at the list of pods again:
+up the first time. You also see some deployment hook pods. We will talk about
+deployment hooks a bit later.
+
+After a few moments, we can look at the list of pods again:
 
     osc get pod | grep front
 
@@ -2310,21 +2312,21 @@ frontend:
 
 As you can see, the current configuration points at the
 `openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
-ahead and re-point our configuration. Assuming your github user is
-`alice`, you could do something like the following:
+ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
+again:
 
-    osc get buildconfig ruby-sample-build -o yaml | sed -e \
-    's/openshift\/ruby-hello-world/alice\/ruby-hello-world/' \
-    -e '/ref: beta3/d' | osc update \
-    buildconfig ruby-sample-build -f -
+    osc edit bc ruby-sample-build
+
+Change the "uri" reference to match the name of your Github repository. Save and
+exit the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
 that the `uri` has been updated.
 
 ### Change the Code
 Github's web interface will let you make edits to files. Go to your forked
-repository (eg: https://github.com/alice/ruby-hello-world) and find the file
-`main.erb` in the `views` folder.
+repository (eg: https://github.com/alice/ruby-hello-world), select the `beta3`
+branch, and find the file `main.erb` in the `views` folder.
 
 Change the following HTML:
 
@@ -2342,8 +2344,9 @@ You can edit code on Github by clicking the pencil icon which is next to the
 "History" button. Provide some nifty commit message like "Personalizing the
 application."
 
-### Start a Build with a Webhook
+If you know how to use Git/Github, you can just do this "normally".
 
+### Start a Build with a Webhook
 Webhooks are a way to integrate external systems into your OpenShift
 environment so that they can fire off OpenShift builds. Generally
 speaking, one would make code changes, update the code repository, and
@@ -2461,9 +2464,14 @@ your Github repository for your application from the previous lab, and find the
 * Provide a nifty commit message.
 * Click the "commit" button.
 
+There is also a file in the `beta3` folder called `run`. You will need to add
+this to the `.sti/bin` folder as well, just like above.
+
 Once this is complete, we can now do another build. The only difference in this
 "custom" assemble script is that it logs some extra output. We will see that
 shortly.
+
+**Note:** If you know how to Git(hub), you can do this via your shell.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
