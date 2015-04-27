@@ -2453,6 +2453,10 @@ OpenShift builds your code, it checks to see if any of the scripts in the
 scripts. If so, it will execute the repository script instead.
 
 ### Add a Script
+*NOTE: This section current has a bug and will not result in a working
+application.  We'll have this fixed shortly but for now please skip ahead to
+[Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)*
+
 You will find a script called `custom-build.sh` in the `beta3` folder. Go to
 your Github repository for your application from the previous lab, find the
 `beta3` branch, and find the `.sti/bin` folder.
@@ -2464,12 +2468,15 @@ your Github repository for your application from the previous lab, find the
 * Provide a nifty commit message.
 * Click the "commit" button.
 
-There is also a file in the `beta3` folder called `run`. You will need to add
-this to the `.sti/bin` folder as well, just like above.
+Now do the same thing for the file called `custom-run.sh` in the `beta3`
+directory.  The only difference is that this time the file will be called `run`
+in your repository's `.sti/bin` directory.  Unfortunately until
+https://github.com/openshift/source-to-image/issues/173 is resolved it's
+actually mandatory to update both of these files together.
 
-Once this is complete, we can now do another build. The only difference in this
-"custom" assemble script is that it logs some extra output. We will see that
-shortly.
+Once this is complete, we can now do another build. The only difference in the
+"custom" assemble and run scripts will be executed and log some extra output.
+We will see that shortly.
 
 **Note:** If you know how to Git(hub), you can do this via your shell.
 
@@ -2489,6 +2496,14 @@ and look at its Docker logs.
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM STI ASSEMBLE COMPLETE
+
+But where's the output from the custom `run` script?  That's going to be in the runtime pod.  As `root` run:
+
+    osc log -n quickstart `osc get pods -n quickstart | grep "^frontend-" | awk '{print $1}'`
+
+You should see:
+
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
 
 ## Arbitrary Docker Image (Builder)
 One of the first things we did with OpenShift was launch an "arbitrary" Docker
