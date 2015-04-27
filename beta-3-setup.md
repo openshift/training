@@ -1,76 +1,167 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [OpenShift Beta 3 Setup Information](#openshift-beta-3-setup-information)
+  - [Architecture and Requirements](#architecture-and-requirements)
+    - [Architecture](#architecture)
+    - [Requirements](#requirements)
+  - [Setting Up the Environment](#setting-up-the-environment)
+    - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
+    - [DNS](#dns)
+    - [Assumptions](#assumptions)
+    - [Git](#git)
+    - [Preparing Each VM](#preparing-each-vm)
+    - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
+    - [Clone the Training Repository](#clone-the-training-repository)
+    - [REMINDER](#reminder)
+  - [Ansible-based Installer](#ansible-based-installer)
+    - [Install Ansible](#install-ansible)
+    - [Generate SSH Keys](#generate-ssh-keys)
+    - [Distribute SSH Keys](#distribute-ssh-keys)
+    - [Clone the Ansible Repository](#clone-the-ansible-repository)
+    - [Configure Ansible](#configure-ansible)
+    - [Modify Hosts](#modify-hosts)
+    - [Run the Ansible Installer](#run-the-ansible-installer)
+    - [Add Development Users](#add-development-users)
+  - [Watching Logs](#watching-logs)
+  - [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
+    - [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
+    - [A Project for Everything](#a-project-for-everything)
+    - [Web Console](#web-console)
+  - [Your First Application](#your-first-application)
+    - ["Resources"](#resources)
+    - [Applying Quota to Projects](#applying-quota-to-projects)
+    - [Login](#login)
+    - [Grab the Training Repo Again](#grab-the-training-repo-again)
+    - [The Hello World Definition JSON](#the-hello-world-definition-json)
+    - [Run the Pod](#run-the-pod)
+    - [Looking at the Pod in the Web Console](#looking-at-the-pod-in-the-web-console)
+    - [Quota Usage](#quota-usage)
+    - [Extra Credit](#extra-credit)
+    - [Delete the Pod](#delete-the-pod)
+    - [Quota Enforcement](#quota-enforcement)
+  - [Adding Nodes](#adding-nodes)
+    - [Modifying the Ansible Configuration](#modifying-the-ansible-configuration)
+  - [Regions and Zones](#regions-and-zones)
+    - [Scheduler and Defaults](#scheduler-and-defaults)
+    - [The NodeSelector](#the-nodeselector)
+    - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
+    - [Restart the Master](#restart-the-master)
+    - [Label Your Nodes](#label-your-nodes)
+  - [Services](#services)
+  - [Routing](#routing)
+    - [Creating the Router](#creating-the-router)
+    - [Router Placement By Region](#router-placement-by-region)
+  - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
+    - [Creating the Definition](#creating-the-definition)
+    - [Status Report, Captain!](#status-report-captain)
+    - [Verifying the Service](#verifying-the-service)
+    - [Verifying the Routing](#verifying-the-routing)
+    - [The Web Console](#the-web-console)
+  - [Project Administration](#project-administration)
+    - [Deleting a Project](#deleting-a-project)
+  - [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
+    - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
+  - [STI - What Is It?](#sti---what-is-it)
+    - [Create a New Project](#create-a-new-project)
+    - [Switch Projects](#switch-projects)
+    - [A Simple Code Example](#a-simple-code-example)
+    - [CLI versus Console](#cli-versus-console)
+    - [Adding the Builder ImageStreams](#adding-the-builder-imagestreams)
+    - [Adding Code Via the Web Console](#adding-code-via-the-web-console)
+    - [The Web Console Revisited](#the-web-console-revisited)
+    - [Examining the Build](#examining-the-build)
+    - [Testing the Application](#testing-the-application)
+    - [Adding a Route to Our Application](#adding-a-route-to-our-application)
+  - [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
+    - [A Project for the Quickstart](#a-project-for-the-quickstart)
+    - [A Quick Aside on Templates](#a-quick-aside-on-templates)
+    - [Adding the Template](#adding-the-template)
+    - [Create an Instance of the Template](#create-an-instance-of-the-template)
+    - [The Template is Alive!](#the-template-is-alive)
+    - [Using Your App](#using-your-app)
+  - [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
+    - [Create a New Project](#create-a-new-project-1)
+    - [Stand Up the Frontend](#stand-up-the-frontend)
+    - [Webhooks](#webhooks)
+    - [Visit Your Application](#visit-your-application)
+    - [Create the Database Config](#create-the-database-config)
+    - [Visit Your Application Again](#visit-your-application-again)
+    - [Replication Controllers](#replication-controllers)
+    - [Revisit the Webpage](#revisit-the-webpage)
+  - [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
+    - [Fork the Repository](#fork-the-repository)
+    - [Update the BuildConfig](#update-the-buildconfig)
+    - [Change the Code](#change-the-code)
+- [ Welcome to an OpenShift v3 Demo App! ](#welcome-to-an-openshift-v3-demo-app)
+- [ This is my crustom demo! ](#this-is-my-crustom-demo)
+    - [Kick Off Another Build](#kick-off-another-build)
+    - [Oops!](#oops)
+    - [Rollback](#rollback)
+    - [Activate](#activate)
+  - [Customized Build Process](#customized-build-process)
+    - [Add a Script](#add-a-script)
+    - [Kick Off a Build](#kick-off-a-build)
+    - [Watch the Build Logs](#watch-the-build-logs)
+    - [Did You See It?](#did-you-see-it)
+  - [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
+    - [That Project Thing](#that-project-thing)
+    - [Build Wordpress](#build-wordpress)
+    - [Test Your Application](#test-your-application)
+  - [Conclusion](#conclusion)
+- [APPENDICES](#appendices)
+  - [Extra STI code examples](#extra-sti-code-examples)
+    - [Wildfly](#wildfly)
+  - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
+    - [Verifying DNSMasq](#verifying-dnsmasq)
+  - [APPENDIX - LDAP Authentication](#appendix---ldap-authentication)
+    - [Prerequirements:](#prerequirements)
+    - [Setting up an example LDAP server:](#setting-up-an-example-ldap-server)
+    - [Creating the Basic Auth service](#creating-the-basic-auth-service)
+    - [Using an LDAP server external to OpenShift](#using-an-ldap-server-external-to-openshift)
+    - [Upcoming changes](#upcoming-changes)
+  - [APPENDIX - Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
+  - [APPENDIX - Cleaning Up](#appendix---cleaning-up)
+  - [APPENDIX - Pretty Output](#appendix---pretty-output)
+  - [APPENDIX - Troubleshooting](#appendix---troubleshooting)
+  - [APPENDIX - Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
+    - [Enable Remote Logging on Master](#enable-remote-logging-on-master)
+    - [Enable logging to /var/log/openshift](#enable-logging-to-varlogopenshift)
+    - [Configure nodes to send openshift logs to your master](#configure-nodes-to-send-openshift-logs-to-your-master)
+    - [Optionally Log Each Node to a unique directory](#optionally-log-each-node-to-a-unique-directory)
+  - [APPENDIX - JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
+    - [Features](#features)
+    - [Installation](#installation)
+    - [Connecting to the server](#connecting-to-the-server)
+  - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
+    - [STI Builds](#sti-builds)
+    - [Setting environment variables in Pods](#setting-environment-variables-in-pods)
+    - [Git repository access](#git-repository-access)
+    - [Proxying Docker pull](#proxying-docker-pull)
+    - [Future considerations](#future-considerations)
+  - [APPENDIX - Lifecycle Pre and Post Deployment Hooks](#appendix---lifecycle-pre-and-post-deployment-hooks)
+    - [Set up app template](#set-up-app-template)
+    - [Modify the BuildConfig source to point to your fork](#modify-the-buildconfig-source-to-point-to-your-fork)
+    - [Create a new project for your app](#create-a-new-project-for-your-app)
+    - [As the project owner, switch to the new project](#as-the-project-owner-switch-to-the-new-project)
+    - [Create the template](#create-the-template)
+    - [Create an app from the template](#create-an-app-from-the-template)
+    - [Verify the app is up and running](#verify-the-app-is-up-and-running)
+    - [Create a branch in your fork of the `ruby-hello-world` app](#create-a-branch-in-your-fork-of-the-ruby-hello-world-app)
+    - [Add a new table by creating a new migration in `db/migrate`](#add-a-new-table-by-creating-a-new-migration-in-dbmigrate)
+    - [Push the changes to your github account](#push-the-changes-to-your-github-account)
+    - [Modify the buildConfig to reference the new branch](#modify-the-buildconfig-to-reference-the-new-branch)
+    - [update the `git` `ref` parameter](#update-the-git-ref-parameter)
+    - [Get the MySQL/MariaDB parameters from the `database` `deploymentConfig`](#get-the-mysqlmariadb-parameters-from-the-database-deploymentconfig)
+    - [Modify the deploymentConfig to run the database migration as a post-deployment lifecycle hook](#modify-the-deploymentconfig-to-run-the-database-migration-as-a-post-deployment-lifecycle-hook)
+    - [Add the desired lifecycle hook](#add-the-desired-lifecycle-hook)
+    - [Kick off the new build:](#kick-off-the-new-build)
+    - [Verify that the database migration happened](#verify-that-the-database-migration-happened)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # OpenShift Beta 3 Setup Information
-
-**Table of contents:**
-
-* [Architecture and Requirements](#architecture-and-requirememts)
-* [Setting Up the Environment](#setting-up-the-environment)
-* [Ansible-based Installer](#ansible-based-installer)
-* [Watching Logs](#watching-logs)
-* [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
- * [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
- * [A Project for Everything](#a-project-for-everything)
- * [Web Console](#web-console)
-* [Your First Application](#your-first-application)
- * ["Resources"](#resources)
- * [Applying Quota to Projects](#applying-quota-to-projects)
- * [Login](#login)
- * [The Hello World Definition JSON](#the-hello-world-definition-json)
- * [Run the Pod](#run-the-pod)
- * [Delete the Pod](#delete-the-pod)
-* [Adding Nodes](#adding-nodes)
-* [Regions and Zones](#regions-and-zones)
- * [Scheduler and Defaults](#scheduler-and-defaults)
- * [Label Your Nodes](#label-your-nodes)
-* [Services](#services)
-* [Routing](#routing)
- * [Creating the Router](#creating-the-router)
- * [Router Placement by Region](#router-placement-by-region)
-* [The Complete Pod-Service-Route](#the-complete-pod-service-route)
- * [Creating the Definition](#creating-the-definition)
- * [Verifying the Service](#verifying-the-service)
- * [Verifying the Routing](#verifying-the-routing)
-* [Project Administration](#project-administration)
-* [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
-* [STI - What Is It?](#sti---what-is-it)
- * [Create a New Project](#create-a-new-project)
- * [Switch Projects](#switch-projects)
- * [A Simple Code Example](#a-simple-code-example)
- * [Adding Code Via the Web Console](#adding-code-via-the-web-console)
- * [Adding a Route to Our Application](#adding-a-route-to-our-application)
-* [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
- * [A Project for the Quickstart](#a-project-for-the-quickstart)
- * [A Quick Aside on Templates](#a-quick-aside-on-templates)
- * [Creating the Integrated Application](#creating-the-integrated-application)
-* [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
- * [Stand Up the Frontend](#stand-up-the-frontend)
- * [Webhooks](#webhooks)
- * [Create the Database Config](#create-the-database-config)
- * [Replication Controllers](#replication-controllers)
-* [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
- * [Update the BuildConfig](#update-the-buildconfig)
- * [Change the Code](#change-the-code)
- * [Kick Off Another Build](#kick-off-another-build)
- * [Rollback](#rollback)
- * [Activate](#activate)
-* [Customized Build Process](#customized-build-process)
-* [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
- * [Build Wordpress](#build-wordpress)
- * [Test Your Application](#test-your-application)
-
-**Appendices:**
-
-* [Extra STI code examples](#appendix---extra-sti-code-examples)
-* [DNSMasq setup](#appendix---dnsmasq-setup)
-* [LDAP Authentication](#appendix---ldap-authentication)
-* [Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
-* [Cleaning Up](#appendix---cleaning-up)
-* [Pretty Output](#appendix---pretty-output)
-* [Troubleshooting](#appendix---troubleshooting)
-* [Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
-* [JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
-* [Working with HTTP proxies](#appendix---working-with-http-proxies)
-* [Lifecycle pre and post deployment hooks](#appendix---lifecycle-pre-and-post-deployment-hooks)
-
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the beta testing is pretty simple. There are
@@ -142,7 +233,6 @@ You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
 in the labs.
 
-### Your Environment
 ### Preparing Each VM
 Once your VMs are built and you have verified DNS and network connectivity you
 can:
@@ -1412,7 +1502,7 @@ Now login at the command line as `alice` to see what is available. `alice` hasn'
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
     Login successful.
-    
+
     Using project "demo"
 
 `alice` has no projects of her own yet, so she is automatically configured
@@ -2456,8 +2546,9 @@ you allow it, developers can actually simply build Docker containers as their
 ## Conclusion
 This concludes the Beta 3 training. Look for more example applications to come!
 
-# APPENDIX - Extra STI code examples
-## Wildfly
+# APPENDICES
+## Extra STI code examples
+### Wildfly
 A Wildfly-based JEE application example is here:
 
     https://github.com/bparees/javaee7-hol
@@ -2481,7 +2572,7 @@ with your browser.**
 `openshift/wildfly-8-centos` ahead of time. Also, if you were using sneakernet,
 you should also include that image in the list in the appendix below.**
 
-# APPENDIX - DNSMasq setup
+## APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
 file. If you do not have the ability to manipulate DNS in your environment, or
 just want a quick and dirty way to set up DNS, you can install dnsmasq on your
@@ -2537,7 +2628,7 @@ wildcard space:
     foo.cloudapps.example.com 0 IN A 192.168.133.2
     ...
 
-# APPENDIX - LDAP Authentication
+## APPENDIX - LDAP Authentication
 OpenShift currently supports several authentication methods for obtaining API
 tokens.  While OpenID or one of the supported Oauth providers are preferred,
 support for services such as LDAP is possible today using either the [Basic Auth
@@ -2648,7 +2739,7 @@ configuration in to a Secret and the Pod could use this on start up.  In this
 case the Build Config would go away and only a Deployment Config would be
 needed.
 
-# APPENDIX - Import/Export of Docker Images (Disconnected Use)
+## APPENDIX - Import/Export of Docker Images (Disconnected Use)
 Docker supports import/save of Images via tarball. These instructions are
 general and may not be 100% accurate for the current release. You can do
 something like the following on your connected machine:
@@ -2688,7 +2779,7 @@ tarball:
 
 **Note: On an SSD-equipped system this took ~4 min**
 
-# APPENDIX - Cleaning Up
+## APPENDIX - Cleaning Up
 Figuring out everything that you have deployed is a little bit of a bear right
 now. The following command will show you just about everything you might need to
 delete. Be sure to change your context across all the namespaces and the
@@ -2702,13 +2793,13 @@ Deleting a project with `osc delete project` should delete all of its resources,
 but you may need help finding things in the default project (where
 infrastructure items are). Deleting the default project is not recommended.
 
-# APPENDIX - Pretty Output
+## APPENDIX - Pretty Output
 If the output of `osc get pods` is a little too busy, you can use the following
 to limit some of what it returns:
 
     osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
-# APPENDIX - Troubleshooting
+## APPENDIX - Troubleshooting
 * All of a sudden authentication seems broken for non-admin users.  Whenever I run osc commands I see output such as:
 
         F0310 14:59:59.219087   30319 get.go:164] request
@@ -2763,7 +2854,7 @@ to limit some of what it returns:
 
     `osc describe service $name_of_service` and check the value of `Endpoints:`
 
-# APPENDIX - Infrastructure Log Aggregation
+## APPENDIX - Infrastructure Log Aggregation
 Given the distributed nature of OpenShift you may find it beneficial to
 aggregate logs from your OpenShift infastructure services. By default, openshift
 services log to the systemd journal and rsyslog persists those log messages to
@@ -2771,7 +2862,7 @@ services log to the systemd journal and rsyslog persists those log messages to
 `/var/log/openshift` and configure the master host to accept log data from the
 other hosts.
 
-## Enable Remote Logging on Master
+### Enable Remote Logging on Master
 Uncomment the following lines in your master's `/etc/rsyslog.conf` to enable
 remote logging services.
 
@@ -2784,7 +2875,7 @@ Restart rsyslogd
 
 
 
-## Enable logging to /var/log/openshift
+### Enable logging to /var/log/openshift
 On your master update the filters in `/etc/rsyslog.conf` to divert openshift logs to `/var/log/openshift`
 
     # Log openshift processes to /var/log/openshift
@@ -2800,7 +2891,7 @@ Restart rsyslogd
 
     systemctl restart rsyslogd
 
-## Configure nodes to send openshift logs to your master
+### Configure nodes to send openshift logs to your master
 On your other hosts send openshift logs to your master by adding this line to
 `/etc/rsyslog.conf`
 
@@ -2813,7 +2904,7 @@ Restart rsyslogd
 Now all your openshift related logs will end up in `/var/log/openshift` on your
 master.
 
-## Optionally Log Each Node to a unique directory
+### Optionally Log Each Node to a unique directory
 You can also configure rsyslog to store logs in a different location
 based on the source host. On your master, add these lines immediately prior to
 `$InputTCPServerRun 514`
@@ -2837,7 +2928,7 @@ See these documentation sources for additional rsyslog configuration information
     https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/s1-basic_configuration_of_rsyslog.html
     http://www.rsyslog.com/doc/v7-stable/configuration/filters.html
 
-# APPENDIX - JBoss Tools for Eclipse
+## APPENDIX - JBoss Tools for Eclipse
 Support for OpenShift development using Eclipse is provided through the JBoss Tools plugin.  The plugin is available
 from the Jboss Tools nightly build of the Eclipse Mars.
 
@@ -2878,7 +2969,7 @@ in the dialog box that appears.
 A successful connection will allow you to expand the OpenShift explorer tree and browse the projects associated with the account
 and the resources associated with each project.
 
-# APPENDIX - Working with HTTP Proxies
+## APPENDIX - Working with HTTP Proxies
 
 In many production environments direct access to the web is not allowed.  In
 these situations there is typically an HTTP(S) proxy available.  Configuring
@@ -2970,9 +3061,9 @@ HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 We're working to have a single place that administrators can set proxies for
 all network traffic.
 
-# APPENDIX - Lifecycle Pre and Post Deployment Hooks
+## APPENDIX - Lifecycle Pre and Post Deployment Hooks
 
-## Set up app template
+### Set up app template
 
 For this, `training/beta3/integrated-template.json` works fine
 
@@ -3012,7 +3103,7 @@ It should end up looking something like this:
     ...
     }
 
-## Create a new project for your app
+### Create a new project for your app
 
 Modify `--admin=` to reference the user you want to own the project.
 
@@ -3021,15 +3112,15 @@ Modify `--admin=` to reference the user you want to own the project.
       --description="My test app template" \
       --admin=admin
 
-## As the project owner, switch to the new project
+### As the project owner, switch to the new project
 
     osc project myapp
 
-## Create the template
+### Create the template
 
     osc create -f ./my-template.json
 
-## Create an app from the template
+### Create an app from the template
 
 In the web console, as the project owner user:
 -   click "+Create"
@@ -3038,14 +3129,14 @@ In the web console, as the project owner user:
 -   click "Create"
 -   watch the tiny computer men build an application!
 
-## Verify the app is up and running
+### Verify the app is up and running
 
-## Create a branch in your fork of the `ruby-hello-world` app
+### Create a branch in your fork of the `ruby-hello-world` app
 
     cd /path/to/ruby-hello-world
     git checkout -b newtable my_remote/beta3
 
-## Add a new table by creating a new migration in `db/migrate`
+### Add a new table by creating a new migration in `db/migrate`
 
     cat <<EOF > db/migrate/1_sample_table.rb
 
@@ -3062,13 +3153,13 @@ In the web console, as the project owner user:
 
     EOF
 
-## Push the changes to your github account
+### Push the changes to your github account
 
     git add db/migrate/1_sample_table.rb
     git commit -m 'Add a new db migration'
     git push my_remote newtable:newtable
 
-## Modify the buildConfig to reference the new branch
+### Modify the buildConfig to reference the new branch
 
     osc edit -ojson bc/ruby-sample-build
 
@@ -3086,7 +3177,7 @@ You should wind up with a section that looks like:
             },
     ...
 
-## Get the MySQL/MariaDB parameters from the `database` `deploymentConfig`
+### Get the MySQL/MariaDB parameters from the `database` `deploymentConfig`
 
 The `database` deployment configuration will contain the correct
 MariaDB parameters and credentials. Copy these out for use in the
@@ -3094,7 +3185,7 @@ lifecycle hook definition later:
 
     # osc get dc database -ojson | grep -C2 '"key": "MYSQL' | grep -v '"key":' > env.json
 
-## Modify the deploymentConfig to run the database migration as a post-deployment lifecycle hook
+### Modify the deploymentConfig to run the database migration as a post-deployment lifecycle hook
 
     osc edit -ojson dc/frontend
 
@@ -3126,7 +3217,7 @@ section that looks like:
             "strategy": {
                 "type": "Recreate",
                 "recreateParams": {
-    
+
     ...
                     "post": {
                         "failurePolicy": "Ignore",
@@ -3157,7 +3248,7 @@ section that looks like:
                     }
     ...
 
-## Kick off the new build:
+### Kick off the new build:
 
     osc start-build ruby-sample-build
 
@@ -3187,7 +3278,7 @@ field for your hook pods.
 Once the pods' `STATUS` move from `Pending` to `Succeeded`, you can
 inspect them to see the result.
 
-## Verify that the database migration happened
+### Verify that the database migration happened
 
 Find the deployment hooks in the output from `osc get pods` and
 inspect them with `osc log`:
