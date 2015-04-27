@@ -2454,8 +2454,8 @@ scripts. If so, it will execute the repository script instead.
 
 ### Add a Script
 You will find a script called `custom-build.sh` in the `beta3` folder. Go to
-your Github repository for your application from the previous lab, and find the
-`.sti/bin` folder.
+your Github repository for your application from the previous lab, find the
+`beta3` branch, and find the `.sti/bin` folder.
 
 * Click the "+" button at the top (to the right of `bin` in the
     breadcrumbs).
