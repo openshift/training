@@ -387,9 +387,9 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift-passwd
-    htpasswd -b /etc/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift-passwd alice redhat
+    touch /etc/openshift/htpasswd
+    htpasswd -b /etc/openshift/htpasswd joe redhat
+    htpasswd -b /etc/openshift/htpasswd alice redhat
 
 The OpenShift configuration is kept in a YAML file which currently lives at
 `/etc/openshift/master.yaml`. We need to edit the `oauthConfig`'s
@@ -401,7 +401,7 @@ The OpenShift configuration is kept in a YAML file which currently lives at
       name: apache_auth
       provider:
         apiVersion: v1
-        file: /etc/openshift-passwd
+        file: /etc/openshift/htpasswd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings can be found here:
@@ -412,7 +412,7 @@ If you're feeling lazy, use your friend `sed`:
 
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
-    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift-passwd' \
+    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift/htpasswd' \
     /etc/openshift/master.yaml
 
 Restart `openshift-master`:
