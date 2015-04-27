@@ -1748,8 +1748,13 @@ have `centos`. An organization will likely choose several supported builders and
 databases from Red Hat, but may also create their own builders, DBs, and other
 images. This system provides a great deal of flexibility.
 
-Feel free to look around `image-streams.json` for more details.  When finished,
-let's go move over to the web console to create our "application".
+Feel free to look around `image-streams.json` for more details.  As you can see,
+we have provided definitions for EAP and Tomcat builders as well as other DBs
+and etc. Please feel free to experiment with these - we will attempt to provide
+sample apps as time progresses.
+
+When finished, let's go move over to the web console to create our
+"application".
 
 ### Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
