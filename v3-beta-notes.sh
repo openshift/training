@@ -62,7 +62,6 @@ sed -i -e 's/name: anypassword/name: apache_auth/' \
 /etc/openshift/master.yaml
 useradd joe
 useradd alice
-yum -y install httpd-tools
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat
 htpasswd -b /etc/openshift-passwd alice redhat
