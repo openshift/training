@@ -1404,11 +1404,6 @@ Hooray!
 Take a moment to look in the web console to see if you can find everything that
 was just created.
 
-And, while you're at it, you can verify that visiting your app with HTTPS will
-also work (albeit with a self-signed certificate):
-
-    https://hello-openshift.cloudapps.example.com
-
 ## Project Administration
 When we created the `demo` project, `joe` was made a project administrator. As
 an example of an administrative function, if `joe` now wants to let `alice` look
