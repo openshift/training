@@ -1891,7 +1891,7 @@ Wait a few seconds and you should see your application scaled up to 3 pods.
 
 Now start another build, wait a moment or two for your build to start.
 
-    osc start build ruby-example
+    osc start-build ruby-example
 
     osc get builds
     NAME             TYPE      STATUS     POD

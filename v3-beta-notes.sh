@@ -39,7 +39,7 @@ docker pull openshift/mysql-55-centos7
 docker pull openshift/hello-openshift
 
 cd
-git clone https://github.com/openshift/training.git -b beta3
+git clone https://github.com/openshift/training.git 
 cd ~/training/beta3
 /bin/cp ~/training/beta1/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
@@ -49,7 +49,7 @@ iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 cd
-git clone https://github.com/openshift/training.git -b beta3
+git clone https://github.com/openshift/training.git
 cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
