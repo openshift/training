@@ -1688,13 +1688,13 @@ example of pointing to code via the web console.  Later examples will use the
 CLI tools.
 
 ### Adding the Builder ImageStreams
-While `new-app` has some built-in logic to help find a compatible builder
-ImageStream, the web console currently does not have that capability. The user
-will have to first target the code repository, and then select the appropriate
-builder image.
+While the `new-app` CLI tool has some built-in logic to help find a compatible
+builder ImageStream, the web console currently does not have that capability.
+The user will have to first target the code repository, and then select the
+appropriate builder image.
 
 Perform the following command as `root` in the `beta3` folder in order to add all
-of the builder images:
+of the `ImageStream`s:
 
     osc create -f image-streams.json -n openshift
 
@@ -1718,14 +1718,38 @@ You will see the following:
 
 What is the `openshift` project where we added these builders? This is a
 special project that can contain various elements that should be available to
-all users of the OpenShift environment.  You may notice that some streams have
-`rhel` in the name and others have `centos`.  These streams could technically
-come from anywhere but it's important to know that the supported ImageStreams
-come from the official Red Hat registry and the CentOS community ImageStreams
-are currently hosted on the DockerHub.  Feel free to look around
-`image-streams.json` for more details.  It's entirely expected that companies
-will have their own internal image streams as well.  That said, let's go move
-over to the web console to create our "application".
+all users of the OpenShift environment. 
+
+### Wait, What's an ImageStream?
+If you think about one of the important things that OpenShift needs to do, it's
+to be able to deploy newer versions of user applications into Docker containers
+quickly. But an "application" is really two pieces -- the starting image (the
+STI builder) and the application code. While it's "obvious" that we need to
+update the deployed Docker containers when application code changes, it may not
+have been so obvious that we also need to update the deployed container if the
+**builder** image changes.
+
+For example, what if a security vulnerability in the Ruby runtime is discovered?
+It would be nice if we could automatically know this and take action. If you dig
+around in the JSON output above from `new-app` you will see some reference to
+"triggers". This is where `ImageStream`s come together.
+
+The `ImageStream` resource is, somewhat unsurprisingly, a definition for a
+stream of Docker images that might need to be paid attention to. By defining an
+`ImageStream` on "ruby-20-rhel7", for example, and then building an application
+against it, we have the ability with OpenShift to "know" when that `ImageStream`
+changes and take action based on that change. In our example from the previous
+paragraph, if the "ruby-20-rhel7" image changed in the Docker repository defined
+by the `ImageStream`, we might automatically trigger a new build of our
+application code.
+
+You may notice that some of the streams above have `rhel` in the name and others
+have `centos`. An organization will likely choose several supported builders and
+databases from Red Hat, but may also create their own builders, DBs, and other
+images. This system provides a great deal of flexibility.
+
+Feel free to look around `image-streams.json` for more details.  When finished,
+let's go move over to the web console to create our "application".
 
 ### Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
