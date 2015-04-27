@@ -1400,6 +1400,11 @@ publicly-accessible OpenShift application!
 
 Hooray!
 
+If your machine is capable of resolving the wildcard DNS, you should also be
+able to view this in your web browser:
+
+    http://hello-openshift.cloudapps.example.com
+
 ### The Web Console
 Take a moment to look in the web console to see if you can find everything that
 was just created.
