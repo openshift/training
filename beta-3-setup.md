@@ -185,7 +185,7 @@ environment happen **faster**, you'll need to first install Docker:
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.6.0-1.el7.x86_64`.
+Make sure that you are running at least `docker-1.6.0-6.el7.x86_64`.
 
 You'll need to add `--insecure-registry 0.0.0.0/0` to your
 `/etc/sysconfig/docker` `OPTIONS`. Then:
@@ -208,6 +208,16 @@ used during the various labs:
     docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
     docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
+
+**Note:** If you built your VM for a previous beta version and at some point
+used an older version of Docker, you need to *reinstall* or *remove+install*
+Docker after removing `/etc/sysconfig/docker`. The options in the config file
+changed and RPM will not overwrite your existing file if you just do a "yum
+update".
+
+    yum -y remove docker
+    rm /etc/sysconfig/docker
+    yum -y install docker
 
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
