@@ -1900,13 +1900,13 @@ options for default domains and etc. Currently, the "default" domain for
 applications is "router.default.local", which is most likely unusable in your
 environment.
 
-#### Implications of Quota enforcement
+### Implications of Quota Enforcement on Scaling
 Quotas have implications one may not immediately realize. As `root` assign a
-quota to the sinatra project.
+quota to the `sinatra` project.
 
     osc create -f quota.json -n sinatra
 
-As `Joe` scale your application up to three replicas by setting your Replication
+As `joe` scale your application up to three replicas by setting your Replication
 Controller's `replicas` value to 3.
 
     osc get rc
@@ -1927,6 +1927,9 @@ Wait a few seconds and you should see your application scaled up to 3 pods.
     ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
     ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
     ruby-example-3-tzt0z   10.1.0.28   ruby-example ... Running About a minute
+
+You will also notice that these pods were distributed across our two nodes
+"east" and "west". Cool!
 
 Now start another build, wait a moment or two for your build to start.
 
