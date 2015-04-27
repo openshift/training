@@ -412,7 +412,7 @@ If you're feeling lazy, use your friend `sed`:
 
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
-    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift/htpasswd' \
+    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift\/htpasswd' \
     /etc/openshift/master.yaml
 
 Restart `openshift-master`:
