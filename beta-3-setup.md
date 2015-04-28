@@ -2468,6 +2468,8 @@ your Github repository for your application from the previous lab, find the
 * Provide a nifty commit message.
 * Click the "commit" button.
 
+**Note:** If you know how to Git(hub), you can do this via your shell.
+
 Now do the same thing for the file called `custom-run.sh` in the `beta3`
 directory.  The only difference is that this time the file will be called `run`
 in your repository's `.sti/bin` directory.  Unfortunately until
@@ -2477,8 +2479,6 @@ actually mandatory to update both of these files together.
 Once this is complete, we can now do another build. The only difference in the
 "custom" assemble and run scripts will be executed and log some extra output.
 We will see that shortly.
-
-**Note:** If you know how to Git(hub), you can do this via your shell.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
