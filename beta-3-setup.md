@@ -2062,7 +2062,7 @@ separate "applications" that we want to wire together.
 As the `root` user, create another new project for this "wiring" example. This
 time we'll make it belong to `alice`:
 
-    openshift admin new-project wiring --display-name="Exploring Parameters" \
+    osadm new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
     --admin=alice
 
