@@ -208,6 +208,7 @@ used during the various labs:
     docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
     docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
+    docker pull openshift/ruby-20-centos7
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
