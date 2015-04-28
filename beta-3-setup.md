@@ -1067,7 +1067,7 @@ If this works, you'll see some output:
 
 Let's check the pods with the following:
 
-    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$6"\n"}' | column -t
+    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
