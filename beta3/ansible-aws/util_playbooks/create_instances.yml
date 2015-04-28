@@ -1,0 +1,77 @@
+# vim: set ft=ansible:
+---
+- name: Launch the instance
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  sudo: no
+  vars:
+    ec2_region: "{{ lookup('env', 'EC2_REGION')
+                    | default('us-east-1', true) }}"
+    ec2_image: "{{ lookup('env', 'EC2_AMI_ID')
+                   | default('ami-12663b7a', true) }}"
+    ec2_keypair: "{{ lookup('env', 'EC2_KEYPAIR')
+                   | default('default', true) }}"
+    root_volume:
+      volume_size: 25
+      device_type: gp2
+      device_name: /dev/sda1
+      delete_on_termination: True
+    docker_volume:
+      volume_size: 50
+      device_type: gp2
+      device_name: /dev/xvdb
+      delete_on_termination: True
+  tasks:
+  - set_fact:
+      volumes: "{{ [root_volume, docker_volume] if 'node' in roles else [root_volume] }}"
+
+  - name: Create ec2 instance
+    ec2:
+      image: "{{ ec2_image }}"
+      region: "{{ ec2_region }}"
+      key_name: "{{ ec2_keypair }}"
+      instance_type: m3.large
+      group: "{{ security_groups }}"
+      user_data: "{{ lookup('template', 'user_data.j2') }}"
+      exact_count: "{{ instance_count }}"
+      wait: yes
+      count_tag: "{{ instance_tags }}"
+      instance_tags: "{{ instance_tags }}"
+      volumes: "{{ volumes }}"
+    register: ec2
+
+  - name: Add name tag to instances
+    ec2_tag: resource={{ item.1.id }} region={{ ec2_region }} state=present
+    args:
+      tags:
+        Name: "{{ item.0 }}"
+    when: ec2.instances
+    with_together:
+    - instance_names
+    - ec2.instances
+
+  - name: Add new instance groups and variables
+    add_host:
+      hostname: "{{ item.0 }}"
+      ansible_ssh_host: "{{ item.1.dns_name }}"
+      ansible_ssh_user: openshift
+      groups: "{{ instance_groups | join(', ') }}"
+      ec2_private_ip_address: "{{ item.1.private_ip }}"
+      ec2_ip_address: "{{ item.1.public_ip }}"
+    when: ec2.instances
+    with_together:
+    - instance_names
+    - ec2.instances
+
+  - name: Wait for ssh
+    wait_for: "port=22 host={{ item.dns_name }}"
+    with_items: ec2.instances
+
+  - name: Wait for user setup
+    command: "ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null openshift@{{ item.dns_name }} echo openshift user is setup"
+    register: result
+    until: result.rc == 0
+    retries: 20
+    delay: 10
+    with_items: ec2.instances
