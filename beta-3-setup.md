@@ -3276,11 +3276,11 @@ post-deploy lifecycle hook. You can verify this by looking for the
 deployment hook pods in the `osc get pods` output:
 
     # osc get pods | grep 'POD\|lifecycle'
-    POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                      HOST                                    LABELS                                                                                                                  STATUS      CREATED
-    deployment-frontend-1-hook-hgr3a               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   About an hour
-    deployment-frontend-1-hook-owy4k               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   About an hour
-    deployment-frontend-2-hook-im42n               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Pending     8 seconds
-    deployment-frontend-2-hook-hejef               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Pending     9 seconds
+    POD                                IP CONTAINER(S) IMAGE(S)                                                                                                    HOST                                  LABELS STATUS    CREATED
+    deployment-frontend-1-hook-hgr3a      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c ose3-master.example.com/192.168.133.2 <none> Succeeded About an hour
+    deployment-frontend-1-hook-owy4k      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c ose3-master.example.com/192.168.133.2 <none> Succeeded About an hour
+    deployment-frontend-2-hook-im42n      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Pending   8 seconds
+    deployment-frontend-2-hook-hejef      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Pending   9 seconds
 
 The pods with the most recent `CREATED` time will be the lifecycle
 hook pods triggered by your build. It may take a few moments after the
@@ -3298,8 +3298,9 @@ Find the deployment hooks in the output from `osc get pods` and
 inspect them with `osc log`:
 
     # osc get pods | grep 'deployment-frontend-2'
-    deployment-frontend-2-hook-im42n               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Pending     8 seconds
-    deployment-frontend-2-hook-hejef               lifecycle                  172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   17 seconds
+    deployment-frontend-2-hook-im42n lifecycle 172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Pending   8 seconds
+    deployment-frontend-2-hook-hejef lifecycle 172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Succeeded 17 seconds
+
     # osc log deployment-frontend-2-hook-im42n
 
 Theres no output from this command; this probably means that this pod
@@ -3314,7 +3315,7 @@ writing) runs `/bin/true`. Let's check the next pod's logs:
     2015-04-23T17:48:41.588326799Z
 
 Pay dirt! Here we can see the output we'd expect from a successful
-rails database migration.
+Rails database migration.
 
 Now use the MySQL credentials from `env.json` and the host IP/port
 for the database service to inspect the database (you may need to
