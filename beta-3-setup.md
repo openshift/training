@@ -1673,7 +1673,7 @@ CentOS builder image?  That is simply a temporary inconvenience until more
 builder selection logic is baked in.  If we had wanted to use the RHEL image we
 could have run:
 
-    osc new-app openshift3_beta/ruby-20-rhel7~https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
+    osc new-app openshift/ruby-20-rhel7~https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
 
 There are a few problems with this.  Namely:
 
