@@ -758,7 +758,7 @@ choose. Note that, depending on your predicate configuration, you might end up
 with no possible nodes to choose. This is totally OK (although generally not
 desired).
 
-These default options are documented in the link above, but the quick overview
+These default options are documented in the link below, but the quick overview
 is:
 
 * Place pod on a node that has enough resources for it (duh)
