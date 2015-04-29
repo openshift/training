@@ -2446,16 +2446,20 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
     osc rollback frontend-2
 
-## Customized Build Process
-OpenShift v3 supports customization of the build process. Generally speaking,
-this involves modifying the various STI scripts from the builder image. When
-OpenShift builds your code, it checks to see if any of the scripts in the
-`.sti/bin` folder of your repository override/supercede the builder image's
-scripts. If so, it will execute the repository script instead.
+## Customized Build and Run Processes
+OpenShift v3 supports customization of both the build and run processes.
+Generally speaking, this involves modifying the various STI scripts from the
+builder image. When OpenShift builds your code, it checks to see if any of the
+scripts in the `.sti/bin` folder of your repository override/supercede the
+builder image's scripts. If so, it will execute the repository script instead.
+
+More information on the scripts, their execution during the process, and
+customization can be found here:
+
+    http://docs.openshift.org/latest/creating_images/sti.html#sti-scripts
 
 ### Add a Script
-
-You will find a script called `custom-build.sh` in the `beta3` folder. Go to
+You will find a script called `custom-assemble.sh` in the `beta3` folder. Go to
 your Github repository for your application from the previous lab, find the
 `beta3` branch, and find the `.sti/bin` folder.
 
@@ -2470,13 +2474,14 @@ your Github repository for your application from the previous lab, find the
 
 Now do the same thing for the file called `custom-run.sh` in the `beta3`
 directory.  The only difference is that this time the file will be called `run`
-in your repository's `.sti/bin` directory.  Unfortunately until
-https://github.com/openshift/source-to-image/issues/173 is resolved it's
-actually mandatory to update both of these files together.
+in your repository's `.sti/bin` directory. There is currently a bug that
+requires that both of these files be present in the `.sti/bin` folder:
 
-Once this is complete, we can now do another build. The only difference in the
-"custom" assemble and run scripts will be executed and log some extra output.
-We will see that shortly.
+    https://github.com/openshift/source-to-image/issues/173
+
+Once the files are added, we can now do another build. The only difference in
+the "custom" assemble and run scripts will be executed and log some extra
+output.  We will see that shortly.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
@@ -2495,13 +2500,235 @@ and look at its Docker logs.
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM STI ASSEMBLE COMPLETE
 
-But where's the output from the custom `run` script?  That's going to be in the runtime pod.  As `root` run:
+But where's the output from the custom `run` script? The `assemble` script is
+run inside of your builder pod. That's what you see by using `build-logs`. The
+`run` script actually is what is executed to "start" your application's pod. In
+other words, the `run` script is what starts the Ruby process for an image that
+was built based on the `ruby-20-rhel7` STI builder. As `root` run:
 
-    osc log -n quickstart `osc get pods -n quickstart | grep "^frontend-" | awk '{print $1}'`
+    osc log -n wiring \
+    `osc get pods -n wiring | \
+    grep "^frontend-" | awk '{print $1}'` |\
+    grep -i custom
 
 You should see:
 
     2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
+
+You will be able to do this as the `alice` user once the proxy development is
+finished -- for the same reason that you cannot view build logs as regular
+users, you also can't view pod logs as regular users.
+
+## Lifecycle Pre and Post Deployment Hooks
+Like in OpenShift 2, we have the capability of "hooks" - performing actions both
+before and after the **deployment**. In other words, once an STI build is
+complete, the resulting Docker image is pushed into the registry. Once the push
+is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
+a **deployment**. 
+
+The *pre*-deployment hook is executed just *before* the new image is deployed.
+
+The *post*-deployment hook is executed just *after* the new image is deployed.
+
+How is this accomplished? OpenShift will actually spin-up an *extra* instance of
+your built image, execute your hook script(s), and then shut down. Neat, huh?
+This has the benefit of making your entire application environment available
+during the hook script's execution, should you need it. And, if not, that's OK,
+too.
+
+### A Rails Database Migration
+Since we already have our `wiring` app pointing at our forked code repository,
+let's go ahead and add a database migration file. In the `beta3` folder you will
+find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
+of the `ruby-hello-world` repository that you forked.
+
+### Examining the Configuration
+Since we are talking about **deployments**, let's look at our
+`DeploymentConfig`s. As the `alice` user in the `wiring` project:
+
+    osc get dc
+
+You should see something like:
+
+    NAME       TRIGGERS       LATEST VERSION
+    database   ConfigChange   1
+    frontend   ImageChange    7
+
+Since we are trying to associate a Rails database migration hook with our
+application, we are ultimately talking about a deployment of the frontend. If
+you edit the frontend's `DeploymentConfig`:
+
+    osc edit dc frontend -ojson
+
+Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+easier as it is indentation-insensitive.
+
+You should see a section that looks like the following:
+
+    "strategy": {
+        "type": "Recreate",
+        "recreateParams": {
+            "pre": {
+                "failurePolicy": "Abort",
+                "execNewPod": {
+                    "command": [
+                        "/bin/true"
+                    ],
+                    "env": [
+                        {
+                            "name": "CUSTOM_VAR1",
+                            "value": "custom_value1"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            },
+            "post": {
+                "failurePolicy": "Ignore",
+                "execNewPod": {
+                    "command": [
+                        "/bin/false"
+                    ],
+                    "env": [
+                        {
+                            "name": "CUSTOM_VAR2",
+                            "value": "custom_value2"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            }
+        }
+    },
+
+As you can see, we have both a *pre* and *post* deployment hook defined. They
+don't actually do anything useful. But they are good examples.
+
+The pre-deployment hook executes "/bin/true" whose exit code is always 0 --
+success. If for some reason this failed (non-zero exit), our policy would be to
+`Abort` -- consider the entire deployment a failure and stop.
+
+The post-deployment hook executes "/bin/false" whose exit code is always 1 --
+failure. The policy is to `Ignore`, or do nothing. For non-essential tasks that
+might rely on an external service, this might be a good policy.
+
+More information on these strategies, the various policies, and other
+information can be found in the documentation:
+
+    http://docs.openshift.org/latest/dev_guide/deployments.html
+
+Note that these hooks are not defined by default - OpenShift did not
+automatically generate them. If you look at the original JSON for the frontend
+(`frontend-template.json`), you'll see that they are already there.
+
+### Modifying the Hooks
+A Rails migration is commonly performed when we have added/modified the database
+as part of our code change. In the case of a pre- or post-deployment hook, it
+would make sense to:
+
+* Attempt to migrate the database
+* Abort the new deployment if the migration fails
+
+Otherwise we could end up with our new code deployed but our database schema
+would not match. This could be a *Real Bad Thing (TM)*.
+
+Since you should still have the `osc edit` session up, go ahead and delete the
+section for the `post`-deployment hook.
+
+In the case of the `ruby-20` builder image, we are actually using RHEL7 and the
+Red Hat Software Collections (SCL) to get our Ruby 2.0 support. So, the command
+we want to run looks like:
+
+    /usr/bin/scl enable ruby200 ror40 'cd /opt/openshift/src ; bundle exec rake db:migrate'
+
+This command:
+
+* executes inside an SCL "shell"
+* enables the Ruby 2.0.0 and Ruby On Rails 4.0 environments
+* changes to the `/opt/openshift/src` directory (where our applications' code is
+    located)
+* executes `bundle exec rake db:migrate`
+
+If you're not familiar with Ruby, Rails, or Bundler, that's OK. Just trust us.
+Would we lie to you?
+
+The `command` directive inside the hook's definition tells us which command to
+actually execute. It is required that this is an array of individual strings.
+Represented in JSON, our desired command above represented as a string array
+looks like:
+
+    "command": [
+        "/usr/bin/scl",
+        "enable",
+        "ruby200",
+        "ror40",
+        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+    ]
+
+This is great, but actually manipulating the database requires that we talk
+**to** the database. Talking to the database requires a user and a password.
+
+The pre- and post-deployment hook `env`ironments do not automatically inherit
+the environment variables normally defined in the pod template. If we want to
+make the database environment variables available during our hook, we need to
+additionally define them. The current example in our `deploymentConfig` shows
+the definition of some environment variables as part of the hooks. It looks very
+similar to the `podTemplate` section, too. In fact, you can just copy and paste
+the `env` section from the `podTemplate` section into your `pre` section.
+
+So, in the end, you will have something that looks like:
+
+    "strategy": {
+        "type": "Recreate",
+        "recreateParams": {
+            "pre": {
+                "failurePolicy": "Abort",
+                "execNewPod": {
+                    "command": [
+                        "/usr/bin/scl",
+                        "enable",
+                        "ruby200",
+                        "ror40",
+                        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+                    ],
+                    "env": [
+                        {
+                            "name": "ADMIN_USERNAME",
+                            "key": "ADMIN_USERNAME",
+                            "value": "adminTLY"
+                        },
+                        {
+                            "name": "ADMIN_PASSWORD",
+                            "key": "ADMIN_PASSWORD",
+                            "value": "PMPuNmFY"
+                        },
+                        {
+                            "name": "MYSQL_USER",
+                            "key": "MYSQL_USER",
+                            "value": "userFXW"
+                        },
+                        {
+                            "name": "MYSQL_PASSWORD",
+                            "key": "MYSQL_PASSWORD",
+                            "value": "24JHg7iV"
+                        },
+                        {
+                            "name": "MYSQL_DATABASE",
+                            "key": "MYSQL_DATABASE",
+                            "value": "root"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            },
+        }
+    },
+
+Yours might look slightly different, because it is likely OpenShift generated
+different passwords for you. Remember, indentation isn't critical in JSON, but
+closing brackets and braces are.
+
+When you are done editing the deployment config, save and quit your editor.
 
 ## Arbitrary Docker Image (Builder)
 One of the first things we did with OpenShift was launch an "arbitrary" Docker
