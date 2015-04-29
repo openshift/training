@@ -2841,12 +2841,11 @@ image:
 
     https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
 
-We've taken the content of this subfolder and placed it in the `beta2/wordpress`
-folder in the `training` repository. Let's run `ex generate` and see what
+We've taken the content of this subfolder and placed it in the GitHub
+`openshift/centos7-wordpress` repository. Let's run `osc new-app` and see what
 happens:
 
-    openshift ex generate --name=wordpress \
-    https://github.com/openshift/centos7-wordpress.git | python -m json.tool
+    osc new-app https://github.com/openshift/centos7-wordpress.git -o yaml
 
 This all looks good for now.
 
@@ -2864,18 +2863,25 @@ As `alice`:
 ### Build Wordpress
 Let's choose the Wordpress example:
 
-    openshift ex generate --name=wordpress \
-    https://github.com/openshift/centos7-wordpress.git | osc create -f -
+    osc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
+    
+    services/centos7-wordpress
+    imageStreams/centos7-wordpress
+    buildConfigs/centos7-wordpress
+    deploymentConfigs/centos7-wordpress
+    Service "centos7-wordpress" created at 172.30.17.91:22 to talk to pods over port 22.
+    A build was created - you can run `osc start-build centos7-wordpress` to start it.
 
 Then, start the build:
 
-    osc start-build wordpress
+    osc start-build centos7-wordpress
 
 **Note: This can take a *really* long time to build.**
 
 You will need a route for this application, as `curl` won't do a whole lot for
-us here. Additionally, `ex generate` currently has a bug in the way services are
-provided, so we'll have a service for SSH but not one for httpd.
+us here. Additionally, `osc new-app` currently has a bug in the way services are
+detected, so we'll have a service for SSH (thus port 22 above) but not one for
+httpd. So we'll add on a service and route for web access.
 
     osc create -f wordpress-addition.json
 
