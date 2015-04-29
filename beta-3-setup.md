@@ -2897,6 +2897,39 @@ Docker image using OpenShift. Technically there was no "code repository". So, if
 you allow it, developers can actually simply build Docker containers as their
 "apps" and run them directly on OpenShift.
 
+### Application Resource Labels
+
+You may have wondered about the `-l name=wordpress` in the invocation above. This
+applies a label to all of the resources created by `osc new-app` so that they can
+be easily distinguished from any other resources in a project. For example, we
+can easily delete only the things with this label:
+
+    osc delete all -l name=wordpress
+    
+    buildConfigs/centos7-wordpress
+    builds/centos7-wordpress-1
+    deploymentConfigs/centos7-wordpress
+    imageStreams/centos7-wordpress
+    pods/centos7-wordpress-1
+    pods/centos7-wordpress-1-j64ck
+    replicationControllers/centos7-wordpress-1
+    services/centos7-wordpress
+
+Notice that the things we created from wordpress-addition.json didn't
+have this label, so they didn't get deleted:
+
+    osc get services
+    
+    NAME                      LABELS    SELECTOR                             IP             PORT(S)
+    wordpress-httpd-service   <none>    deploymentconfig=centos7-wordpress   172.30.17.83   80/TCP
+    
+    osc get route
+    
+    NAME              HOST/PORT                         PATH      SERVICE                   LABELS
+    wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service   
+
+Labels will be useful for many things, including identification in the web console.
+
 ## Conclusion
 This concludes the Beta 3 training. Look for more example applications to come!
 
