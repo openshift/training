@@ -2838,7 +2838,7 @@ to limit some of what it returns:
         rm ~/.config/openshift/.config
 
         osc login \
-        --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
+        --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
         --cluster=master --server=https://ose3-master.example.com:8443 \
         --namespace=[INSERT NAMESPACE HERE]
 
