@@ -2446,16 +2446,20 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
     osc rollback frontend-2
 
-## Customized Build Process
-OpenShift v3 supports customization of the build process. Generally speaking,
-this involves modifying the various STI scripts from the builder image. When
-OpenShift builds your code, it checks to see if any of the scripts in the
-`.sti/bin` folder of your repository override/supercede the builder image's
-scripts. If so, it will execute the repository script instead.
+## Customized Build and Run Processes
+OpenShift v3 supports customization of both the build and run processes.
+Generally speaking, this involves modifying the various STI scripts from the
+builder image. When OpenShift builds your code, it checks to see if any of the
+scripts in the `.sti/bin` folder of your repository override/supercede the
+builder image's scripts. If so, it will execute the repository script instead.
+
+More information on the scripts, their execution during the process, and
+customization can be found here:
+
+    http://docs.openshift.org/latest/creating_images/sti.html#sti-scripts
 
 ### Add a Script
-
-You will find a script called `custom-build.sh` in the `beta3` folder. Go to
+You will find a script called `custom-assemble.sh` in the `beta3` folder. Go to
 your Github repository for your application from the previous lab, find the
 `beta3` branch, and find the `.sti/bin` folder.
 
@@ -2470,13 +2474,14 @@ your Github repository for your application from the previous lab, find the
 
 Now do the same thing for the file called `custom-run.sh` in the `beta3`
 directory.  The only difference is that this time the file will be called `run`
-in your repository's `.sti/bin` directory.  Unfortunately until
-https://github.com/openshift/source-to-image/issues/173 is resolved it's
-actually mandatory to update both of these files together.
+in your repository's `.sti/bin` directory. There is currently a bug that
+requires that both of these files be present in the `.sti/bin` folder:
 
-Once this is complete, we can now do another build. The only difference in the
-"custom" assemble and run scripts will be executed and log some extra output.
-We will see that shortly.
+    https://github.com/openshift/source-to-image/issues/173
+
+Once the files are added, we can now do another build. The only difference in
+the "custom" assemble and run scripts will be executed and log some extra
+output.  We will see that shortly.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
@@ -2495,13 +2500,333 @@ and look at its Docker logs.
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM STI ASSEMBLE COMPLETE
 
-But where's the output from the custom `run` script?  That's going to be in the runtime pod.  As `root` run:
+But where's the output from the custom `run` script? The `assemble` script is
+run inside of your builder pod. That's what you see by using `build-logs`. The
+`run` script actually is what is executed to "start" your application's pod. In
+other words, the `run` script is what starts the Ruby process for an image that
+was built based on the `ruby-20-rhel7` STI builder. As `root` run:
 
-    osc log -n quickstart `osc get pods -n quickstart | grep "^frontend-" | awk '{print $1}'`
+    osc log -n wiring \
+    `osc get pods -n wiring | \
+    grep "^frontend-" | awk '{print $1}'` |\
+    grep -i custom
 
 You should see:
 
     2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
+
+You will be able to do this as the `alice` user once the proxy development is
+finished -- for the same reason that you cannot view build logs as regular
+users, you also can't view pod logs as regular users.
+
+## Lifecycle Pre and Post Deployment Hooks
+Like in OpenShift 2, we have the capability of "hooks" - performing actions both
+before and after the **deployment**. In other words, once an STI build is
+complete, the resulting Docker image is pushed into the registry. Once the push
+is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
+a **deployment**. 
+
+The *pre*-deployment hook is executed just *before* the new image is deployed.
+
+The *post*-deployment hook is executed just *after* the new image is deployed.
+
+How is this accomplished? OpenShift will actually spin-up an *extra* instance of
+your built image, execute your hook script(s), and then shut down. Neat, huh?
+This has the benefit of making your entire application environment available
+during the hook script's execution, should you need it. And, if not, that's OK,
+too.
+
+### A Rails Database Migration
+Since we already have our `wiring` app pointing at our forked code repository,
+let's go ahead and add a database migration file. In the `beta3` folder you will
+find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
+of the `ruby-hello-world` repository that you forked. If you don't add this file
+to the right folder, the rest of the steps will fail.
+
+### Examining the Deployment Configuration
+Since we are talking about **deployments**, let's look at our
+`DeploymentConfig`s. As the `alice` user in the `wiring` project:
+
+    osc get dc
+
+You should see something like:
+
+    NAME       TRIGGERS       LATEST VERSION
+    database   ConfigChange   1
+    frontend   ImageChange    7
+
+Since we are trying to associate a Rails database migration hook with our
+application, we are ultimately talking about a deployment of the frontend. If
+you edit the frontend's `DeploymentConfig`:
+
+    osc edit dc frontend -ojson
+
+Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+easier as it is indentation-insensitive.
+
+You should see a section that looks like the following:
+
+    "strategy": {
+        "type": "Recreate",
+        "recreateParams": {
+            "pre": {
+                "failurePolicy": "Abort",
+                "execNewPod": {
+                    "command": [
+                        "/bin/true"
+                    ],
+                    "env": [
+                        {
+                            "name": "CUSTOM_VAR1",
+                            "value": "custom_value1"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            },
+            "post": {
+                "failurePolicy": "Ignore",
+                "execNewPod": {
+                    "command": [
+                        "/bin/false"
+                    ],
+                    "env": [
+                        {
+                            "name": "CUSTOM_VAR2",
+                            "value": "custom_value2"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            }
+        }
+    },
+
+As you can see, we have both a *pre* and *post* deployment hook defined. They
+don't actually do anything useful. But they are good examples.
+
+The pre-deployment hook executes "/bin/true" whose exit code is always 0 --
+success. If for some reason this failed (non-zero exit), our policy would be to
+`Abort` -- consider the entire deployment a failure and stop.
+
+The post-deployment hook executes "/bin/false" whose exit code is always 1 --
+failure. The policy is to `Ignore`, or do nothing. For non-essential tasks that
+might rely on an external service, this might be a good policy.
+
+More information on these strategies, the various policies, and other
+information can be found in the documentation:
+
+    http://docs.openshift.org/latest/dev_guide/deployments.html
+
+Note that these hooks are not defined by default - OpenShift did not
+automatically generate them. If you look at the original JSON for the frontend
+(`frontend-template.json`), you'll see that they are already there.
+
+### Modifying the Hooks
+A Rails migration is commonly performed when we have added/modified the database
+as part of our code change. In the case of a pre- or post-deployment hook, it
+would make sense to:
+
+* Attempt to migrate the database
+* Abort the new deployment if the migration fails
+
+Otherwise we could end up with our new code deployed but our database schema
+would not match. This could be a *Real Bad Thing (TM)*.
+
+Since you should still have the `osc edit` session up, go ahead and delete the
+section for the `post`-deployment hook.
+
+In the case of the `ruby-20` builder image, we are actually using RHEL7 and the
+Red Hat Software Collections (SCL) to get our Ruby 2.0 support. So, the command
+we want to run looks like:
+
+    /usr/bin/scl enable ruby200 ror40 'cd /opt/openshift/src ; bundle exec rake db:migrate'
+
+This command:
+
+* executes inside an SCL "shell"
+* enables the Ruby 2.0.0 and Ruby On Rails 4.0 environments
+* changes to the `/opt/openshift/src` directory (where our applications' code is
+    located)
+* executes `bundle exec rake db:migrate`
+
+If you're not familiar with Ruby, Rails, or Bundler, that's OK. Just trust us.
+Would we lie to you?
+
+The `command` directive inside the hook's definition tells us which command to
+actually execute. It is required that this is an array of individual strings.
+Represented in JSON, our desired command above represented as a string array
+looks like:
+
+    "command": [
+        "/usr/bin/scl",
+        "enable",
+        "ruby200",
+        "ror40",
+        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+    ]
+
+This is great, but actually manipulating the database requires that we talk
+**to** the database. Talking to the database requires a user and a password.
+
+The pre- and post-deployment hook `env`ironments do not automatically inherit
+the environment variables normally defined in the pod template. If we want to
+make the database environment variables available during our hook, we need to
+additionally define them. The current example in our `deploymentConfig` shows
+the definition of some environment variables as part of the hooks. It looks very
+similar to the `podTemplate` section, too. In fact, you can just copy and paste
+the `env` section from the `podTemplate` section into your `pre` section.
+
+So, in the end, you will have something that looks like:
+
+    "strategy": {
+        "type": "Recreate",
+        "recreateParams": {
+            "pre": {
+                "failurePolicy": "Abort",
+                "execNewPod": {
+                    "command": [
+                        "/usr/bin/scl",
+                        "enable",
+                        "ruby200",
+                        "ror40",
+                        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+                    ],
+                    "env": [
+                        {
+                            "name": "ADMIN_USERNAME",
+                            "key": "ADMIN_USERNAME",
+                            "value": "adminTLY"
+                        },
+                        {
+                            "name": "ADMIN_PASSWORD",
+                            "key": "ADMIN_PASSWORD",
+                            "value": "PMPuNmFY"
+                        },
+                        {
+                            "name": "MYSQL_USER",
+                            "key": "MYSQL_USER",
+                            "value": "userFXW"
+                        },
+                        {
+                            "name": "MYSQL_PASSWORD",
+                            "key": "MYSQL_PASSWORD",
+                            "value": "24JHg7iV"
+                        },
+                        {
+                            "name": "MYSQL_DATABASE",
+                            "key": "MYSQL_DATABASE",
+                            "value": "root"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            },
+        }
+    },
+
+Yours might look slightly different, because it is likely OpenShift generated
+different passwords for you. Remember, indentation isn't critical in JSON, but
+closing brackets and braces are.
+
+When you are done editing the deployment config, save and quit your editor.
+
+### Quickly Clean Up
+When we did our previous builds and rollbacks and etc, we ended up with a lot of
+stale pods that are not running (`Succeeded`). Currently we do not auto-delete
+these pods because we have no log store -- once they are deleted, you can't view
+their logs any longer.
+
+For now, we can clean up by doing the following as `alice`:
+
+    osc get pod |\
+    grep -E "lifecycle|sti-build" |\
+    awk {'print $1'} |\
+    xargs -r osc delete pod
+
+This will get rid of all of our old build and lifecycle pods. The lifecycle pods
+are the pre- and post-deployment hook pods, and the sti-build pods are the pods
+in which our previous builds occurred.
+
+### Build Again
+Now that we have modified the deployment configuration and cleaned up a bit, we
+need to trigger another deployment. While killing the frontend pod would trigger
+another deployment, our current Docker image doesn't have the database migration
+file in it. Nothing really useful would happen.
+
+In order to get the database migration file into the Docker image, we actually
+need to do another build. Remember, the STI process starts with the builder
+image, fetches the source code, executes the (customized) assemble script, and
+then pushes the resulting Docker image into the registry. **Then** the
+deployment happens.
+
+As `alice`:
+
+    osc start-build ruby-sample-build
+
+### Verify the Migration
+Once the build is complete, you should see something like the following output
+of `osc get pod` as `alice`:
+
+    POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                       HOST                                    LABELS                                                                                                                  STATUS      CREATED
+    database-1-6lvao                   10.1.0.13   ruby-helloworld-database   registry.access.redhat.com/openshift3_beta/mysql-55-rhel7                                                      ose3-master.example.com/192.168.133.2   deployment=database-1,deploymentconfig=database,name=database,template=application-template-stibuild                    Running     2 hours
+    deployment-frontend-9-hook-wlqqx               lifecycle                  172.30.17.24:5000/wiring/origin-ruby-sample:85e3393a2827ae4ce42ea6abf45a08e42d7c0d5f527f6415d35a4d4847392ed1   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   4 minutes
+    frontend-9-cb4u9                   10.1.0.56   ruby-helloworld            172.30.17.24:5000/wiring/origin-ruby-sample:85e3393a2827ae4ce42ea6abf45a08e42d7c0d5f527f6415d35a4d4847392ed1   ose3-master.example.com/192.168.133.2   deployment=frontend-9,deploymentconfig=frontend,name=frontend,template=application-template-stibuild                    Running     3 minutes
+    ruby-sample-build-6                            sti-build                  openshift3_beta/ose-sti-builder:v0.4.3.2                                                                       ose3-master.example.com/192.168.133.2   build=ruby-sample-build-6,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded   5 minutes
+
+You'll see that there is a single `hook`/`lifecycle` pod -- this corresponds
+with the pod that ran our pre-deployment hook.
+
+Inspect this pod's logs:
+
+    osc log deployment-frontend-9-hook-wlqqx -n wiring
+
+**Note:** You'll have to perform this as `root`.
+
+The output likely shows:
+
+    2015-04-29T22:17:30.928941999Z == 1 SampleTable: migrating
+    ===================================================
+    2015-04-29T22:17:30.929014043Z -- create_table(:sample_table)
+    2015-04-29T22:17:30.929021057Z    -> 0.0995s
+    2015-04-29T22:17:30.929024656Z == 1 SampleTable: migrated (0.0999s)
+    ==========================================
+    2015-04-29T22:17:30.929027404Z
+
+If you have no output, you may have forgotten to actually put the migration file
+in your repo. Without that file, the migration does nothing, which produces no
+output.
+
+For giggles, you can even talk directly to the database on its service IP/port
+using the `mysql` client and the environment variables.
+
+As `alice`, find your database:
+
+    NAME       LABELS                                   SELECTOR        IP            PORT(S)
+    database   template=application-template-stibuild   name=database   172.30.17.5   5434/TCP
+
+Then, somewhere inside your OpenShift environment, use the `mysql` client to
+connect to this service and dump the table that we created:
+
+    mysql -u userJKL \
+      -p 5678efgh \
+      -h 172.30.17.208 \
+      -P 5434 \
+      -e 'show tables; describe sample_table;' \
+      root
+    +-------------------+
+    | Tables_in_root    |
+    +-------------------+
+    | sample_table      |
+    | key_pairs         |
+    | schema_migrations |
+    +-------------------+
+    +-------+--------------+------+-----+---------+----------------+
+    | Field | Type         | Null | Key | Default | Extra          |
+    +-------+--------------+------+-----+---------+----------------+
+    | id    | int(11)      | NO   | PRI | NULL    | auto_increment |
+    | name  | varchar(255) | NO   |     | NULL    |                |
+    +-------+--------------+------+-----+---------+----------------+
 
 ## Arbitrary Docker Image (Builder)
 One of the first things we did with OpenShift was launch an "arbitrary" Docker
@@ -3072,272 +3397,3 @@ HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 
 We're working to have a single place that administrators can set proxies for
 all network traffic.
-
-# APPENDIX - Lifecycle Pre and Post Deployment Hooks
-
-## Set up app template
-
-For this, `training/beta3/integrated-template.json` works fine
-
-    cd
-    cp training/beta3/integrated-template.json ./my-template.json
-
-### Modify the BuildConfig source to point to your fork
-
-It should end up looking something like this:
-
-    {
-      "kind": "BuildConfig",
-      "apiVersion": "v1beta1",
-    ...
-          "parameters": {
-            "source": {
-              "type": "Git"
-              "git": {
-                "uri": "git://github.com/YOUR_GITHUB_USER/ruby-hello-world.git",
-                "ref": "beta3"
-              },
-            },
-            "strategy": {
-              "type": "STI",
-              "stiStrategy": {
-                "builderImage": "openshift/ruby-20-centos7",
-                "image": "openshift/ruby-20-centos7"
-              }
-            },
-            "output": {
-              "to": {
-                "kind": "ImageStream",
-                "name": "origin-ruby-sample"
-              }
-            }
-          }
-    ...
-    }
-
-## Create a new project for your app
-
-Modify `--admin=` to reference the user you want to own the project.
-
-    osadm new-project myapp \
-      --display-name="My App" \
-      --description="My test app template" \
-      --admin=admin
-
-## As the project owner, switch to the new project
-
-    osc project myapp
-
-## Create the template
-
-    osc create -f ./my-template.json
-
-## Create an app from the template
-
-In the web console, as the project owner user:
--   click "+Create"
--   select `quickstart-keyvalue-application` or whatever
--   click "Select template..."
--   click "Create"
--   watch the tiny computer men build an application!
-
-## Verify the app is up and running
-
-## Create a branch in your fork of the `ruby-hello-world` app
-
-    cd /path/to/ruby-hello-world
-    git checkout -b newtable my_remote/beta3
-
-## Add a new table by creating a new migration in `db/migrate`
-
-    cat <<EOF > db/migrate/1_sample_table.rb
-
-    class SampleTable < ActiveRecord::Migration
-      def up
-        create_table :sample_table do |t|
-          t.column :name, :string, :null => false
-        end
-      end
-      def down
-        drop_table :sample_table
-      end
-    end
-
-    EOF
-
-## Push the changes to your github account
-
-    git add db/migrate/1_sample_table.rb
-    git commit -m 'Add a new db migration'
-    git push my_remote newtable:newtable
-
-## Modify the buildConfig to reference the new branch
-
-    osc edit -ojson bc/ruby-sample-build
-
-### update the `git` `ref` parameter
-
-You should wind up with a section that looks like:
-
-    ...
-            "source": {
-              "git": {
-                "uri": "git://github.com/YOUR_GITHUB_USER/ruby-hello-world.git",
-                "ref": "newtable"
-              },
-              "type": "Git"
-            },
-    ...
-
-## Get the MySQL/MariaDB parameters from the `database` `deploymentConfig`
-
-The `database` deployment configuration will contain the correct
-MariaDB parameters and credentials. Copy these out for use in the
-lifecycle hook definition later:
-
-    # osc get dc database -ojson | grep -C2 '"key": "MYSQL' | grep -v '"key":' > env.json
-
-## Modify the deploymentConfig to run the database migration as a post-deployment lifecycle hook
-
-    osc edit -ojson dc/frontend
-
-### Add the desired lifecycle hook
-
-The hook should run the command with the appropriate environment in
-the correct directory, like:
-
-    /usr/bin/scl enable ruby200 ror40 'cd /opt/openshift/src ; bundle exec rake db:migrate'
-
-...but expressed as a string array in `json`:
-
-    "command": [
-        "/usr/bin/scl",
-        "enable",
-        "ruby200",
-        "ror40",
-        "cd /opt/openshift/src ; bundle exec rake db:migrate"
-    ]
-
-#### create/modify the `recreateParams` `post` hook definition for the template strategy
-
-Don't forget to copy & paste the `env` variable definitions from
-the `env.json` file you created earlier. You should end up with a
-section that looks like:
-
-    ...
-        "template": {
-            "strategy": {
-                "type": "Recreate",
-                "recreateParams": {
-    
-    ...
-                    "post": {
-                        "failurePolicy": "Ignore",
-                        "execNewPod": {
-                            "command": [
-                                "/usr/bin/scl",
-                                "enable",
-                                "ruby200",
-                                "ror40",
-                                "cd /opt/openshift/src ; bundle exec rake db:migrate"
-                            ],
-                            "env": [
-                                {
-                                    "name": "MYSQL_USER",
-                                    "value": "userJKL"
-                                },
-                                {
-                                    "name": "MYSQL_PASSWORD",
-                                    "value": "5678efgh"
-                                },
-                                {
-                                    "name": "MYSQL_DATABASE",
-                                    "value": "root"
-                                }
-                            ],
-                            "containerName": "ruby-helloworld"
-                        }
-                    }
-    ...
-
-## Kick off the new build:
-
-    osc start-build ruby-sample-build
-
-Monitor the build logs, and note the docker image tag, which should
-be output towards the end of the build on a line similar to this:
-
-    2015-04-23T19:59:34.304730547Z I0423 15:59:34.303984       1 sti.go:236] Tagged e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 as 172.30.17.99:5000/myapp2/origin-ruby-sample
-
-At this point the deployment should run, including your revised
-post-deploy lifecycle hook. You can verify this by looking for the
-deployment hook pods in the `osc get pods` output:
-
-    # osc get pods | grep 'POD\|lifecycle'
-    POD                                IP CONTAINER(S) IMAGE(S)                                                                                                    HOST                                  LABELS STATUS    CREATED
-    deployment-frontend-1-hook-hgr3a      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c ose3-master.example.com/192.168.133.2 <none> Succeeded About an hour
-    deployment-frontend-1-hook-owy4k      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:2003ffa35bf573181d6be7eba720d05c2003ffa35bf573181d6be7eba720d05c ose3-master.example.com/192.168.133.2 <none> Succeeded About an hour
-    deployment-frontend-2-hook-im42n      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Pending   8 seconds
-    deployment-frontend-2-hook-hejef      lifecycle    172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Pending   9 seconds
-
-The pods with the most recent `CREATED` time will be the lifecycle
-hook pods triggered by your build. It may take a few moments after the
-build completes for the pods to show up, so you will want to keep
-monitoring this command until the pods appear. You'll notice that the
-docker image tag from your build logs will appear in the `IMAGE(S)`
-field for your hook pods.
-
-Once the pods' `STATUS` move from `Pending` to `Succeeded`, you can
-inspect them to see the result.
-
-## Verify that the database migration happened
-
-Find the deployment hooks in the output from `osc get pods` and
-inspect them with `osc log`:
-
-    # osc get pods | grep 'deployment-frontend-2'
-    deployment-frontend-2-hook-im42n lifecycle 172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Pending   8 seconds
-    deployment-frontend-2-hook-hejef lifecycle 172.30.17.43:5000/myapp/origin-ruby-sample:e696bbc88d892473a593b4e074483888e696bbc88d892473a593b4e074483888 ose3-master.example.com/192.168.133.2 <none> Succeeded 17 seconds
-
-    # osc log deployment-frontend-2-hook-im42n
-
-Theres no output from this command; this probably means that this pod
-had run the pre-deployment lifecycle hook which (at the time of this
-writing) runs `/bin/true`. Let's check the next pod's logs:
-
-    # osc log deployment-frontend-2-hook-hejef
-    2015-04-23T17:48:41.588240012Z == 1 SampleTable: migrating ======================================================
-    2015-04-23T17:48:41.588312703Z -- create_table(:sample_table)
-    2015-04-23T17:48:41.588318626Z    -> 0.2923s
-    2015-04-23T17:48:41.588322977Z == 1 SampleTable: migrated (0.3026s) =============================================
-    2015-04-23T17:48:41.588326799Z
-
-Pay dirt! Here we can see the output we'd expect from a successful
-Rails database migration.
-
-Now use the MySQL credentials from `env.json` and the host IP/port
-for the database service to inspect the database (you may need to
-install the `mysql` client):
-
-    # osc get svc database
-    NAME       LABELS                                   SELECTOR        IP              PORT(S)
-    database   template=application-template-stibuild   name=database   172.30.17.208   5434/TCP
-    # mysql -u userJKL \
-      -p 5678efgh \
-      -h 172.30.17.208 \
-      -P 5434 \
-      -e 'show tables; describe sample_table;' \
-      root
-    +-------------------+
-    | Tables_in_root    |
-    +-------------------+
-    | sample_table      |
-    | key_pairs         |
-    | schema_migrations |
-    +-------------------+
-    +-------+--------------+------+-----+---------+----------------+
-    | Field | Type         | Null | Key | Default | Extra          |
-    +-------+--------------+------+-----+---------+----------------+
-    | id    | int(11)      | NO   | PRI | NULL    | auto_increment |
-    | name  | varchar(255) | NO   |     | NULL    |                |
-    +-------+--------------+------+-----+---------+----------------+
