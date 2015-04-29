@@ -2318,8 +2318,10 @@ again:
 
     osc edit bc ruby-sample-build
 
-Change the "uri" reference to match the name of your Github repository. Save and
-exit the editor.
+Change the "uri" reference to match the name of your Github
+repository. Assuming your github user is `alice`, you would point it
+to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
+the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
 that the `uri` has been updated.
