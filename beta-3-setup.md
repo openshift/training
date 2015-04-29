@@ -2462,7 +2462,7 @@ your Github repository for your application from the previous lab, find the
 * Click the "+" button at the top (to the right of `bin` in the
     breadcrumbs).
 * Name your file `assemble`.
-* Paste the contents of `custom-build.sh` into the text area.
+* Paste the contents of `custom-assemble.sh` into the text area.
 * Provide a nifty commit message.
 * Click the "commit" button.
 
