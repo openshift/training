@@ -2446,9 +2446,6 @@ cool. Let's now roll forward (activate) the typo-enabled application:
     osc rollback frontend-2
 
 ## Customized Build Process
-*THIS CURRENTLY HAS A BUG - WILL NOT WORK.  Please skip ahead to [Arbitrary
-Docker Image (Builder)](#arbitrary-docker-image-builder)*
-
 OpenShift v3 supports customization of the build process. Generally speaking,
 this involves modifying the various STI scripts from the builder image. When
 OpenShift builds your code, it checks to see if any of the scripts in the
