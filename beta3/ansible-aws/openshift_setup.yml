@@ -6,44 +6,15 @@
 # Create the AWS security groups if not already present
 - include: util_playbooks/create_security_groups.yml
 
-# Create the master/node intstance
+# Create the master instance
 - include: util_playbooks/create_instances.yml
   vars:
-    instance_count: 1
-    instance_names:
-    - ose3-master
-    roles:
-    - master
-    - node
-    security_groups:
-    - openshift-v3-training-master
-    - openshift-v3-training-node
-    instance_tags:
-      env: openshift-v3-training
-      openshift-master: v3
-      openshift-node: v3
-    instance_groups:
-    - tag_env_openshift-v3-training
-    - tag_openshift-master_v3
-    - tag_openshift-node_v3
+    role: master
 
-# Create the additional node intstance
+# Create the additional node instance(s)
 - include: util_playbooks/create_instances.yml
   vars:
-    instance_count: 3 # Add one to account for master being a node
-    instance_names:
-    - ose3-node1
-    - ose3-node2
-    roles:
-    - node
-    security_groups:
-    - openshift-v3-training-node
-    instance_tags:
-      env: openshift-v3-training
-      openshift-node: v3
-    instance_groups:
-    - tag_env_openshift-v3-training
-    - tag_openshift-node_v3
+    role: node
 
 # Register any un-registered hosts to rhsm
 - include: util_playbooks/register_host.yml
@@ -71,7 +42,7 @@
       groups: oo_nodes_to_config
     with_items: groups['tag_openshift-node_v3']
 
-# Configure the master instance
+## Configure the master instance
 - include: playbooks/common/openshift-master/config.yml
   vars:
     openshift_cluster_id: openshift-v3-training

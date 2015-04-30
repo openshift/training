@@ -3113,10 +3113,10 @@ ansible ~/openshift-ansible/playbooks/byo/config.yml
     - The following security groups will be created:
       - openshift-v3-training-master
       - openshift-v3-training-node
+  - Create and update route53 record sets
 - The ec2 region selected is using ec2 classic or has a default vpc and subnets configured.
   - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
 - If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
-- DNS entries are managed externally.
 
 ###Setup (modifying the values appropriately):
 ```sh
@@ -3127,6 +3127,8 @@ export EC2_AMI_ID=ami-12663b7a
 export EC2_KEYPAIR=MY_KEYPAIR_NAME
 export RHN_USERNAME=MY_RHN_USERNAME
 export RHN_PASSWORD=MY_RHN_PASSWORD
+export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
+export ROUTE_53_HOST_ZONE=example.com
 ```
 
 ###Configuring the hosts:
