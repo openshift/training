@@ -17,29 +17,29 @@ osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 #beta3
 systemctl start docker
-yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*'
+yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' 
 docker images -q | xargs -r docker rmi -f
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod
-docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.3.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-image-builder:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.4.3.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
 docker pull centos:centos7
 docker pull openshift/ruby-20-centos7
 docker pull openshift/mysql-55-centos7
 docker pull openshift/hello-openshift
 
 cd
-git clone https://github.com/openshift/training.git -b beta3
+git clone https://github.com/openshift/training.git 
 cd ~/training/beta3
 /bin/cp ~/training/beta1/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
@@ -49,7 +49,7 @@ iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 cd
-git clone https://github.com/openshift/training.git -b beta3
+git clone https://github.com/openshift/training.git
 cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
@@ -62,7 +62,6 @@ sed -i -e 's/name: anypassword/name: apache_auth/' \
 /etc/openshift/master.yaml
 useradd joe
 useradd alice
-yum -y install httpd-tools
 touch /etc/openshift-passwd
 htpasswd -b /etc/openshift-passwd joe redhat
 htpasswd -b /etc/openshift-passwd alice redhat
