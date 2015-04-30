@@ -521,17 +521,19 @@ covers. Resources can have quotas enforced against them, so let's take a moment
 to look at some example JSON for project resource quota might look like:
 
     {
-      "id": "test-quota",
+      "apiVersion": "v1beta3",
       "kind": "ResourceQuota",
-      "apiVersion": "v1beta1",
+      "metadata": {
+        "name": "test-quota"
+      },
       "spec": {
         "hard": {
-          "memory": "512000000",
-          "cpu": "3",
+          "memory": "512Mi",
+          "cpu": "200m",
           "pods": "3",
           "services": "3",
-          "replicationcontrollers":"4",
-          "resourcequotas":"1"
+          "replicationcontrollers": "3",
+          "resourcequotas": "1"
         }
       }
     }
