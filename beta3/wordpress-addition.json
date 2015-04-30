@@ -23,7 +23,7 @@
       "containerPort": 80,
       "port": 80,
       "selector": {
-        "deploymentconfig": "wordpress"
+        "deploymentconfig": "centos7-wordpress"
       }
     }
   ]

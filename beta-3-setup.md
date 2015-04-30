@@ -2318,8 +2318,10 @@ again:
 
     osc edit bc ruby-sample-build
 
-Change the "uri" reference to match the name of your Github repository. Save and
-exit the editor.
+Change the "uri" reference to match the name of your Github
+repository. Assuming your github user is `alice`, you would point it
+to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
+the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
 that the `uri` has been updated.
@@ -2839,12 +2841,11 @@ image:
 
     https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
 
-We've taken the content of this subfolder and placed it in the `beta2/wordpress`
-folder in the `training` repository. Let's run `ex generate` and see what
+We've taken the content of this subfolder and placed it in the GitHub
+`openshift/centos7-wordpress` repository. Let's run `osc new-app` and see what
 happens:
 
-    openshift ex generate --name=wordpress \
-    https://github.com/openshift/centos7-wordpress.git | python -m json.tool
+    osc new-app https://github.com/openshift/centos7-wordpress.git -o yaml
 
 This all looks good for now.
 
@@ -2862,18 +2863,25 @@ As `alice`:
 ### Build Wordpress
 Let's choose the Wordpress example:
 
-    openshift ex generate --name=wordpress \
-    https://github.com/openshift/centos7-wordpress.git | osc create -f -
+    osc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
+    
+    services/centos7-wordpress
+    imageStreams/centos7-wordpress
+    buildConfigs/centos7-wordpress
+    deploymentConfigs/centos7-wordpress
+    Service "centos7-wordpress" created at 172.30.17.91:22 to talk to pods over port 22.
+    A build was created - you can run `osc start-build centos7-wordpress` to start it.
 
 Then, start the build:
 
-    osc start-build wordpress
+    osc start-build centos7-wordpress
 
 **Note: This can take a *really* long time to build.**
 
 You will need a route for this application, as `curl` won't do a whole lot for
-us here. Additionally, `ex generate` currently has a bug in the way services are
-provided, so we'll have a service for SSH but not one for httpd.
+us here. Additionally, `osc new-app` currently has a bug in the way services are
+detected, so we'll have a service for SSH (thus port 22 above) but not one for
+httpd. So we'll add on a service and route for web access.
 
     osc create -f wordpress-addition.json
 
@@ -2888,6 +2896,39 @@ Remember - not only did we use an arbitrary Docker image, we actually built the
 Docker image using OpenShift. Technically there was no "code repository". So, if
 you allow it, developers can actually simply build Docker containers as their
 "apps" and run them directly on OpenShift.
+
+### Application Resource Labels
+
+You may have wondered about the `-l name=wordpress` in the invocation above. This
+applies a label to all of the resources created by `osc new-app` so that they can
+be easily distinguished from any other resources in a project. For example, we
+can easily delete only the things with this label:
+
+    osc delete all -l name=wordpress
+    
+    buildConfigs/centos7-wordpress
+    builds/centos7-wordpress-1
+    deploymentConfigs/centos7-wordpress
+    imageStreams/centos7-wordpress
+    pods/centos7-wordpress-1
+    pods/centos7-wordpress-1-j64ck
+    replicationControllers/centos7-wordpress-1
+    services/centos7-wordpress
+
+Notice that the things we created from wordpress-addition.json didn't
+have this label, so they didn't get deleted:
+
+    osc get services
+    
+    NAME                      LABELS    SELECTOR                             IP             PORT(S)
+    wordpress-httpd-service   <none>    deploymentconfig=centos7-wordpress   172.30.17.83   80/TCP
+    
+    osc get route
+    
+    NAME              HOST/PORT                         PATH      SERVICE                   LABELS
+    wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service   
+
+Labels will be useful for many things, including identification in the web console.
 
 ## Conclusion
 This concludes the Beta 3 training. Look for more example applications to come!
