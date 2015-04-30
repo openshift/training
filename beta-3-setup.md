@@ -149,6 +149,16 @@
     - [Git repository access](#git-repository-access)
     - [Proxying Docker pull](#proxying-docker-pull)
     - [Future considerations](#future-considerations)
+- [APPENDIX - Installing in IaaS clouds](#appendix---installing-in-iaas-clouds)
+  - [Generic cloud install](#generic-cloud-install)
+    - [An example hosts file (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
+    - [Testing the auto-detected values](#testing-the-auto-detected-values)
+  - [Automated AWS install with Ansible](#automated-aws-install-with-ansible)
+    - [Requirements:](#requirements)
+    - [Assumptions made:](#assumptions-made)
+    - [Setup (modifying the values appropriately):](#setup-modifying-the-values-appropriately)
+    - [Configuring the hosts:](#configuring-the-hosts)
+    - [Accessing the hosts:](#accessing-the-hosts)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -3422,7 +3432,7 @@ Development is ongoing but current features include:
 After installation, open the OpenShift explorer view by clicking from the toolbar 'Window > Show View > Other' and typing 'OpenShift'
 in the dialog box that appears.
 
-### Connecting to the server
+### Connecting to the Server
 1. Click 'New Connection Wizard' and a dialog appears
 1. Select a v3 connection type
 1. Uncheck default server
@@ -3453,7 +3463,7 @@ HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
 HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 ~~~
 
-### Setting environment variables in Pods
+### Setting Environment Variables in Pods
 
 It's not only at build time that proxies are required.  Many applications will
 need them too.  In previous examples we used environment variables in
@@ -3482,7 +3492,7 @@ be done for configuring a `Pod`'s proxy at runtime:
 ...
 ~~~
 
-### Git repository access
+### Git Repository Access
 
 In most of the beta examples code has been hosted on GitHub.  This is strictly
 for convenience and in the near future documentation will be published to show
@@ -3507,7 +3517,7 @@ the `stiStrategy`:
 It's worth noting that if the variable is set on the `stiStrategy` it's not
 necessary to use the `.sti/environment` file.
 
-### Proxying Docker pull
+### Proxying Docker Pull
 
 This is yet another case where it may be necessary to tunnel traffic through a
 proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
@@ -3519,16 +3529,16 @@ HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
 HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 ~~~
 
-### Future considerations
+### Future Considerations
 
 We're working to have a single place that administrators can set proxies for
 all network traffic.
 
-# APPENDIX - Installing in IaaS clouds
+# APPENDIX - Installing in IaaS Clouds
 
-## Generic cloud install
+## Generic Cloud Install
 
-### An example hosts file (/etc/ansible/hosts)
+### An Example Hosts File (/etc/ansible/hosts)
 
     [OSEv3:children]
     masters
@@ -3551,7 +3561,7 @@ all network traffic.
     ec2-52-6-179-239.compute-1.amazonaws.com #The master
     ... <additional node hosts go here> ...
 
-### Testing the auto-detected values
+### Testing the Auto-detected Values
 Run the openshift_facts playbook:
 
     cd ~/openshift-ansible
@@ -3606,13 +3616,13 @@ Running ansible:
 
     ansible ~/openshift-ansible/playbooks/byo/config.yml
 
-## Automated AWS install with Ansible
+## Automated AWS Install With Ansible
 
 ### Requirements:
 - ansible-1.8.x
 - python-boto
 
-### Assumptions made:
+### Assumptions Made:
 - The user's ec2 credentials have the following permissions:
   - Create instances
   - Create EBS volumes
@@ -3625,7 +3635,7 @@ Running ansible:
   - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
 - If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
 
-### Setup (modifying the values appropriately):
+### Setup (Modifying the Values Appropriately):
 
     export AWS_ACCESS_KEY_ID=MY_ACCESS_KEY
     export AWS_SECRET_ACCESS_KEY=MY_SECRET_ACCESS_KEY
@@ -3637,10 +3647,10 @@ Running ansible:
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
-### Configuring the hosts:
+### Configuring the Hosts:
 
     ansible-playbook -i inventory/aws/hosts openshift_setup.yml
 
-### Accessing the hosts:
+### Accessing the Hosts:
 Each host will be created with an 'openshift' user that has passwordless sudo configured.
 
