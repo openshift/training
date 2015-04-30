@@ -531,8 +531,8 @@ to look at some example JSON for project resource quota might look like:
           "pods": "3",
           "services": "3",
           "replicationcontrollers":"4",
-          "resourcequotas":"1",
-        },
+          "resourcequotas":"1"
+        }
       }
     }
 
