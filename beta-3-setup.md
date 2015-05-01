@@ -105,9 +105,6 @@
     - [An example hosts file (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
     - [Testing the auto-detected values](#testing-the-auto-detected-values)
   - [Automated AWS install with Ansible](#automated-aws-install-with-ansible)
-    - [Setup (modifying the values appropriately):](#setup-modifying-the-values-appropriately)
-    - [Configuring the hosts:](#configuring-the-hosts)
-    - [Accessing the hosts:](#accessing-the-hosts)
 
 # OpenShift Beta 3
 ## Architecture and Requirements
