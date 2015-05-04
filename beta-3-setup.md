@@ -159,6 +159,9 @@
     - [Setup (modifying the values appropriately):](#setup-modifying-the-values-appropriately)
     - [Configuring the hosts:](#configuring-the-hosts)
     - [Accessing the hosts:](#accessing-the-hosts)
+- [APPENDIX - Linux, Mac, and Windows clients](#appendix---linux-mac-and-windows-clients)
+  - [Downloading The Clients](#downloading-the-clients)
+  - [Log In To Your OpenShift Environment](#log-in-to-your-openshift-environment)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1526,7 +1529,7 @@ Open a new terminal window as the `alice` user and the login to OpenShift:
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
     Login successful.
-    
+
     Using project "demo"
 
 `alice` has no projects of her own yet (she is not an administrator on
@@ -1545,7 +1548,7 @@ Also login as `alice` in the web console and confirm that she can view
 the `demo` project.
 
 `joe` could also give `alice` the role of `edit`, which gives her access to all
-activities except for project administration. 
+activities except for project administration.
 
     [joe]$ osadm policy add-role-to-user edit alice
 
@@ -1814,7 +1817,7 @@ You will see the following:
 
 What is the `openshift` project where we added these builders? This is a
 special project that can contain various elements that should be available to
-all users of the OpenShift environment. 
+all users of the OpenShift environment.
 
 ### Wait, What's an ImageStream?
 If you think about one of the important things that OpenShift needs to do, it's
@@ -2168,7 +2171,7 @@ Open a terminal as `alice`:
 
 Then:
 
-    osc project wiring 
+    osc project wiring
 
 Remember, your password was probably "redhat".
 
@@ -2202,7 +2205,7 @@ Go ahead and create the configuration:
 
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
-before continuing. 
+before continuing.
 
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
@@ -2621,7 +2624,7 @@ Like in OpenShift 2, we have the capability of "hooks" - performing actions both
 before and after the **deployment**. In other words, once an STI build is
 complete, the resulting Docker image is pushed into the registry. Once the push
 is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
-a **deployment**. 
+a **deployment**.
 
 The *pre*-deployment hook is executed just *before* the new image is deployed.
 
@@ -2959,7 +2962,7 @@ As `alice`:
 Let's choose the Wordpress example:
 
     osc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
-    
+
     services/centos7-wordpress
     imageStreams/centos7-wordpress
     buildConfigs/centos7-wordpress
@@ -3000,7 +3003,7 @@ be easily distinguished from any other resources in a project. For example, we
 can easily delete only the things with this label:
 
     osc delete all -l name=wordpress
-    
+
     buildConfigs/centos7-wordpress
     builds/centos7-wordpress-1
     deploymentConfigs/centos7-wordpress
@@ -3014,14 +3017,14 @@ Notice that the things we created from wordpress-addition.json didn't
 have this label, so they didn't get deleted:
 
     osc get services
-    
+
     NAME                      LABELS    SELECTOR                             IP             PORT(S)
     wordpress-httpd-service   <none>    deploymentconfig=centos7-wordpress   172.30.17.83   80/TCP
-    
+
     osc get route
-    
+
     NAME              HOST/PORT                         PATH      SERVICE                   LABELS
-    wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service   
+    wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service
 
 Labels will be useful for many things, including identification in the web console.
 
@@ -3654,3 +3657,43 @@ Running ansible:
 ### Accessing the Hosts:
 Each host will be created with an 'openshift' user that has passwordless sudo configured.
 
+# APPENDIX - Linux, Mac, and Windows clients
+
+The OpenShift client `osc` is available for Linux, Mac OSX, and Windows. You
+can use these clients to perform all tasks in this documentation that make use
+of the `osc` command.
+
+## Downloading The Clients
+
+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.4.3.2/x86_64/product-downloads)
+to download the Beta3 clients. You will need to sign into Customer Portal using
+an account that includes the OpenShift Enterprise High Touch Beta entitlements.
+
+**Note**: Certain versions of Internet Explorer will save the Windows
+client without the .exe extension. Please rename the file to `osc.exe`.
+
+## Log In To Your OpenShift Environment
+
+You will need to log into your environment using `osc login` as you have
+elsewhere. If you have access to the CA certificate you can pass it to osc with
+the --certificate-authority flag or otherwise import the CA into your host's
+certificate authority. If you do not import or specify the CA you will be
+prompted to accept an untrusted certificate which is not recommended.
+
+The CA is created on your master in `/var/lib/openshift/openshift.local.certificates/ca/cert.crt`
+
+    C:\Users\test\Downloads> osc --certificate-authority="cert.crt"
+    OpenShift server [[https://localhost:8443]]: https://ose3-master.example.com:8443
+    Authentication required for https://ose3-master.example.com:8443 (openshift)
+    Username: joe
+    Password:
+    Login successful.
+
+    Using project "sinatra"
+
+On Mac OSX and Linux you will need to make the file executable
+
+   chmod +x osc
+
+In the future users will be able to download clients directly from the OpenShift
+console rather than needing to visit Customer Portal.
