@@ -11,11 +11,9 @@
     - [DNS](#dns)
     - [Assumptions](#assumptions)
     - [Git](#git)
-    - [Your Environment](#your-environment)
     - [Preparing Each VM](#preparing-each-vm)
     - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
     - [Clone the Training Repository](#clone-the-training-repository)
-    - [REMINDER](#reminder)
   - [Ansible-based Installer](#ansible-based-installer)
     - [Install Ansible](#install-ansible)
     - [Generate SSH Keys](#generate-ssh-keys)
@@ -25,7 +23,7 @@
     - [Modify Hosts](#modify-hosts)
     - [Run the Ansible Installer](#run-the-ansible-installer)
     - [Add Development Users](#add-development-users)
-  - [Watching Logs](#watching-logs)
+  - [Useful OpenShift Logs](#useful-openshift-logs)
   - [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
     - [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
     - [A Project for Everything](#a-project-for-everything)
@@ -56,7 +54,7 @@
     - [Router Placement By Region](#router-placement-by-region)
   - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
     - [Creating the Definition](#creating-the-definition)
-    - [Status Report, Captain!](#status-report-captain)
+    - [Project Status](#project-status)
     - [Verifying the Service](#verifying-the-service)
     - [Verifying the Routing](#verifying-the-routing)
     - [The Web Console](#the-web-console)
@@ -77,12 +75,11 @@
     - [Testing the Application](#testing-the-application)
     - [Adding a Route to Our Application](#adding-a-route-to-our-application)
     - [Implications of Quota Enforcement on Scaling](#implications-of-quota-enforcement-on-scaling)
-  - [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
+  - [Templates, Instant Apps, and "Quickstarts"](#templates-instant-apps-and-quickstarts)
     - [A Project for the Quickstart](#a-project-for-the-quickstart)
     - [A Quick Aside on Templates](#a-quick-aside-on-templates)
     - [Adding the Template](#adding-the-template)
     - [Create an Instance of the Template](#create-an-instance-of-the-template)
-    - [The Template is Alive!](#the-template-is-alive)
     - [Using Your App](#using-your-app)
   - [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
     - [Create a New Project](#create-a-new-project-1)
@@ -96,26 +93,21 @@
     - [Fork the Repository](#fork-the-repository)
     - [Update the BuildConfig](#update-the-buildconfig)
     - [Change the Code](#change-the-code)
-- [ Welcome to an OpenShift v3 Demo App! ](#welcome-to-an-openshift-v3-demo-app)
-- [ This is my crustom demo! ](#this-is-my-crustom-demo)
     - [Start a Build with a Webhook](#start-a-build-with-a-webhook)
-    - [Oops!](#oops)
     - [Rollback](#rollback)
     - [Activate](#activate)
   - [Customized Build and Run Processes](#customized-build-and-run-processes)
     - [Add a Script](#add-a-script)
     - [Kick Off a Build](#kick-off-a-build)
     - [Watch the Build Logs](#watch-the-build-logs)
-    - [Did You See It?](#did-you-see-it)
   - [Lifecycle Pre and Post Deployment Hooks](#lifecycle-pre-and-post-deployment-hooks)
-    - [A Rails Database Migration](#a-rails-database-migration)
     - [Examining the Deployment Configuration](#examining-the-deployment-configuration)
     - [Modifying the Hooks](#modifying-the-hooks)
     - [Quickly Clean Up](#quickly-clean-up)
     - [Build Again](#build-again)
     - [Verify the Migration](#verify-the-migration)
   - [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
-    - [That Project Thing](#that-project-thing)
+    - [Create a Project](#create-a-project)
     - [Build Wordpress](#build-wordpress)
     - [Test Your Application](#test-your-application)
     - [Application Resource Labels](#application-resource-labels)
@@ -140,20 +132,19 @@
   - [Configure nodes to send openshift logs to your master](#configure-nodes-to-send-openshift-logs-to-your-master)
   - [Optionally Log Each Node to a unique directory](#optionally-log-each-node-to-a-unique-directory)
 - [APPENDIX - JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
-    - [Features](#features)
-    - [Installation](#installation)
-    - [Connecting to the server](#connecting-to-the-server)
+  - [Installation](#installation)
+  - [Connecting to the Server](#connecting-to-the-server)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
-    - [STI Builds](#sti-builds)
-    - [Setting environment variables in Pods](#setting-environment-variables-in-pods)
-    - [Git repository access](#git-repository-access)
-    - [Proxying Docker pull](#proxying-docker-pull)
-    - [Future considerations](#future-considerations)
-- [APPENDIX - Installing in IaaS clouds](#appendix---installing-in-iaas-clouds)
-  - [Generic cloud install](#generic-cloud-install)
-    - [An example hosts file (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
-    - [Testing the auto-detected values](#testing-the-auto-detected-values)
-  - [Automated AWS install with Ansible](#automated-aws-install-with-ansible)
+  - [STI Builds](#sti-builds)
+  - [Setting Environment Variables in Pods](#setting-environment-variables-in-pods)
+  - [Git Repository Access](#git-repository-access)
+  - [Proxying Docker Pull](#proxying-docker-pull)
+  - [Future Considerations](#future-considerations)
+- [APPENDIX - Installing in IaaS Clouds](#appendix---installing-in-iaas-clouds)
+  - [Generic Cloud Install](#generic-cloud-install)
+    - [An Example Hosts File (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
+    - [Testing the Auto-detected Values](#testing-the-auto-detected-values)
+  - [Automated AWS Install With Ansible](#automated-aws-install-with-ansible)
     - [Requirements:](#requirements)
     - [Assumptions made:](#assumptions-made)
     - [Setup (modifying the values appropriately):](#setup-modifying-the-values-appropriately)
@@ -237,7 +228,6 @@ You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
 in the labs.
 
-### Your Environment
 ### Preparing Each VM
 Once your VMs are built and you have verified DNS and network connectivity you
 can:
@@ -322,7 +312,7 @@ On your master, it makes sense to clone the training git repository:
     cd
     git clone https://github.com/openshift/training.git
 
-### REMINDER
+**REMINDER**
 Almost all of the files for this training are in the training folder you just
 cloned.
 
@@ -409,7 +399,7 @@ will create user accounts for two non-privileged users of OpenShift, *joe* and
 
 We will come back to these users later.
 
-## Watching Logs
+## Useful OpenShift Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
 `/var/log/messages` any longer. You will need to use `journalctl`.
 
@@ -424,9 +414,12 @@ window:
     journalctl -f -u openshift-sdn-master
     journalctl -f -u openshift-sdn-node
 
-**Note: You will want to do this on the other nodes as they are added, but you
+**Note:** You will want to do this on the other nodes as they are added, but you
 will not need the `master`-related services. These instructions will not appear
-again.**
+again.
+
+**Note:** There is an appendix on configuring [Log
+Aggregation](#appendix---infrastructure-log-aggregation)
 
 ## Auth, Projects, and the Web Console
 ### Configuring htpasswd Authentication
@@ -1404,7 +1397,7 @@ You can verify this with other `osc` commands:
 
     osc get routes
 
-### Status Report, Captain!
+### Project Status
 OpenShift provides a handy tool, `osc status`, to give you a summary of
 common resources existing in the current project:
 
@@ -2047,7 +2040,7 @@ automatically start after a minute or two.
 **Note:** Once the build is complete a new replication controller is
 created and the old one is no longer used.
 
-## A Fully-Integrated "Quickstart" Application
+## Templates, Instant Apps, and "Quickstarts"
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
 application also makes use of auto-generated parameters and other neat features
@@ -2126,7 +2119,6 @@ insantiated.
 
 Leave all of the defaults and simply click "Create".
 
-### The Template is Alive!
 Once you hit the "Create" button, the services and pods and
 replicationcontrollers etc. will be instantiated
 
@@ -2507,7 +2499,6 @@ You should see your big fat typo.
 updated. You might get a `503` error if you try to access the application before
 this happens.**
 
-### Oops!
 Since we failed to properly test our application, and our ugly typo has made it
 into production, a nastygram from corporate marketing has told us that we need
 to revert to the previous version, ASAP.
@@ -2595,7 +2586,7 @@ Using the skills you have learned, watch the build logs for this build. If you
 miss them, remember that you can find the Docker container that ran the build
 and look at its Docker logs.
 
-### Did You See It?
+Did You See It?
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM STI ASSEMBLE COMPLETE
@@ -2636,7 +2627,6 @@ This has the benefit of making your entire application environment available
 during the hook script's execution, should you need it. And, if not, that's OK,
 too.
 
-### A Rails Database Migration
 Since we already have our `wiring` app pointing at our forked code repository,
 let's go ahead and add a database migration file. In the `beta3` folder you will
 find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
@@ -2947,7 +2937,7 @@ happens:
 
 This all looks good for now.
 
-### That Project Thing
+### Create a Project
 As `root`, create a new project for Wordpress for `alice`:
 
     osadm new-project wordpress --display-name="Wordpress" \
@@ -3408,7 +3398,6 @@ See these documentation sources for additional rsyslog configuration information
 Support for OpenShift development using Eclipse is provided through the JBoss Tools plugin.  The plugin is available
 from the Jboss Tools nightly build of the Eclipse Mars.
 
-### Features
 Development is ongoing but current features include:
 
 - Connecting to an OpenShift server using Oauth
@@ -3418,7 +3407,7 @@ Development is ongoing but current features include:
     - Browsing project resources
 - Display of resource properties
 
-### Installation
+## Installation
 1. Install the Mars release of Eclipse from the [Eclipse Download site](http://www.eclipse.org/downloads/)
 1. Add the update site
   1. Click from the toolbar 'Help > Install New Sofware'
@@ -3435,7 +3424,7 @@ Development is ongoing but current features include:
 After installation, open the OpenShift explorer view by clicking from the toolbar 'Window > Show View > Other' and typing 'OpenShift'
 in the dialog box that appears.
 
-### Connecting to the Server
+## Connecting to the Server
 1. Click 'New Connection Wizard' and a dialog appears
 1. Select a v3 connection type
 1. Uncheck default server
@@ -3452,7 +3441,7 @@ these situations there is typically an HTTP(S) proxy available.  Configuring
 OpenShift builds and deployments to use these proxies is as simple as setting
 standard environment variables.  The trick is knowing where to place them.
 
-### STI Builds
+## STI Builds
 
 Let's take the sinatra example.  That build uses fetches gems from
 rubygems.org.  The first thing we'll want to do is fork that codebase and
@@ -3466,7 +3455,7 @@ HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
 HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 ~~~
 
-### Setting Environment Variables in Pods
+## Setting Environment Variables in Pods
 
 It's not only at build time that proxies are required.  Many applications will
 need them too.  In previous examples we used environment variables in
@@ -3495,7 +3484,7 @@ be done for configuring a `Pod`'s proxy at runtime:
 ...
 ~~~
 
-### Git Repository Access
+## Git Repository Access
 
 In most of the beta examples code has been hosted on GitHub.  This is strictly
 for convenience and in the near future documentation will be published to show
@@ -3520,7 +3509,7 @@ the `stiStrategy`:
 It's worth noting that if the variable is set on the `stiStrategy` it's not
 necessary to use the `.sti/environment` file.
 
-### Proxying Docker Pull
+## Proxying Docker Pull
 
 This is yet another case where it may be necessary to tunnel traffic through a
 proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
@@ -3532,12 +3521,17 @@ HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
 HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 ~~~
 
-### Future Considerations
+## Future Considerations
 
 We're working to have a single place that administrators can set proxies for
 all network traffic.
 
 # APPENDIX - Installing in IaaS Clouds
+This appendix contains two "versions" of installation instructions. One is for
+"generic" clouds, where the installer does not provision any resources on the
+actual cloud (eg: it does not stand up VMs or configure security groups).
+Another is specifically for AWS, which can take your API credentials and
+configure the entire AWS environment, too.
 
 ## Generic Cloud Install
 
