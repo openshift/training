@@ -2623,9 +2623,6 @@ The *post*-deployment hook is executed just *after* the new image is deployed.
 
 How is this accomplished? OpenShift will actually spin-up an *extra* instance of
 your built image, execute your hook script(s), and then shut down. Neat, huh?
-This has the benefit of making your entire application environment available
-during the hook script's execution, should you need it. And, if not, that's OK,
-too.
 
 Since we already have our `wiring` app pointing at our forked code repository,
 let's go ahead and add a database migration file. In the `beta3` folder you will
