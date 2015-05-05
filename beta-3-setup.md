@@ -3115,31 +3115,6 @@ it's because Java is confusing.
 ## Conclusion
 This concludes the Beta 3 training. Look for more example applications to come!
 
-# APPENDIX - Extra STI code examples
-## Wildfly
-A Wildfly-based JEE application example is here:
-
-    https://github.com/bparees/javaee7-hol
-
-If you have successfully built and deployed the "integrated" example above, you
-can simply create a new project, change your context, and then:
-
-    osc process \
-    -f https://raw.githubusercontent.com/bparees/javaee7-hol/master/application-template-jeebuild.json \
-    | osc create -f -
-
-Once created, you can go through the same build process as before.
-
-**Note: You should wait for the database/mysql pod to come up before starting
-your build.**
-
-**Note: You will want to create a route for this app so that you can access it
-with your browser.**
-
-**Note: If you needed to pre-pull the Docker images, you will want to fetch
-`openshift/wildfly-8-centos` ahead of time. Also, if you were using sneakernet,
-you should also include that image in the list in the appendix below.**
-
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
 file. If you do not have the ability to manipulate DNS in your environment, or
