@@ -1063,6 +1063,24 @@ This HAProxy pool ultimately contains all pods that are in a service. Which
 service? The service that corresponds to the `serviceName` directive that you
 see above.
 
+### Creating a Wildcard Certificate
+In order to serve a valid certificate for secure access to applications in
+our cloud domain, we will need to create a key and wildcard certificate
+that the router will use by default for any routes that do not specify
+a key/cert of their own. OpenShift supplies a command for creating a
+key/cert signed by the OpenShift CA which we will use.  On the master:
+
+    CA=/var/lib/openshift/openshift.local.certificates/ca
+    osadm create-server-cert --signer-cert=$CA/cert.crt \
+          --signer-key=$CA/key.key --signer-serial=$CA/serial.txt \
+          --hostnames='*.cloudapps.example.com' \
+          --cert=cloudapps.crt --key=cloudapps.key
+
+Now we need to combine `cloudapps.crt` and `cloudapps.key` with the CA into
+a single PEM format file that the router needs in the next step.
+
+    cat cloudapps.crt cloudapps.key $CA/cert.crt > cloudapps.router.pem
+
 ### Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
 v3 services. It currently supports only HTTP(S) traffic (and "any"
@@ -1075,34 +1093,38 @@ proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
 OpenShift's admin command set enables you to deploy router pods automatically.
-As the `root` user, try running it with no options and you should see the note
-that a router is needed:
+As the `root` user, try running it with no options and you will see that
+some options are needed to create the router:
 
     osadm router
-    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
-    (no service). Pass --create to install.
-
-So, go ahead and do what it says:
-
-    osadm router --create
-    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
-    file path containing credentials for connecting the router to the master
-    with --credentials
+    Error: router could not be created; you must specify a .kubeconfig
+    file path containing credentials for connecting the router to the
+    master with --credentials
 
 Just about every form of communication with OpenShift components is secured by
-SSL and uses various certificates and authentication methods. Even though we set
-up our `.kubeconfig` for the root user, `osadm router` is asking us what
-credentials the *router* should use to communicate. We also need to specify the
-router image, since the tooling defaults to upstream/origin:
+SSL and uses various certificates and authentication methods. We set up our
+client config for the root user, but `osadm router` is asking us to supply
+credentials the *router* should use to contact the master.
 
-    osadm router --create \
+    osadm router --dry-run \
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig
+
+Adding that would be enough to allow the command to proceed, but if we want
+this router to work for our environment, we also need to specify the beta
+router image (the tooling defaults to upstream/origin otherwise) and we need
+to supply the wildcard cert/key that we created for the cloud domain.
+
+    osadm router --default-cert=cloudapps.router.pem \
     --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
-If this works, you'll see some output:
+You should see some output indicating what was created:
 
     services/router
     deploymentConfigs/router
+
+(If you get something wrong, these are the resources you need to delete or
+edit to fix it.)
 
 Let's check the pods with the following:
 
@@ -1439,12 +1461,31 @@ publicly-accessible OpenShift application!
 
 Hooray!
 
+You can also reach the route securely and check that it is using the right certificate:
+
+    # curl --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+             https://hello-openshift.cloudapps.example.com
+    Hello OpenShift!
+    # openssl s_client -connect hello.cloudapps.example.com:443 \
+                       -CAfile /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+    CONNECTED(00000003)
+    depth=1 CN = openshift-signer@1430768237
+    verify return:1
+    depth=0 CN = *.cloudapps.example.com
+    verify return:1
+    [...]
+
+The need for specifying the CA (signer) certificate above is due to the
+assumption that the CA is created self-signed by OpenShift. With a CA or
+all certificates signed by a trusted authority, it would not be necessary
+to specify the CA everywhere.
+
 ### The Web Console
 Take a moment to look in the web console to see if you can find everything that
 was just created.
 
 And, while you're at it, you can verify that visiting your app with HTTPS will
-also work (albeit with a self-signed certificate):
+also work (albeit with OpenShift-provided CA):
 
     https://hello-openshift.cloudapps.example.com
 
@@ -2559,7 +2600,7 @@ For full documentation on the other authentication options please refer to the
 [Official
 Documentation](http://docs.openshift.org/latest/architecture/authentication.html#authentication-integrations)
 
-### Prerequirements:
+### Prerequisites:
 
 * A working Router with a wildcard DNS entry pointed to it
 * A working Registry
