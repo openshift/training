@@ -93,6 +93,8 @@
     - [Fork the Repository](#fork-the-repository)
     - [Update the BuildConfig](#update-the-buildconfig)
     - [Change the Code](#change-the-code)
+- [ Welcome to an OpenShift v3 Demo App! ](#welcome-to-an-openshift-v3-demo-app)
+- [ This is my crustom demo! ](#this-is-my-crustom-demo)
     - [Start a Build with a Webhook](#start-a-build-with-a-webhook)
     - [Rollback](#rollback)
     - [Activate](#activate)
@@ -111,9 +113,13 @@
     - [Build Wordpress](#build-wordpress)
     - [Test Your Application](#test-your-application)
     - [Application Resource Labels](#application-resource-labels)
+  - [EAP Example](#eap-example)
+    - [Create a Project](#create-a-project-1)
+    - [Instantiate the Template](#instantiate-the-template)
+    - [Update the BuildConfig](#update-the-buildconfig-1)
+    - [Run the EAP Build](#run-the-eap-build)
+    - [Visit Your Application](#visit-your-application-1)
   - [Conclusion](#conclusion)
-- [APPENDIX - Extra STI code examples](#appendix---extra-sti-code-examples)
-  - [Wildfly](#wildfly)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
 - [APPENDIX - LDAP Authentication](#appendix---ldap-authentication)
@@ -146,10 +152,10 @@
     - [Testing the Auto-detected Values](#testing-the-auto-detected-values)
   - [Automated AWS Install With Ansible](#automated-aws-install-with-ansible)
     - [Requirements:](#requirements)
-    - [Assumptions made:](#assumptions-made)
-    - [Setup (modifying the values appropriately):](#setup-modifying-the-values-appropriately)
-    - [Configuring the hosts:](#configuring-the-hosts)
-    - [Accessing the hosts:](#accessing-the-hosts)
+    - [Assumptions Made:](#assumptions-made)
+    - [Setup (Modifying the Values Appropriately):](#setup-modifying-the-values-appropriately)
+    - [Configuring the Hosts:](#configuring-the-hosts)
+    - [Accessing the Hosts:](#accessing-the-hosts)
 - [APPENDIX - Linux, Mac, and Windows clients](#appendix---linux-mac-and-windows-clients)
   - [Downloading The Clients](#downloading-the-clients)
   - [Log In To Your OpenShift Environment](#log-in-to-your-openshift-environment)
@@ -3015,33 +3021,105 @@ have this label, so they didn't get deleted:
 
 Labels will be useful for many things, including identification in the web console.
 
-## Conclusion
-This concludes the Beta 3 training. Look for more example applications to come!
+## EAP Example
+This example requires internet access because the Maven configuration uses
+public repositories.
 
-# APPENDIX - Extra STI code examples
-## Wildfly
-A Wildfly-based JEE application example is here:
+If you have a Java application whose Maven configuration uses local
+repositories, or has no Maven requirements, you could probably substitute that
+code repository for the one below.
 
-    https://github.com/bparees/javaee7-hol
+### Create a Project
+Using the skills you have learned earlier in the training, create a new project
+for the EAP example. Choose a user as the administrator, and make sure to use
+that user in the subsequent commands as necessary.
 
-If you have successfully built and deployed the "integrated" example above, you
-can simply create a new project, change your context, and then:
+### Instantiate the Template
+When we imported the imagestreams into the `openshift` namespace earlier, we
+also brought in JBoss EAP and Tomcat STI builder images.
 
-    osc process \
-    -f https://raw.githubusercontent.com/bparees/javaee7-hol/master/application-template-jeebuild.json \
+There are currently several application templates that can be used with these
+images, except they leverage some features that were not available at the time
+beta3 was cut.
+
+We can still use them, but not in the same way we used the "Quickstart" template
+arlier. We will have to process them from the CLI and massage them to substitute
+some variables.
+
+If you simply execute the following:
+
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json 
+
+You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
+use in this template. Since beta3 doesn't support these, we will have to do some
+manual substitution. This template is already configured to use the EAP builder
+image.
+
+The following command will:
+
+* set the application name to *helloworld*
+* create a route for *helloworld.cloudapps.example.com*
+* set Github and Generic trigger secrets to *secret*
+* set the correct EAP image release
+* set the Git repository URI, reference, and folder (where to get the source
+    code)
+* pipe this into `osc create` so that the template becomes an actionable
+    configuration
+
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json \
+    | sed -e 's/${APPLICATION_NAME}/helloworld/' \
+    -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
+    -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
+    -e 's/${GENERIC_TRIGGER_SECRET/secret/' \
+    -e 's/${EAP_RELEASE}/6.4/' \
+    -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
+    -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
     | osc create -f -
 
-Once created, you can go through the same build process as before.
+### Update the BuildConfig
+The template assumes that the imageStream exists in our current project, but
+that is not the case. The EAP imageStream exists in the `openshift` namespace.
+So we need to edit the resulting `buildConfig` and specify that.
 
-**Note: You should wait for the database/mysql pod to come up before starting
-your build.**
+    osc edit bc helloworld -o json
 
-**Note: You will want to create a route for this app so that you can access it
-with your browser.**
+You will need to edit the `strategy` section to look like the following:
 
-**Note: If you needed to pre-pull the Docker images, you will want to fetch
-`openshift/wildfly-8-centos` ahead of time. Also, if you were using sneakernet,
-you should also include that image in the list in the appendix below.**
+    "strategy": {
+        "type": "STI",
+        "stiStrategy": {
+            "tag": "6.4",
+            "from": {
+                "kind": "ImageStream",
+                "name": "jboss-eap6-openshift",
+                "namespace": "openshift"
+            },
+            "clean": true
+        }
+    },
+
+### Run the EAP Build
+Once done, save and exit, which will update the `buildConfig`. Then, start the
+build as `joe`:
+
+    osc start-build helloworld
+
+You can watch the build if you choose, or just look at the web console and wait
+for it to finish. If you do watch the build, you might notice some Maven errors.
+These are non-critical and will not affect the success or failure of the build.
+
+### Visit Your Application
+We specified a route when the template was processed, so you should be able to
+visit your app at:
+
+    helloworld.cloudapps.example.com/jboss-helloworld
+
+The reason that it is "/jboss-helloworld" and not just "/" is because the
+helloworld application does not use a "ROOT.war". If you don't understand this,
+it's because Java is confusing.
+
+## Conclusion
+This concludes the Beta 3 training. Look for more example applications to come!
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
