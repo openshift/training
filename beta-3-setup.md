@@ -342,7 +342,7 @@ Disable EPEL so that it is not accidentally used later:
 There's currently a bug in the latest Ansible version, so we need to use a
 slightly older one. Install the packages for Ansible:
 
-    yum -y --enablerepo=epel install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm
+    yum -y --enablerepo=epel install ansible
 
 ### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
