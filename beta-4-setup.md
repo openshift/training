@@ -1,85 +1,151 @@
-# OpenShift Beta 4 Setup Information
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-**Table of contents:**
+- [OpenShift Beta 4 Setup Information](#openshift-beta-4-setup-information)
+  - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
+  - [Assumptions](#assumptions)
+  - [Architecture and Requirememts](#architecture-and-requirememts)
+    - [Architecture](#architecture)
+    - [Requirements](#requirements)
+  - [Setting Up the Environment](#setting-up-the-environment)
+    - [DNS](#dns)
+    - [Git](#git)
+    - [Your Environment](#your-environment)
+    - [Preparing Each VM](#preparing-each-vm)
+    - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
+    - [Clone the Training Repository](#clone-the-training-repository)
+    - [REMINDER](#reminder)
+  - [Ansible-based Installer](#ansible-based-installer)
+    - [Install Ansible](#install-ansible)
+    - [Generate SSH Keys](#generate-ssh-keys)
+    - [Distribute SSH Keys](#distribute-ssh-keys)
+    - [Clone the Ansible Repository](#clone-the-ansible-repository)
+    - [Configure Ansible](#configure-ansible)
+    - [Modify Hosts](#modify-hosts)
+    - [Run the Ansible Installer](#run-the-ansible-installer)
+    - [Add Development Users](#add-development-users)
+  - [Watching Logs](#watching-logs)
+  - [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
+    - [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
+    - [A Project for Everything](#a-project-for-everything)
+    - [Web Console](#web-console)
+  - [Your First Application](#your-first-application)
+    - ["Resources"](#resources)
+    - [Applying Quota to Projects](#applying-quota-to-projects)
+    - [Login](#login)
+    - [Grab the Training Repo Again](#grab-the-training-repo-again)
+    - [The Hello World Definition JSON](#the-hello-world-definition-json)
+    - [Run the Pod](#run-the-pod)
+    - [Looking at the Pod in the Web Console](#looking-at-the-pod-in-the-web-console)
+    - [Quota Usage](#quota-usage)
+    - [Extra Credit](#extra-credit)
+    - [Delete the Pod](#delete-the-pod)
+    - [Quota Enforcement](#quota-enforcement)
+  - [Adding Nodes](#adding-nodes)
+    - [Modifying the Ansible Configuration](#modifying-the-ansible-configuration)
+  - [Regions and Zones](#regions-and-zones)
+    - [Scheduler and Defaults](#scheduler-and-defaults)
+    - [The NodeSelector](#the-nodeselector)
+    - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
+    - [Restart the Master](#restart-the-master)
+    - [Label Your Nodes](#label-your-nodes)
+  - [Services](#services)
+  - [Routing](#routing)
+    - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
+    - [Creating the Router](#creating-the-router)
+    - [Router Placement By Region](#router-placement-by-region)
+  - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
+    - [Creating the Definition](#creating-the-definition)
+    - [Status Report, Captain!](#status-report-captain)
+    - [Verifying the Service](#verifying-the-service)
+    - [Verifying the Routing](#verifying-the-routing)
+    - [The Web Console](#the-web-console)
+  - [Project Administration](#project-administration)
+    - [Deleting a Project](#deleting-a-project)
+  - [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
+    - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
+  - [STI - What Is It?](#sti---what-is-it)
+    - [Create a New Project](#create-a-new-project)
+    - [Switch Projects](#switch-projects)
+    - [A Simple Code Example](#a-simple-code-example)
+    - [CLI versus Console](#cli-versus-console)
+    - [Adding the Builder ImageStreams](#adding-the-builder-imagestreams)
+    - [Adding Code Via the Web Console](#adding-code-via-the-web-console)
+    - [The Web Console Revisited](#the-web-console-revisited)
+    - [Examining the Build](#examining-the-build)
+    - [Testing the Application](#testing-the-application)
+    - [Adding a Route to Our Application](#adding-a-route-to-our-application)
+  - [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
+    - [A Project for the Quickstart](#a-project-for-the-quickstart)
+    - [A Quick Aside on Templates](#a-quick-aside-on-templates)
+    - [Adding the Template](#adding-the-template)
+    - [Create an Instance of the Template](#create-an-instance-of-the-template)
+    - [The Template is Alive!](#the-template-is-alive)
+    - [Using Your App](#using-your-app)
+  - [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
+    - [Create a New Project](#create-a-new-project-1)
+    - [Stand Up the Frontend](#stand-up-the-frontend)
+    - [Webhooks](#webhooks)
+    - [Visit Your Application](#visit-your-application)
+    - [Create the Database Config](#create-the-database-config)
+    - [Visit Your Application Again](#visit-your-application-again)
+    - [Replication Controllers](#replication-controllers)
+    - [Revisit the Webpage](#revisit-the-webpage)
+  - [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
+    - [Fork the Repository](#fork-the-repository)
+    - [Update the BuildConfig](#update-the-buildconfig)
+    - [Change the Code](#change-the-code)
+- [ Welcome to an OpenShift v3 Demo App! ](#welcome-to-an-openshift-v3-demo-app)
+- [ This is my crustom demo! ](#this-is-my-crustom-demo)
+    - [Kick Off Another Build](#kick-off-another-build)
+    - [Oops!](#oops)
+    - [Rollback](#rollback)
+    - [Activate](#activate)
+  - [Customized Build Process](#customized-build-process)
+    - [Add a Script](#add-a-script)
+    - [Kick Off a Build](#kick-off-a-build)
+    - [Watch the Build Logs](#watch-the-build-logs)
+    - [Did You See It?](#did-you-see-it)
+  - [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
+    - [That Project Thing](#that-project-thing)
+    - [Build Wordpress](#build-wordpress)
+    - [Test Your Application](#test-your-application)
+  - [Conclusion](#conclusion)
+- [APPENDIX - Extra STI code examples](#appendix---extra-sti-code-examples)
+  - [Wildfly](#wildfly)
+- [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
+    - [Verifying DNSMasq](#verifying-dnsmasq)
+- [APPENDIX - LDAP Authentication](#appendix---ldap-authentication)
+    - [Prerequisites:](#prerequisites)
+    - [Setting up an example LDAP server:](#setting-up-an-example-ldap-server)
+    - [Creating the Basic Auth service](#creating-the-basic-auth-service)
+    - [Using an LDAP server external to OpenShift](#using-an-ldap-server-external-to-openshift)
+    - [Upcoming changes](#upcoming-changes)
+- [APPENDIX - Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
+- [APPENDIX - Cleaning Up](#appendix---cleaning-up)
+- [APPENDIX - Pretty Output](#appendix---pretty-output)
+- [APPENDIX - Troubleshooting](#appendix---troubleshooting)
+- [APPENDIX - Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
+  - [Enable Remote Logging on Master](#enable-remote-logging-on-master)
+  - [Enable logging to /var/log/openshift](#enable-logging-to-varlogopenshift)
+  - [Configure nodes to send openshift logs to your master](#configure-nodes-to-send-openshift-logs-to-your-master)
+  - [Optionally Log Each Node to a unique directory](#optionally-log-each-node-to-a-unique-directory)
+- [APPENDIX - JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
+    - [Features](#features)
+    - [Installation](#installation)
+    - [Connecting to the server](#connecting-to-the-server)
+- [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
+    - [STI Builds](#sti-builds)
+    - [Setting environment variables in Pods](#setting-environment-variables-in-pods)
+    - [Git repository access](#git-repository-access)
+    - [Proxying Docker pull](#proxying-docker-pull)
+    - [Future considerations](#future-considerations)
 
-* [Setting Up the Environment](#setting-up-the-environment)
-* [Ansible-based Installer](#ansible-based-installer)
-* [Watching Logs](#watching-logs)
-* [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
- * [Configuring htpasswd Authentication](#auth-projects-and-the-web-console)
- * [A Project for Everything](#a-project-for-everything)
- * [Web Console](#web-console)
-* [Your First Application](#your-first-application)
- * ["Resources"](#resources)
- * [Applying Quota to Projects](#applying-quota-to-projects)
- * [Login](#login)
- * [The Hello World Definition JSON](#the-hello-world-definition-json)
- * [Run the Pod](#run-the-pod)
- * [Delete the Pod](#delete-the-pod)
-* [Adding Nodes](#adding-nodes)
-* [Regions and Zones](#regions-and-zones)
- * [Scheduler and Defaults](#scheduler-and-defaults)
- * [Label Your Nodes](#label-your-nodes)
-* [Services](#services)
-* [Routing](#routing)
- * [Creating the Router](#creating-the-router)
- * [Router placement by region](#router-placement-by-region)
-* [The Complete Pod-Service-Route](#the-complete-pod-service-route)
- * [Creating the Definition](#creating-the-definition)
- * [Verifying the Service](#verifying-the-service)
- * [Verifying the Routing](#verifying-the-routing)
-* [Project Administration](#project-administration)
-* [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
-* [STI - What Is It?](#sti---what-is-it)
- * [Create a New Project](#create-a-new-project)
- * [Switch contexts](#switch-contexts)
- * [A Simple STI Build](#a-simple-sti-build)
- * [Create the Build Process](#create-the-build-process)
- * [Adding a Route to Our Application](#adding-a-route-to-our-application)
-* [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
- * [A Project for the Quickstart](#a-project-for-the-quickstart)
- * [A Quick Aside on Templates](#a-quick-aside-on-templates)
- * [Creating the Integrated Application](#creating-the-integrated-application)
-* [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
- * [Stand Up the Frontend](#stand-up-the-frontend)
- * [Webhooks](#webhooks)
- * [Create the Database Config](#create-the-database-config)
- * [Replication Controllers](#replication-controllers)
-* [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
- * [Update the BuildConfig](#update-the-buildconfig)
- * [Change the Code](#change-the-code)
- * [Kick Off Another Build](#kick-off-another-build)
- * [Rollback](#rollback)
- * [Activate](#activate)
-* [Customized Build Process](#customized-build-process)
-* [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
- * [That Project Thing](#that-project-thing)
- * [Build Wordpress](#build-wordpress)
- * [Test Your Application](#test-your-application)
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Appendices:**
-
-* [Extra STI code examples](#appendix---extra-sti-code-examples)
-* [DNSMasq setup](#appendix---dnsmasq-setup)
-* [LDAP Authentication](#appendix---ldap-authentication)
-* [Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
-* [Cleaning Up](#appendix---cleaning-up)
-* [Pretty Output](#appendix---pretty-output)
-* [Troubleshooting](#appendix---troubleshooting)
-* [Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
-* [JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
-* [Working with HTTP proxies](#appendix---working-with-http-proxies)
-
-## Use a Terminal Window Manager
-We **strongly** recommend that you use some kind of terminal window manager
-(Screen, Tmux).
-
-## Assumptions
-In most cases you will see references to "example.com" and other FQDNs related
-to it. If you choose not to use "example.com" in your configuration, that is
-fine, but remember that you will have to adjust files and actions accordingly.
-
-## Architecture and Requirememts
+# OpenShift Beta 4
+## Architecture and Requirements
 ### Architecture
 The documented architecture for the beta testing is pretty simple. There are
 three systems:
@@ -98,9 +164,8 @@ You will learn much more about the inner workings of OpenShift throughout the
 rest of the document.
 
 ### Requirements
-Each of the virtual machines should have 4+ GB of memory, 10 GB of space for
-the root filesystem and 10+ GB for container storage dependent on the size and
-number of the containers you wish to run.
+Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
+and the following configuration:
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
@@ -114,7 +179,80 @@ them to the *OpenShift Enterprise High Touch Beta* subscription.
 All of your VMs should be on the same logical network and be able to access one
 another.
 
-#### Docker Storage Setup
+## Setting Up the Environment
+### Use a Terminal Window Manager
+We **strongly** recommend that you use some kind of terminal window manager
+(Screen, Tmux).
+
+### DNS
+You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
+address of the OpenShift router. For this training, we will ensure that the
+router will end up on the OpenShift server that is running the master. Go
+ahead and create a wildcard DNS entry for "cloudapps" (or something similar),
+with a low TTL, that points to the public IP address of your master.
+
+For example:
+
+    *.cloudapps.example.com. 300 IN  A 192.168.133.2
+
+In almost all cases, when referencing VMs you must use hostnames and the
+hostnames that you use must match the output of `hostname -f` on each of your
+nodes. By extension, you must at least have all hostname/ip mappings in
+/etc/hosts files or forward DNS should work.
+
+It is possible to use dnsmasq inside of your beta environment to handle these
+duties. See the [appendix on
+dnsmasq](#appendix---dnsmasq-setup) if you can't easily manipulate your existing
+DNS environment.
+
+### Assumptions
+In most cases you will see references to "example.com" and other FQDNs related
+to it. If you choose not to use "example.com" in your configuration, that is
+fine, but remember that you will have to adjust files and actions accordingly.
+
+### Git
+You will either need internet access or read and write access to an internal
+http-based git server where you will duplicate the public code repositories used
+in the labs.
+
+### Preparing Each VM
+Once your VMs are built and you have verified DNS and network connectivity you
+can:
+
+* Configure yum / subscription manager as follows:
+
+        subscription-manager repos --disable="*"
+        subscription-manager repos \
+        --enable="rhel-7-server-rpms" \
+        --enable="rhel-7-server-extras-rpms" \
+        --enable="rhel-7-server-optional-rpms" \
+        --enable="rhel-server-7-ose-beta-rpms"
+
+    **Note:** You will have had to register/attach your system first.
+
+* Import the GPG key for beta:
+
+        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
+
+Onn **each** VM:
+
+1. Install deltarpm to make package updates a little faster:
+
+        yum -y install deltarpm
+
+1. Remove NetworkManager:
+
+        yum -y remove NetworkManager*
+
+1. Install missing packages:
+
+        yum -y install wget vim-enhanced net-tools bind-utils tmux git
+
+1. Update:
+
+        yum -y update
+
+### Docker Storage Setup (optional, recommended)
 **IMPORTANT:** The default docker storage configuration uses loopback devices
 and is not appropriate for production. Red Hat considers the dm.thinpooldev
 storage option to be the only appropriate configuration for production use.
@@ -166,73 +304,6 @@ images and containers on the host.
     rm -rf /var/lib/docker/*
     systemctl start docker
 ```
-
-
-## Setting Up the Environment
-### DNS
-You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
-address of the OpenShift router. For this training, we will ensure that the
-router will end up on the OpenShift server that is running the master. Go
-ahead and create a wildcard DNS entry for "cloudapps" (or something similar),
-with a low TTL, that points to the public IP address of your master.
-
-For example:
-
-    *.cloudapps.example.com. 300 IN  A 192.168.133.2
-
-In almost all cases, when referencing VMs you must use hostnames and the
-hostnames that you use must match the output of `hostname -f` on each of your
-nodes. By extension, you must at least have all hostname/ip mappings in
-/etc/hosts files or forward DNS should work.
-
-It is possible to use dnsmasq inside of your beta environment to handle these
-duties. See the [appendix on
-dnsmasq](#appendix---dnsmasq-setup) if you can't easily manipulate your existing
-DNS environment.
-
-### Git
-You will either need internet access or read and write access to an internal
-http-based git server where you will duplicate the public code repositories used
-in the labs.
-
-### Your Environment
-### Preparing Each VM
-Once your VMs are built and you have verified DNS and network connectivity you
-can:
-
-* Configure yum / subscription manager as follows:
-
-        subscription-manager repos --disable="*"
-        subscription-manager repos \
-        --enable="rhel-7-server-rpms" \
-        --enable="rhel-7-server-extras-rpms" \
-        --enable="rhel-7-server-optional-rpms" \
-        --enable="rhel-server-7-ose-beta-rpms"
-    
-    **Note:** You will have had to register/attach your system first.
-
-* Import the GPG key for beta:
-
-        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
-
-Onn **each** VM:
-
-1. Install deltarpm to make package updates a little faster:
-
-        yum -y install deltarpm
-
-1. Remove NetworkManager:
-
-        yum -y remove NetworkManager*
-
-1. Install missing packages:
-
-        yum -y install wget vim-enhanced net-tools bind-utils tmux git
-
-1. Update:
-
-        yum -y update
-
 ### Grab Docker Images (Optional, Recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
 environment happen **faster**, you'll need to first install Docker:
@@ -248,20 +319,31 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull openshift/ruby-20-centos7
-    docker pull openshift/mysql-55-centos7
+    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
+    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
-    docker pull centos:centos7
+    docker pull openshift/ruby-20-centos7
+
+**Note:** If you built your VM for a previous beta version and at some point
+used an older version of Docker, you need to *reinstall* or *remove+install*
+Docker after removing `/etc/sysconfig/docker`. The options in the config file
+changed and RPM will not overwrite your existing file if you just do a "yum
+update".
+
+    yum -y remove docker
+    rm /etc/sysconfig/docker
+    yum -y install docker
 
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
@@ -269,7 +351,7 @@ On your master, it makes sense to clone the training git repository:
     cd
     git clone https://github.com/openshift/training.git
 
-### REMINDER
+**REMINDER**
 Almost all of the files for this training are in the training folder you just
 cloned.
 
@@ -356,7 +438,7 @@ will create user accounts for two non-privileged users of OpenShift, *joe* and
 
 We will come back to these users later.
 
-## Watching Logs
+## Useful OpenShift Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
 `/var/log/messages` any longer. You will need to use `journalctl`.
 
@@ -371,9 +453,12 @@ window:
     journalctl -f -u openshift-sdn-master
     journalctl -f -u openshift-sdn-node
 
-**Note: You will want to do this on the other nodes as they are added, but you
+**Note:** You will want to do this on the other nodes as they are added, but you
 will not need the `master`-related services. These instructions will not appear
-again.**
+again.
+
+**Note:** There is an appendix on configuring [Log
+Aggregation](#appendix---infrastructure-log-aggregation)
 
 ## Auth, Projects, and the Web Console
 ### Configuring htpasswd Authentication
@@ -481,18 +566,20 @@ covers. Resources can have quotas enforced against them, so let's take a moment
 to look at some example JSON for project resource quota might look like:
 
     {
-      "id": "test-quota",
+      "apiVersion": "v1beta3",
       "kind": "ResourceQuota",
-      "apiVersion": "v1beta1",
+      "metadata": {
+        "name": "test-quota"
+      },
       "spec": {
         "hard": {
-          "memory": "512000000",
-          "cpu": "3",
+          "memory": "512Mi",
+          "cpu": "200m",
           "pods": "3",
           "services": "3",
-          "replicationcontrollers":"4",
-          "resourcequotas":"1",
-        },
+          "replicationcontrollers": "3",
+          "resourcequotas": "1"
+        }
       }
     }
 
@@ -552,6 +639,10 @@ If you go back into the web console and click into the "OpenShift 3 Demo"
 project, and click on the *Settings* tab, you'll see that the quota information
 is displayed.
 
+**Note:** Once creating the quota, it can take a few moments for it to be fully
+processed. If you get blank output from the `get` or `describe` commands, wait a
+few moments and try again.
+
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
 him, we can log into a terminal as *joe* and then set up the command line
@@ -563,15 +654,15 @@ Open a terminal as `joe`:
 
 Then, execute:
 
-    osc login -n demo \
+    osc login -u joe \
     --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
 our tool at the CA file.
 
-This created a file called `.config` in the `~/.config/openshift` folder. Take a
-look at it, and you'll see something like the following:
+The `login` process created a file called `.config` in the `~/.config/openshift`
+folder. Take a look at it, and you'll see something like the following:
 
     apiVersion: v1
     clusters:
@@ -847,8 +938,9 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
-look for a specific scheduler config file. Edit `/etc/openshift/master.yaml` and
-find the line with `schedulerConfigFile`. Change it to:
+look for a specific scheduler config file. As `root` edit
+`/etc/openshift/master.yaml` and find the line with `schedulerConfigFile`.
+Change it to:
 
     schedulerConfigFile: "/etc/openshift/scheduler.json"
 
@@ -961,7 +1053,7 @@ For your node2, add the following:
       "zone" : "west"
     },
 
-Then, update your nodes using the following:
+Then, as `root` update your nodes using the following:
 
     osc update node -f ~/nodes.json
 
@@ -1097,14 +1189,21 @@ As the `root` user, try running it with no options and you will see that
 some options are needed to create the router:
 
     osadm router
-    Error: router could not be created; you must specify a .kubeconfig
-    file path containing credentials for connecting the router to the
-    master with --credentials
+    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
+    (no service). Pass --create to install.
+
+So, go ahead and do what it says:
+
+    osadm router --create
+    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
+    file path containing credentials for connecting the router to the master
+    with --credentials
 
 Just about every form of communication with OpenShift components is secured by
-SSL and uses various certificates and authentication methods. We set up our
-client config for the root user, but `osadm router` is asking us to supply
-credentials the *router* should use to contact the master.
+SSL and uses various certificates and authentication methods. Even though we set
+up our `.kubeconfig` for the root user, `osadm router` is asking us what
+credentials the *router* should use to communicate. We also need to specify the
+router image, since the tooling defaults to upstream/origin:
 
     osadm router --dry-run \
     --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig
@@ -1118,13 +1217,10 @@ to supply the wildcard cert/key that we created for the cloud domain.
     --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
-You should see some output indicating what was created:
+If this works, you'll see some output:
 
     services/router
     deploymentConfigs/router
-
-(If you get something wrong, these are the resources you need to delete or
-edit to fix it.)
 
 Let's check the pods with the following:
 
@@ -1366,7 +1462,7 @@ You can verify this with other `osc` commands:
 
     osc get routes
 
-### Status Report, Captain!
+### Project Status
 OpenShift provides a handy tool, `osc status`, to give you a summary of
 common resources existing in the current project:
 
@@ -1484,31 +1580,35 @@ to specify the CA everywhere.
 Take a moment to look in the web console to see if you can find everything that
 was just created.
 
-And, while you're at it, you can verify that visiting your app with HTTPS will
-also work (albeit with OpenShift-provided CA):
-
-    https://hello-openshift.cloudapps.example.com
-
 ## Project Administration
-
-If `joe` now wants to let `alice` look at his project, with his project
-administrator rights he can add her using the `osadm policy` command:
+When we created the `demo` project, `joe` was made a project administrator. As
+an example of an administrative function, if `joe` now wants to let `alice` look
+at his project, with his project administrator rights he can add her using the
+`osadm policy` command:
 
     [joe]$ osadm policy add-role-to-user view alice
 
-Now login at the command line as `alice` to see what is available:
+**Note:** `osadm` will act, by default, on whatever project the user has
+selected. If you recall earlier, when we logged in as `joe` we ended up in the
+`demo` project. We'll see how to switch projects later.
 
-    osc login -u alice
+Open a new terminal window as the `alice` user and the login to OpenShift:
+
+    osc login -u alice \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --server=https://ose3-master.example.com:8443
+
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
     Login successful.
-    
+
     Using project "demo"
 
-`alice` has no projects of her own yet, so she is automatically configured
-to look at the `demo` project. She has "view" access, so `osc status`
-and `osc get pods` and so forth should show her the same thing as
-`joe`. However, she cannot make changes:
+`alice` has no projects of her own yet (she is not an administrator on
+anything), so she is automatically configured to look at the `demo` project
+since she has access to it. She has "view" access, so `osc status` and `osc get
+pods` and so forth should show her the same thing as `joe`. However, she cannot
+make changes:
 
     [alice]$ osc get pods
     POD                       IP         CONTAINER(S)      IMAGE(S)
@@ -1538,7 +1638,7 @@ affecting the existing project.
     [joe]$ osadm policy remove-user joe
 
 Check `osadm policy help` for a list of available commands to modify
-project permissions. OpenShift RBAC is extremely flexible; the roles
+project permissions. OpenShift RBAC is extremely flexible. The roles
 mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
@@ -1546,7 +1646,7 @@ access, etc. Check the documentation for more details:
 * http://docs.openshift.org/latest/dev_guide/authorization.html
 * https://github.com/openshift/origin/blob/master/docs/proposals/policy.md
 
-Of course, here be dragons. The basic roles should suffice for most uses.
+Of course, there be dragons. The basic roles should suffice for most uses.
 
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
@@ -1572,7 +1672,7 @@ should return no results.
 Note: As of beta4, a user with the `edit` role can actually delete the project.
 [This will be fixed](https://github.com/openshift/origin/issues/1885).
 
-## Preparing for STI and Other Things
+## Preparing for STI: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
 OpenShift 3 will provide a Docker registry that administrators may run inside
@@ -1727,7 +1827,7 @@ Let's see some JSON:
     osc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
 
 Take a look at the JSON that was generated. You will see some familiar items at
-this point, and some new ones, like `BuildConfig`, `ImageRepository` and others.
+this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
 
 Essentially, the STI process is as follows:
 
@@ -1745,14 +1845,16 @@ bug with services not being created.
 ### CLI versus Console
 There are currently two ways to get from source code to components on OpenShift.
 The CLI has a tool (`new-app`) that can take a source code repository as an
-input and then configure OpenShift to do what we need. You looked at that
-already. You can also just run `osc new-app --help` to see other things that
-`new-app` can help you achieve.
+input and will make its best guesses to configure OpenShift to do what we need
+to build and run the code. You looked at that already. 
+
+You can also just run `osc new-app --help` to see other things that `new-app`
+can help you achieve.
 
 The web console also lets you point directly at a source code repository, but
-requires a little bit more input to get things running. Let's go through an
-example of pointing to code via the web console. Later examples will use the CLI
-tools.
+requires a little bit more input from a user to get things running. Let's go
+through an example of pointing to code via the web console. Later examples will
+use the CLI tools.
 
 ### Adding the Builder ImageStreams
 While `new-app` has some built-in logic to help automatically determine the
@@ -1767,16 +1869,61 @@ of the builder images:
 
 You will see the following:
 
+    imageStreams/ruby-20-rhel7
+    imageStreams/nodejs-010-rhel7
+    imageStreams/perl-516-rhel7
+    imageStreams/python-33-rhel7
+    imageStreams/mysql-55-rhel7
+    imageStreams/postgresql-92-rhel7
+    imageStreams/mongodb-24-rhel7
+    imageStreams/eap-openshift
+    imageStreams/tomcat7-openshift
+    imageStreams/tomcat8-openshift
     imageStreams/ruby-20-centos7
     imageStreams/nodejs-010-centos7
     imageStreams/perl-516-centos7
     imageStreams/python-33-centos7
     imageStreams/wildfly-8-centos
 
-What is the `openshift` project where we added these builders? This is a special
-project that can contain various elements that should be available to all users
-of the OpenShift environment. There's not a whole lot for the user to do with
-these right now, so we'll go to the web console to create our "application".
+What is the `openshift` project where we added these builders? This is a
+special project that can contain various elements that should be available to
+all users of the OpenShift environment.
+
+### Wait, What's an ImageStream?
+If you think about one of the important things that OpenShift needs to do, it's
+to be able to deploy newer versions of user applications into Docker containers
+quickly. But an "application" is really two pieces -- the starting image (the
+STI builder) and the application code. While it's "obvious" that we need to
+update the deployed Docker containers when application code changes, it may not
+have been so obvious that we also need to update the deployed container if the
+**builder** image changes.
+
+For example, what if a security vulnerability in the Ruby runtime is discovered?
+It would be nice if we could automatically know this and take action. If you dig
+around in the JSON output above from `new-app` you will see some reference to
+"triggers". This is where `ImageStream`s come together.
+
+The `ImageStream` resource is, somewhat unsurprisingly, a definition for a
+stream of Docker images that might need to be paid attention to. By defining an
+`ImageStream` on "ruby-20-rhel7", for example, and then building an application
+against it, we have the ability with OpenShift to "know" when that `ImageStream`
+changes and take action based on that change. In our example from the previous
+paragraph, if the "ruby-20-rhel7" image changed in the Docker repository defined
+by the `ImageStream`, we might automatically trigger a new build of our
+application code.
+
+You may notice that some of the streams above have `rhel` in the name and others
+have `centos`. An organization will likely choose several supported builders and
+databases from Red Hat, but may also create their own builders, DBs, and other
+images. This system provides a great deal of flexibility.
+
+Feel free to look around `image-streams.json` for more details.  As you can see,
+we have provided definitions for EAP and Tomcat builders as well as other DBs
+and etc. Please feel free to experiment with these - we will attempt to provide
+sample apps as time progresses.
+
+When finished, let's go move over to the web console to create our
+"application".
 
 ### Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
@@ -1792,7 +1939,7 @@ referenced earlier. Enter this repo in the box:
 
 When you hit "Next" you will then be asked which builder image you want to use.
 This application uses the Ruby language, so make sure to click
-`ruby-20-centos7:latest`. You'll see a pop-up with some more details asking for
+`ruby-20-rhel7:latest`. You'll see a pop-up with some more details asking for
 confirmation. Click "Select image..."
 
 The next screen you see lets you begin to customize the information a little
@@ -1824,10 +1971,11 @@ You'll see some output to indicate the build:
 
     ruby-example-1
 
-OpenShift v3 is in a bit of a transtiion period between authentication
+OpenShift v3 is in a bit of a transition period between authentication
 paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
 performed by "normal" users, even if it makes sense that they should. Don't
-worry, we'll get there.
+worry, we'll get there. Feel free to try these things as a "normal" user - you
+will get a "forbidden" error.
 
 In order to watch the build logs, you actually need to be a cluster
 administratior right now. So, as `root`, you can do the following things:
@@ -1903,8 +2051,9 @@ When you are done, create your route:
 Check to make sure it was created:
 
     osc get route
-    NAME            HOST/PORT                             PATH      SERVICE                    LABELS
-    sinatra-route   hello-sinatra.cloudapps.example.com             simple-openshift-sinatra
+    NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
+    ruby-example         ruby-example-sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
+    ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
 
 And now, you should be able to verify everything is working right:
 
@@ -1913,7 +2062,62 @@ And now, you should be able to verify everything is working right:
 
 If you want to be fancy, try it in your browser!
 
-## A Fully-Integrated "Quickstart" Application
+You'll note above that there is a route involving "router.default.local". If you
+remember, when creating the application from the web console, there was a
+section for "route". In the future the router will provide more configuration
+options for default domains and etc. Currently, the "default" domain for
+applications is "router.default.local", which is most likely unusable in your
+environment.
+
+### Implications of Quota Enforcement on Scaling
+Quotas have implications one may not immediately realize. As `root` assign a
+quota to the `sinatra` project.
+
+    osc create -f quota.json -n sinatra
+
+As `joe` scale your application up to three replicas by setting your Replication
+Controller's `replicas` value to 3.
+
+    osc get rc
+    CONTROLLER       CONTAINER(S)   REPLICAS
+    ruby-example-1   ruby-example   1
+
+    osc edit rc ruby-example-1
+
+Alter `replicas`
+
+    spec:
+      replicas: 3
+
+Wait a few seconds and you should see your application scaled up to 3 pods.
+
+    osc get pods
+    POD                    IP          CONTAINER(S) ... STATUS  CREATED
+    ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
+    ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
+    ruby-example-3-tzt0z   10.1.0.28   ruby-example ... Running About a minute
+
+You will also notice that these pods were distributed across our two nodes
+"east" and "west". Cool!
+
+Now start another build, wait a moment or two for your build to start.
+
+    osc start-build ruby-example
+
+    osc get builds
+    NAME             TYPE      STATUS     POD
+    ruby-example-1   STI       Complete   ruby-example-1
+    ruby-example-2   STI       New        ruby-example-2
+
+The build never starts, what happened? The quota limits the number of pods in
+this project to three and this includes ephemeral pods like STI builders.
+Resize your application to just one replica and your new build will
+automatically start after a minute or two.
+
+**Note:** Once the build is complete a new replication controller is
+created and the old one is no longer used.
+
+## Templates, Instant Apps, and "Quickstarts"
 The next example will involve a build of another application, but also a service
 that has two pods -- a "front-end" web tier and a "back-end" database tier. This
 application also makes use of auto-generated parameters and other neat features
@@ -1938,7 +2142,7 @@ As the `joe` user, we'll set our context to use the corresponding namespace:
 
 ### A Quick Aside on Templates
 From the [OpenShift
-documentation](https://ci.openshift.redhat.com/openshift-docs-master-testing/latest/using_openshift/templates.html):
+documentation](http://docs.openshift.org/latest/dev_guide/templates.html):
 
     A template describes a set of resources intended to be used together that
     can be customized and processed to produce a configuration. Each template
@@ -1991,7 +2195,6 @@ insantiated.
 
 Leave all of the defaults and simply click "Create".
 
-### The Template is Alive!
 Once you hit the "Create" button, the services and pods and
 replicationcontrollers etc. will be instantiated
 
@@ -2026,7 +2229,7 @@ separate "applications" that we want to wire together.
 As the `root` user, create another new project for this "wiring" example. This
 time we'll make it belong to `alice`:
 
-    openshift admin new-project wiring --display-name="Exploring Parameters" \
+    osadm new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters' \
     --admin=alice
 
@@ -2036,9 +2239,7 @@ Open a terminal as `alice`:
 
 Then:
 
-    osc login -n wiring \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
-    --server=https://ose3-master.example.com:8443
+    osc project wiring
 
 Remember, your password was probably "redhat".
 
@@ -2072,54 +2273,7 @@ Go ahead and create the configuration:
 
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
-before continuing. It may take about 20-40 seconds for the automatic build to
-start:
-
-    https://github.com/openshift/origin/issues/1738
-
-### Webhooks
-
-**Note**: Since the build auto starts, we may want to move this to a later
-example.
-
-Webhooks are a way to integrate external systems into your OpenShift
-environment. They can be used to fire off builds. Generally speaking, one would
-make code changes, update the code repository, and then some process would hit
-OpenShift's webhook URL in order to start a build with the new code.
-
-Visit the web console, click into the project, click on *Browse* and then on
-*Builds*. You'll see two webhook URLs. Copy the *Generic* one. It should look
-like:
-
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
-
-If you look at the `frontend-config.json` file that you created earlier, you'll
-notice these same "secrets". These are kind of like user/password combinations
-to secure the build. More access control will be added around these webhooks,
-but, for now, this is the simple way it is achieved.
-
-This time, in order to run a build for the frontend, we'll use `curl` to hit our
-webhook URL.
-
-First, look at the list of builds:
-
-    osc get build
-
-You should see that the first build had completed. Then, `curl`:
-
-    curl -i -H "Accept: application/json" \
-    -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
-
-And now `get build` again:
-
-    osc get build
-    NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
-    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
-
-You can see that this could have been part of some CI/CD workflow that
-automatically called our webhook once the code was tested.
+before continuing.
 
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
@@ -2132,42 +2286,52 @@ Remember, `osc process` will examine a template, generate any desired
 parameters, and spit out a JSON `config`uration that can be `create`d with
 `osc`.
 
-First, we will generate a config for the database:
-
-    osc process -f db-template.json > db-config.json
-
 Processing the template for the db will generate some values for the DB root
 user and password, but they don't actually match what was previously generated
 when we set up the front-end. In the "quickstart" example, we generated these
-values and used them for both the frontend and the back-end at the exact same
-time. In this case, we need to do some manual intervention.
+values and used them for both the frontend and the backend at the exact same
+time. Since we are processing them separately now, some manual intervention is
+required.
 
-In the future, you'll be able to pass values into the template when it is
-processed, or things will be auto-populated (like in OpenShift v2).
+This template uses the OpenShift MySQL Docker container, which knows to take some
+env-vars when it fires up (eg: the MySQL user / password). More information on
+the specifics of this container can be found here:
 
-So, look at the frontend configuration (`frontend-config.json`) and find the
-value for `MYSQL_PASSWORD`. For example, `mugX5R2B`.
+    https://github.com/openshift/mysql
 
-Edit `db-config.json` and set the values for `MYSQL_PASSWORD`,
-`MYSQL_DATABASE`, and `MYSQL_USER` to match whatever is in your
-`frontend-config.json`. Once you are finished, you can create the backend:
+Take a look at the frontend configuration (`frontend-config.json`) and find the
+value for `MYSQL_USER`. For example, `userMXG`. Then insert these values into
+the template using the `process` command and create the result:
 
-    osc create -f db-config.json
+    grep -A 1 MYSQL_* frontend-config.json
+                                                "name": "MYSQL_USER",
+                                                "key": "MYSQL_USER",
+                                                "value": "userMXG"
+    --
+                                                "name": "MYSQL_PASSWORD",
+                                                "key": "MYSQL_PASSWORD",
+                                                "value": "slDrggRv"
+    --
+                                                "name": "MYSQL_DATABASE",
+                                                "key": "MYSQL_DATABASE",
+                                                "value": "root"
 
-All we are doing is leveraging the standard Dockerhub MySQL container, which
-knows to take some env-vars when it fires up (eg: the MySQL root password).
+    osc process -f db-template.json \
+        -v MYSQL_USER=userMXG,MYSQL_PASSWORD=slDrggRv,MYSQL_DATABASE=root \
+        | osc create -f -
 
-It may take a little while for the mysql container to download from the Docker
-Hub (if you didn't pre-fetch it), which can cause the frontend application to
-appear broken if it is restarted.  In reality it's simply polling for the
-database connection to become active.  It's a good idea to verify that that
-database is running at this point.  If you don't happen to have a mysql client
-installed you can verify it's running with curl:
+`osc process` can be passed values for parameters, which will override
+auto-generation.
+
+It may take a little while for the MySQL container to download (if you didn't
+pre-fetch it). It's a good idea to verify that the database is running before
+continuing.  If you don't happen to have a MySQL client installed you can still
+verify MySQL is running with curl:
 
     curl `osc get services | grep database | awk '{print $4}'`:5434
 
-Obviously mysql doesn't speak HTTP so you'll see garbled output like this
-(however, you'll know your database is running!):
+MySQL doesn't speak HTTP so you will see garbled output like this (however,
+you'll know your database is running!):
 
     5.6.2K\l-7mA<��F/T:emsy'TR~mysql_native_password!��#08S01Got packets out of order
 
@@ -2178,7 +2342,8 @@ there is no database?
 When the frontend was first built and created, there was no service called
 "database", so the environment variable `DATABASE_SERVICE_HOST` did not get
 populated with any values. Our database does exist now, and there is a service
-for it, but OpenShift did not "inject" those values into the running container.
+for it, but OpenShift could not "inject" those values into the frontend
+container.
 
 ### Replication Controllers
 The easiest way to get this going? Just nuke the existing pod. There is a
@@ -2186,15 +2351,16 @@ replication controller running for both the frontend and backend:
 
     osc get replicationcontroller
 
-The replication controller will ensure that we always have however many
-replicas (instances) running. We can look at how many that should be:
+The replication controller is configured to ensure that we always have the
+desired number of replicas (instances) running. We can look at how many that
+should be:
 
     osc describe rc frontend-1
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
 which means it will be able to connect to the DB, which means that we should no
-longer see these errors!
+longer see the database error!
 
 As `alice`, go ahead and find your frontend pod, and then kill it:
 
@@ -2202,10 +2368,15 @@ As `alice`, go ahead and find your frontend pod, and then kill it:
 
 You'll see something like:
 
+    pods/deployment-frontend-1-hook-gbnys
+    pods/deployment-frontend-1-hook-ot22m
     pods/frontend-1-b6bgy
 
 That was the generated name of the pod when the replication controller stood it
-up the first time. After a few moments, we can look at the list of pods again:
+up the first time. You also see some deployment hook pods. We will talk about
+deployment hooks a bit later.
+
+After a few moments, we can look at the list of pods again:
 
     osc get pod | grep front
 
@@ -2221,7 +2392,7 @@ id as `root`:
     docker inspect `docker ps | grep wiring | grep front | grep run | awk \
     '{print $1}'` | grep DATABASE
 
-The output will look like:
+The output will look something like:
 
     "MYSQL_DATABASE=root",
     "DATABASE_PORT_5434_TCP_ADDR=172.30.17.106",
@@ -2278,16 +2449,17 @@ frontend:
     parameters:
       output:
         to:
-          kind: ImageRepository
+          kind: ImageStream
           name: origin-ruby-sample
       source:
         git:
           uri: git://github.com/openshift/ruby-hello-world.git
+          ref: beta3
         type: Git
       strategy:
         stiStrategy:
-          builderImage: openshift/ruby-20-centos7
-          image: openshift/ruby-20-centos7
+          builderImage: openshift/ruby-20-rhel7
+          image: openshift/ruby-20-rhel7
         type: STI
     triggers:
     - github:
@@ -2298,30 +2470,32 @@ frontend:
       type: generic
     - imageChange:
         from:
-          name: ruby-20-centos7
-        image: openshift/ruby-20-centos7
+          name: ruby-20-rhel7
+        image: openshift/ruby-20-rhel7
         imageRepositoryRef:
-          name: ruby-20-centos7
+          name: ruby-20-rhel7
         tag: latest
       type: imageChange
 
 As you can see, the current configuration points at the
 `openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
-ahead and re-point our configuration. Assuming your github user is
-`alice`, you could do something like the following:
+ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
+again:
 
-    osc get buildconfig ruby-sample-build -o yaml | sed -e \
-    's/openshift\/ruby-hello-world/alice\/ruby-hello-world/' \
-    -e '/ref: beta2/d' | osc update \
-    buildconfig ruby-sample-build -f -
+    osc edit bc ruby-sample-build
+
+Change the "uri" reference to match the name of your Github
+repository. Assuming your github user is `alice`, you would point it
+to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
+the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
 that the `uri` has been updated.
 
 ### Change the Code
 Github's web interface will let you make edits to files. Go to your forked
-repository (eg: https://github.com/alice/ruby-hello-world) and find the file
-`main.erb` in the `views` folder.
+repository (eg: https://github.com/alice/ruby-hello-world), select the `beta3`
+branch, and find the file `main.erb` in the `views` folder.
 
 Change the following HTML:
 
@@ -2339,17 +2513,59 @@ You can edit code on Github by clicking the pencil icon which is next to the
 "History" button. Provide some nifty commit message like "Personalizing the
 application."
 
-### Kick Off Another Build
-Now that our code is changed, we can kick off another build process using the
-same webhook as before:
+If you know how to use Git/Github, you can just do this "normally".
+
+### Start a Build with a Webhook
+Webhooks are a way to integrate external systems into your OpenShift
+environment so that they can fire off OpenShift builds. Generally
+speaking, one would make code changes, update the code repository, and
+then some process would hit OpenShift's webhook URL in order to start
+a build with the new code.
+
+Your GitHub account has the capability to configure a webhook to request
+whenever a commit is pushed to a specific branch; however, it would only
+be able to make a request against your OpenShift master if that master
+is exposed on the Internet, so you will probably need to simulate the
+request manually for now.
+
+To find the webhook URL, you can visit the web console, click into the
+project, click on *Browse* and then on *Builds*. You'll see two webhook
+URLs. Copy the *Generic* one. It should look like:
+
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+
+If you look at the `frontend-config.json` file that you created earlier,
+you'll notice the same "secret101" entries in triggers. These are
+basically passwords so that just anyone on the web can't trigger the
+build with knowledge of the name only. You could of course have adjusted
+the passwords or had the template generate randomized ones.
+
+This time, in order to run a build for the frontend, we'll use `curl` to hit our
+webhook URL.
+
+First, look at the list of builds:
+
+    osc get build
+
+You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
     https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
 
-As soon as you issue this curl, you can check the web interface (logged in as
-`alice`) and see that the build is running. Once it is complete, point your web
-browser at the application:
+And now `get build` again:
+
+    osc get build
+    NAME                  TYPE      STATUS     POD
+    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
+    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
+
+You can see that this could have been part of some CI/CD workflow that
+automatically called our webhook once the code was tested.
+
+You can also check the web interface (logged in as `alice`) and see
+that the build is running. Once it is complete, point your web browser
+at the application:
 
     http://wiring.cloudapps.example.com/
 
@@ -2359,7 +2575,6 @@ You should see your big fat typo.
 updated. You might get a `503` error if you try to access the application before
 this happens.**
 
-### Oops!
 Since we failed to properly test our application, and our ugly typo has made it
 into production, a nastygram from corporate marketing has told us that we need
 to revert to the previous version, ASAP.
@@ -2374,7 +2589,7 @@ You can also see this information from the cli by doing:
 
 The semantics of this are that a `DeploymentConfig` ensures a
 `ReplicationController` is created to manage the deployment of the built `Image`
-from the `ImageRepository`.
+from the `ImageStream`.
 
 Simple, right?
 
@@ -2398,28 +2613,42 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
     osc rollback frontend-2
 
-## Customized Build Process
-OpenShift v3 supports customization of the build process. Generally speaking,
-this involves modifying the various STI scripts from the builder image. When
-OpenShift builds your code, it checks to see if any of the scripts in the
-`.sti/bin` folder of your repository override/supercede the builder image's
-scripts. If so, it will execute the repository script instead.
+## Customized Build and Run Processes
+OpenShift v3 supports customization of both the build and run processes.
+Generally speaking, this involves modifying the various STI scripts from the
+builder image. When OpenShift builds your code, it checks to see if any of the
+scripts in the `.sti/bin` folder of your repository override/supercede the
+builder image's scripts. If so, it will execute the repository script instead.
+
+More information on the scripts, their execution during the process, and
+customization can be found here:
+
+    http://docs.openshift.org/latest/creating_images/sti.html#sti-scripts
 
 ### Add a Script
-You will find a script called `custom-build.sh` in the `beta4` folder. Go to
-your Github repository for your application from the previous lab, and find the
-`.sti/bin` folder.
+You will find a script called `custom-assemble.sh` in the `beta3` folder. Go to
+your Github repository for your application from the previous lab, find the
+`beta3` branch, and find the `.sti/bin` folder.
 
 * Click the "+" button at the top (to the right of `bin` in the
     breadcrumbs).
 * Name your file `assemble`.
-* Paste the contents of `custom-build.sh` into the text area.
+* Paste the contents of `custom-assemble.sh` into the text area.
 * Provide a nifty commit message.
 * Click the "commit" button.
 
-Once this is complete, we can now do another build. The only difference in this
-"custom" assemble script is that it logs some extra output. We will see that
-shortly.
+**Note:** If you know how to Git(hub), you can do this via your shell.
+
+Now do the same thing for the file called `custom-run.sh` in the `beta3`
+directory.  The only difference is that this time the file will be called `run`
+in your repository's `.sti/bin` directory. There is currently a bug that
+requires that both of these files be present in the `.sti/bin` folder:
+
+    https://github.com/openshift/source-to-image/issues/173
+
+Once the files are added, we can now do another build. The only difference in
+the "custom" assemble and run scripts will be executed and log some extra
+output.  We will see that shortly.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
@@ -2433,10 +2662,334 @@ Using the skills you have learned, watch the build logs for this build. If you
 miss them, remember that you can find the Docker container that ran the build
 and look at its Docker logs.
 
-### Did You See It?
+Did You See It?
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM STI ASSEMBLE COMPLETE
+
+But where's the output from the custom `run` script? The `assemble` script is
+run inside of your builder pod. That's what you see by using `build-logs`. The
+`run` script actually is what is executed to "start" your application's pod. In
+other words, the `run` script is what starts the Ruby process for an image that
+was built based on the `ruby-20-rhel7` STI builder. As `root` run:
+
+    osc log -n wiring \
+    `osc get pods -n wiring | \
+    grep "^frontend-" | awk '{print $1}'` |\
+    grep -i custom
+
+You should see:
+
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
+
+You will be able to do this as the `alice` user once the proxy development is
+finished -- for the same reason that you cannot view build logs as regular
+users, you also can't view pod logs as regular users.
+
+## Lifecycle Pre and Post Deployment Hooks
+Like in OpenShift 2, we have the capability of "hooks" - performing actions both
+before and after the **deployment**. In other words, once an STI build is
+complete, the resulting Docker image is pushed into the registry. Once the push
+is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
+a **deployment**.
+
+The *pre*-deployment hook is executed just *before* the new image is deployed.
+
+The *post*-deployment hook is executed just *after* the new image is deployed.
+
+How is this accomplished? OpenShift will actually spin-up an *extra* instance of
+your built image, execute your hook script(s), and then shut down. Neat, huh?
+
+Since we already have our `wiring` app pointing at our forked code repository,
+let's go ahead and add a database migration file. In the `beta3` folder you will
+find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
+of the `ruby-hello-world` repository that you forked. If you don't add this file
+to the right folder, the rest of the steps will fail.
+
+### Examining the Deployment Configuration
+Since we are talking about **deployments**, let's look at our
+`DeploymentConfig`s. As the `alice` user in the `wiring` project:
+
+    osc get dc
+
+You should see something like:
+
+    NAME       TRIGGERS       LATEST VERSION
+    database   ConfigChange   1
+    frontend   ImageChange    7
+
+Since we are trying to associate a Rails database migration hook with our
+application, we are ultimately talking about a deployment of the frontend. If
+you edit the frontend's `DeploymentConfig`:
+
+    osc edit dc frontend -ojson
+
+Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+easier as it is indentation-insensitive.
+
+You should see a section that looks like the following:
+
+    "strategy": {
+        "type": "Recreate",
+        "recreateParams": {
+            "pre": {
+                "failurePolicy": "Abort",
+                "execNewPod": {
+                    "command": [
+                        "/bin/true"
+                    ],
+                    "env": [
+                        {
+                            "name": "CUSTOM_VAR1",
+                            "value": "custom_value1"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            },
+            "post": {
+                "failurePolicy": "Ignore",
+                "execNewPod": {
+                    "command": [
+                        "/bin/false"
+                    ],
+                    "env": [
+                        {
+                            "name": "CUSTOM_VAR2",
+                            "value": "custom_value2"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            }
+        }
+    },
+
+As you can see, we have both a *pre* and *post* deployment hook defined. They
+don't actually do anything useful. But they are good examples.
+
+The pre-deployment hook executes "/bin/true" whose exit code is always 0 --
+success. If for some reason this failed (non-zero exit), our policy would be to
+`Abort` -- consider the entire deployment a failure and stop.
+
+The post-deployment hook executes "/bin/false" whose exit code is always 1 --
+failure. The policy is to `Ignore`, or do nothing. For non-essential tasks that
+might rely on an external service, this might be a good policy.
+
+More information on these strategies, the various policies, and other
+information can be found in the documentation:
+
+    http://docs.openshift.org/latest/dev_guide/deployments.html
+
+Note that these hooks are not defined by default - OpenShift did not
+automatically generate them. If you look at the original JSON for the frontend
+(`frontend-template.json`), you'll see that they are already there.
+
+### Modifying the Hooks
+A Rails migration is commonly performed when we have added/modified the database
+as part of our code change. In the case of a pre- or post-deployment hook, it
+would make sense to:
+
+* Attempt to migrate the database
+* Abort the new deployment if the migration fails
+
+Otherwise we could end up with our new code deployed but our database schema
+would not match. This could be a *Real Bad Thing (TM)*.
+
+Since you should still have the `osc edit` session up, go ahead and delete the
+section for the `post`-deployment hook.
+
+In the case of the `ruby-20` builder image, we are actually using RHEL7 and the
+Red Hat Software Collections (SCL) to get our Ruby 2.0 support. So, the command
+we want to run looks like:
+
+    /usr/bin/scl enable ruby200 ror40 'cd /opt/openshift/src ; bundle exec rake db:migrate'
+
+This command:
+
+* executes inside an SCL "shell"
+* enables the Ruby 2.0.0 and Ruby On Rails 4.0 environments
+* changes to the `/opt/openshift/src` directory (where our applications' code is
+    located)
+* executes `bundle exec rake db:migrate`
+
+If you're not familiar with Ruby, Rails, or Bundler, that's OK. Just trust us.
+Would we lie to you?
+
+The `command` directive inside the hook's definition tells us which command to
+actually execute. It is required that this is an array of individual strings.
+Represented in JSON, our desired command above represented as a string array
+looks like:
+
+    "command": [
+        "/usr/bin/scl",
+        "enable",
+        "ruby200",
+        "ror40",
+        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+    ]
+
+This is great, but actually manipulating the database requires that we talk
+**to** the database. Talking to the database requires a user and a password.
+
+The pre- and post-deployment hook `env`ironments do not automatically inherit
+the environment variables normally defined in the pod template. If we want to
+make the database environment variables available during our hook, we need to
+additionally define them. The current example in our `deploymentConfig` shows
+the definition of some environment variables as part of the hooks. It looks very
+similar to the `podTemplate` section, too. In fact, you can just copy and paste
+the `env` section from the `podTemplate` section into your `pre` section.
+
+So, in the end, you will have something that looks like:
+
+    "strategy": {
+        "type": "Recreate",
+        "recreateParams": {
+            "pre": {
+                "failurePolicy": "Abort",
+                "execNewPod": {
+                    "command": [
+                        "/usr/bin/scl",
+                        "enable",
+                        "ruby200",
+                        "ror40",
+                        "cd /opt/openshift/src ; bundle exec rake db:migrate"
+                    ],
+                    "env": [
+                        {
+                            "name": "ADMIN_USERNAME",
+                            "key": "ADMIN_USERNAME",
+                            "value": "adminTLY"
+                        },
+                        {
+                            "name": "ADMIN_PASSWORD",
+                            "key": "ADMIN_PASSWORD",
+                            "value": "PMPuNmFY"
+                        },
+                        {
+                            "name": "MYSQL_USER",
+                            "key": "MYSQL_USER",
+                            "value": "userFXW"
+                        },
+                        {
+                            "name": "MYSQL_PASSWORD",
+                            "key": "MYSQL_PASSWORD",
+                            "value": "24JHg7iV"
+                        },
+                        {
+                            "name": "MYSQL_DATABASE",
+                            "key": "MYSQL_DATABASE",
+                            "value": "root"
+                        }
+                    ],
+                    "containerName": "ruby-helloworld"
+                }
+            },
+        }
+    },
+
+Yours might look slightly different, because it is likely OpenShift generated
+different passwords for you. Remember, indentation isn't critical in JSON, but
+closing brackets and braces are.
+
+When you are done editing the deployment config, save and quit your editor.
+
+### Quickly Clean Up
+When we did our previous builds and rollbacks and etc, we ended up with a lot of
+stale pods that are not running (`Succeeded`). Currently we do not auto-delete
+these pods because we have no log store -- once they are deleted, you can't view
+their logs any longer.
+
+For now, we can clean up by doing the following as `alice`:
+
+    osc get pod |\
+    grep -E "lifecycle|sti-build" |\
+    awk {'print $1'} |\
+    xargs -r osc delete pod
+
+This will get rid of all of our old build and lifecycle pods. The lifecycle pods
+are the pre- and post-deployment hook pods, and the sti-build pods are the pods
+in which our previous builds occurred.
+
+### Build Again
+Now that we have modified the deployment configuration and cleaned up a bit, we
+need to trigger another deployment. While killing the frontend pod would trigger
+another deployment, our current Docker image doesn't have the database migration
+file in it. Nothing really useful would happen.
+
+In order to get the database migration file into the Docker image, we actually
+need to do another build. Remember, the STI process starts with the builder
+image, fetches the source code, executes the (customized) assemble script, and
+then pushes the resulting Docker image into the registry. **Then** the
+deployment happens.
+
+As `alice`:
+
+    osc start-build ruby-sample-build
+
+### Verify the Migration
+Once the build is complete, you should see something like the following output
+of `osc get pod` as `alice`:
+
+    POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                       HOST                                    LABELS                                                                                                                  STATUS      CREATED
+    database-1-6lvao                   10.1.0.13   ruby-helloworld-database   registry.access.redhat.com/openshift3_beta/mysql-55-rhel7                                                      ose3-master.example.com/192.168.133.2   deployment=database-1,deploymentconfig=database,name=database,template=application-template-stibuild                    Running     2 hours
+    deployment-frontend-9-hook-wlqqx               lifecycle                  172.30.17.24:5000/wiring/origin-ruby-sample:85e3393a2827ae4ce42ea6abf45a08e42d7c0d5f527f6415d35a4d4847392ed1   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   4 minutes
+    frontend-9-cb4u9                   10.1.0.56   ruby-helloworld            172.30.17.24:5000/wiring/origin-ruby-sample:85e3393a2827ae4ce42ea6abf45a08e42d7c0d5f527f6415d35a4d4847392ed1   ose3-master.example.com/192.168.133.2   deployment=frontend-9,deploymentconfig=frontend,name=frontend,template=application-template-stibuild                    Running     3 minutes
+    ruby-sample-build-6                            sti-build                  openshift3_beta/ose-sti-builder:v0.4.3.2                                                                       ose3-master.example.com/192.168.133.2   build=ruby-sample-build-6,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded   5 minutes
+
+You'll see that there is a single `hook`/`lifecycle` pod -- this corresponds
+with the pod that ran our pre-deployment hook.
+
+Inspect this pod's logs:
+
+    osc log deployment-frontend-9-hook-wlqqx -n wiring
+
+**Note:** You'll have to perform this as `root`.
+
+The output likely shows:
+
+    2015-04-29T22:17:30.928941999Z == 1 SampleTable: migrating
+    ===================================================
+    2015-04-29T22:17:30.929014043Z -- create_table(:sample_table)
+    2015-04-29T22:17:30.929021057Z    -> 0.0995s
+    2015-04-29T22:17:30.929024656Z == 1 SampleTable: migrated (0.0999s)
+    ==========================================
+    2015-04-29T22:17:30.929027404Z
+
+If you have no output, you may have forgotten to actually put the migration file
+in your repo. Without that file, the migration does nothing, which produces no
+output.
+
+For giggles, you can even talk directly to the database on its service IP/port
+using the `mysql` client and the environment variables.
+
+As `alice`, find your database:
+
+    NAME       LABELS                                   SELECTOR        IP            PORT(S)
+    database   template=application-template-stibuild   name=database   172.30.17.5   5434/TCP
+
+Then, somewhere inside your OpenShift environment, use the `mysql` client to
+connect to this service and dump the table that we created:
+
+    mysql -u userJKL \
+      -p 5678efgh \
+      -h 172.30.17.208 \
+      -P 5434 \
+      -e 'show tables; describe sample_table;' \
+      root
+    +-------------------+
+    | Tables_in_root    |
+    +-------------------+
+    | sample_table      |
+    | key_pairs         |
+    | schema_migrations |
+    +-------------------+
+    +-------+--------------+------+-----+---------+----------------+
+    | Field | Type         | Null | Key | Default | Extra          |
+    +-------+--------------+------+-----+---------+----------------+
+    | id    | int(11)      | NO   | PRI | NULL    | auto_increment |
+    | name  | varchar(255) | NO   |     | NULL    |                |
+    +-------+--------------+------+-----+---------+----------------+
 
 ## Arbitrary Docker Image (Builder)
 One of the first things we did with OpenShift was launch an "arbitrary" Docker
@@ -2449,44 +3002,47 @@ image:
 
     https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
 
-We've taken the content of this subfolder and placed it in the `beta2/wordpress`
-folder in the `training` repository. Let's run `ex generate` and see what
+We've taken the content of this subfolder and placed it in the GitHub
+`openshift/centos7-wordpress` repository. Let's run `osc new-app` and see what
 happens:
 
-    openshift ex generate --name=wordpress \
-    https://github.com/openshift/centos7-wordpress.git | python -m json.tool
+    osc new-app https://github.com/openshift/centos7-wordpress.git -o yaml
 
 This all looks good for now.
 
-### That Project Thing
+### Create a Project
 As `root`, create a new project for Wordpress for `alice`:
 
     osadm new-project wordpress --display-name="Wordpress" \
     --description='Building an arbitrary Wordpress Docker image' \
-    --admin=htpasswd:alice
+    --admin=alice
 
 As `alice`:
 
-    cd ~/.kube
-    osc config set-context wordpress --cluster=ose3-master.example.com:8443 \
-    --namespace=wordpress --user=alice
-    osc config use-context wordpress
+    osc project wordpress
 
 ### Build Wordpress
 Let's choose the Wordpress example:
 
-    openshift ex generate --name=wordpress \
-    https://github.com/openshift/centos7-wordpress.git | osc create -f -
+    osc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
+
+    services/centos7-wordpress
+    imageStreams/centos7-wordpress
+    buildConfigs/centos7-wordpress
+    deploymentConfigs/centos7-wordpress
+    Service "centos7-wordpress" created at 172.30.17.91:22 to talk to pods over port 22.
+    A build was created - you can run `osc start-build centos7-wordpress` to start it.
 
 Then, start the build:
 
-    osc start-build wordpress
+    osc start-build centos7-wordpress
 
 **Note: This can take a *really* long time to build.**
 
 You will need a route for this application, as `curl` won't do a whole lot for
-us here. Additionally, `ex generate` currently has a bug in the way services are
-provided, so we'll have a service for SSH but not one for httpd.
+us here. Additionally, `osc new-app` currently has a bug in the way services are
+detected, so we'll have a service for SSH (thus port 22 above) but not one for
+httpd. So we'll add on a service and route for web access.
 
     osc create -f wordpress-addition.json
 
@@ -2502,33 +3058,138 @@ Docker image using OpenShift. Technically there was no "code repository". So, if
 you allow it, developers can actually simply build Docker containers as their
 "apps" and run them directly on OpenShift.
 
-## Conclusion
-This concludes the Beta 2 training. Look for more example applications to come!
+### Application Resource Labels
 
-# APPENDIX - Extra STI code examples
-## Wildfly
-A Wildfly-based JEE application example is here:
+You may have wondered about the `-l name=wordpress` in the invocation above. This
+applies a label to all of the resources created by `osc new-app` so that they can
+be easily distinguished from any other resources in a project. For example, we
+can easily delete only the things with this label:
 
-    https://github.com/bparees/javaee7-hol
+    osc delete all -l name=wordpress
 
-If you have successfully built and deployed the "integrated" example above, you
-can simply create a new project, change your context, and then:
+    buildConfigs/centos7-wordpress
+    builds/centos7-wordpress-1
+    deploymentConfigs/centos7-wordpress
+    imageStreams/centos7-wordpress
+    pods/centos7-wordpress-1
+    pods/centos7-wordpress-1-j64ck
+    replicationControllers/centos7-wordpress-1
+    services/centos7-wordpress
 
-    osc process \
-    -f https://raw.githubusercontent.com/bparees/javaee7-hol/master/application-template-jeebuild.json \
+Notice that the things we created from wordpress-addition.json didn't
+have this label, so they didn't get deleted:
+
+    osc get services
+
+    NAME                      LABELS    SELECTOR                             IP             PORT(S)
+    wordpress-httpd-service   <none>    deploymentconfig=centos7-wordpress   172.30.17.83   80/TCP
+
+    osc get route
+
+    NAME              HOST/PORT                         PATH      SERVICE                   LABELS
+    wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service
+
+Labels will be useful for many things, including identification in the web console.
+
+## EAP Example
+This example requires internet access because the Maven configuration uses
+public repositories.
+
+If you have a Java application whose Maven configuration uses local
+repositories, or has no Maven requirements, you could probably substitute that
+code repository for the one below.
+
+### Create a Project
+Using the skills you have learned earlier in the training, create a new project
+for the EAP example. Choose a user as the administrator, and make sure to use
+that user in the subsequent commands as necessary.
+
+### Instantiate the Template
+When we imported the imagestreams into the `openshift` namespace earlier, we
+also brought in JBoss EAP and Tomcat STI builder images.
+
+There are currently several application templates that can be used with these
+images, except they leverage some features that were not available at the time
+beta3 was cut.
+
+We can still use them, but not in the same way we used the "Quickstart" template
+arlier. We will have to process them from the CLI and massage them to substitute
+some variables.
+
+If you simply execute the following:
+
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json 
+
+You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
+use in this template. Since beta3 doesn't support these, we will have to do some
+manual substitution. This template is already configured to use the EAP builder
+image.
+
+The following command will:
+
+* set the application name to *helloworld*
+* create a route for *helloworld.cloudapps.example.com*
+* set Github and Generic trigger secrets to *secret*
+* set the correct EAP image release
+* set the Git repository URI, reference, and folder (where to get the source
+    code)
+* pipe this into `osc create` so that the template becomes an actionable
+    configuration
+
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json \
+    | sed -e 's/${APPLICATION_NAME}/helloworld/' \
+    -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
+    -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
+    -e 's/${GENERIC_TRIGGER_SECRET/secret/' \
+    -e 's/${EAP_RELEASE}/6.4/' \
+    -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
+    -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
     | osc create -f -
 
-Once created, you can go through the same build process as before.
+### Update the BuildConfig
+The template assumes that the imageStream exists in our current project, but
+that is not the case. The EAP imageStream exists in the `openshift` namespace.
+So we need to edit the resulting `buildConfig` and specify that.
 
-**Note: You should wait for the database/mysql pod to come up before starting
-your build.**
+    osc edit bc helloworld -o json
 
-**Note: You will want to create a route for this app so that you can access it
-with your browser.**
+You will need to edit the `strategy` section to look like the following:
 
-**Note: If you needed to pre-pull the Docker images, you will want to fetch
-`openshift/wildfly-8-centos` ahead of time. Also, if you were using sneakernet,
-you should also include that image in the list in the appendix below.**
+    "strategy": {
+        "type": "STI",
+        "stiStrategy": {
+            "tag": "6.4",
+            "from": {
+                "kind": "ImageStream",
+                "name": "jboss-eap6-openshift",
+                "namespace": "openshift"
+            },
+            "clean": true
+        }
+    },
+
+### Run the EAP Build
+Once done, save and exit, which will update the `buildConfig`. Then, start the
+build as `joe`:
+
+    osc start-build helloworld
+
+You can watch the build if you choose, or just look at the web console and wait
+for it to finish. If you do watch the build, you might notice some Maven errors.
+These are non-critical and will not affect the success or failure of the build.
+
+### Visit Your Application
+We specified a route when the template was processed, so you should be able to
+visit your app at:
+
+    helloworld.cloudapps.example.com/jboss-helloworld
+
+The reason that it is "/jboss-helloworld" and not just "/" is because the
+helloworld application does not use a "ROOT.war". If you don't understand this,
+it's because Java is confusing.
+
+## Conclusion
+This concludes the Beta 3 training. Look for more example applications to come!
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
@@ -2590,17 +3251,17 @@ wildcard space:
 OpenShift currently supports several authentication methods for obtaining API
 tokens.  While OpenID or one of the supported Oauth providers are preferred,
 support for services such as LDAP is possible today using either the [Basic Auth
-Remote](http://docs.openshift.org/latest/architecture/authentication.html#BasicAuthPasswordIdentityProvider)
+Remote](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#BasicAuthPasswordIdentityProvider)
 identity provider or the [Request
-Header](http://docs.openshift.org/latest/architecture/authentication.html#RequestHeaderIdentityProvider)
+Header](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#RequestHeaderIdentityProvider)
 Identity provider.  This example while demonstrate the ease of running a
 `BasicAuthPasswordIdentityProvider` on OpenShift.
 
 For full documentation on the other authentication options please refer to the
 [Official
-Documentation](http://docs.openshift.org/latest/architecture/authentication.html#authentication-integrations)
+Documentation](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html)
 
-### Prerequisites:
+### Prerequirements:
 
 * A working Router with a wildcard DNS entry pointed to it
 * A working Registry
@@ -2635,7 +3296,7 @@ While the example OpenLDAP service is itself mostly a toy, the Basic Auth
 service created below can easily be made highly available using OpenShift
 features.  It's a normal web service that happens to speak the [API required by
 the
-master](http://docs.openshift.org/latest/architecture/authentication.html#BasicAuthPasswordIdentityProvider)
+master](http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#BasicAuthPasswordIdentityProvider)
 and talk to an LDAP server.  Since it's stateless simply increasing the
 replicas in the replication controller is all that is needed to make the
 application highly available.
@@ -2644,7 +3305,7 @@ To make this as easy as possible for the beta training a helper script has been
 provided to create a Route, Service, Build Config and Deployment Config.  The
 Basic Auth service will be configured to use TLS all the way to the pod by
 means of the [Router's SNI
-capabilities](http://docs.openshift.org/latest/architecture/routing.html#passthrough-termination).
+capabilities](http://docs.openshift.org/latest/architecture/core_objects/routing.html#passthrough-termination).
 Since TLS is used this helper script will also generated the required
 certificates using OpenShift default CA.
 
@@ -2890,7 +3551,6 @@ See these documentation sources for additional rsyslog configuration information
 Support for OpenShift development using Eclipse is provided through the JBoss Tools plugin.  The plugin is available
 from the Jboss Tools nightly build of the Eclipse Mars.
 
-### Features
 Development is ongoing but current features include:
 
 - Connecting to an OpenShift server using Oauth
@@ -2900,7 +3560,7 @@ Development is ongoing but current features include:
     - Browsing project resources
 - Display of resource properties
 
-### Installation
+## Installation
 1. Install the Mars release of Eclipse from the [Eclipse Download site](http://www.eclipse.org/downloads/)
 1. Add the update site
   1. Click from the toolbar 'Help > Install New Sofware'
@@ -2917,7 +3577,7 @@ Development is ongoing but current features include:
 After installation, open the OpenShift explorer view by clicking from the toolbar 'Window > Show View > Other' and typing 'OpenShift'
 in the dialog box that appears.
 
-### Connecting to the server
+## Connecting to the Server
 1. Click 'New Connection Wizard' and a dialog appears
 1. Select a v3 connection type
 1. Uncheck default server
@@ -2934,7 +3594,7 @@ these situations there is typically an HTTP(S) proxy available.  Configuring
 OpenShift builds and deployments to use these proxies is as simple as setting
 standard environment variables.  The trick is knowing where to place them.
 
-### STI Builds
+## STI Builds
 
 Let's take the sinatra example.  That build uses fetches gems from
 rubygems.org.  The first thing we'll want to do is fork that codebase and
@@ -2948,7 +3608,7 @@ HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
 HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 ~~~
 
-### Setting environment variables in Pods
+## Setting Environment Variables in Pods
 
 It's not only at build time that proxies are required.  Many applications will
 need them too.  In previous examples we used environment variables in
@@ -2977,7 +3637,7 @@ be done for configuring a `Pod`'s proxy at runtime:
 ...
 ~~~
 
-### Git repository access
+## Git Repository Access
 
 In most of the beta examples code has been hosted on GitHub.  This is strictly
 for convenience and in the near future documentation will be published to show
@@ -3002,7 +3662,7 @@ the `stiStrategy`:
 It's worth noting that if the variable is set on the `stiStrategy` it's not
 necessary to use the `.sti/environment` file.
 
-### Proxying Docker pull
+## Proxying Docker Pull
 
 This is yet another case where it may be necessary to tunnel traffic through a
 proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
@@ -3014,7 +3674,173 @@ HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
 HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 ~~~
 
-### Future considerations
+## Future Considerations
 
 We're working to have a single place that administrators can set proxies for
 all network traffic.
+
+# APPENDIX - Installing in IaaS Clouds
+This appendix contains two "versions" of installation instructions. One is for
+"generic" clouds, where the installer does not provision any resources on the
+actual cloud (eg: it does not stand up VMs or configure security groups).
+Another is specifically for AWS, which can take your API credentials and
+configure the entire AWS environment, too.
+
+## Generic Cloud Install
+
+### An Example Hosts File (/etc/ansible/hosts)
+
+    [OSEv3:children]
+    masters
+    nodes
+    
+    [OSEv3:vars]
+    deployment_type=enterprise
+    
+    # The default user for the image used
+    ansible_ssh_user=ec2-user
+    
+    # host group for masters
+    # The entries should be either the publicly accessible dns name for the host
+    # or the publicly accessible IP address of the host.
+    [masters]
+    ec2-52-6-179-239.compute-1.amazonaws.com
+    
+    # host group for nodes
+    [nodes]
+    ec2-52-6-179-239.compute-1.amazonaws.com #The master
+    ... <additional node hosts go here> ...
+
+### Testing the Auto-detected Values
+Run the openshift_facts playbook:
+
+    cd ~/openshift-ansible
+    ansible-playbook playbooks/byo/openshift_facts.yml
+
+The output will be similar to:
+
+    ok: [10.3.9.45] => {
+        "result": {
+            "ansible_facts": {
+                "openshift": {
+                    "common": {
+                        "hostname": "ip-172-31-8-89.ec2.internal",
+                        "ip": "172.31.8.89",
+                        "public_hostname": "ec2-52-6-179-239.compute-1.amazonaws.com",
+                        "public_ip": "52.6.179.239",
+                        "use_openshift_sdn": true
+                    },
+                    "provider": {
+                      ... <snip> ...
+                    }
+                }
+            },
+            "changed": false,
+            "invocation": {
+                "module_args": "",
+                "module_name": "openshift_facts"
+            }
+        }
+    }
+    ...
+
+Next, we'll need to override the detected defaults if they are not what we expect them to be
+- hostname
+  * Should resolve to the internal ip from the instances themselves.
+  * openshift_hostname will override.
+* ip
+  * Should be the internal ip of the instance.
+  * openshift_ip will override.
+* public hostname
+  * Should resolve to the external ip from hosts outside of the cloud
+  * provider openshift_public_hostname will override.
+* public_ip
+  * Should be the externally accessible ip associated with the instance
+  * openshift_public_ip will override
+To override the the defaults, you can set the variables in your inventory. For example, if using AWS and managing dns externally, you can override the host public hostname as follows:
+
+    [masters]
+    ec2-52-6-179-239.compute-1.amazonaws.com openshift_public_hostname=ose3-master.public.example.com
+
+Running ansible:
+
+    ansible ~/openshift-ansible/playbooks/byo/config.yml
+
+## Automated AWS Install With Ansible
+
+### Requirements:
+- ansible-1.8.x
+- python-boto
+
+### Assumptions Made:
+- The user's ec2 credentials have the following permissions:
+  - Create instances
+  - Create EBS volumes
+  - Create and modify security groups
+    - The following security groups will be created:
+      - openshift-v3-training-master
+      - openshift-v3-training-node
+  - Create and update route53 record sets
+- The ec2 region selected is using ec2 classic or has a default vpc and subnets configured.
+  - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
+- If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
+
+### Setup (Modifying the Values Appropriately):
+
+    export AWS_ACCESS_KEY_ID=MY_ACCESS_KEY
+    export AWS_SECRET_ACCESS_KEY=MY_SECRET_ACCESS_KEY
+    export EC2_REGION=us-east-1
+    export EC2_AMI_ID=ami-12663b7a
+    export EC2_KEYPAIR=MY_KEYPAIR_NAME
+    export RHN_USERNAME=MY_RHN_USERNAME
+    export RHN_PASSWORD=MY_RHN_PASSWORD
+    export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
+    export ROUTE_53_HOST_ZONE=example.com
+
+### Configuring the Hosts:
+
+    ansible-playbook -i inventory/aws/hosts openshift_setup.yml
+
+### Accessing the Hosts:
+Each host will be created with an 'openshift' user that has passwordless sudo configured.
+
+# APPENDIX - Linux, Mac, and Windows clients
+
+The OpenShift client `osc` is available for Linux, Mac OSX, and Windows. You
+can use these clients to perform all tasks in this documentation that make use
+of the `osc` command.
+
+## Downloading The Clients
+
+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.4.3.2/x86_64/product-downloads)
+to download the Beta3 clients. You will need to sign into Customer Portal using
+an account that includes the OpenShift Enterprise High Touch Beta entitlements.
+
+**Note**: Certain versions of Internet Explorer will save the Windows
+client without the .exe extension. Please rename the file to `osc.exe`.
+
+## Log In To Your OpenShift Environment
+
+You will need to log into your environment using `osc login` as you have
+elsewhere. If you have access to the CA certificate you can pass it to osc with
+the --certificate-authority flag or otherwise import the CA into your host's
+certificate authority. If you do not import or specify the CA you will be
+prompted to accept an untrusted certificate which is not recommended.
+
+The CA is created on your master in `/var/lib/openshift/openshift.local.certificates/ca/cert.crt`
+
+    C:\Users\test\Downloads> osc --certificate-authority="cert.crt"
+    OpenShift server [[https://localhost:8443]]: https://ose3-master.example.com:8443
+    Authentication required for https://ose3-master.example.com:8443 (openshift)
+    Username: joe
+    Password:
+    Login successful.
+
+    Using project "sinatra"
+
+On Mac OSX and Linux you will need to make the file executable
+
+   chmod +x osc
+
+In the future users will be able to download clients directly from the OpenShift
+console rather than needing to visit Customer Portal.
