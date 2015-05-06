@@ -319,12 +319,12 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.0.0
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.0.0
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.0.0
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.0.0
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.0.0
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.0.0
     docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
 
 It may be advisable to pull the following Docker images as well, since they are
@@ -332,6 +332,7 @@ used during the various labs:
 
     docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
     docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
+    docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift
     docker pull openshift/ruby-20-centos7
 
