@@ -141,6 +141,7 @@
   - [Installation](#installation)
   - [Connecting to the Server](#connecting-to-the-server)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
+  - [Importing ImageStreams](#importing-imagestreams)
   - [STI Builds](#sti-builds)
   - [Setting Environment Variables in Pods](#setting-environment-variables-in-pods)
   - [Git Repository Access](#git-repository-access)
@@ -3517,6 +3518,34 @@ In many production environments direct access to the web is not allowed.  In
 these situations there is typically an HTTP(S) proxy available.  Configuring
 OpenShift builds and deployments to use these proxies is as simple as setting
 standard environment variables.  The trick is knowing where to place them.
+
+## Importing ImageStreams
+
+Since the importer is on the Master we need to make the configuration change
+there.  The easiest way to do that is to create a configuration file in
+`/etc/systemd/system/openshift-master.service.d/` and set appropriate values
+for `NO_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY`:
+
+~~~
+[Service]
+Environment="HTTP_PROXY=http://10.0.1.1:8080/" "HTTPS_PROXY=https://10.0.0.1:8080/" "NO_PROXY=master.example.com"
+~~~
+
+It's important that the Master doesn't use the proxy to access itself so make
+sure it's listed in the `NO_PROXY` value.
+
+Now restart the Service:
+~~~
+systemctl daemon-reload
+systemctl restart openshift-master
+~~~
+
+If you had previously imported ImageStreams without the proxy configuration to can re-run the process as follows:
+
+~~~
+osc delete imagestreams -n openshift --all
+osc create -f image-streams.json
+~~~
 
 ## STI Builds
 
