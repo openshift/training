@@ -691,7 +691,7 @@ In the beta3 training folder, you can see the contents of our pod definition by 
             }]
           }]
         }
-      },
+      }
     }
 
 In the simplest sense, a *pod* is an application or an instance of something. If
