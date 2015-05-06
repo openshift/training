@@ -342,7 +342,7 @@ Disable EPEL so that it is not accidentally used later:
 There's currently a bug in the latest Ansible version, so we need to use a
 slightly older one. Install the packages for Ansible:
 
-    yum -y --enablerepo=epel install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm
+    yum -y --enablerepo=epel install ansible
 
 ### Generate SSH Keys
 Because of the way Ansible works, SSH key distribution is required. First,
@@ -691,7 +691,7 @@ In the beta3 training folder, you can see the contents of our pod definition by 
             }]
           }]
         }
-      },
+      }
     }
 
 In the simplest sense, a *pod* is an application or an instance of something. If
@@ -3124,8 +3124,10 @@ This concludes the Beta 3 training. Look for more example applications to come!
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
 file. If you do not have the ability to manipulate DNS in your environment, or
-just want a quick and dirty way to set up DNS, you can install dnsmasq on your
-master:
+just want a quick and dirty way to set up DNS, you can install dnsmasq on one of
+your nodes. Do **not** install DNSMasq on your master. OpenShift now has an
+internal DNS service provided by Go's "SkyDNS" that is used for internal service
+communication, which will be explored more in beta4.
 
     yum -y install dnsmasq
 
@@ -3140,13 +3142,13 @@ You will need to ensure the following, or fix the following:
 
 * Your IP addresses match the entries in `/etc/hosts`
 * Your hostnames for your machines match the entries in `/etc/hosts`
-* Your `cloudapps` domain points to the correct ip (master) in `dnsmasq.conf`
+* Your `cloudapps` domain points to the correct node ip in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
-* Your master and nodes `/etc/resolv.conf` points to the IP address of a node as
-  the first nameserver
+* Your master and nodes `/etc/resolv.conf` points to the IP address of the node
+  running DNSMasq as the first nameserver
 * The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
   to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
-* That you also open port 53 (UDP) to allow DNS queries to hit the master
+* That you also open port 53 (UDP) to allow DNS queries to hit the node
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
 that your hosts in the `example.com` domain resolve, that any other DNS requests
