@@ -478,7 +478,7 @@ From there, we can create a password for our users, Joe and Alice:
     htpasswd -b /etc/openshift/htpasswd alice redhat
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master.yaml`. We need to edit the `oauthConfig`'s
+`/etc/openshift/master-config.yaml`. We need to edit the `oauthConfig`'s
 `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
@@ -499,7 +499,7 @@ If you're feeling lazy, use your friend `sed`:
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
     -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift\/htpasswd' \
-    /etc/openshift/master.yaml
+    /etc/openshift/master-config.yaml
 
 Restart `openshift-master`:
 
@@ -656,7 +656,7 @@ Open a terminal as `joe`:
 Then, execute:
 
     osc login -u joe \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
@@ -668,7 +668,7 @@ folder. Take a look at it, and you'll see something like the following:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+        certificate-authority: /etc/openshift/master/ca.crt
         server: https://ose3-master.example.com:8443
       name: ose3-master-example-com-8443
     contexts:
@@ -940,7 +940,7 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
 look for a specific scheduler config file. As `root` edit
-`/etc/openshift/master.yaml` and find the line with `schedulerConfigFile`.
+`/etc/openshift/master-config.yaml` and find the line with `schedulerConfigFile`.
 Change it to:
 
     schedulerConfigFile: "/etc/openshift/scheduler.json"
@@ -1163,16 +1163,16 @@ that the router will use by default for any routes that do not specify
 a key/cert of their own. OpenShift supplies a command for creating a
 key/cert signed by the OpenShift CA which we will use.  On the master:
 
-    CA=/var/lib/openshift/openshift.local.certificates/ca
-    osadm create-server-cert --signer-cert=$CA/cert.crt \
-          --signer-key=$CA/key.key --signer-serial=$CA/serial.txt \
+    CA=/etc/openshift/master
+    osadm create-server-cert --signer-cert=$CA/ca.crt
+          --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
           --hostnames='*.cloudapps.example.com' \
           --cert=cloudapps.crt --key=cloudapps.key
 
 Now we need to combine `cloudapps.crt` and `cloudapps.key` with the CA into
 a single PEM format file that the router needs in the next step.
 
-    cat cloudapps.crt cloudapps.key $CA/cert.crt > cloudapps.router.pem
+    cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
 
 ### Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
@@ -1207,7 +1207,7 @@ credentials the *router* should use to communicate. We also need to specify the
 router image, since the tooling defaults to upstream/origin:
 
     osadm router --dry-run \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig
+    --credentials=/etc/openshift/master/openshift-router.kubeconfig
 
 Adding that would be enough to allow the command to proceed, but if we want
 this router to work for our environment, we also need to specify the beta
@@ -1215,7 +1215,7 @@ router image (the tooling defaults to upstream/origin otherwise) and we need
 to supply the wildcard cert/key that we created for the cloud domain.
 
     osadm router --default-cert=cloudapps.router.pem \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
+    --credentials=/etc/openshift/master/openshift-router.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -1560,11 +1560,11 @@ Hooray!
 
 You can also reach the route securely and check that it is using the right certificate:
 
-    # curl --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    # curl --cacert /etc/openshift/master/ca.crt \
              https://hello-openshift.cloudapps.example.com
     Hello OpenShift!
     # openssl s_client -connect hello.cloudapps.example.com:443 \
-                       -CAfile /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+                       -CAfile /etc/openshift/master/ca.crt
     CONNECTED(00000003)
     depth=1 CN = openshift-signer@1430768237
     verify return:1
@@ -1596,7 +1596,7 @@ selected. If you recall earlier, when we logged in as `joe` we ended up in the
 Open a new terminal window as the `alice` user and the login to OpenShift:
 
     osc login -u alice \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
     Authentication required for https://ose3-master.example.com:8443 (openshift)
@@ -1684,7 +1684,7 @@ to set that up.
 registry. As the `root` user, run the following:
 
     osadm registry --create \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
+    --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
@@ -3320,7 +3320,7 @@ No arguments are required but the help output will show you the defaults:
     --git-repo git://github.com/brenton/basicauthurl-example.git
 
 Once you run the helper script it will output the configuration changes
-required for `/etc/openshift/master.yaml` as well as create
+required for `/etc/openshift/master-config.yaml` as well as create
 `basicauthurl.json`.  You can now feed that to `osc`:
 
     osc create -f basicauthurl.json
@@ -3333,16 +3333,16 @@ deployment.
 When the build finished you can run the following command to test that the
 Service is responding correctly:
 
-    curl -v -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    curl -v -u joe:redhat --cacert /etc/openshift/master/ca.crt \
         --resolve basicauthurl.example.com:443:`osc get services | grep basicauthurl | awk '{print $4}'` \
         https://basicauthurl.example.com/validate
 
 In that case in order for SNI to work correctly we had to trick curl with the `--resolve` flag.  If wildcard DNS is set up in your environment to point to the router then the following should test the service end to end:
 
-    curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    curl -u joe:redhat --cacert /etc/openshift/master/ca.crt \
         https://basicauthurl.example.com/validate
 
-If you've made the required changes to `/etc/openshift/mmaster.yaml` and
+If you've made the required changes to `/etc/openshift/master-config.yaml` and
 restarted `openshift-master` then you should now be able to log it with the
 example users `joe` and `alice` with the password `redhat`.
 
@@ -3441,7 +3441,7 @@ to limit some of what it returns:
         rm .kubeconfig
 
         osc login \
-        --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
+        --certificate-authority=/etc/openshift/master/ca.crt \
         --cluster=master --server=https://ose3-master.example.com:8443 \
         --namespace=[INSERT NAMESPACE HERE]
 
@@ -3830,9 +3830,9 @@ the --certificate-authority flag or otherwise import the CA into your host's
 certificate authority. If you do not import or specify the CA you will be
 prompted to accept an untrusted certificate which is not recommended.
 
-The CA is created on your master in `/var/lib/openshift/openshift.local.certificates/ca/cert.crt`
+The CA is created on your master in `/etc/openshift/master/ca.crt`
 
-    C:\Users\test\Downloads> osc --certificate-authority="cert.crt"
+    C:\Users\test\Downloads> osc --certificate-authority="ca.crt"
     OpenShift server [[https://localhost:8443]]: https://ose3-master.example.com:8443
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Username: joe
