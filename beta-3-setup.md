@@ -3522,13 +3522,14 @@ standard environment variables.  The trick is knowing where to place them.
 ## Importing ImageStreams
 
 Since the importer is on the Master we need to make the configuration change
-there.  The easiest way to do that is to create a configuration file in
-`/etc/systemd/system/openshift-master.service.d/` and set appropriate values
-for `NO_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY`:
+there.  The easiest way to do that is to add environment variables `NO_PROXY`,
+`HTTP_PROXY`, and `HTTPS_PROXY` to `/etc/sysconfig/openshift-master` then restart
+your master.
 
 ~~~
-[Service]
-Environment="HTTP_PROXY=http://10.0.1.1:8080/" "HTTPS_PROXY=https://10.0.0.1:8080/" "NO_PROXY=master.example.com"
+HTTP_PROXY=http://USERNAME:PASSWORD@10.0.1.1:8080/
+HTTPS_PROXY=https://USERNAME:PASSWORD@10.0.0.1:8080/
+NO_PROXY=master.example.com
 ~~~
 
 It's important that the Master doesn't use the proxy to access itself so make
@@ -3536,7 +3537,6 @@ sure it's listed in the `NO_PROXY` value.
 
 Now restart the Service:
 ~~~
-systemctl daemon-reload
 systemctl restart openshift-master
 ~~~
 
