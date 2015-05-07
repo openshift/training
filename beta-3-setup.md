@@ -3626,7 +3626,7 @@ configure the entire AWS environment, too.
 
 ## Generic Cloud Install
 
-#### An Example Hosts File (/etc/ansible/hosts)
+**An Example Hosts File (/etc/ansible/hosts):**
 
     [OSEv3:children]
     masters
@@ -3649,7 +3649,7 @@ configure the entire AWS environment, too.
     ec2-52-6-179-239.compute-1.amazonaws.com #The master
     ... <additional node hosts go here> ...
 
-#### Testing the Auto-detected Values
+**Testing the Auto-detected Values:**
 Run the openshift_facts playbook:
 
     cd ~/openshift-ansible
@@ -3707,11 +3707,11 @@ Running ansible:
 
 ## Automated AWS Install With Ansible
 
-#### Requirements:
+**Requirements:**
 - ansible-1.8.x
 - python-boto
 
-#### Assumptions Made:
+**Assumptions Made:**
 - The user's ec2 credentials have the following permissions:
   - Create instances
   - Create EBS volumes
@@ -3724,7 +3724,7 @@ Running ansible:
   - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
 - If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
 
-#### Setup (Modifying the Values Appropriately):
+**Setup (Modifying the Values Appropriately):**
 
     export AWS_ACCESS_KEY_ID=MY_ACCESS_KEY
     export AWS_SECRET_ACCESS_KEY=MY_SECRET_ACCESS_KEY
@@ -3736,14 +3736,14 @@ Running ansible:
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
-#### Clone the openshift-ansible repo and configure helpful symlinks:
+**Clone the openshift-ansible repo and configure helpful symlinks:**
     ansible-playbook clone_and_setup_repo.yml
 
-#### Configuring the Hosts:
+**Configuring the Hosts:**
 
     ansible-playbook -i inventory/aws/hosts openshift_setup.yml
 
-#### Accessing the Hosts:
+**Accessing the Hosts:**
 Each host will be created with an 'openshift' user that has passwordless sudo configured.
 
 # APPENDIX - Linux, Mac, and Windows clients
