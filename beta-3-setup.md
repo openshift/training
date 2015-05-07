@@ -3352,6 +3352,15 @@ to limit some of what it returns:
     osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 # APPENDIX - Troubleshooting
+
+An experimental diagnostics command is in progress for OpenShift v3, to hopefully
+be included in the openshift binary for the next release. For now, you can download
+the one for beta3 under [Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
+Running this may save you some time by pointing you in the right direction
+for common issues. This is very much still under development however.
+
+Common problems
+
 * All of a sudden authentication seems broken for non-admin users.  Whenever I run osc commands I see output such as:
 
         F0310 14:59:59.219087   30319 get.go:164] request
