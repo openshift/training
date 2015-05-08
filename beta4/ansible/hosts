@@ -18,5 +18,5 @@ ose3-master.example.com
 
 # host group for nodes
 [nodes]
-ose3-master.example.com
-#ose3-node[1:2].example.com
+ose3-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+#ose3-node[1:2].example.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"

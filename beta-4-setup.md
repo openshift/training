@@ -2,20 +2,19 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [OpenShift Beta 4 Setup Information](#openshift-beta-4-setup-information)
-  - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
-  - [Assumptions](#assumptions)
-  - [Architecture and Requirememts](#architecture-and-requirememts)
+- [OpenShift Beta 4](#openshift-beta-4)
+  - [Architecture and Requirements](#architecture-and-requirements)
     - [Architecture](#architecture)
     - [Requirements](#requirements)
   - [Setting Up the Environment](#setting-up-the-environment)
+    - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
     - [DNS](#dns)
+    - [Assumptions](#assumptions)
     - [Git](#git)
-    - [Your Environment](#your-environment)
     - [Preparing Each VM](#preparing-each-vm)
+    - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
     - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
     - [Clone the Training Repository](#clone-the-training-repository)
-    - [REMINDER](#reminder)
   - [Ansible-based Installer](#ansible-based-installer)
     - [Install Ansible](#install-ansible)
     - [Generate SSH Keys](#generate-ssh-keys)
@@ -25,7 +24,7 @@
     - [Modify Hosts](#modify-hosts)
     - [Run the Ansible Installer](#run-the-ansible-installer)
     - [Add Development Users](#add-development-users)
-  - [Watching Logs](#watching-logs)
+  - [Useful OpenShift Logs](#useful-openshift-logs)
   - [Auth, Projects, and the Web Console](#auth-projects-and-the-web-console)
     - [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
     - [A Project for Everything](#a-project-for-everything)
@@ -57,13 +56,13 @@
     - [Router Placement By Region](#router-placement-by-region)
   - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
     - [Creating the Definition](#creating-the-definition)
-    - [Status Report, Captain!](#status-report-captain)
+    - [Project Status](#project-status)
     - [Verifying the Service](#verifying-the-service)
     - [Verifying the Routing](#verifying-the-routing)
     - [The Web Console](#the-web-console)
   - [Project Administration](#project-administration)
     - [Deleting a Project](#deleting-a-project)
-  - [Preparing for STI and Other Things](#preparing-for-sti-and-other-things)
+  - [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
     - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
   - [STI - What Is It?](#sti---what-is-it)
     - [Create a New Project](#create-a-new-project)
@@ -71,22 +70,22 @@
     - [A Simple Code Example](#a-simple-code-example)
     - [CLI versus Console](#cli-versus-console)
     - [Adding the Builder ImageStreams](#adding-the-builder-imagestreams)
+    - [Wait, What's an ImageStream?](#wait-whats-an-imagestream)
     - [Adding Code Via the Web Console](#adding-code-via-the-web-console)
     - [The Web Console Revisited](#the-web-console-revisited)
     - [Examining the Build](#examining-the-build)
     - [Testing the Application](#testing-the-application)
     - [Adding a Route to Our Application](#adding-a-route-to-our-application)
-  - [A Fully-Integrated "Quickstart" Application](#a-fully-integrated-quickstart-application)
+    - [Implications of Quota Enforcement on Scaling](#implications-of-quota-enforcement-on-scaling)
+  - [Templates, Instant Apps, and "Quickstarts"](#templates-instant-apps-and-quickstarts)
     - [A Project for the Quickstart](#a-project-for-the-quickstart)
     - [A Quick Aside on Templates](#a-quick-aside-on-templates)
     - [Adding the Template](#adding-the-template)
     - [Create an Instance of the Template](#create-an-instance-of-the-template)
-    - [The Template is Alive!](#the-template-is-alive)
     - [Using Your App](#using-your-app)
   - [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
     - [Create a New Project](#create-a-new-project-1)
     - [Stand Up the Frontend](#stand-up-the-frontend)
-    - [Webhooks](#webhooks)
     - [Visit Your Application](#visit-your-application)
     - [Create the Database Config](#create-the-database-config)
     - [Visit Your Application Again](#visit-your-application-again)
@@ -98,26 +97,35 @@
     - [Change the Code](#change-the-code)
 - [ Welcome to an OpenShift v3 Demo App! ](#welcome-to-an-openshift-v3-demo-app)
 - [ This is my crustom demo! ](#this-is-my-crustom-demo)
-    - [Kick Off Another Build](#kick-off-another-build)
-    - [Oops!](#oops)
+    - [Start a Build with a Webhook](#start-a-build-with-a-webhook)
     - [Rollback](#rollback)
     - [Activate](#activate)
-  - [Customized Build Process](#customized-build-process)
+  - [Customized Build and Run Processes](#customized-build-and-run-processes)
     - [Add a Script](#add-a-script)
     - [Kick Off a Build](#kick-off-a-build)
     - [Watch the Build Logs](#watch-the-build-logs)
-    - [Did You See It?](#did-you-see-it)
+  - [Lifecycle Pre and Post Deployment Hooks](#lifecycle-pre-and-post-deployment-hooks)
+    - [Examining the Deployment Configuration](#examining-the-deployment-configuration)
+    - [Modifying the Hooks](#modifying-the-hooks)
+    - [Quickly Clean Up](#quickly-clean-up)
+    - [Build Again](#build-again)
+    - [Verify the Migration](#verify-the-migration)
   - [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
-    - [That Project Thing](#that-project-thing)
+    - [Create a Project](#create-a-project)
     - [Build Wordpress](#build-wordpress)
     - [Test Your Application](#test-your-application)
+    - [Application Resource Labels](#application-resource-labels)
+  - [EAP Example](#eap-example)
+    - [Create a Project](#create-a-project-1)
+    - [Instantiate the Template](#instantiate-the-template)
+    - [Update the BuildConfig](#update-the-buildconfig-1)
+    - [Run the EAP Build](#run-the-eap-build)
+    - [Visit Your Application](#visit-your-application-1)
   - [Conclusion](#conclusion)
-- [APPENDIX - Extra STI code examples](#appendix---extra-sti-code-examples)
-  - [Wildfly](#wildfly)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
 - [APPENDIX - LDAP Authentication](#appendix---ldap-authentication)
-    - [Prerequisites:](#prerequisites)
+    - [Prerequirements:](#prerequirements)
     - [Setting up an example LDAP server:](#setting-up-an-example-ldap-server)
     - [Creating the Basic Auth service](#creating-the-basic-auth-service)
     - [Using an LDAP server external to OpenShift](#using-an-ldap-server-external-to-openshift)
@@ -132,16 +140,21 @@
   - [Configure nodes to send openshift logs to your master](#configure-nodes-to-send-openshift-logs-to-your-master)
   - [Optionally Log Each Node to a unique directory](#optionally-log-each-node-to-a-unique-directory)
 - [APPENDIX - JBoss Tools for Eclipse](#appendix---jboss-tools-for-eclipse)
-    - [Features](#features)
-    - [Installation](#installation)
-    - [Connecting to the server](#connecting-to-the-server)
+  - [Installation](#installation)
+  - [Connecting to the Server](#connecting-to-the-server)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
-    - [Importing ImageStreams](#importing-imagestreams)
-    - [STI Builds](#sti-builds)
-    - [Setting environment variables in Pods](#setting-environment-variables-in-pods)
-    - [Git repository access](#git-repository-access)
-    - [Proxying Docker pull](#proxying-docker-pull)
-    - [Future considerations](#future-considerations)
+  - [Importing ImageStreams](#importing-imagestreams)
+  - [STI Builds](#sti-builds)
+  - [Setting Environment Variables in Pods](#setting-environment-variables-in-pods)
+  - [Git Repository Access](#git-repository-access)
+  - [Proxying Docker Pull](#proxying-docker-pull)
+  - [Future Considerations](#future-considerations)
+- [APPENDIX - Installing in IaaS Clouds](#appendix---installing-in-iaas-clouds)
+  - [Generic Cloud Install](#generic-cloud-install)
+  - [Automated AWS Install With Ansible](#automated-aws-install-with-ansible)
+- [APPENDIX - Linux, Mac, and Windows clients](#appendix---linux-mac-and-windows-clients)
+  - [Downloading The Clients](#downloading-the-clients)
+  - [Log In To Your OpenShift Environment](#log-in-to-your-openshift-environment)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -268,43 +281,40 @@ remaining space for the thinpool.
 
 *  A dedicated LVM volume group where you'd like to reate your thinpool
 
-```
-   echo <<EOF > /etc/sysconfig/docker-storage-setup
-   VG=docker-vg
-   SETUP_LVM_THIN_POOL=yes
-   EOF
-   docker-storage-setup
-```
+        echo <<EOF > /etc/sysconfig/docker-storage-setup
+        VG=docker-vg
+        SETUP_LVM_THIN_POOL=yes
+        EOF
+        docker-storage-setup
 
-*  A dedicated block device, which will be used to create a volume group and
-thinpool
-```
-   cat <<EOF > /etc/sysconfig/docker-storage-setup
-   DEVS=/dev/vdc
-   VG=docker-vg
-   SETUP_LVM_THIN_POOL=yes
-   EOF
-   docker-storage-setup
-```
+*  A dedicated block device, which will be used to create a volume group and thinpool
+
+        cat <<EOF > /etc/sysconfig/docker-storage-setup
+        DEVS=/dev/vdc
+        VG=docker-vg
+        SETUP_LVM_THIN_POOL=yes
+        EOF
+        docker-storage-setup
+
 Once complete you should have a thinpool named `docker-pool` and docker should
 be configured to use it in `/etc/sysconfig/docker-storage`.
-```
-  # lvs
-  LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
-  docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
 
-  # cat /etc/sysconfig/docker-storage
-  DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
-```
+    # lvs
+    LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
+    docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
+
+    # cat /etc/sysconfig/docker-storage
+    DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
+
 
 **Note:** If you had previously used docker with loopback storage you should
 clean out `/var/lib/docker` This is a destructive operation and will delete all
 images and containers on the host.
-```
+
     systemctl stop docker
     rm -rf /var/lib/docker/*
     systemctl start docker
-```
+
 ### Grab Docker Images (Optional, Recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
 environment happen **faster**, you'll need to first install Docker:
@@ -702,8 +712,7 @@ go ahead and grab it inside Joe's home folder:
     cd ~/training/beta4
 
 ### The Hello World Definition JSON
-In the beta4 training folder, you can see the contents of our pod definition by using
-`cat`:
+In the beta4 training folder, you can see the contents of our pod definition by using cat`:
 
     cat hello-pod.json
     {
@@ -1848,7 +1857,7 @@ bug with services not being created.
 There are currently two ways to get from source code to components on OpenShift.
 The CLI has a tool (`new-app`) that can take a source code repository as an
 input and will make its best guesses to configure OpenShift to do what we need
-to build and run the code. You looked at that already. 
+to build and run the code. You looked at that already.
 
 You can also just run `osc new-app --help` to see other things that `new-app`
 can help you achieve.
@@ -3120,7 +3129,7 @@ some variables.
 
 If you simply execute the following:
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json 
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json
 
 You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
 use in this template. Since beta3 doesn't support these, we will have to do some
@@ -3191,7 +3200,7 @@ helloworld application does not use a "ROOT.war". If you don't understand this,
 it's because Java is confusing.
 
 ## Conclusion
-This concludes the Beta 3 training. Look for more example applications to come!
+This concludes the Beta 4 training. Look for more example applications to come!
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
@@ -3634,11 +3643,9 @@ create a file called `.sti/environment`.  The contents of the file are simple
 shell variables.  Most libraries will look for `NO_PROXY`, `HTTP_PROXY`, and
 `HTTPS_PROXY` variables and react accordingly.
 
-~~~
-NO_PROXY=mycompany.com
-HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
-HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
-~~~
+    NO_PROXY=mycompany.com
+    HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+    HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 
 ## Setting Environment Variables in Pods
 
@@ -3647,8 +3654,7 @@ need them too.  In previous examples we used environment variables in
 `DeploymentConfig`s to pass in database connection information.  The same can
 be done for configuring a `Pod`'s proxy at runtime:
 
-~~~
-   {
+    {
       "apiVersion": "v1beta1",
       "kind": "DeploymentConfig",
       "metadata": {
@@ -3666,8 +3672,7 @@ be done for configuring a `Pod`'s proxy at runtime:
                         "name": "HTTP_PROXY",
                         "value": "http://USER:PASSWORD@IPADDR:PORT"
                       },
-...
-~~~
+    ...
 
 ## Git Repository Access
 
@@ -3677,19 +3682,17 @@ how best to integrate with GitLab as well as corporate git servers.  For now if
 you wish to use GitHub behind a proxy you can set an environment variable on
 the `stiStrategy`:
 
-~~~
-{
-  "stiStrategy": {
-    ...
-    "env": [
-      {
-        "Name": "HTTP_PROXY",
-        "Value": "http://USER:PASSWORD@IPADDR:PORT"
+    {
+      "stiStrategy": {
+        ...
+        "env": [
+          {
+            "Name": "HTTP_PROXY",
+            "Value": "http://USER:PASSWORD@IPADDR:PORT"
+          }
+        ]
       }
-    ]
-  }
-}
-~~~
+    }
 
 It's worth noting that if the variable is set on the `stiStrategy` it's not
 necessary to use the `.sti/environment` file.
@@ -3700,11 +3703,10 @@ This is yet another case where it may be necessary to tunnel traffic through a
 proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
 in shell format:
 
-~~~
-NO_PROXY=mycompany.com
-HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
-HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
-~~~
+    NO_PROXY=mycompany.com
+    HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+    HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
+
 
 ## Future Considerations
 
@@ -3720,30 +3722,31 @@ configure the entire AWS environment, too.
 
 ## Generic Cloud Install
 
-### An Example Hosts File (/etc/ansible/hosts)
+**An Example Hosts File (/etc/ansible/hosts):**
 
     [OSEv3:children]
     masters
     nodes
-    
+
     [OSEv3:vars]
     deployment_type=enterprise
-    
+
     # The default user for the image used
     ansible_ssh_user=ec2-user
-    
+
     # host group for masters
     # The entries should be either the publicly accessible dns name for the host
     # or the publicly accessible IP address of the host.
     [masters]
     ec2-52-6-179-239.compute-1.amazonaws.com
-    
+
     # host group for nodes
     [nodes]
-    ec2-52-6-179-239.compute-1.amazonaws.com #The master
+    ec2-52-6-179-239.compute-1.amazonaws.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" #The master
+    ec2-52-4-251-128.compute-1.amazonaws.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
     ... <additional node hosts go here> ...
 
-### Testing the Auto-detected Values
+**Testing the Auto-detected Values:**
 Run the openshift_facts playbook:
 
     cd ~/openshift-ansible
@@ -3789,22 +3792,23 @@ Next, we'll need to override the detected defaults if they are not what we expec
 * public_ip
   * Should be the externally accessible ip associated with the instance
   * openshift_public_ip will override
+
 To override the the defaults, you can set the variables in your inventory. For example, if using AWS and managing dns externally, you can override the host public hostname as follows:
 
     [masters]
-    ec2-52-6-179-239.compute-1.amazonaws.com openshift_public_hostname=ose3-master.public.example.com
+    ec2-52-6-179-239.compute-1.amazonaws.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" openshift_public_hostname=ose3-master.public.example.com
 
-Running ansible:
+**Running ansible:**
 
     ansible ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
-### Requirements:
+**Requirements:**
 - ansible-1.8.x
 - python-boto
 
-### Assumptions Made:
+**Assumptions Made:**
 - The user's ec2 credentials have the following permissions:
   - Create instances
   - Create EBS volumes
@@ -3817,7 +3821,7 @@ Running ansible:
   - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
 - If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
 
-### Setup (Modifying the Values Appropriately):
+**Setup (Modifying the Values Appropriately):**
 
     export AWS_ACCESS_KEY_ID=MY_ACCESS_KEY
     export AWS_SECRET_ACCESS_KEY=MY_SECRET_ACCESS_KEY
@@ -3829,11 +3833,14 @@ Running ansible:
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
-### Configuring the Hosts:
+**Clone the openshift-ansible repo and configure helpful symlinks:**
+    ansible-playbook clone_and_setup_repo.yml
+
+**Configuring the Hosts:**
 
     ansible-playbook -i inventory/aws/hosts openshift_setup.yml
 
-### Accessing the Hosts:
+**Accessing the Hosts:**
 Each host will be created with an 'openshift' user that has passwordless sudo configured.
 
 # APPENDIX - Linux, Mac, and Windows clients
@@ -3872,7 +3879,7 @@ The CA is created on your master in `/etc/openshift/master/ca.crt`
 
 On Mac OSX and Linux you will need to make the file executable
 
-   chmod +x osc
+    chmod +x osc
 
 In the future users will be able to download clients directly from the OpenShift
 console rather than needing to visit Customer Portal.

@@ -149,14 +149,7 @@
   - [Future Considerations](#future-considerations)
 - [APPENDIX - Installing in IaaS Clouds](#appendix---installing-in-iaas-clouds)
   - [Generic Cloud Install](#generic-cloud-install)
-    - [An Example Hosts File (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
-    - [Testing the Auto-detected Values](#testing-the-auto-detected-values)
   - [Automated AWS Install With Ansible](#automated-aws-install-with-ansible)
-    - [Requirements:](#requirements)
-    - [Assumptions Made:](#assumptions-made)
-    - [Setup (Modifying the Values Appropriately):](#setup-modifying-the-values-appropriately)
-    - [Configuring the Hosts:](#configuring-the-hosts)
-    - [Accessing the Hosts:](#accessing-the-hosts)
 - [APPENDIX - Linux, Mac, and Windows clients](#appendix---linux-mac-and-windows-clients)
   - [Downloading The Clients](#downloading-the-clients)
   - [Log In To Your OpenShift Environment](#log-in-to-your-openshift-environment)
@@ -668,8 +661,7 @@ go ahead and grab it inside Joe's home folder:
     cd ~/training/beta3
 
 ### The Hello World Definition JSON
-In the beta3 training folder, you can see the contents of our pod definition by using
-`cat`:
+In the beta3 training folder, you can see the contents of our pod definition by using cat`:
 
     cat hello-pod.json
     {
@@ -3049,7 +3041,7 @@ some variables.
 
 If you simply execute the following:
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json 
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json
 
 You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
 use in this template. Since beta3 doesn't support these, we will have to do some
@@ -3564,11 +3556,9 @@ create a file called `.sti/environment`.  The contents of the file are simple
 shell variables.  Most libraries will look for `NO_PROXY`, `HTTP_PROXY`, and
 `HTTPS_PROXY` variables and react accordingly.
 
-~~~
-NO_PROXY=mycompany.com
-HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
-HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
-~~~
+    NO_PROXY=mycompany.com
+    HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+    HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 
 ## Setting Environment Variables in Pods
 
@@ -3577,8 +3567,7 @@ need them too.  In previous examples we used environment variables in
 `DeploymentConfig`s to pass in database connection information.  The same can
 be done for configuring a `Pod`'s proxy at runtime:
 
-~~~
-   {
+    {
       "apiVersion": "v1beta1",
       "kind": "DeploymentConfig",
       "metadata": {
@@ -3596,8 +3585,8 @@ be done for configuring a `Pod`'s proxy at runtime:
                         "name": "HTTP_PROXY",
                         "value": "http://USER:PASSWORD@IPADDR:PORT"
                       },
-...
-~~~
+    ...
+
 
 ## Git Repository Access
 
@@ -3607,19 +3596,17 @@ how best to integrate with GitLab as well as corporate git servers.  For now if
 you wish to use GitHub behind a proxy you can set an environment variable on
 the `stiStrategy`:
 
-~~~
-{
-  "stiStrategy": {
-    ...
-    "env": [
-      {
-        "Name": "HTTP_PROXY",
-        "Value": "http://USER:PASSWORD@IPADDR:PORT"
+    {
+      "stiStrategy": {
+        ...
+        "env": [
+          {
+            "Name": "HTTP_PROXY",
+            "Value": "http://USER:PASSWORD@IPADDR:PORT"
+          }
+        ]
       }
-    ]
-  }
-}
-~~~
+    }
 
 It's worth noting that if the variable is set on the `stiStrategy` it's not
 necessary to use the `.sti/environment` file.
@@ -3630,11 +3617,9 @@ This is yet another case where it may be necessary to tunnel traffic through a
 proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
 in shell format:
 
-~~~
-NO_PROXY=mycompany.com
-HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
-HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
-~~~
+    NO_PROXY=mycompany.com
+    HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+    HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
 
 ## Future Considerations
 
@@ -3650,30 +3635,30 @@ configure the entire AWS environment, too.
 
 ## Generic Cloud Install
 
-### An Example Hosts File (/etc/ansible/hosts)
+**An Example Hosts File (/etc/ansible/hosts):**
 
     [OSEv3:children]
     masters
     nodes
-    
+
     [OSEv3:vars]
     deployment_type=enterprise
-    
+
     # The default user for the image used
     ansible_ssh_user=ec2-user
-    
+
     # host group for masters
     # The entries should be either the publicly accessible dns name for the host
     # or the publicly accessible IP address of the host.
     [masters]
     ec2-52-6-179-239.compute-1.amazonaws.com
-    
+
     # host group for nodes
     [nodes]
     ec2-52-6-179-239.compute-1.amazonaws.com #The master
     ... <additional node hosts go here> ...
 
-### Testing the Auto-detected Values
+**Testing the Auto-detected Values:**
 Run the openshift_facts playbook:
 
     cd ~/openshift-ansible
@@ -3707,7 +3692,7 @@ The output will be similar to:
     ...
 
 Next, we'll need to override the detected defaults if they are not what we expect them to be
-- hostname
+* hostname
   * Should resolve to the internal ip from the instances themselves.
   * openshift_hostname will override.
 * ip
@@ -3719,6 +3704,7 @@ Next, we'll need to override the detected defaults if they are not what we expec
 * public_ip
   * Should be the externally accessible ip associated with the instance
   * openshift_public_ip will override
+
 To override the the defaults, you can set the variables in your inventory. For example, if using AWS and managing dns externally, you can override the host public hostname as follows:
 
     [masters]
@@ -3730,11 +3716,11 @@ Running ansible:
 
 ## Automated AWS Install With Ansible
 
-### Requirements:
+**Requirements:**
 - ansible-1.8.x
 - python-boto
 
-### Assumptions Made:
+**Assumptions Made:**
 - The user's ec2 credentials have the following permissions:
   - Create instances
   - Create EBS volumes
@@ -3747,7 +3733,7 @@ Running ansible:
   - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
 - If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
 
-### Setup (Modifying the Values Appropriately):
+**Setup (Modifying the Values Appropriately):**
 
     export AWS_ACCESS_KEY_ID=MY_ACCESS_KEY
     export AWS_SECRET_ACCESS_KEY=MY_SECRET_ACCESS_KEY
@@ -3759,11 +3745,14 @@ Running ansible:
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
-### Configuring the Hosts:
+**Clone the openshift-ansible repo and configure helpful symlinks:**
+    ansible-playbook clone_and_setup_repo.yml
+
+**Configuring the Hosts:**
 
     ansible-playbook -i inventory/aws/hosts openshift_setup.yml
 
-### Accessing the Hosts:
+**Accessing the Hosts:**
 Each host will be created with an 'openshift' user that has passwordless sudo configured.
 
 # APPENDIX - Linux, Mac, and Windows clients
@@ -3802,7 +3791,7 @@ The CA is created on your master in `/var/lib/openshift/openshift.local.certific
 
 On Mac OSX and Linux you will need to make the file executable
 
-   chmod +x osc
+    chmod +x osc
 
 In the future users will be able to download clients directly from the OpenShift
 console rather than needing to visit Customer Portal.
