@@ -3623,7 +3623,7 @@ If you had previously imported ImageStreams without the proxy configuration to c
 
 ~~~
 osc delete imagestreams -n openshift --all
-osc create -f image-streams.json
+osc create -f image-streams.json -n openshift
 ~~~
 
 ## STI Builds
