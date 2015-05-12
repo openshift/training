@@ -3513,9 +3513,9 @@ remote logging services.
     $ModLoad imtcp
     $InputTCPServerRun 514
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 
 
@@ -3531,9 +3531,9 @@ On your master update the filters in `/etc/rsyslog.conf` to divert openshift log
     :programname, contains, "openshift" ~
     *.info;mail.none;authpriv.none;cron.none                /var/log/messages
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 ## Configure nodes to send openshift logs to your master
 On your other hosts send openshift logs to your master by adding this line to
@@ -3541,9 +3541,9 @@ On your other hosts send openshift logs to your master by adding this line to
 
     :programname, contains, "openshift" @@ose3-master.example.com
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 Now all your openshift related logs will end up in `/var/log/openshift` on your
 master.
@@ -3560,9 +3560,9 @@ based on the source host. On your master, add these lines immediately prior to
     $RuleSet RSYSLOG_DefaultRuleset   #End the rule set by switching back to the default rule set
     $InputTCPServerBindRuleset remote1  #Define a new input and bind it to the "remote1" rule set
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 
 Now logs from remote hosts will go to `/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log`
