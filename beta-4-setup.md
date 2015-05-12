@@ -54,6 +54,7 @@
     - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
     - [Creating the Router](#creating-the-router)
     - [Router Placement By Region](#router-placement-by-region)
+    - [Viewing Router Stats](#viewing-router-stats)
   - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
     - [Creating the Definition](#creating-the-definition)
     - [Project Status](#project-status)
@@ -1307,6 +1308,20 @@ to the master host.
 
 For a true HA implementation, one would want multiple "infra" nodes and
 multiple, clustered router instances. Look for this to be described in beta4.
+
+### Viewing Router Stats
+Haproxy provides a stats page that's visible on port 1936 of your router host.
+Currently the stats page is password protected with a static password, this
+password will be generated using a template parameter in the future, for now the
+password is `cEVu2hUb` and the username is `admin`.
+
+**Note**: Unlike OpenShift v2 this router is not specific to a given project, as
+such it's really intended to be viewed by cluster admins rather than project
+admins.
+
+Ensure that port 1936 is accessible and visit
+<http://admin:cEVu2hUb@ose3-master.example.com:1936> to view your router stats.
+
 
 ## The Complete Pod-Service-Route
 With a router now available, let's take a look at an entire
