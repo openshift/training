@@ -1065,7 +1065,7 @@ If you think back to the simple pod we created earlier, there was a "label":
 Now, let's look at a *service* definition:
 
     {
-      "id": "hello-openshift",
+      "id": "hello-openshift-service",
       "kind": "Service",
       "apiVersion": "v1beta1",
       "port": 27017,
