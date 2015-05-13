@@ -490,7 +490,7 @@ From there, we can create a password for our users, Joe and Alice:
     htpasswd -b /etc/openshift/htpasswd alice redhat
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master-config.yaml`. We need to edit the `oauthConfig`'s
+`/etc/openshift//master/master-config.yaml`. We need to edit the `oauthConfig`'s
 `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
@@ -511,7 +511,7 @@ If you're feeling lazy, use your friend `sed`:
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
     -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift\/htpasswd' \
-    /etc/openshift/master-config.yaml
+    /etc/openshift/master/master-config.yaml
 
 Restart `openshift-master`:
 
@@ -951,12 +951,12 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
 look for a specific scheduler config file. As `root` edit
-`/etc/openshift/master-config.yaml` and find the line with `schedulerConfigFile`.
+`/etc/openshift/master/master-config.yaml` and find the line with `schedulerConfigFile`.
 Change it to:
 
-    schedulerConfigFile: "/etc/openshift/scheduler.json"
+    schedulerConfigFile: "/etc/openshift/master/scheduler.json"
 
-Then, create `/etc/openshift/scheduler.json` from the training materials:
+Then, create `/etc/openshift/master/scheduler.json` from the training materials:
 
     /bin/cp -r ~/training/beta4/scheduler.json /etc/openshift/
 
@@ -3345,7 +3345,7 @@ No arguments are required but the help output will show you the defaults:
     --git-repo git://github.com/brenton/basicauthurl-example.git
 
 Once you run the helper script it will output the configuration changes
-required for `/etc/openshift/master-config.yaml` as well as create
+required for `/etc/openshift/master/master-config.yaml` as well as create
 `basicauthurl.json`.  You can now feed that to `osc`:
 
     osc create -f basicauthurl.json
@@ -3367,7 +3367,7 @@ In that case in order for SNI to work correctly we had to trick curl with the `-
     curl -u joe:redhat --cacert /etc/openshift/master/ca.crt \
         https://basicauthurl.example.com/validate
 
-If you've made the required changes to `/etc/openshift/master-config.yaml` and
+If you've made the required changes to `/etc/openshift/master/master-config.yaml` and
 restarted `openshift-master` then you should now be able to log it with the
 example users `joe` and `alice` with the password `redhat`.
 
