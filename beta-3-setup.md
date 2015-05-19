@@ -3706,6 +3706,7 @@ The output will be similar to:
     ...
 
 Next, we'll need to override the detected defaults if they are not what we expect them to be
+
 - hostname
   * Should resolve to the internal ip from the instances themselves.
   * openshift_hostname will override.
@@ -3718,7 +3719,10 @@ Next, we'll need to override the detected defaults if they are not what we expec
 * public_ip
   * Should be the externally accessible ip associated with the instance
   * openshift_public_ip will override
-To override the the defaults, you can set the variables in your inventory. For example, if using AWS and managing dns externally, you can override the host public hostname as follows:
+
+To override the the defaults, you can set the variables in your inventory. For
+example, if using AWS and managing dns externally, you can override the host
+public hostname as follows:
 
     [masters]
     ec2-52-6-179-239.compute-1.amazonaws.com openshift_public_hostname=ose3-master.public.example.com
