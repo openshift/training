@@ -1065,7 +1065,7 @@ If you think back to the simple pod we created earlier, there was a "label":
 Now, let's look at a *service* definition:
 
     {
-      "id": "hello-openshift",
+      "id": "hello-openshift-service",
       "kind": "Service",
       "apiVersion": "v1beta1",
       "port": 27017,
@@ -3145,10 +3145,9 @@ You will need to ensure the following, or fix the following:
 * Your hostnames for your machines match the entries in `/etc/hosts`
 * Your `cloudapps` domain points to the correct node ip in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
-* Your master and nodes `/etc/resolv.conf` points to the IP address of the node
+* The first `nameserver` in `/etc/resolv.conf` on the node running dnsmasq should be 127.0.0.1 and the second nameserver should be your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8); alternatively put upstream resolver as `server=8.8.8.8` in `/etc/dnsmasq.conf`
+* the other nodes' and master's `/etc/resolv.conf` points to the IP address of the node
   running DNSMasq as the first nameserver
-* The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
-  to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
 * That you also open port 53 (UDP) to allow DNS queries to hit the node
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
@@ -3422,9 +3421,9 @@ remote logging services.
     $ModLoad imtcp
     $InputTCPServerRun 514
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 
 
@@ -3440,9 +3439,9 @@ On your master update the filters in `/etc/rsyslog.conf` to divert openshift log
     :programname, contains, "openshift" ~
     *.info;mail.none;authpriv.none;cron.none                /var/log/messages
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 ## Configure nodes to send openshift logs to your master
 On your other hosts send openshift logs to your master by adding this line to
@@ -3450,9 +3449,9 @@ On your other hosts send openshift logs to your master by adding this line to
 
     :programname, contains, "openshift" @@ose3-master.example.com
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 Now all your openshift related logs will end up in `/var/log/openshift` on your
 master.
@@ -3469,9 +3468,9 @@ based on the source host. On your master, add these lines immediately prior to
     $RuleSet RSYSLOG_DefaultRuleset   #End the rule set by switching back to the default rule set
     $InputTCPServerBindRuleset remote1  #Define a new input and bind it to the "remote1" rule set
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 
 Now logs from remote hosts will go to `/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log`
@@ -3531,13 +3530,14 @@ standard environment variables.  The trick is knowing where to place them.
 ## Importing ImageStreams
 
 Since the importer is on the Master we need to make the configuration change
-there.  The easiest way to do that is to create a configuration file in
-`/etc/systemd/system/openshift-master.service.d/` and set appropriate values
-for `NO_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY`:
+there.  The easiest way to do that is to add environment variables `NO_PROXY`,
+`HTTP_PROXY`, and `HTTPS_PROXY` to `/etc/sysconfig/openshift-master` then restart
+your master.
 
 ~~~
-[Service]
-Environment="HTTP_PROXY=http://10.0.1.1:8080/" "HTTPS_PROXY=https://10.0.0.1:8080/" "NO_PROXY=master.example.com"
+HTTP_PROXY=http://USERNAME:PASSWORD@10.0.1.1:8080/
+HTTPS_PROXY=https://USERNAME:PASSWORD@10.0.0.1:8080/
+NO_PROXY=master.example.com
 ~~~
 
 It's important that the Master doesn't use the proxy to access itself so make
@@ -3545,7 +3545,6 @@ sure it's listed in the `NO_PROXY` value.
 
 Now restart the Service:
 ~~~
-systemctl daemon-reload
 systemctl restart openshift-master
 ~~~
 
