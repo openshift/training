@@ -758,7 +758,8 @@ If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
 
 ### Delete the Pod
-Go ahead and delete this pod so that you don't get confused in later examples:
+Go ahead and delete this pod so that you don't get confused in later examples. Don't forget to
+do this as the ```joe``` user:
 
     osc delete pod hello-openshift
 
