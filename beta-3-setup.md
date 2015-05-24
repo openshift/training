@@ -1281,7 +1281,7 @@ and a corresponding route. It also includes a deployment configuration.
           "apiVersion": "v1beta1",
           "kind": "ImageStream",
           "metadata": {
-            "name": "openshift/hello-openshift"
+            "name": "hello-openshift"
           }
         },
         {
