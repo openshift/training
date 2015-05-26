@@ -1704,11 +1704,30 @@ and that is running on one of your nodes.
 
 To quickly test your Docker registry, you can do the following:
 
-    curl `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl -v `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`/v2/
 
-And you should see:
+And you should see [a 200
+response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
+mostly empty body.  Your IP addresses will almost certainly be different.
 
-    "docker-registry server (dev) (v0.9.0)"
+~~~~
+* About to connect() to 172.30.17.114 port 5000 (#0)
+*   Trying 172.30.17.114...
+* Connected to 172.30.17.114 (172.30.17.114) port 5000 (#0)
+> GET /v2/ HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 172.30.17.114:5000
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Content-Length: 2
+< Content-Type: application/json; charset=utf-8
+< Docker-Distribution-Api-Version: registry/2.0
+< Date: Tue, 26 May 2015 17:18:02 GMT
+<
+* Connection #0 to host 172.30.17.114 left intact
+{}    
+~~~~
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
