@@ -986,9 +986,9 @@ following as the `root` user:
 
     osc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
 
-You will have the JSON output of the definition of all of your nodes. Go ahead
-and edit this file. Add the following to the beginning of the `"metadata": {}`
-block for your "master" node:
+You will have the JSON output of the definition of all of your nodes. Go ahead and
+edit this file. Add the following to the beginning of the `"metadata": {}`
+block for your "master" node inside the files `"items"` list:
 
     "labels" : {
       "region" : "infra",
@@ -1034,6 +1034,8 @@ Then, as `root` update your nodes using the following:
 Note: At release the user should not need to edit JSON like this; the
 installer should be able to configure nodes initially with desired labels,
 and there should be better tools for changing them afterward.
+
+Note: If you end up getting an error while attempting to update the nodes review your json. Ensure that there are commas in the previous element to your added label sections.
 
 Check the results to ensure the labels were applied:
 
