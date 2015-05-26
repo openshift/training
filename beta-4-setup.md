@@ -1227,6 +1227,7 @@ to supply the wildcard cert/key that we created for the cloud domain.
 
     osadm router --default-cert=cloudapps.router.pem \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig \
+    --selector='region=infra' \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -1243,7 +1244,7 @@ few moments (it may take up to a few minutes):
 
     POD                   CONTAINER(S)  HOST                                   STATUS
     deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
-    router-1-ats7z        router        ose3-node2.example.com/192.168.133.4   Running
+    router-1-ats7z        router        ose3-master.example.com/192.168.133.4  Running
 
 Note: You may or may not see the deploy pod, depending on when you run this
 command. Also the router may not end up on the master.
@@ -1255,56 +1256,9 @@ request for an FQDN that it knows about, it will proxy the request to a pod for
 a service. But, for that FQDN request to actually reach the router, the FQDN has
 to resolve to whatever the host is where the router is running. Remember, the
 router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
-DNS entry points to the public IP address of the master, we need to ensure that
-the router runs *on* the master.
-
-Remember how we set up regions and zones earlier? In our setup we labeled the
-master with the "infra" region. Without specifying a region or a zone in our
-environment, the router pod had an equal chance of ending up on any node, but we
-can ensure that it always and only lands in the "infra" region (thus, on the
-master) using a NodeSelector.
-
-To do this, we will modify the `deploymentConfig` for the router. If you recall,
-when we created the router we saw both a `deploymentConfig` and `service`
-resource.
-
-We have not discussed DeploymentConfigs (or even Deployments) yet. The brief
-summary is that a DeploymentConfig defines not only the pods (and containers)
-but also how many pods should be created and also transitioning from one pod
-definition to another.  We'll learn a little bit more about deployment
-configurations later.  For now, as `root`, we will use `osc edit` to manipulate
-the router DeploymentConfig and modify the router's pod definition to add a
-NodeSelector, so that router pods will be placed where we want them.  Whew!
-
-    osc edit deploymentConfigs/router
-
-`osc edit` will bring up the default system editor (vi) with a YAML
-representation of the resource, in this case the router's `deploymentConfig`.
-You could also edit it as JSON or use a different editor; see `osc edit --help`.
-
-Note: In future releases, you will be able to supply NodeSelector and other
-labels at creation time rather than editing the object after the fact.
-
-We will specify our NodeSelector within the `podTemplate:` block that
-defines the pods to create. It is easiest to just place it right after
-that line, like this: (indentation *is* significant in YAML)
-
-    [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: infra
-          desiredState:
-            manifest:
-    [...]
-
-Once you save this file and exit the editor, the DeploymentConfig will be
-updated in OpenShift's data store and a new router deployment will be created
-based on the new definition.  It will take at least a few seconds for this to
-happen (possibly longer if the router image has not been pulled to the master
-yet).  Watch `osc get pods` until the router pod has been recreated and assigned
-to the master host.
+DNS entry points to the public IP address of the master, the `--selector` flag
+used above ensures that the router is placed on our master as it's the only node
+with the label `region=infra`.
 
 For a true HA implementation, one would want multiple "infra" nodes and
 multiple, clustered router instances. Look for this to be described in beta4.
@@ -1791,13 +1745,13 @@ defines the pods to create. It is easiest to just place it right after
 that line, like this: (indentation *is* significant in YAML)
 
     [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: infra
-          desiredState:
-            manifest:
+    spec:
+      nodeSelector:
+        region: infra
+      containers:
+      - capabilities: {}
+        env:
+        - name: OPENSHIFT_CA_DATA
     [...]
 
 
