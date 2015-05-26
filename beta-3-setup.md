@@ -198,6 +198,18 @@ them to the *OpenShift Enterprise High Touch Beta* subscription.
 All of your VMs should be on the same logical network and be able to access one
 another.
 
+Forward DNS resolution of hostnames is an **absolute requirement**. This
+training document assumes the following configuration:
+
+* ose3-master.example.com (master+node)
+* ose3-node1.example.com
+* ose3-node2.example.com
+
+If you cannot create real forward resolving DNS entries in your DNS system, you
+will need to set up your own DNS server in the beta testing environment.
+Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
+setup](#appendix---dnsmasq-setup)
+
 ## Setting Up the Environment
 
 ### Use a Terminal Window Manager
