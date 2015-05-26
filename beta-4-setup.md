@@ -1175,7 +1175,7 @@ a key/cert of their own. OpenShift supplies a command for creating a
 key/cert signed by the OpenShift CA which we will use.  On the master:
 
     CA=/etc/openshift/master
-    osadm create-server-cert --signer-cert=$CA/ca.crt
+    osadm create-server-cert --signer-cert=$CA/ca.crt \
           --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
           --hostnames='*.cloudapps.example.com' \
           --cert=cloudapps.crt --key=cloudapps.key
