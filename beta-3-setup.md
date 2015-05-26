@@ -190,6 +190,10 @@ and the following configuration:
 * "Minimal" installation option
 * NetworkManager **disabled**
 
+The majority of storage requirements are related to Docker and etcd (the data
+store). Both of their contents live in /var, so it is recommended that the
+majority of the storage be allocated to /var.
+
 As part of signing up for the beta program, you should have received an
 evaluation subscription. This subscription gave you access to the beta software.
 You will need to use subscription manager to both register your VMs, and attach
@@ -1293,7 +1297,7 @@ and a corresponding route. It also includes a deployment configuration.
           "apiVersion": "v1beta1",
           "kind": "ImageStream",
           "metadata": {
-            "name": "openshift/hello-openshift"
+            "name": "hello-openshift"
           }
         },
         {
@@ -1315,6 +1319,9 @@ and a corresponding route. It also includes a deployment configuration.
                     "tag": "latest"
                   },
                   "type": "ImageChange"
+                },
+                {
+                  "type": "ConfigChange"
                 }
             ],
             "template": {
@@ -1335,7 +1342,7 @@ and a corresponding route. It also includes a deployment configuration.
                                 "containers": [
                                     {
                                         "name": "hello-openshift",
-                                        "image": "openshift/hello-openshift",
+                                        "image": "openshift/hello-openshift:v0.4.3",
                                         "ports": [
                                             {
                                                 "containerPort": 8080,
@@ -1399,7 +1406,7 @@ If we work from the route down to the pod:
 the route to have the correct domain, matching the DNS configuration for your
 environment. Once this is done, go ahead and use `osc` to apply it:
 
-        osc create -f test-complete.json
+    osc create -f test-complete.json
 
  You should see something like the following:
 
@@ -1905,6 +1912,25 @@ webhooks, etc), we will have to trigger our build manually in this example.
 By the way, most of these things can (SHOULD!) also be verified in the web
 console. If anything, it looks prettier!
 
+Before starting our build, the default setup for apps created in this way is not
+to have any nodeSelector. So, in order to deploy the built app into the
+"primary" region we will need to edit the deploymentConfig. As `joe` on the
+terminal:
+
+    osc edit deploymentConfigs/ruby-example
+
+Then, remember to add the nodeSelector for the "primary" region:
+
+    [...]
+    template:
+      controllerTemplate:
+        podTemplate:
+          nodeSelector:
+            region: primary
+          desiredState:
+            manifest:
+    [...]
+
 To start our build, as `joe`, execute the following:
 
     osc start-build ruby-example
@@ -1989,6 +2015,9 @@ services from the service output you looked at above.
 When you are done, create your route:
 
     osc create -f sinatra-route.json
+
+**Note:** If you're not using the `example.com` domain, you'll have to edit this
+route to match your domain.
 
 Check to make sure it was created:
 
@@ -2114,11 +2143,14 @@ Go ahead and do the following as `root` in the `~/training/beta3` folder:
 What did you just do? The `integrated-template.json` file defined a template. By
 "creating" it, you have added it to the `openshift` project.
 
+**Note:** If you're not using the `example.com` domain, you'll have to edit the
+route in the template to match your domain. It is hard-coded at this time.
+
 ### Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and
 then hit the "Create +" button. We've seen this page before, but now it contains
 something new -- an "instant app(lication)". An instant app is a "special" kind
-of template (relaly, it just has the "instant-app" tag). The idea behind an
+of template (really, it just has the "instant-app" tag). The idea behind an
 "instant app" is that, when creating an instance of the template, you will have
 a fully functional application. in this example, our "instant" app is just a
 simple key-value storage and retrieval webpage.
@@ -2145,7 +2177,7 @@ The cool thing about the template is that it has a built-in route. The not so
 cool thing is that route is not configurable at the moment. But, it's there!
 
 If you click "Browse" and then "Services" you will see that there is a route for
-the *frontend* service:
+the *frontend* service (or whatever your domain is):
 
     `integrated.cloudapps.example.com`
 
@@ -2162,6 +2194,11 @@ actually use the application!
 
 **Note: HTTPS will *not* work for this example because the form submission was
 written with HTTP links. Be sure to use HTTP. **
+
+### Placing Your App (Optional)
+If you want this app to run in the "primary" region, you'll have to edit the
+deployment configuration like you did previously. If you move your database
+after you've added data to it, your data will be lost. Do you know why?
 
 ## Creating and Wiring Disparate Components
 Quickstarts are great, but sometimes a developer wants to build up the various
@@ -2217,6 +2254,10 @@ Go ahead and create the configuration:
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
 before continuing.
+
+The same things hold true regarding nodeSelectors for this example as
+in the previous examples -- you will have to modify the deployment configuration
+if you want to restrict this app to run in the "primary" region.
 
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
@@ -2647,7 +2688,9 @@ Since we already have our `wiring` app pointing at our forked code repository,
 let's go ahead and add a database migration file. In the `beta3` folder you will
 find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
 of the `ruby-hello-world` repository that you forked. If you don't add this file
-to the right folder, the rest of the steps will fail.
+to the right folder, the rest of the steps will fail. You will want to make sure
+that you add this to the `beta3` branch of your forked repository, since that is
+the branch we are looking for when we do our builds.
 
 ### Examining the Deployment Configuration
 Since we are talking about **deployments**, let's look at our
@@ -2988,6 +3031,9 @@ detected, so we'll have a service for SSH (thus port 22 above) but not one for
 httpd. So we'll add on a service and route for web access.
 
     osc create -f wordpress-addition.json
+
+**Note:** If you're not using the `example.com` domain, you'll have to edit this
+route to match your domain.
 
 ### Test Your Application
 You should be able to visit:
