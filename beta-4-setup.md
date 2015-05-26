@@ -958,7 +958,7 @@ Change it to:
 
 Then, create `/etc/openshift/master/scheduler.json` from the training materials:
 
-    /bin/cp -r ~/training/beta4/scheduler.json /etc/openshift/
+    /bin/cp -r ~/training/beta4/scheduler.json /etc/openshift/master/
 
 It will have the following content:
 
