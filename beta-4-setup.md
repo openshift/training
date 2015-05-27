@@ -1659,12 +1659,32 @@ OpenShift 3 will provide a Docker registry that administrators may run inside
 the OpenShift environment that will manage images "locally". Let's take a moment
 to set that up.
 
+### Storage for the registry
+
+The registry is stores docker images and metadata. If you simply deploy a pod
+with the registry, it will use an ephemeral volume that is destroyed once the
+pod exits. Any images anyone has built would disappear. That would be bad.
+
+What we will do for this demo is use a directory on the master host for
+persistent storage. In production, this directory could be backed by an NFS
+mount supplied from the HA storage solution of your choice. That NFS mount
+could then be shared between multiple hosts for multiple replicas of the
+registry to make the registry HA.
+
+For now we will just show how to specify the directory and the and leave the NFS
+configuration as an exercise. On the master, create the storage directory with:
+
+    mkdir -p /mnt/registry
+
+### Creating the registry
+
 `osadm` again comes to our rescue with a handy installer for the
 registry. As the `root` user, run the following:
 
     osadm registry --create \
     --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
+    --selector="region=infra" --mount-host=/mnt/registry
 
 You'll get output like:
 
@@ -1689,18 +1709,18 @@ as root:
 
     service router (172.30.17.129:80 -> 80)
       router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-        #2 deployed 8 minutes ago
         #1 deployed 7 minutes ago
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 OpenShift will re-create it) and that the administrative user uses by default.
 One interesting feature of `osc status` is that it lists recent deployments.
-When we created the router and adjusted it, that adjustment resulted in a second
-deployment. We will talk more about deployments when we get into builds.
+When we created the router and registry, each created one deployment.
+We will talk more about deployments when we get into builds.
 
 Anyway, ultimately you will have a Docker registry that is being hosted by OpenShift
-and that is running on one of your nodes.
+and that is running on the master (because we specified "region=infra" as the
+registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
@@ -1747,40 +1767,10 @@ And you will eventually see something like:
     Session Affinity:       None
     No events.
 
-Once there is an endpoint listed, the curl should work.
+Once there is an endpoint listed, the curl should work and the registry is available.
 
-### Registry Placement By Region (optional)
-In the beta environment, as architected, there is no real need for the registry
-to land on any particular node. However, for consistency, you might want to keep
-OpenShift "infrastructure" components on the master's node. We can use our
-previously-defined "infra" region for this purpose.
-
-To do this, edit the created DeploymentConfig definition with `osc edit`:
-
-    osc edit dc docker-registry
-
-As before, specify your NodeSelector within the `podTemplate:` block that
-defines the pods to create. It is easiest to just place it right after
-that line, like this: (indentation *is* significant in YAML)
-
-    [...]
-    spec:
-      nodeSelector:
-        region: infra
-      containers:
-      - capabilities: {}
-        env:
-        - name: OPENSHIFT_CA_DATA
-    [...]
-
-
-Once you save this file and exit, the DeploymentConfig will be updated and
-a new registry deployment will soon be created with the new definition.
-
-If you are going to move the registry, do it now or don't do it all. As
-dedicated storage volumes did not make the beta4 drop, restarting the registry
-pod will result in an empty registry -- all the images will be lost. This will
-be a Very.Bad.Thing.
+Highly available, actually. You should be able to delete the registry pod at any
+point in this training and have it return shortly after with all data intact.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
@@ -3447,7 +3437,7 @@ for common issues. This is very much still under development however.
         # But we need it to exist in ~/.kube
         cd ~/.kube
 
-        # If a stale token exists it will prevent the beta2 login command from working
+        # If a stale token exists it will prevent the beta4 login command from working
         rm .kubeconfig
 
         osc login \
