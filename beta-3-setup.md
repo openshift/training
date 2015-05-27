@@ -3090,20 +3090,23 @@ code repository for the one below.
 
 ### Create a Project
 Using the skills you have learned earlier in the training, create a new project
-for the EAP example. Choose a user as the administrator, and make sure to use
-that user in the subsequent commands as necessary.
+for the EAP example. Choose a user as the administrator for the newly created project.
 
 ### Instantiate the Template
 When we imported the imagestreams into the `openshift` namespace earlier, we
-also brought in JBoss EAP and Tomcat STI builder images.
+also brought in JBoss EAP and Tomcat STI builder images. Changes made upstream now requires additional imagestreams to be added aside from those brought in previously. 
+
+Execute the following command as `root` to add the additional imagestreams to the `openshift` project
+
+    osc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
 
 There are currently several application templates that can be used with these
 images, except they leverage some features that were not available at the time
-beta3 was cut.
+beta3 was cut. 
 
 We can still use them, but not in the same way we used the "Quickstart" template
-arlier. We will have to process them from the CLI and massage them to substitute
-some variables.
+earlier. We will have to process them from the CLI and massage them to substitute
+some variables. 
 
 If you simply execute the following:
 
@@ -3112,7 +3115,7 @@ If you simply execute the following:
 You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
 use in this template. Since beta3 doesn't support these, we will have to do some
 manual substitution. This template is already configured to use the EAP builder
-image.
+image. 
 
 The following command will:
 
@@ -3124,6 +3127,9 @@ The following command will:
     code)
 * pipe this into `osc create` so that the template becomes an actionable
     configuration
+* set the name of the Secret containing the HTTPS keystore
+
+Execute the subsequent commands as the administrator user designated for this project.
 
     osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json \
     | sed -e 's/${APPLICATION_NAME}/helloworld/' \
@@ -3133,7 +3139,15 @@ The following command will:
     -e 's/${EAP_RELEASE}/6.4/' \
     -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
     -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
+    -e 's/${EAP_HTTPS_SECRET}/eap-app-secret/'
     | osc create -f -
+
+## Add the Secret
+The EAP template makes use of a [Secret](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/design/secrets.md) value to reference the contents of the HTTPS keystore. Secrets are used to store passwords and configurations that can be referenced at runtime. 
+
+As the project user, add the *eap-app-secret* Secret to the project:
+
+    osc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap-app-secret.json
 
 ### Update the BuildConfig
 The template assumes that the imageStream exists in our current project, but
@@ -3159,7 +3173,7 @@ You will need to edit the `strategy` section to look like the following:
 
 ### Run the EAP Build
 Once done, save and exit, which will update the `buildConfig`. Then, start the
-build as `joe`:
+build:
 
     osc start-build helloworld
 
