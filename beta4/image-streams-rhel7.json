@@ -6,10 +6,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "ruby"
+        "name": "ruby",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/ruby-20-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7",
         "tags": [
           {
             "name": "latest",
@@ -27,10 +30,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "nodejs"
+        "name": "nodejs",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/nodejs-010-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/nodejs-010-rhel7",
         "tags": [
           {
             "name": "latest",
@@ -48,10 +54,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "perl"
+        "name": "perl",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/perl-516-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/perl-516-rhel7",
         "tags": [
           {
             "name": "latest",
@@ -69,10 +78,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "php"
+        "name": "php",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/php-55-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7",
         "tags": [
           {
             "name": "latest",
@@ -90,10 +102,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "python"
+        "name": "python",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/python-33-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/python-33-rhel7",
         "tags": [
           {
             "name": "latest",
@@ -111,10 +126,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "mysql"
+        "name": "mysql",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7",
         "tags": [
           {
             "name":"latest"
@@ -126,10 +144,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "postgresql"
+        "name": "postgresql",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/postgresql-92-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/postgresql-92-rhel7",
         "tags": [
           {
             "name":"latest"
@@ -141,10 +162,13 @@
       "apiVersion": "v1beta3",
       "kind": "ImageStream",
       "metadata": {
-        "name": "mongodb"
+        "name": "mongodb",
+        "annotations": {
+          "openshift.io/image.insecureRepository": "true"
+        }
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/mongodb-24-rhel7",
+        "dockerImageRepository": "ci.dev.openshift.redhat.com:5000/openshift/mongodb-24-rhel7",
         "tags": [
           {
             "name":"latest"
