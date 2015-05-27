@@ -52,3 +52,6 @@
     openshift_cluster_id: openshift-v3-training
     openshift_debug_level: 4
     openshift_deployment_type: enterprise
+    openshift_node_labels:
+      region: "{{ 'infra' if inventory_hostname in groups.oo_first_master else 'primary' }}"
+      zone: default
