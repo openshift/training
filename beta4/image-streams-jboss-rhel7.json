@@ -1,0 +1,157 @@
+{
+    "kind": "Config",
+    "apiVersion": "v1beta3",
+    "metadata": {
+        "name": "jboss-image-streams",
+        "annotations": {
+            "description": "ImageStream definitions for JBoss Middleware products."
+        }
+    },
+    "items": [
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-webserver3-tomcat7-openshift",
+                "annotations": {
+                    "description": "Provides JBoss Web Server v3 Tomcat 7 STI images."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift",
+                "tags": [
+                    {
+                        "name": "3.0",
+                        "annotations": {
+                            "tags": "builder,tomcat",
+                            "dockerImageReference": "registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift:3.0",
+                            "version": "3.0"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-webserver3-tomcat8-openshift",
+                "annotations": {
+                    "description": "Provides JBoss Web Server v3 Tomcat 8 STI images."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift",
+                "tags": [
+                    {
+                        "name": "3.0",
+                        "annotations": {
+                            "tags": "builder,tomcat",
+                            "dockerImageReference": "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0",
+                            "version": "3.0"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-eap6-openshift",
+                "annotations": {
+                    "description": "Provides JBoss EAP 6 STI images."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/jboss-eap-6/eap-openshift",
+                "tags": [
+                    {
+                        "name": "6.4",
+                        "annotations": {
+                            "tags": "builder,eap",
+                            "dockerImageReference": "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4",
+                            "version": "6.4"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-amq-62",
+                "annotations": {
+                    "description": "JBoss ActiveMQ 6.2 broker image."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/jboss-amq-6/amq:6.2",
+                "tags": [
+                    {
+                        "name": "latest",
+                        "dockerImageReference": "registry.access.redhat.com/jboss-amq-6/amq:6.2"
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-mysql-55",
+                "annotations": {
+                    "description": "Provides MySQL 5.5 images for use with JBoss Middleware products."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7",
+                "tags": [
+                    {
+                        "name": "latest",
+                        "dockerImageReference": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7:latest"
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-postgresql-92",
+                "annotations": {
+                    "description": "Provides PostgreSQL 9.2 images for use with JBoss Middleware products."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/postgresql-92-rhel7",
+                "tags": [
+                    {
+                        "name": "latest",
+                        "dockerImageReference": "registry.access.redhat.com/openshift3_beta/postgresql-92-rhel7:latest"
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "jboss-mongodb-24",
+                "annotations": {
+                    "description": "Provides MongoDB 2.4 images for use with JBoss Middleware products."
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/mongodb-24-rhel7",
+                "tags": [
+                    {
+                        "name": "latest",
+                        "dockerImageReference": "registry.access.redhat.com/openshift3_beta/mongodb-24-rhel7:latest"
+                    }
+                ]
+            }
+        }
+    ]
+}
