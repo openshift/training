@@ -35,7 +35,7 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-dock
 
 cd
 git clone https://github.com/openshift/training.git 
-cd ~/training/beta3
+cd ~/training/beta4
 /bin/cp ~/training/beta1/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
@@ -49,7 +49,7 @@ cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
-/bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
+/bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
 
 #beta3
