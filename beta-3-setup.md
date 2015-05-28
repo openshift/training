@@ -1035,7 +1035,7 @@ Note: At release the user should not need to edit JSON like this; the
 installer should be able to configure nodes initially with desired labels,
 and there should be better tools for changing them afterward.
 
-Note: If you end up getting an error while attempting to update the nodes review your json. Ensure that there are commas in the previous element to your added label sections.
+Note: If you end up getting an error while attempting to update the nodes, review your json. Ensure that there are commas in the previous element to your added label sections.
 
 Check the results to ensure the labels were applied:
 
