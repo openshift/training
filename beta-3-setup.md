@@ -701,7 +701,7 @@ In the beta3 training folder, you can see the contents of our pod definition by 
           "id": "hello-openshift",
           "containers": [{
             "name": "hello-openshift",
-            "image": "openshift/hello-openshift",
+            "image": "openshift/hello-openshift:v0.4.3",
             "ports": [{
               "hostPort": 6061,
               "containerPort": 8080
@@ -729,8 +729,8 @@ the pod inside of it. The command should display the ID of the pod:
 Issue a `get pods` to see the details of how it was defined:
 
     osc get pods
-    POD               IP         CONTAINER(S)      IMAGE(S)                    HOST                                    LABELS                 STATUS    CREATED
-    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
+    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                    LABELS                 STATUS    CREATED
+    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift:v0.4.3   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
 
 Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
 see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
