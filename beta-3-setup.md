@@ -701,7 +701,7 @@ In the beta3 training folder, you can see the contents of our pod definition by 
           "id": "hello-openshift",
           "containers": [{
             "name": "hello-openshift",
-            "image": "openshift/hello-openshift",
+            "image": "openshift/hello-openshift:v0.4.3",
             "ports": [{
               "hostPort": 6061,
               "containerPort": 8080
@@ -729,8 +729,8 @@ the pod inside of it. The command should display the ID of the pod:
 Issue a `get pods` to see the details of how it was defined:
 
     osc get pods
-    POD               IP         CONTAINER(S)      IMAGE(S)                    HOST                                    LABELS                 STATUS    CREATED
-    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
+    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                    LABELS                 STATUS    CREATED
+    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift:v0.4.3   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
 
 Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
 see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
@@ -1384,10 +1384,10 @@ and a corresponding route. It also includes a deployment configuration.
 
 In the JSON above:
 
-* There is a pod whose containers have the label `name=hello-openshift-label` and the nodeSelector `region=primary`
+* There is a pod that has the label `name=hello-openshift` and the nodeSelector `region=primary`
 * There is a service:
   * with the id `hello-openshift-service`
-  * with the selector `name=hello-openshift-label`
+  * with the selector `name=hello-openshift`
 * There is a route:
   * with the FQDN `hello-openshift.cloudapps.example.com`
   * with the `serviceName` directive `hello-openshift-service`
@@ -1398,9 +1398,9 @@ If we work from the route down to the pod:
 * The pool is for any pods in the service whose ID is `hello-openshift-service`,
     via the `serviceName` directive of the route.
 * The service `hello-openshift-service` includes every pod who has a label
-    `name=hello-openshift-label`
+    `name=hello-openshift`
 * There is a single pod with a single container that has the label
-    `name=hello-openshift-label`
+    `name=hello-openshift`
 
 **Logged in as `joe`,** edit `test-complete.json` and change the `host` stanza for
 the route to have the correct domain, matching the DNS configuration for your
