@@ -3080,6 +3080,10 @@ If you have a Java application whose Maven configuration uses local
 repositories, or has no Maven requirements, you could probably substitute that
 code repository for the one below.
 
+Note: Please ensure the correct EAP image stream has been added by verifying the *jboss-eap6-openshift* imagestream is available:
+
+    osc get is -n openshift | grep jboss-eap6-openshift
+
 ### Create a Project
 Using the skills you have learned earlier in the training, create a new project
 for the EAP example. Choose a user as the administrator, and make sure to use
@@ -3099,7 +3103,7 @@ some variables.
 
 If you simply execute the following:
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-beta3/eap/eap6-basic-sti.json
 
 You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
 use in this template. Since beta3 doesn't support these, we will have to do some
@@ -3117,7 +3121,7 @@ The following command will:
 * pipe this into `osc create` so that the template becomes an actionable
     configuration
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json \
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-beta3/eap/eap6-basic-sti.json \
     | sed -e 's/${APPLICATION_NAME}/helloworld/' \
     -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
     -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
