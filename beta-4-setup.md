@@ -54,6 +54,7 @@
     - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
     - [Creating the Router](#creating-the-router)
     - [Router Placement By Region](#router-placement-by-region)
+    - [Viewing Router Stats](#viewing-router-stats)
   - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
     - [Creating the Definition](#creating-the-definition)
     - [Project Status](#project-status)
@@ -489,7 +490,7 @@ From there, we can create a password for our users, Joe and Alice:
     htpasswd -b /etc/openshift/htpasswd alice redhat
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master-config.yaml`. We need to edit the `oauthConfig`'s
+`/etc/openshift//master/master-config.yaml`. We need to edit the `oauthConfig`'s
 `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
@@ -510,7 +511,7 @@ If you're feeling lazy, use your friend `sed`:
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
     -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift\/htpasswd' \
-    /etc/openshift/master-config.yaml
+    /etc/openshift/master/master-config.yaml
 
 Restart `openshift-master`:
 
@@ -950,14 +951,14 @@ How can we make this more intelligent? We'll finally use "regions" and "zones".
 ### Customizing the Scheduler Configuration
 The first step is to edit the OpenShift master's configuration to tell it to
 look for a specific scheduler config file. As `root` edit
-`/etc/openshift/master-config.yaml` and find the line with `schedulerConfigFile`.
+`/etc/openshift/master/master-config.yaml` and find the line with `schedulerConfigFile`.
 Change it to:
 
-    schedulerConfigFile: "/etc/openshift/scheduler.json"
+    schedulerConfigFile: "/etc/openshift/master/scheduler.json"
 
-Then, create `/etc/openshift/scheduler.json` from the training materials:
+Then, create `/etc/openshift/master/scheduler.json` from the training materials:
 
-    /bin/cp -r ~/training/beta4/scheduler.json /etc/openshift/
+    /bin/cp -r ~/training/beta4/scheduler.json /etc/openshift/master/
 
 It will have the following content:
 
@@ -1174,7 +1175,7 @@ a key/cert of their own. OpenShift supplies a command for creating a
 key/cert signed by the OpenShift CA which we will use.  On the master:
 
     CA=/etc/openshift/master
-    osadm create-server-cert --signer-cert=$CA/ca.crt
+    osadm create-server-cert --signer-cert=$CA/ca.crt \
           --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
           --hostnames='*.cloudapps.example.com' \
           --cert=cloudapps.crt --key=cloudapps.key
@@ -1226,6 +1227,7 @@ to supply the wildcard cert/key that we created for the cloud domain.
 
     osadm router --default-cert=cloudapps.router.pem \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig \
+    --selector='region=infra' \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -1242,7 +1244,7 @@ few moments (it may take up to a few minutes):
 
     POD                   CONTAINER(S)  HOST                                   STATUS
     deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
-    router-1-ats7z        router        ose3-node2.example.com/192.168.133.4   Running
+    router-1-ats7z        router        ose3-master.example.com/192.168.133.4  Running
 
 Note: You may or may not see the deploy pod, depending on when you run this
 command. Also the router may not end up on the master.
@@ -1254,59 +1256,26 @@ request for an FQDN that it knows about, it will proxy the request to a pod for
 a service. But, for that FQDN request to actually reach the router, the FQDN has
 to resolve to whatever the host is where the router is running. Remember, the
 router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
-DNS entry points to the public IP address of the master, we need to ensure that
-the router runs *on* the master.
-
-Remember how we set up regions and zones earlier? In our setup we labeled the
-master with the "infra" region. Without specifying a region or a zone in our
-environment, the router pod had an equal chance of ending up on any node, but we
-can ensure that it always and only lands in the "infra" region (thus, on the
-master) using a NodeSelector.
-
-To do this, we will modify the `deploymentConfig` for the router. If you recall,
-when we created the router we saw both a `deploymentConfig` and `service`
-resource.
-
-We have not discussed DeploymentConfigs (or even Deployments) yet. The brief
-summary is that a DeploymentConfig defines not only the pods (and containers)
-but also how many pods should be created and also transitioning from one pod
-definition to another.  We'll learn a little bit more about deployment
-configurations later.  For now, as `root`, we will use `osc edit` to manipulate
-the router DeploymentConfig and modify the router's pod definition to add a
-NodeSelector, so that router pods will be placed where we want them.  Whew!
-
-    osc edit deploymentConfigs/router
-
-`osc edit` will bring up the default system editor (vi) with a YAML
-representation of the resource, in this case the router's `deploymentConfig`.
-You could also edit it as JSON or use a different editor; see `osc edit --help`.
-
-Note: In future releases, you will be able to supply NodeSelector and other
-labels at creation time rather than editing the object after the fact.
-
-We will specify our NodeSelector within the `podTemplate:` block that
-defines the pods to create. It is easiest to just place it right after
-that line, like this: (indentation *is* significant in YAML)
-
-    [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: infra
-          desiredState:
-            manifest:
-    [...]
-
-Once you save this file and exit the editor, the DeploymentConfig will be
-updated in OpenShift's data store and a new router deployment will be created
-based on the new definition.  It will take at least a few seconds for this to
-happen (possibly longer if the router image has not been pulled to the master
-yet).  Watch `osc get pods` until the router pod has been recreated and assigned
-to the master host.
+DNS entry points to the public IP address of the master, the `--selector` flag
+used above ensures that the router is placed on our master as it's the only node
+with the label `region=infra`.
 
 For a true HA implementation, one would want multiple "infra" nodes and
 multiple, clustered router instances. Look for this to be described in beta4.
+
+### Viewing Router Stats
+Haproxy provides a stats page that's visible on port 1936 of your router host.
+Currently the stats page is password protected with a static password, this
+password will be generated using a template parameter in the future, for now the
+password is `cEVu2hUb` and the username is `admin`.
+
+**Note**: Unlike OpenShift v2 this router is not specific to a given project, as
+such it's really intended to be viewed by cluster admins rather than project
+admins.
+
+Ensure that port 1936 is accessible and visit
+<http://admin:cEVu2hUb@ose3-master.example.com:1936> to view your router stats.
+
 
 ## The Complete Pod-Service-Route
 With a router now available, let's take a look at an entire
@@ -1690,12 +1659,32 @@ OpenShift 3 will provide a Docker registry that administrators may run inside
 the OpenShift environment that will manage images "locally". Let's take a moment
 to set that up.
 
+### Storage for the registry
+
+The registry is stores docker images and metadata. If you simply deploy a pod
+with the registry, it will use an ephemeral volume that is destroyed once the
+pod exits. Any images anyone has built would disappear. That would be bad.
+
+What we will do for this demo is use a directory on the master host for
+persistent storage. In production, this directory could be backed by an NFS
+mount supplied from the HA storage solution of your choice. That NFS mount
+could then be shared between multiple hosts for multiple replicas of the
+registry to make the registry HA.
+
+For now we will just show how to specify the directory and the and leave the NFS
+configuration as an exercise. On the master, create the storage directory with:
+
+    mkdir -p /mnt/registry
+
+### Creating the registry
+
 `osadm` again comes to our rescue with a handy installer for the
 registry. As the `root` user, run the following:
 
     osadm registry --create \
     --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
+    --selector="region=infra" --mount-host=/mnt/registry
 
 You'll get output like:
 
@@ -1720,26 +1709,45 @@ as root:
 
     service router (172.30.17.129:80 -> 80)
       router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-        #2 deployed 8 minutes ago
         #1 deployed 7 minutes ago
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 OpenShift will re-create it) and that the administrative user uses by default.
 One interesting feature of `osc status` is that it lists recent deployments.
-When we created the router and adjusted it, that adjustment resulted in a second
-deployment. We will talk more about deployments when we get into builds.
+When we created the router and registry, each created one deployment.
+We will talk more about deployments when we get into builds.
 
 Anyway, ultimately you will have a Docker registry that is being hosted by OpenShift
-and that is running on one of your nodes.
+and that is running on the master (because we specified "region=infra" as the
+registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl -v `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`/v2/
 
-And you should see:
+And you should see [a 200
+response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
+mostly empty body.  Your IP addresses will almost certainly be different.
 
-    "docker-registry server (dev) (v0.9.0)"
+~~~~
+* About to connect() to 172.30.17.114 port 5000 (#0)
+*   Trying 172.30.17.114...
+* Connected to 172.30.17.114 (172.30.17.114) port 5000 (#0)
+> GET /v2/ HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 172.30.17.114:5000
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Content-Length: 2
+< Content-Type: application/json; charset=utf-8
+< Docker-Distribution-Api-Version: registry/2.0
+< Date: Tue, 26 May 2015 17:18:02 GMT
+<
+* Connection #0 to host 172.30.17.114 left intact
+{}    
+~~~~
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
@@ -1759,40 +1767,10 @@ And you will eventually see something like:
     Session Affinity:       None
     No events.
 
-Once there is an endpoint listed, the curl should work.
+Once there is an endpoint listed, the curl should work and the registry is available.
 
-### Registry Placement By Region (optional)
-In the beta environment, as architected, there is no real need for the registry
-to land on any particular node. However, for consistency, you might want to keep
-OpenShift "infrastructure" components on the master's node. We can use our
-previously-defined "infra" region for this purpose.
-
-To do this, edit the created DeploymentConfig definition with `osc edit`:
-
-    osc edit dc docker-registry
-
-As before, specify your NodeSelector within the `podTemplate:` block that
-defines the pods to create. It is easiest to just place it right after
-that line, like this: (indentation *is* significant in YAML)
-
-    [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: infra
-          desiredState:
-            manifest:
-    [...]
-
-
-Once you save this file and exit, the DeploymentConfig will be updated and
-a new registry deployment will soon be created with the new definition.
-
-If you are going to move the registry, do it now or don't do it all. As
-dedicated storage volumes did not make the beta4 drop, restarting the registry
-pod will result in an empty registry -- all the images will be lost. This will
-be a Very.Bad.Thing.
+Highly available, actually. You should be able to delete the registry pod at any
+point in this training and have it return shortly after with all data intact.
 
 ## STI - What Is It?
 STI stands for *source-to-image* and is the process where OpenShift will take
@@ -3330,7 +3308,7 @@ No arguments are required but the help output will show you the defaults:
     --git-repo git://github.com/brenton/basicauthurl-example.git
 
 Once you run the helper script it will output the configuration changes
-required for `/etc/openshift/master-config.yaml` as well as create
+required for `/etc/openshift/master/master-config.yaml` as well as create
 `basicauthurl.json`.  You can now feed that to `osc`:
 
     osc create -f basicauthurl.json
@@ -3352,7 +3330,7 @@ In that case in order for SNI to work correctly we had to trick curl with the `-
     curl -u joe:redhat --cacert /etc/openshift/master/ca.crt \
         https://basicauthurl.example.com/validate
 
-If you've made the required changes to `/etc/openshift/master-config.yaml` and
+If you've made the required changes to `/etc/openshift/master/master-config.yaml` and
 restarted `openshift-master` then you should now be able to log it with the
 example users `joe` and `alice` with the password `redhat`.
 
@@ -3459,7 +3437,7 @@ for common issues. This is very much still under development however.
         # But we need it to exist in ~/.kube
         cd ~/.kube
 
-        # If a stale token exists it will prevent the beta2 login command from working
+        # If a stale token exists it will prevent the beta4 login command from working
         rm .kubeconfig
 
         osc login \
@@ -3513,9 +3491,9 @@ remote logging services.
     $ModLoad imtcp
     $InputTCPServerRun 514
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 
 
@@ -3531,9 +3509,9 @@ On your master update the filters in `/etc/rsyslog.conf` to divert openshift log
     :programname, contains, "openshift" ~
     *.info;mail.none;authpriv.none;cron.none                /var/log/messages
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 ## Configure nodes to send openshift logs to your master
 On your other hosts send openshift logs to your master by adding this line to
@@ -3541,9 +3519,9 @@ On your other hosts send openshift logs to your master by adding this line to
 
     :programname, contains, "openshift" @@ose3-master.example.com
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 Now all your openshift related logs will end up in `/var/log/openshift` on your
 master.
@@ -3560,9 +3538,9 @@ based on the source host. On your master, add these lines immediately prior to
     $RuleSet RSYSLOG_DefaultRuleset   #End the rule set by switching back to the default rule set
     $InputTCPServerBindRuleset remote1  #Define a new input and bind it to the "remote1" rule set
 
-Restart rsyslogd
+Restart rsyslog
 
-    systemctl restart rsyslogd
+    systemctl restart rsyslog
 
 
 Now logs from remote hosts will go to `/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log`
@@ -3622,13 +3600,14 @@ standard environment variables.  The trick is knowing where to place them.
 ## Importing ImageStreams
 
 Since the importer is on the Master we need to make the configuration change
-there.  The easiest way to do that is to create a configuration file in
-`/etc/systemd/system/openshift-master.service.d/` and set appropriate values
-for `NO_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY`:
+there.  The easiest way to do that is to add environment variables `NO_PROXY`,
+`HTTP_PROXY`, and `HTTPS_PROXY` to `/etc/sysconfig/openshift-master` then restart
+your master.
 
 ~~~
-[Service]
-Environment="HTTP_PROXY=http://10.0.1.1:8080/" "HTTPS_PROXY=https://10.0.0.1:8080/" "NO_PROXY=master.example.com"
+HTTP_PROXY=http://USERNAME:PASSWORD@10.0.1.1:8080/
+HTTPS_PROXY=https://USERNAME:PASSWORD@10.0.0.1:8080/
+NO_PROXY=master.example.com
 ~~~
 
 It's important that the Master doesn't use the proxy to access itself so make
@@ -3636,7 +3615,6 @@ sure it's listed in the `NO_PROXY` value.
 
 Now restart the Service:
 ~~~
-systemctl daemon-reload
 systemctl restart openshift-master
 ~~~
 
