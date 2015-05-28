@@ -1384,10 +1384,10 @@ and a corresponding route. It also includes a deployment configuration.
 
 In the JSON above:
 
-* There is a pod whose containers have the label `name=hello-openshift-label` and the nodeSelector `region=primary`
+* There is a pod that has the label `name=hello-openshift` and the nodeSelector `region=primary`
 * There is a service:
   * with the id `hello-openshift-service`
-  * with the selector `name=hello-openshift-label`
+  * with the selector `name=hello-openshift`
 * There is a route:
   * with the FQDN `hello-openshift.cloudapps.example.com`
   * with the `serviceName` directive `hello-openshift-service`
@@ -1398,9 +1398,9 @@ If we work from the route down to the pod:
 * The pool is for any pods in the service whose ID is `hello-openshift-service`,
     via the `serviceName` directive of the route.
 * The service `hello-openshift-service` includes every pod who has a label
-    `name=hello-openshift-label`
+    `name=hello-openshift`
 * There is a single pod with a single container that has the label
-    `name=hello-openshift-label`
+    `name=hello-openshift`
 
 **Logged in as `joe`,** edit `test-complete.json` and change the `host` stanza for
 the route to have the correct domain, matching the DNS configuration for your
