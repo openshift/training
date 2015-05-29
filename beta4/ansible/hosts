@@ -26,11 +26,14 @@ deployment_type=enterprise
 # Origin copr repo
 #openshift_additional_repos=[{'id': 'openshift-origin-copr', 'name': 'OpenShift Origin COPR', 'baseurl': 'https://copr-be.cloud.fedoraproject.org/results/maxamillion/origin-next/epel-7-$basearch/', 'enabled': 1, 'gpgcheck': 1, gpgkey: 'https://copr-be.cloud.fedoraproject.org/results/maxamillion/origin-next/pubkey.gpg'}]
 
+# disable sdn install for now until ansible fixed
+openshift_use_openshift_sdn=false
+
 # host group for masters
 [masters]
 ose3-master.example.com
 
-# host group for nodes
+# host group for nodes, includes region info
 [nodes]
 ose3-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
 ose3-node1.example.com openshift_node_labels="{'region': 'primary', 'zone': 'east'}"
