@@ -713,7 +713,8 @@ go ahead and grab it inside Joe's home folder:
     cd ~/training/beta4
 
 ### The Hello World Definition JSON
-In the beta4 training folder, you can see the contents of our pod definition by using cat`:
+In the beta4 training folder, you can see the contents of our pod definition by
+using `cat`:
 
     cat hello-pod.json
     {
