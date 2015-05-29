@@ -258,7 +258,9 @@ can:
         --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
 
-    **Note:** You will have had to register/attach your system first.
+    **Note:** You will have had to register/attach your system first.  Also,
+    *rhel-server-7-ose-beta-rpms* is not a typo.  The name will change at GA to be
+    consistent with the RHEL channel names.
 
 * Import the GPG key for beta:
 
