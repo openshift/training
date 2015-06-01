@@ -1839,25 +1839,26 @@ select the appropriate builder image.
 Perform the following command as `root` in the `beta4`folder in order to add all
 of the builder images:
 
-    osc create -f image-streams.json -n openshift
+    osc create -f image-streams-rhel7.json -n openshift
+    osc create -f image-streams-jboss-rhel7.json -n openshift
 
 You will see the following:
 
-    imageStreams/ruby-20-rhel7
-    imageStreams/nodejs-010-rhel7
-    imageStreams/perl-516-rhel7
-    imageStreams/python-33-rhel7
-    imageStreams/mysql-55-rhel7
-    imageStreams/postgresql-92-rhel7
-    imageStreams/mongodb-24-rhel7
-    imageStreams/eap-openshift
-    imageStreams/tomcat7-openshift
-    imageStreams/tomcat8-openshift
-    imageStreams/ruby-20-centos7
-    imageStreams/nodejs-010-centos7
-    imageStreams/perl-516-centos7
-    imageStreams/python-33-centos7
-    imageStreams/wildfly-8-centos
+    imageStreams/ruby
+    imageStreams/nodejs
+    imageStreams/perl
+    imageStreams/php
+    imageStreams/python
+    imageStreams/mysql
+    imageStreams/postgresql
+    imageStreams/mongodb
+    imageStreams/jboss-webserver3-tomcat7-openshift
+    imageStreams/jboss-webserver3-tomcat8-openshift
+    imageStreams/jboss-eap6-openshift
+    imageStreams/jboss-amq-62
+    imageStreams/jboss-mysql-55
+    imageStreams/jboss-postgresql-92
+    imageStreams/jboss-mongodb-24
 
 What is the `openshift` project where we added these builders? This is a
 special project that can contain various elements that should be available to
