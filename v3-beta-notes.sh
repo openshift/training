@@ -50,8 +50,15 @@ rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b configTemplates
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
-ansible-playbook playbooks/byo/config.yml
-## make changes to netwrk
+
+# misc ansible steps here
+
+useradd joe
+useradd alice
+touch /etc/openshift-passwd
+htpasswd -b /etc/openshift-passwd joe redhat
+htpasswd -b /etc/openshift-passwd alice redhat
+systemctl restart openshift-master
 
 #beta3
 systemctl start docker
