@@ -646,6 +646,23 @@ The documentation link has some more complicated examples. The topoligical
 possibilities are endless!
 
 ### Node Labels
+** Bug Fix **
+Another artifact of the installer is that the node labels were not applied at
+installation:
+
+    NAME                      LABELS                                           STATUS
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com   Ready
+    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com    Ready
+    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com    Ready
+
+We can fix this with the `osc label` command. As `root` on your master:
+
+    osc label --overwrite node ose3-master.example.com region=infra zone=default
+    osc label --overwrite node ose3-node1.example.com region=primary zone=east
+    osc label --overwrite node ose3-node2.example.com region=primary zone=west
+
+Remember to edit the command appropriately if your hostnames are different
+
 The assignments of "regions" and "zones" at the node-level are handled by labels
 on the nodes. You can look at how the labels were implemented by doing:
 
@@ -653,16 +670,27 @@ on the nodes. You can look at how the labels were implemented by doing:
 
 You should see something like the following in the YAML:
 
-    RELEVANT BLOCK OF NODE YAML
+    - apiVersion: v1beta3
+      kind: Node
+      metadata:
+        creationTimestamp: 2015-06-01T19:30:37Z
+        labels:
+          kubernetes.io/hostname: ose3-master.example.com
+          region: infra
+          zone: default
+        name: ose3-master.example.com
+        resourceVersion: "219"
+        selfLink: /api/v1beta3/nodes/ose3-master.example.com
+        uid: ae0ecaa7-0894-11e5-8f4f-525400b33d1d
 
 You should be able to see that the nodes have the labels applied:
 
     osc get nodes
 
-    NAME                       LABELS                     STATUS
-    ose3-master.example.com    region=infra,zone=default  Ready
-    ose3-node1.example.com     region=primary,zone=east   Ready
-    ose3-node2.example.com     region=primary,zone=west   Ready
+    NAME                      LABELS                                                                     STATUS
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
+    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
+    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
 
 At this point we have a running OpenShift environment across three hosts, with
 one master and three nodes, divided up into two regions -- "*infra*structure"
@@ -702,14 +730,14 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift/htpasswd
-    htpasswd -b /etc/openshift/htpasswd joe redhat
-    htpasswd -b /etc/openshift/htpasswd alice redhat
+    touch /etc/openshift/openshift-passwd
+    htpasswd -b /etc/openshift/openshift-passwd joe redhat
+    htpasswd -b /etc/openshift/openshift-passwd alice redhat
 
 Remember, you created these users previously.
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift//master/master-config.yaml`. We need to edit the `oauthConfig`'s
+`/etc/openshift/master/master-config.yaml`. We need to edit the `oauthConfig`'s
 `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
@@ -718,19 +746,12 @@ The OpenShift configuration is kept in a YAML file which currently lives at
       name: apache_auth
       provider:
         apiVersion: v1
-        file: /etc/openshift/htpasswd
+        file: /etc/openshift/openshift-passwd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings can be found here:
 
     http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
-
-If you're feeling lazy, use your friend `sed`:
-
-    sed -i -e 's/name: anypassword/name: apache_auth/' \
-    -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
-    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift\/htpasswd' \
-    /etc/openshift/master/master-config.yaml
 
 Restart `openshift-master`:
 
@@ -899,22 +920,22 @@ folder. Take a look at it, and you'll see something like the following:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: /etc/openshift/master/ca.crt
+        certificate-authority: ../../../../etc/openshift/master/ca.crt
         server: https://ose3-master.example.com:8443
-      name: ose3-master-example-com-8443
+      name: ose3-master-example-com:8443
     contexts:
     - context:
-        cluster: ose3-master-example-com-8443
+        cluster: ose3-master-example-com:8443
         namespace: demo
-        user: joe
-      name: demo
-    current-context: demo
+        user: joe/ose3-master-example-com:8443
+      name: demo/ose3-master-example-com:8443/joe
+    current-context: demo/ose3-master-example-com:8443/joe
     kind: Config
     preferences: {}
     users:
-    - name: joe
+    - name: joe/ose3-master-example-com:8443
       user:
-        token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
+        token: _ebJfOdcHy8TW4XIDxJjOQEC_yJp08zW0xPI-JWWU3c
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, etc.
@@ -998,13 +1019,17 @@ the pod inside of it. The command should display the ID of the pod:
 Issue a `get pods` to see the details of how it was defined:
 
     osc get pods
-    POD               IP         CONTAINER(S)      IMAGE(S)                    HOST                                    LABELS                 STATUS    CREATED
-    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
+    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
+    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   16 seconds   
+                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   2 seconds   
 
-Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
-see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
-to 36061 on the host and bound to 8080 on the container, along with several other
-`ose-pod` containers.
+The output of this command shows all of the Docker containers in a pod, which
+explains some of the spacing.
+
+On the node where the pod is running (`HOST`), look at the list of Docker
+containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
+should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
+bound to 8080 on the container, along with several other `ose-pod` containers.
 
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
@@ -1012,9 +1037,10 @@ container as nothing more than a way for the host OS to get an interface created
 for the corresponding pod to be able to receive traffic. Deeper understanding of
 networking in OpenShift is outside the scope of this material.
 
-To verify that the app is working, you can issue a curl to the app's port:
+To verify that the app is working, you can issue a curl to the app's port *on
+the node where the pod is running*
 
-    curl http://localhost:36061
+    [root@ose3-node1 ~]# curl localhost:36061
     Hello OpenShift!
 
 Hooray!
@@ -1038,7 +1064,7 @@ If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
 
 ### Delete the Pod
-Go ahead and delete this pod so that you don't get confused in later examples:
+As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
 
@@ -1055,13 +1081,13 @@ enforcement exercise. The `hello-quota` JSON will attempt to create four
 instances of the "hello-openshift" pod. It will fail when it tries to create the
 fourth, because the quota on this project limits us to three total pods.
 
-Go ahead and use `osc create` and you will see the following:
+As `joe`, go ahead and use `osc create` and you will see the following:
 
-    osc create -f hello-quota.json
-    pods/1-hello-openshift
-    pods/2-hello-openshift
-    pods/3-hello-openshift
-    Error: pods "4-hello-openshift" is forbidden: Limited to 3 pods
+    osc create -f hello-quota.json 
+    pods/hello-openshift-1
+    pods/hello-openshift-2
+    pods/hello-openshift-3
+    Error from server: Pod "hello-openshift-4" is forbidden: Limited to 3 pods
 
 Let's delete these pods quickly. As `joe` again:
 
