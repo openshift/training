@@ -20,7 +20,12 @@
             "protocol": "TCP"
           }
         ],
-        "resources": {},
+        "resources": {
+          "limits": {
+            "cpu": "100m",
+            "memory": "16Mi"
+          }
+        },
         "terminationMessagePath": "/dev/termination-log",
         "imagePullPolicy": "IfNotPresent",
         "capabilities": {},
