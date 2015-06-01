@@ -47,9 +47,10 @@ cd
 git clone https://github.com/openshift/training.git
 cd
 rm -rf openshift-ansible
-git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
+git clone https://github.com/detiber/openshift-ansible.git -b configTemplates
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
+ansible-playbook playbooks/byo/config.yml
 ## make changes to netwrk
 
 #beta3
