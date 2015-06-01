@@ -917,26 +917,47 @@ using `cat`:
 
     cat hello-pod.json
     {
-      "id": "hello-openshift",
       "kind": "Pod",
-      "apiVersion":"v1beta2",
-      "labels": {
-        "name": "hello-openshift"
-      },
-      "desiredState": {
-        "manifest": {
-          "version": "v1beta1",
-          "id": "hello-openshift",
-          "containers": [{
-            "name": "hello-openshift",
-            "image": "openshift/hello-openshift",
-            "ports": [{
-              "hostPort": 6061,
-              "containerPort": 8080
-            }]
-          }]
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-openshift",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-openshift"
         }
-      }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "hello-openshift",
+            "image": "openshift/hello-openshift:v0.4.3",
+            "ports": [
+              {
+                "hostPort": 36061,
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "100m",
+                "memory": "16Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     }
 
 In the simplest sense, a *pod* is an application or an instance of something. If
@@ -962,7 +983,7 @@ Issue a `get pods` to see the details of how it was defined:
 
 Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
 see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
-to 6061 on the host and bound to 8080 on the container, along with several other
+to 36061 on the host and bound to 8080 on the container, along with several other
 `ose-pod` containers.
 
 The `openshift3_beta/ose-pod` container exists because of the way network
@@ -973,7 +994,7 @@ networking in OpenShift is outside the scope of this material.
 
 To verify that the app is working, you can issue a curl to the app's port:
 
-    curl http://localhost:6061
+    curl http://localhost:36061
     Hello OpenShift!
 
 Hooray!
