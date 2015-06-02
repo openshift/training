@@ -116,15 +116,15 @@ OPENSHIFT_OAUTH_HTPASSWD_FILE=/etc/openshift-passwd
 OPENSHIFT_OAUTH_ACCESS_TOKEN_MAX_AGE_SECONDS=172800
 EOF
 systemctl restart openshift-master
-openshift ex router --create --credentials=/root/.kube/.kubeconfig \
+osadm router --create --credentials=/root/.kube/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
-openshift ex registry --create --credentials=/root/.kube/.kubeconfig \
+osadm registry --create --credentials=/root/.kube/.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 cd
 mkdir .kube
 cd ~/.kube
-openshift ex login \
+osadm login \
 --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
 --cluster=master --server=https://ose3-master.example.com:8443 \
 --namespace=demo
@@ -136,7 +136,7 @@ cd ~/training/beta2
 cd
 mkdir .kube
 cd ~/.kube
-openshift ex login \
+osadm login \
 --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt \
 --cluster=master --server=https://ose3-master.example.com:8443 \
 --namespace=wiring
