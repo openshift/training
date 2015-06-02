@@ -29,6 +29,11 @@ deployment_type=enterprise
 # disable sdn install for now until ansible fixed
 openshift_use_openshift_sdn=false
 
+# enable htpasswd authentication
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/openshift-passwd'}]
+
+
+
 # host group for masters
 [masters]
 ose3-master.example.com
