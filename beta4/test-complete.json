@@ -20,97 +20,53 @@
       "kind": "Route",
       "apiVersion": "v1beta1",
       "metadata": {
-        "name": "hello-openshift-route"
       },
       "id": "hello-openshift-route",
       "host": "hello-openshift.cloudapps.example.com",
       "serviceName": "hello-openshift-service"
     },
     {
-      "apiVersion": "v1beta1",
-      "kind": "ImageStream",
+      "kind": "Pod",
+      "apiVersion": "v1beta3",
       "metadata": {
-        "name": "hello-openshift"
-      }
-    },
-    {
-        "kind": "DeploymentConfig",
-        "apiVersion": "v1beta1",
-        "metadata": {
-            "name": "hello-openshift"
-        },
-        "triggers": [
-            {
-              "imageChangeParams": {
-                "automatic": true,
-                "containerNames": [
-                  "hello-openshift"
-                ],
-                "from": {
-                  "name": "hello-openshift"
-                },
-                "tag": "latest"
-              },
-              "type": "ImageChange"
+        "name": "hello-openshift",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "hello-openshift",
+            "image": "openshift/hello-openshift:v0.4.3",
+            "ports": [
+              {
+                "hostPort": 6061,
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "10m",
+                "memory": "16Mi"
+              }
             },
-            {
-              "type": "ConfigChange"
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
             }
+          }
         ],
-        "template": {
-            "strategy": {
-                "type": "Recreate"
-            },
-            "controllerTemplate": {
-                "replicas": 1,
-                "replicaSelector": {
-                    "name": "hello-openshift"
-                },
-                "podTemplate": {
-                    "desiredState": {
-                        "manifest": {
-                            "version": "v1beta2",
-                            "id": "",
-                            "volumes": null,
-                            "containers": [
-                                {
-                                    "name": "hello-openshift",
-                                    "image": "openshift/hello-openshift",
-                                    "ports": [
-                                        {
-                                            "containerPort": 8080,
-                                            "protocol": "TCP"
-                                        }
-                                    ],
-                                    "resources": {},
-                                    "livenessProbe": {
-                                        "tcpSocket": {
-                                            "port": 8080
-                                        },
-                                        "timeoutSeconds": 1,
-                                        "initialDelaySeconds": 10
-                                    },
-                                    "terminationMessagePath": "/dev/termination-log",
-                                    "imagePullPolicy": "PullIfNotPresent",
-                                    "capabilities": {}
-                                }
-                            ],
-                            "restartPolicy": {
-                                "always": {}
-                            },
-                            "dnsPolicy": "ClusterFirst"
-                        }
-                    },
-                    "nodeSelector": {
-                      "region": "primary"
-                    },
-                    "labels": {
-                        "name": "hello-openshift"
-                    }
-                }
-            }
-        },
-        "latestVersion": 1
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     }
   ]
 }

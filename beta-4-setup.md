@@ -1020,7 +1020,7 @@ Reality is more complex, and we will learn more about the terms as we explore
 OpenShift further.
 
 ### Run the Pod
-To create the pod from our JSON file, execute the following:
+As `joe`, to create the pod from our JSON file, execute the following:
 
     osc create -f hello-pod.json
 
@@ -1072,6 +1072,11 @@ project. You'll see some interesting things:
 ### Quota Usage
 If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 
+You can also use `osc` to determine the current quota usage of your project. As
+`joe`:
+
+    osc describe quota test-quota -n demo
+
 ### Extra Credit
 If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
@@ -1108,29 +1113,6 @@ Let's delete these pods quickly. As `joe` again:
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
 check*. Be careful.
-
-## Adding Nodes
-We are getting ready to build out our complete environment and add more
-infrastructure. We will begin by adding our other two nodes.
-
-It is extremely easy to add nodes to an existing OpenShift environment. Return
-to a `root` terminal on your master.
-
-### Modifying the Ansible Configuration
-On your master, edit the `/etc/ansible/hosts` file and uncomment the nodes, or
-add them as appropriate for your DNS/hostnames.
-
-Then, run the ansible playbook again:
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
-
-Once the installer is finished, you can check the status of your environment
-(nodes) with `osc get nodes`. You'll see something like:
-
-    NAME                      LABELS        STATUS
-    ose3-master.example.com   Schedulable   <none>    Ready
-    ose3-node1.example.com    Schedulable   <none>    Ready
-    ose3-node2.example.com    Schedulable   <none>    Ready
 
 ## Services
 From the [Kubernetes
@@ -1211,12 +1193,12 @@ This HAProxy pool ultimately contains all pods that are in a service. Which
 service? The service that corresponds to the `serviceName` directive that you
 see above.
 
-### Creating a Wildcard Certificate
-In order to serve a valid certificate for secure access to applications in
-our cloud domain, we will need to create a key and wildcard certificate
-that the router will use by default for any routes that do not specify
-a key/cert of their own. OpenShift supplies a command for creating a
-key/cert signed by the OpenShift CA which we will use.  On the master:
+### Creating a Wildcard Certificate In order to serve a valid certificate for
+secure access to applications in our cloud domain, we will need to create a key
+and wildcard certificate that the router will use by default for any routes that
+do not specify a key/cert of their own. OpenShift supplies a command for
+creating a key/cert signed by the OpenShift CA which we will use.  On the
+master, as `root`:
 
     CA=/etc/openshift/master
     osadm create-server-cert --signer-cert=$CA/ca.crt \
@@ -1229,6 +1211,8 @@ a single PEM format file that the router needs in the next step.
 
     cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
 
+Make sure you remember where you put this PEM file.
+
 ### Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
 v3 services. It currently supports only HTTP(S) traffic (and "any"
@@ -1236,7 +1220,7 @@ TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
 proxy.
 
 The `openshift3_beta/ose-haproxy-router` container listens on the host network
-interface unlike most containers that listen only on private IPs. The router
+interface, unlike most containers that listen only on private IPs. The router
 proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
@@ -1279,19 +1263,32 @@ If this works, you'll see some output:
     services/router
     deploymentConfigs/router
 
-Let's check the pods with the following:
+**Note:** You will have to reference the absolute path of the PEM file if you
+did not run this command in the folder where you created it.
 
-    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$6"\n"}' | column -t
+Let's check the pods:
+
+    osc get pods 
 
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
 
-    POD                   CONTAINER(S)  HOST                                   STATUS
-    deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
-    router-1-ats7z        router        ose3-master.example.com/192.168.133.4  Running
+    POD              IP         CONTAINER(S)   IMAGE(S)                                                                 HOST                                    LABELS                                                      STATUS    CREATED      MESSAGE
+    router-1-cutck   10.1.0.4                                                                                           ose3-master.example.com/192.168.133.2   deployment=router-1,deploymentconfig=router,router=router   Running   18 minutes   
+                                router         registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2                                                                                                       Running   18 minutes
 
-Note: You may or may not see the deploy pod, depending on when you run this
-command. Also the router may not end up on the master.
+Note: This output is huge, wide, and ugly. We're working on making it nicer. You
+can chime in here:
+
+    https://github.com/GoogleCloudPlatform/kubernetes/issues/7843
+
+In the above router creation command (`osadm router...`) we also specified
+`--selector`. This flag causes a `nodeSelector` to be placed on all of the pods
+created. If you think back to our "regions" and "zones" conversation, the
+OpenShift environment is currently configured with an *infra*structure region
+called "infra". This `--selector` argument asks OpenShift:
+
+*Please place all of these router pods in the infra region*.
 
 ### Router Placement By Region
 In the very beginning of the documentation, we indicated that a wildcard DNS
@@ -1305,7 +1302,7 @@ used above ensures that the router is placed on our master as it's the only node
 with the label `region=infra`.
 
 For a true HA implementation, one would want multiple "infra" nodes and
-multiple, clustered router instances. Look for this to be described in beta4.
+multiple, clustered router instances. We will describe this later.
 
 ### Viewing Router Stats
 Haproxy provides a stats page that's visible on port 1936 of your router host.
@@ -1313,13 +1310,24 @@ Currently the stats page is password protected with a static password, this
 password will be generated using a template parameter in the future, for now the
 password is `cEVu2hUb` and the username is `admin`.
 
+To make this acessible publicly, you will need to open this port on your master:
+
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m tcp --dport 1936 -j ACCEPT
+
+You will also want to add this rule to `/etc/sysconfig/iptables` as well.
+
+Feel free to not open this port if you don't want to make this accessible, or if
+you only want it accessible via port fowarding, etc.
+
 **Note**: Unlike OpenShift v2 this router is not specific to a given project, as
 such it's really intended to be viewed by cluster admins rather than project
 admins.
 
-Ensure that port 1936 is accessible and visit
-<http://admin:cEVu2hUb@ose3-master.example.com:1936> to view your router stats.
+Ensure that port 1936 is accessible and visit:
 
+    http://admin:cEVu2hUb@ose3-master.example.com:1936 
+
+to view your router stats.
 
 ## The Complete Pod-Service-Route
 With a router now available, let's take a look at an entire
@@ -1353,94 +1361,53 @@ and a corresponding route. It also includes a deployment configuration.
           "kind": "Route",
           "apiVersion": "v1beta1",
           "metadata": {
-            "name": "hello-openshift-route"
           },
           "id": "hello-openshift-route",
           "host": "hello-openshift.cloudapps.example.com",
           "serviceName": "hello-openshift-service"
         },
         {
-          "apiVersion": "v1beta1",
-          "kind": "ImageStream",
+          "kind": "Pod",
+          "apiVersion": "v1beta3",
           "metadata": {
-            "name": "openshift/hello-openshift"
-          }
-        },
-        {
-            "kind": "DeploymentConfig",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "hello-openshift"
-            },
-            "triggers": [
-                {
-                  "imageChangeParams": {
-                    "automatic": true,
-                    "containerNames": [
-                      "hello-openshift"
-                    ],
-                    "from": {
-                      "name": "hello-openshift"
-                    },
-                    "tag": "latest"
-                  },
-                  "type": "ImageChange"
-                }
-            ],
-            "template": {
-                "strategy": {
-                    "type": "Recreate"
+            "name": "hello-openshift",
+            "creationTimestamp": null,
+            "labels": {
+              "name": "hello-openshift"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "hello-openshift",
+                "image": "openshift/hello-openshift:v0.4.3",
+                "ports": [
+                  {
+                    "hostPort": 6061,
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "10m",
+                    "memory": "16Mi"
+                  }
                 },
-                "controllerTemplate": {
-                    "replicas": 1,
-                    "replicaSelector": {
-                        "name": "hello-openshift"
-                    },
-                    "podTemplate": {
-                        "desiredState": {
-                            "manifest": {
-                                "version": "v1beta2",
-                                "id": "",
-                                "volumes": null,
-                                "containers": [
-                                    {
-                                        "name": "hello-openshift",
-                                        "image": "openshift/hello-openshift",
-                                        "ports": [
-                                            {
-                                                "containerPort": 8080,
-                                                "protocol": "TCP"
-                                            }
-                                        ],
-                                        "resources": {},
-                                        "livenessProbe": {
-                                            "tcpSocket": {
-                                                "port": 8080
-                                            },
-                                            "timeoutSeconds": 1,
-                                            "initialDelaySeconds": 10
-                                        },
-                                        "terminationMessagePath": "/dev/termination-log",
-                                        "imagePullPolicy": "PullIfNotPresent",
-                                        "capabilities": {}
-                                    }
-                                ],
-                                "restartPolicy": {
-                                    "always": {}
-                                },
-                                "dnsPolicy": "ClusterFirst"
-                            }
-                        },
-                        "nodeSelector": {
-                          "region": "primary"
-                        },
-                        "labels": {
-                            "name": "hello-openshift"
-                        }
-                    }
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "IfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
                 }
-            },
-            "latestVersion": 1
+              }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst",
+            "serviceAccount": ""
+          },
+          "status": {}
         }
       ]
     }
@@ -1465,13 +1432,14 @@ If we work from the route down to the pod:
 * There is a single pod with a single container that has the label
     `name=hello-openshift-label`
 
-**Logged in as `joe`,** edit `test-complete.json` and change the `host` stanza for
-the route to have the correct domain, matching the DNS configuration for your
-environment. Once this is done, go ahead and use `osc` to apply it:
+If you are not using the `example.com` domain you will need to edit the route
+portion of `test-complete.json` to match your DNS environment.
 
-        osc create -f test-complete.json
+**Logged in as `joe`,** go ahead and use `osc` to create everything:
 
- You should see something like the following:
+    osc create -f test-complete.json
+
+You should see something like the following:
 
     services/hello-openshift-service
     routes/hello-openshift-route
