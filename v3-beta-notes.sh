@@ -34,17 +34,19 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
 
 cd
-git clone https://github.com/openshift/training.git 
+git clone https://github.com/openshift/training.git -b beta4
 cd ~/training/beta4
 /bin/cp ~/training/beta4/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
+sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 systemctl start dnsmasq
 iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
+sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 cd
-git clone https://github.com/openshift/training.git
+git clone https://github.com/openshift/training.git -b beta4
 cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b configTemplates
@@ -55,9 +57,9 @@ cd ~/openshift-ansible
 
 useradd joe
 useradd alice
-touch /etc/openshift-passwd
-htpasswd -b /etc/openshift-passwd joe redhat
-htpasswd -b /etc/openshift-passwd alice redhat
+touch /etc/openshift/openshift-passwd
+htpasswd -b /etc/openshift/openshift-passwd joe redhat
+htpasswd -b /etc/openshift/openshift-passwd alice redhat
 systemctl restart openshift-master
 
 #beta3

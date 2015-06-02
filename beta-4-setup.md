@@ -184,7 +184,6 @@ and the following configuration:
 
 * RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
-* NetworkManager **disabled**
 
 The majority of storage requirements are related to Docker and etcd (the data
 store). Both of their contents live in /var, so it is recommended that the
@@ -214,6 +213,14 @@ If you cannot create real forward resolving DNS entries in your DNS system, you
 will need to set up your own DNS server in the beta testing environment.
 Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
 setup](#appendix---dnsmasq-setup)
+
+Remember that NetworkManager may make changes to your DNS
+configuration/resolver/etc. You will need to properly configure your interfaces'
+DNS settings and/or configure NetworkManager appropriately.
+
+More information on NetworkManager can be found in this comment:
+
+    https://github.com/openshift/training/issues/193#issuecomment-105693742
 
 ## Setting Up the Environment
 ### Use a Terminal Window Manager
@@ -482,6 +489,11 @@ Edit the `/etc/ansible/hosts` file on your master and change the sdn line to:
 
     openshift_use_openshift_sdn=true
 
+Or use `sed`:
+
+    sed -i /etc/ansible/hosts \ 
+    -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
+
 Then, run the installer again:
 
     ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
@@ -650,6 +662,7 @@ possibilities are endless!
 Another artifact of the installer is that the node labels were not applied at
 installation:
 
+    osc get node
     NAME                      LABELS                                           STATUS
     ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com   Ready
     ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com    Ready
@@ -981,7 +994,7 @@ using `cat`:
             ],
             "resources": {
               "limits": {
-                "cpu": "100m",
+                "cpu": "10m",
                 "memory": "16Mi"
               }
             },
