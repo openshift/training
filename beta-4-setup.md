@@ -737,8 +737,8 @@ From there, we can create a password for our users, Joe and Alice:
 Remember, you created these users previously.
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master/master-config.yaml`. We need to edit the `oauthConfig`'s
-`identityProviders` stanza so that it looks like the following:
+`/etc/openshift/master/master-config.yaml`. Ansible was configured to edit
+the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
     - challenge: true
@@ -749,13 +749,9 @@ The OpenShift configuration is kept in a YAML file which currently lives at
         file: /etc/openshift/openshift-passwd
         kind: HTPasswdPasswordIdentityProvider
 
-More information on these configuration settings can be found here:
+More information on these configuration settings (and other identity providers) can be found here:
 
     http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
-
-Restart `openshift-master`:
-
-    systemctl restart openshift-master
 
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different resources:
@@ -791,13 +787,13 @@ Open your browser and visit the following URL:
 
     https://fqdn.of.master:8443
 
-It may take up to 90 seconds for the web console to be available after
-restarting the master (when you changed the authentication settings).
+Be aware that it may take up to 90 seconds for the web console to be available
+any time you restart the master.
 
-You will first need to accept the self-signed SSL certificate. You will then be
-asked for a username and a password. Remembering that we created a user
-previously, `joe`, go ahead and enter that and use the password (redhat) you set
-earlier.
+On your first visit your browser will need to accept the self-signed SSL
+certificate. You will then be asked for a username and a password. Remembering
+that we created a user previously, `joe`, go ahead and enter that and use
+the password (`redhat`) you set earlier.
 
 Once you are in, click the *OpenShift 3 Demo* project. There really isn't
 anything of interest at the moment, because we haven't put anything into our
