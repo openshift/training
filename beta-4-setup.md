@@ -491,7 +491,7 @@ Edit the `/etc/ansible/hosts` file on your master and change the sdn line to:
 
 Or use `sed`:
 
-    sed -i /etc/ansible/hosts \ 
+    sed -i /etc/ansible/hosts \
     -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
 
 Then, run the installer again:

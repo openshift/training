@@ -49,7 +49,7 @@ cd
 git clone https://github.com/openshift/training.git -b beta4
 cd
 rm -rf openshift-ansible
-git clone https://github.com/detiber/openshift-ansible.git -b configTemplates
+git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
 
