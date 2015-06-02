@@ -1,4 +1,5 @@
 # OpenShift Beta 2 Setup Information
+**THIS DOCUMENT IS DEPRECATED. PLEASE CHECK THE README FOR THIS REPO**
 
 **Table of contents:**
 
