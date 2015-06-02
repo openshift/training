@@ -737,6 +737,11 @@ see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
 to 6061 on the host and bound to 8080 on the container, along with several other
 `ose-pod` containers.
 
+    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
+    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.9ac8152d_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_c43c7d54   
+    405d63115a60        openshift3_beta/ose-pod:v0.4.3.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.a01602bc_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_dffebcf1     
+
+
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
 container as nothing more than a way for the host OS to get an interface created
@@ -769,7 +774,8 @@ If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
 
 ### Delete the Pod
-Go ahead and delete this pod so that you don't get confused in later examples:
+Go ahead and delete this pod so that you don't get confused in later examples. Don't forget to
+do this as the ```joe``` user:
 
     osc delete pod hello-openshift
 
@@ -996,9 +1002,9 @@ following as the `root` user:
 
     osc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
 
-You will have the JSON output of the definition of all of your nodes. Go ahead
-and edit this file. Add the following to the beginning of the `"metadata": {}`
-block for your "master" node:
+You will have the JSON output of the definition of all of your nodes. Go ahead and
+edit this file. Add the following to the beginning of the `"metadata": {}`
+block for your "master" node inside the files `"items"` list:
 
     "labels" : {
       "region" : "infra",
@@ -1044,6 +1050,8 @@ Then, as `root` update your nodes using the following:
 Note: At release the user should not need to edit JSON like this; the
 installer should be able to configure nodes initially with desired labels,
 and there should be better tools for changing them afterward.
+
+Note: If you end up getting an error while attempting to update the nodes, review your json. Ensure that there are commas in the previous element to your added label sections.
 
 Check the results to ensure the labels were applied:
 
@@ -3240,7 +3248,7 @@ wildcard space:
     ;; ANSWER SECTION:
     foo.cloudapps.example.com 0 IN A 192.168.133.2
     ...
-
+    
 # APPENDIX - LDAP Authentication
 OpenShift currently supports several authentication methods for obtaining API
 tokens.  While OpenID or one of the supported Oauth providers are preferred,
