@@ -1131,12 +1131,22 @@ If you think back to the simple pod we created earlier, there was a "label":
 Now, let's look at a *service* definition:
 
     {
-      "id": "hello-openshift",
       "kind": "Service",
-      "apiVersion": "v1beta1",
-      "port": 27017,
-      "selector": {
-        "name": "hello-openshift"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-service"
+      },
+      "spec": {
+        "selector": {
+          "name":"hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 80,
+            "targetPort": 9376
+          }
+        ]
       }
     }
 
@@ -1168,13 +1178,16 @@ Here is an example route resource JSON definition:
 
     {
       "kind": "Route",
-      "apiVersion": "v1beta1",
+      "apiVersion": "v1beta3",
       "metadata": {
         "name": "hello-openshift-route"
       },
-      "id": "hello-openshift-route",
-      "host": "hello-openshift.cloudapps.example.com",
-      "serviceName": "hello-openshift-service"
+      "spec": {
+        "host": "hello-openshift.cloudapps.example.com",
+        "to": {
+          "name": "hello-openshift-service"
+        }
+      }
     }
 
 When the `osc` command is used to create this route, a new instance of a route
@@ -1336,31 +1349,43 @@ The following is a complete definition for a pod with a corresponding service
 and a corresponding route. It also includes a deployment configuration.
 
     {
-      "metadata":{
-        "name":"hello-service-pod-meta"
-      },
       "kind":"Config",
-      "apiVersion":"v1beta1",
-      "creationTimestamp":"2014-09-18T18:28:38-04:00",
+      "apiVersion":"v1beta3",
+      "metadata":{
+        "name":"hello-service-complete-example"
+      },
       "items":[
         {
-          "id": "hello-openshift-service",
           "kind": "Service",
-          "apiVersion": "v1beta1",
-          "port": 27017,
-          "containerPort": 8080,
-          "selector": {
-            "name": "hello-openshift"
+          "apiVersion": "v1beta3",
+          "metadata": {
+            "name": "hello-openshift-service"
+          },
+          "spec": {
+            "selector": {
+              "name":"hello-openshift"
+            },
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 27017,
+                "targetPort": 8080
+              }
+            ]
           }
         },
         {
           "kind": "Route",
-          "apiVersion": "v1beta1",
+          "apiVersion": "v1beta3",
           "metadata": {
+            "name": "hello-openshift-route"
           },
-          "id": "hello-openshift-route",
-          "host": "hello-openshift.cloudapps.example.com",
-          "serviceName": "hello-openshift-service"
+          "spec": {
+            "host": "hello-openshift.cloudapps.example.com",
+            "to": {
+              "name": "hello-openshift-service"
+            }
+          }
         },
         {
           "kind": "Pod",
