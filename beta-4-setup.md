@@ -1333,7 +1333,9 @@ To make this acessible publicly, you will need to open this port on your master:
 
     iptables -I OS_FIREWALL_ALLOW -p tcp -m tcp --dport 1936 -j ACCEPT
 
-You will also want to add this rule to `/etc/sysconfig/iptables` as well.
+You will also want to add this rule to `/etc/sysconfig/iptables` as well to keep it
+across reboots. However, don't restart the iptables service, as this would destroy
+docker networking. Use the `iptables` command to change rules on a live system.
 
 Feel free to not open this port if you don't want to make this accessible, or if
 you only want it accessible via port fowarding, etc.
