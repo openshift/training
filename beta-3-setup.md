@@ -3799,7 +3799,7 @@ public hostname as follows:
 
 Running ansible:
 
-    ansible ~/openshift-ansible/playbooks/byo/config.yml
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
