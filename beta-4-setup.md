@@ -1464,8 +1464,7 @@ You should see something like the following:
 
     services/hello-openshift-service
     routes/hello-openshift-route
-    imageStreams/openshift/hello-openshift
-    deploymentConfigs/hello-openshift
+    pods/hello-openshift
 
 You can verify this with other `osc` commands:
 
@@ -1481,14 +1480,12 @@ common resources existing in the current project:
 
     osc status
     In project OpenShift 3 Demo (demo)
+    
+    service hello-openshift-service (172.30.197.132:27017 -> 8080)
+    
+    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
 
-    service hello-openshift-service (172.30.17.237:27017 -> 8080)
-      hello-openshift deploys hello-openshift:latest
-        #1 deployed about a minute ago
-
-    To see more information about a service or deployment config, use 'osc describe service <name>' or 'osc describe dc <name>'.
-    You can use 'osc get pods,svc,dc,bc,builds' to see lists of each of the types described above.
-
+You can use 'osc get all' to see lists of each of the types described above.
 `osc status` does not yet show bare pods or routes. The output will be
 more interesting when we get to builds and deployments.
 
@@ -1516,19 +1513,10 @@ Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
 Docker container is on the master.
 
-We ultimately want the PID of the container running the router so that we can go
-"inside" it. On the master system, as the `root` user, issue the following to
-get the PID of the router:
+We can use `docker exec` to get a bash interactive shell inside the running
+router container. The following command will do that for us:
 
-    docker inspect --format {{.State.Pid}}   \
-      `docker ps | grep haproxy-router | awk '{print $1}'`
-    2239
-
-The output will be a PID -- in this case, the PID is `2239`. We can use
-`nsenter` to jump inside that container:
-
-    nsenter -m -u -n -i -p -t 2239
-    [root@mainrouter /]#
+    docker exec -it `docker ps | grep haproxy-router | awk {'print $1'}` /bin/bash
 
 You are now in a bash session *inside* the container running the router.
 
@@ -1563,19 +1551,24 @@ route in OpenShift and added the corresponding configuration to HAProxy.
 Go ahead and `exit` from the container, and then curl your fancy,
 publicly-accessible OpenShift application!
 
-    [root@mainrouter /]# exit
-    logout
-    # curl http://hello-openshift.cloudapps.example.com
+    [root@router-1-2yefi /]# exit
+    exit
+    [root@ose3-master ~]# curl http://hello-openshift.cloudapps.example.com
     Hello OpenShift!
 
 Hooray!
 
+** The following does not work **
+
 You can also reach the route securely and check that it is using the right certificate:
 
-    # curl --cacert /etc/openshift/master/ca.crt \
+    curl --cacert /etc/openshift/master/ca.crt \
              https://hello-openshift.cloudapps.example.com
     Hello OpenShift!
-    # openssl s_client -connect hello.cloudapps.example.com:443 \
+
+And:
+
+    openssl s_client -connect hello.cloudapps.example.com:443 \
                        -CAfile /etc/openshift/master/ca.crt
     CONNECTED(00000003)
     depth=1 CN = openshift-signer@1430768237
@@ -1605,11 +1598,17 @@ at his project, with his project administrator rights he can add her using the
 selected. If you recall earlier, when we logged in as `joe` we ended up in the
 `demo` project. We'll see how to switch projects later.
 
-Open a new terminal window as the `alice` user and the login to OpenShift:
+Open a new terminal window as the `alice` user:
+
+    su - alice
+
+and login to OpenShift:
 
     osc login -u alice \
     --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
+
+You'll interact with the tool as follows:
 
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
@@ -1620,14 +1619,16 @@ Open a new terminal window as the `alice` user and the login to OpenShift:
 `alice` has no projects of her own yet (she is not an administrator on
 anything), so she is automatically configured to look at the `demo` project
 since she has access to it. She has "view" access, so `osc status` and `osc get
-pods` and so forth should show her the same thing as `joe`. However, she cannot
-make changes:
+pods` and so forth should show her the same thing as `joe`:
 
     [alice]$ osc get pods
-    POD                       IP         CONTAINER(S)      IMAGE(S)
-    hello-openshift-1-zdgmt   10.1.2.4   hello-openshift   openshift/hello-openshift
-    [alice]$ osc delete pod hello-openshift-1-zdgmt
-    Error from server: "/api/v1beta1/pods/hello-openshift-1-zdgmt?namespace=demo" is forbidden because alice cannot delete on pods with name "hello-openshift-1-zdgmt" in demo
+    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
+    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   14 minutes   
+                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   14 minutes   
+However, she cannot make changes:
+
+    [alice]$ osc delete pod hello-openshift
+    Error from server: User "alice" cannot delete pods in project "demo"
 
 Also login as `alice` in the web console and confirm that she can view
 the `demo` project.
@@ -1682,9 +1683,6 @@ cleanup routine to finish.
 Once the project disappears from `osc get project`, doing `osc get pod -n demo`
 should return no results.
 
-Note: As of beta4, a user with the `edit` role can actually delete the project.
-[This will be fixed](https://github.com/openshift/origin/issues/1885).
-
 ## Preparing for STI: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
@@ -1693,10 +1691,10 @@ the OpenShift environment that will manage images "locally". Let's take a moment
 to set that up.
 
 ### Storage for the registry
-
 The registry is stores docker images and metadata. If you simply deploy a pod
 with the registry, it will use an ephemeral volume that is destroyed once the
-pod exits. Any images anyone has built would disappear. That would be bad.
+pod exits. Any images anyone has built or pushed into the registry would
+disappear. That would be bad.
 
 What we will do for this demo is use a directory on the master host for
 persistent storage. In production, this directory could be backed by an NFS
@@ -1705,7 +1703,8 @@ could then be shared between multiple hosts for multiple replicas of the
 registry to make the registry HA.
 
 For now we will just show how to specify the directory and the and leave the NFS
-configuration as an exercise. On the master, create the storage directory with:
+configuration as an exercise. On the master, as `root`, create the storage
+directory with:
 
     mkdir -p /mnt/registry
 
@@ -1747,11 +1746,11 @@ as root:
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 OpenShift will re-create it) and that the administrative user uses by default.
-One interesting feature of `osc status` is that it lists recent deployments.
-When we created the router and registry, each created one deployment.
-We will talk more about deployments when we get into builds.
+One interesting features of `osc status` is that it lists recent deployments.
+When we created the router and registry, each created one deployment.  We will
+talk more about deployments when we get into builds.
 
-Anyway, ultimately you will have a Docker registry that is being hosted by OpenShift
+Anyway, you will ultimately have a Docker registry that is being hosted by OpenShift
 and that is running on the master (because we specified "region=infra" as the
 registry's node selector).
 
@@ -1794,9 +1793,10 @@ And you will eventually see something like:
     Name:                   docker-registry
     Labels:                 docker-registry=default
     Selector:               docker-registry=default
-    IP:                     172.30.17.64
+    Type:                   ClusterIP
+    IP:                     172.30.239.41
     Port:                   <unnamed>       5000/TCP
-    Endpoints:              10.1.0.5:5000
+    Endpoints:              <unnamed>       10.1.0.4:5000
     Session Affinity:       None
     No events.
 
@@ -1821,9 +1821,9 @@ into. Grab the project definition and create it:
     --description="This is your first build on OpenShift 3" \
     --admin=joe
 
-At this point, if you click the OpenShift image on the web console you should be
-returned to the project overview page where you will see the new project show
-up. Go ahead and click the *Sinatra* project - you'll see why soon.
+Logged in as `joe` in the web console, if you click the OpenShift image you
+should be returned to the project overview page where you will see the new
+project show up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
 ### Switch Projects
 As the `joe` user, let's switch to the `sinatra` project:
@@ -1860,9 +1860,6 @@ a Docker image.
 
 1. OpenShift will then deploy the built Docker image as a Pod with an associated
 Service.
-
-**Note:** I am wondering if we want to do this via the console now, except for a
-bug with services not being created.
 
 ### CLI versus Console
 There are currently two ways to get from source code to components on OpenShift.
@@ -1962,7 +1959,7 @@ referenced earlier. Enter this repo in the box:
 
 When you hit "Next" you will then be asked which builder image you want to use.
 This application uses the Ruby language, so make sure to click
-`ruby-20-rhel7:latest`. You'll see a pop-up with some more details asking for
+`ruby:latest`. You'll see a pop-up with some more details asking for
 confirmation. Click "Select image..."
 
 The next screen you see lets you begin to customize the information a little

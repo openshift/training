@@ -18,6 +18,7 @@ osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 #beta4
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' 
+docker images | grep 0.5.2 | awk {'print $3'} | xargs docker rmi -f
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.5.2.2
@@ -52,15 +53,36 @@ rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
+ansible-playbook playbooks/byo/config.yml
 
 # misc ansible steps here
+# all nodes
+sed -i /etc/openshift/node/node-config.yaml \
+-e 's/^networkPlugin/networkPluginName: ""\n/'
+systemctl restart openshift-node
 
+# master
+sed -i /etc/ansible/hosts \
+-e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
+ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
 htpasswd -b /etc/openshift/openshift-passwd joe redhat
 htpasswd -b /etc/openshift/openshift-passwd alice redhat
-systemctl restart openshift-master
+osc label --overwrite node ose3-master.example.com region=infra zone=default
+osc label --overwrite node ose3-node1.example.com region=primary zone=east
+osc label --overwrite node ose3-node2.example.com region=primary zone=west
+CA=/etc/openshift/master
+osadm create-server-cert --signer-cert=$CA/ca.crt \
+      --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
+      --hostnames='*.cloudapps.example.com' \
+      --cert=cloudapps.crt --key=cloudapps.key
+cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
+osadm router --default-cert=cloudapps.router.pem \
+--credentials=/etc/openshift/master/openshift-router.kubeconfig \
+--selector='region=infra' \
+--images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 #beta3
 systemctl start docker
