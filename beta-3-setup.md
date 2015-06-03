@@ -3141,7 +3141,7 @@ The following command will:
     | sed -e 's/${APPLICATION_NAME}/helloworld/' \
     -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
     -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
-    -e 's/${GENERIC_TRIGGER_SECRET/secret/' \
+    -e 's/${GENERIC_TRIGGER_SECRET}/secret/' \
     -e 's/${EAP_RELEASE}/6.4/' \
     -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
     -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
