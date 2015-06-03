@@ -34,6 +34,9 @@
         "host": "hello-openshift.cloudapps.example.com",
         "to": {
           "name": "hello-openshift-service"
+        },
+        "tls": {
+          "termination": "edge"
         }
       }
     },
