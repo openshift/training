@@ -42,29 +42,19 @@ restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 systemctl start dnsmasq
-iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT
+sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
+systemctl restart iptables
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 cd
-git clone https://github.com/openshift/training.git -b beta4
+git clone https://github.com/thoraxe/training.git -b beta4-work
 cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
 ansible-playbook playbooks/byo/config.yml
-
-# misc ansible steps here
-# all nodes
-sed -i /etc/openshift/node/node-config.yaml \
--e 's/^networkPlugin/networkPluginName: ""\n/'
-systemctl restart openshift-node
-
-# master
-sed -i /etc/ansible/hosts \
--e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
-ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
