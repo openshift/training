@@ -3821,7 +3821,7 @@ To override the the defaults, you can set the variables in your inventory. For e
 
 **Running ansible:**
 
-    ansible ~/openshift-ansible/playbooks/byo/config.yml
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
