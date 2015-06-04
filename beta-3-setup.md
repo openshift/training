@@ -729,6 +729,11 @@ see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
 to 6061 on the host and bound to 8080 on the container, along with several other
 `ose-pod` containers.
 
+    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
+    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.9ac8152d_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_c43c7d54   
+    405d63115a60        openshift3_beta/ose-pod:v0.4.3.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.a01602bc_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_dffebcf1     
+
+
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
 container as nothing more than a way for the host OS to get an interface created
@@ -761,7 +766,8 @@ If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
 
 ### Delete the Pod
-Go ahead and delete this pod so that you don't get confused in later examples:
+Go ahead and delete this pod so that you don't get confused in later examples. Don't forget to
+do this as the ```joe``` user:
 
     osc delete pod hello-openshift
 
@@ -988,9 +994,9 @@ following as the `root` user:
 
     osc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
 
-You will have the JSON output of the definition of all of your nodes. Go ahead
-and edit this file. Add the following to the beginning of the `"metadata": {}`
-block for your "master" node:
+You will have the JSON output of the definition of all of your nodes. Go ahead and
+edit this file. Add the following to the beginning of the `"metadata": {}`
+block for your "master" node inside the files `"items"` list:
 
     "labels" : {
       "region" : "infra",
@@ -1036,6 +1042,8 @@ Then, as `root` update your nodes using the following:
 Note: At release the user should not need to edit JSON like this; the
 installer should be able to configure nodes initially with desired labels,
 and there should be better tools for changing them afterward.
+
+Note: If you end up getting an error while attempting to update the nodes, review your json. Ensure that there are commas in the previous element to your added label sections.
 
 Check the results to ensure the labels were applied:
 
@@ -1147,13 +1155,13 @@ As the `root` user, try running it with no options and you should see the note
 that a router is needed:
 
     osadm router
-    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
+    F0529 11:50:57.985423    2610 router.go:143] Router "router" does not exist
     (no service). Pass --create to install.
 
 So, go ahead and do what it says:
 
     osadm router --create
-    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
+    F0529 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
     file path containing credentials for connecting the router to the master
     with --credentials
 
@@ -1998,7 +2006,7 @@ so it's not very useful at the moment.
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 
-**Hint:** It is `simple-openshift-sinatra`.
+**Hint:** It is `ruby-example`.
 
 **Hint:** You will need to use `osc get services` to find it.
 
@@ -2042,8 +2050,8 @@ As `joe` scale your application up to three replicas by setting your Replication
 Controller's `replicas` value to 3.
 
     osc get rc
-    CONTROLLER       CONTAINER(S)   REPLICAS
-    ruby-example-1   ruby-example   1
+    CONTROLLER       CONTAINER(S)   IMAGE(S)                                                                                                SELECTOR                                                   REPLICAS
+    ruby-example-1   ruby-example   172.30.17.88:5000/sinatra/ruby-example:65c87f9ceea1dbd36e813cec05674a6eeb82b98395a8d6aecc2fb2ec30479aa1 deployment=ruby-example-1,deploymentconfig=ruby-example         1
 
     osc edit rc ruby-example-1
 
@@ -2096,7 +2104,7 @@ comes in a template that you can just fire up and start using or hacking on.
 ### A Project for the Quickstart
 As the `root` user, first we'll create a new project:
 
-    openshift admin new-project quickstart --display-name="Quickstart" \
+    osadm new-project quickstart --display-name="Quickstart" \
     --description='A demonstration of a "quickstart/template"' \
     --admin=joe
 
@@ -2144,7 +2152,7 @@ then hit the "Create +" button. We've seen this page before, but now it contains
 something new -- an "instant app(lication)". An instant app is a "special" kind
 of template (really, it just has the "instant-app" tag). The idea behind an
 "instant app" is that, when creating an instance of the template, you will have
-a fully functional application. in this example, our "instant" app is just a
+a fully functional application. In this example, our "instant" app is just a
 simple key-value storage and retrieval webpage.
 
 Click "quickstart-keyvalue-application", and you'll see a modal pop-up that
@@ -2462,7 +2470,7 @@ again:
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
-to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
+to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
@@ -3125,7 +3133,7 @@ The following command will:
     | sed -e 's/${APPLICATION_NAME}/helloworld/' \
     -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
     -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
-    -e 's/${GENERIC_TRIGGER_SECRET/secret/' \
+    -e 's/${GENERIC_TRIGGER_SECRET}/secret/' \
     -e 's/${EAP_RELEASE}/6.4/' \
     -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
     -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
@@ -3232,7 +3240,7 @@ wildcard space:
     ;; ANSWER SECTION:
     foo.cloudapps.example.com 0 IN A 192.168.133.2
     ...
-
+    
 # APPENDIX - LDAP Authentication
 OpenShift currently supports several authentication methods for obtaining API
 tokens.  While OpenID or one of the supported Oauth providers are preferred,

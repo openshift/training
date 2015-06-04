@@ -1,4 +1,5 @@
 # OpenShift Beta 1 Setup Information
+**THIS DOCUMENT IS DEPRECATED. PLEASE CHECK THE README FOR THIS REPO**
 ## Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
 (Screen, Tmux).
