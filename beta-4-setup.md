@@ -287,6 +287,14 @@ Onn **each** VM:
 
         yum -y update
 
+**Note: temporary fix**
+1. Set a `sysctl` setting:
+
+        sysctl -w net.bridge.bridge-nf-call-iptables=0
+
+    This setting is required currently to enable things to talk over the SDN. It
+    will soon be added to the installer.
+
 ### Docker Storage Setup (optional, recommended)
 **IMPORTANT:** The default docker storage configuration uses loopback devices
 and is not appropriate for production. Red Hat considers the dm.thinpooldev
