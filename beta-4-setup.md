@@ -499,16 +499,16 @@ Edit the /etc/ansible/hosts file on your master and change the sdn line to:
 
     openshift_use_openshift_sdn=true
 
-Then, run the installer again:
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
-
 Set a `sysctl` setting:
 
     sysctl -w net.bridge.bridge-nf-call-iptables=0
 
 This setting is required currently to enable things to talk over the SDN. It
 will soon be added to the installer. You should do this on **all systems**.
+
+Then, run the installer again:
+
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Regions and Zones
 If you think you're about to learn how to configure regions and zones in
