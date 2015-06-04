@@ -46,7 +46,9 @@ sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.co
 systemctl start dnsmasq
 sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
 systemctl restart iptables
+sysctl -w net.bridge.bridge-nf-call-iptables=0
 
+sysctl -w net.bridge.bridge-nf-call-iptables=0
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 cd
