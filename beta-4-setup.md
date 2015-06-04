@@ -63,9 +63,9 @@
     - [The Web Console](#the-web-console)
   - [Project Administration](#project-administration)
     - [Deleting a Project](#deleting-a-project)
-  - [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
+  - [Preparing for S2I: the Registry](#preparing-for-s2i-the-registry)
     - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
-  - [STI - What Is It?](#sti---what-is-it)
+  - [S2I - What Is It?](#s2i---what-is-it)
     - [Create a New Project](#create-a-new-project)
     - [Switch Projects](#switch-projects)
     - [A Simple Code Example](#a-simple-code-example)
@@ -145,7 +145,7 @@
   - [Connecting to the Server](#connecting-to-the-server)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
   - [Importing ImageStreams](#importing-imagestreams)
-  - [STI Builds](#sti-builds)
+  - [S2I Builds](#s2i-builds)
   - [Setting Environment Variables in Pods](#setting-environment-variables-in-pods)
   - [Git Repository Access](#git-repository-access)
   - [Proxying Docker Pull](#proxying-docker-pull)
@@ -1677,7 +1677,7 @@ cleanup routine to finish.
 Once the project disappears from `osc get project`, doing `osc get pod -n demo`
 should return no results.
 
-## Preparing for STI: the Registry
+## Preparing for S2I: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
 OpenShift 3 will provide a Docker registry that administrators may run inside
@@ -1799,8 +1799,8 @@ Once there is an endpoint listed, the curl should work and the registry is avail
 Highly available, actually. You should be able to delete the registry pod at any
 point in this training and have it return shortly after with all data intact.
 
-## STI - What Is It?
-STI stands for *source-to-image* and is the process where OpenShift will take
+## S2I - What Is It?
+S2I stands for *source-to-image* and is the process where OpenShift will take
 your application source code and build a Docker image for it. In the real world,
 you would need to have a code repository (where OpenShift can introspect an
 appropriate Docker image to build and use to support the code) or a code
@@ -1809,7 +1809,7 @@ for you).
 
 ### Create a New Project
 By default, users are allowed to create their own projects. Let's try this now.
-As the `joe` user, we will create a new project to put our first STI example
+As the `joe` user, we will create a new project to put our first S2I example
 into:
 
     osc new-project sinatra --display-name="Sinatra Example" \
@@ -1845,7 +1845,7 @@ Let's see some JSON:
 Take a look at the JSON that was generated. You will see some familiar items at
 this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
 
-Essentially, the STI process is as follows:
+Essentially, the S2I process is as follows:
 
 1. OpenShift sets up various components such that it can build source code into
 a Docker image.
@@ -1907,7 +1907,7 @@ all users of the OpenShift environment.
 If you think about one of the important things that OpenShift needs to do, it's
 to be able to deploy newer versions of user applications into Docker containers
 quickly. But an "application" is really two pieces -- the starting image (the
-STI builder) and the application code. While it's "obvious" that we need to
+S2I builder) and the application code. While it's "obvious" that we need to
 update the deployed Docker containers when application code changes, it may not
 have been so obvious that we also need to update the deployed container if the
 **builder** image changes.
@@ -1999,7 +1999,7 @@ moments):
 
     osc get builds -n sinatra
     NAME             TYPE      STATUS     POD
-    ruby-example-1   STI       Running   ruby-example-1
+    ruby-example-1   Source    Running   ruby-example-1
 
 The web console would've updated the *Overview* tab for the *Sinatra* project to
 say:
@@ -2149,11 +2149,11 @@ Now start another build, wait a moment or two for your build to start.
 
     osc get builds
     NAME             TYPE      STATUS     POD
-    ruby-example-1   STI       Complete   ruby-example-1
-    ruby-example-2   STI       New        ruby-example-2
+    ruby-example-1   Source    Complete   ruby-example-1
+    ruby-example-2   Source    New        ruby-example-2
 
 The build never starts, what happened? The quota limits the number of pods in
-this project to three and this includes ephemeral pods like STI builders.
+this project to three and this includes ephemeral pods like S2I builders.
 Resize your application to just one replica and your new build will
 automatically start after a minute or two.
 
@@ -2600,8 +2600,8 @@ And now `get build` again:
 
     osc get build
     NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
-    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
+    ruby-sample-build-1   Source    Complete   ruby-sample-build-1
+    ruby-sample-build-2   Source    Pending    ruby-sample-build-2
 
 You can see that this could have been part of some CI/CD workflow that
 automatically called our webhook once the code was tested.
@@ -2658,7 +2658,7 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
-Generally speaking, this involves modifying the various STI scripts from the
+Generally speaking, this involves modifying the various S2I scripts from the
 builder image. When OpenShift builds your code, it checks to see if any of the
 scripts in the `.sti/bin` folder of your repository override/supercede the
 builder image's scripts. If so, it will execute the repository script instead.
@@ -2708,13 +2708,13 @@ and look at its Docker logs.
 Did You See It?
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
-    ---> CUSTOM STI ASSEMBLE COMPLETE
+    ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 But where's the output from the custom `run` script? The `assemble` script is
 run inside of your builder pod. That's what you see by using `build-logs`. The
 `run` script actually is what is executed to "start" your application's pod. In
 other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` STI builder. As `root` run:
+was built based on the `ruby-20-rhel7` S2I builder. As `root` run:
 
     osc log -n wiring \
     `osc get pods -n wiring | \
@@ -2723,7 +2723,7 @@ was built based on the `ruby-20-rhel7` STI builder. As `root` run:
 
 You should see:
 
-    2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I RUN COMPLETE
 
 You will be able to do this as the `alice` user once the proxy development is
 finished -- for the same reason that you cannot view build logs as regular
@@ -2731,7 +2731,7 @@ users, you also can't view pod logs as regular users.
 
 ## Lifecycle Pre and Post Deployment Hooks
 Like in OpenShift 2, we have the capability of "hooks" - performing actions both
-before and after the **deployment**. In other words, once an STI build is
+before and after the **deployment**. In other words, once an S2I build is
 complete, the resulting Docker image is pushed into the registry. Once the push
 is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
 a **deployment**.
@@ -2961,7 +2961,7 @@ another deployment, our current Docker image doesn't have the database migration
 file in it. Nothing really useful would happen.
 
 In order to get the database migration file into the Docker image, we actually
-need to do another build. Remember, the STI process starts with the builder
+need to do another build. Remember, the S2I process starts with the builder
 image, fetches the source code, executes the (customized) assemble script, and
 then pushes the resulting Docker image into the registry. **Then** the
 deployment happens.
@@ -3149,7 +3149,7 @@ that user in the subsequent commands as necessary.
 
 ### Instantiate the Template
 When we imported the imagestreams into the `openshift` namespace earlier, we
-also brought in JBoss EAP and Tomcat STI builder images.
+also brought in JBoss EAP and Tomcat S2I builder images.
 
 There are currently several application templates that can be used with these
 images, except they leverage some features that were not available at the time
@@ -3397,7 +3397,7 @@ mod_authnz_ldap directives are available.
 ### Upcoming changes
 
 We've recently worked with Kubernetes upstream to add API support for Secrets.
-Before GA the need for STI builds in this authentication approach may go away.
+Before GA the need for S2I builds in this authentication approach may go away.
 What this would mean is that admins would run a script to import an Apache
 configuration in to a Secret and the Pod could use this on start up.  In this
 case the Build Config would go away and only a Deployment Config would be
@@ -3679,7 +3679,7 @@ osc delete imagestreams -n openshift --all
 osc create -f image-streams.json -n openshift
 ~~~
 
-## STI Builds
+## S2I Builds
 
 Let's take the sinatra example.  That build uses fetches gems from
 rubygems.org.  The first thing we'll want to do is fork that codebase and
