@@ -26,6 +26,10 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.5.2.2
+<<<<<<< Updated upstream
+=======
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
+>>>>>>> Stashed changes
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.2.2
@@ -33,6 +37,10 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2 
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+<<<<<<< Updated upstream
+=======
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
+>>>>>>> Stashed changes
 
 cd
 git clone https://github.com/openshift/training.git -b beta4
