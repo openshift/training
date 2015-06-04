@@ -29,7 +29,8 @@ deployment_type=enterprise
 # enable htpasswd authentication
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/openshift-passwd'}]
 
-
+# temporary
+openshift_use_openshift_sdn=false
 
 # host group for masters
 [masters]

@@ -17,7 +17,7 @@ osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 #beta4
 systemctl start docker
-yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' 
+yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
 docker images | grep 0.5.2 | awk {'print $3'} | xargs docker rmi -f
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.5.2.2
