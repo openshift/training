@@ -2124,6 +2124,14 @@ applications is "router.default.local", which is most likely unusable in your
 environment.
 
 ### Implications of Quota Enforcement on Scaling
+**THIS SECTION IS BROKEN**
+
+There is currently a bug with quota enforcement. Do **NOT** apply the quota to
+this project. Skip ahead to the scaling part.
+
+** SKIP THIS**
+
+`*
 Quotas have implications one may not immediately realize. As `root` assign a
 quota to the `sinatra` project.
 
@@ -2151,16 +2159,16 @@ block to look like this:
           }
         },
 
-As `joe` scale your application up to three replicas by setting your Replication
-Controller's `replicas` value to 3.
+`*
 
-    osc get rc
-    CONTROLLER       CONTAINER(S)   REPLICAS
-    ruby-example-1   ruby-example   1
+As `joe` scale your application up to three instances using the `osc resize`
+command:
+
+    osc resize --replicas=3 rc/ruby-example-1
 
 Wait a few seconds and you should see your application scaled up to 3 pods.
 
-    osc get pods
+    osc get pods | grep -v "example"
     POD                    IP          CONTAINER(S) ... STATUS  CREATED
     ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
     ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes

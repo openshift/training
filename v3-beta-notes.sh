@@ -62,9 +62,10 @@ sed -i /etc/openshift/node/node-config.yaml \
 systemctl restart openshift-node
 sysctl -w net.bridge.bridge-nf-call-iptables=0
 
+# continue
 sed -i /etc/ansible/hosts \
 -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
-
+ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
