@@ -2087,11 +2087,11 @@ so it's not very useful at the moment.
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 
-**Hint:** It is `simple-openshift-sinatra`.
-
 **Hint:** You will need to use `osc get services` to find it.
 
 **Hint:** Do this as `joe`.
+
+**Hint:** It is `ruby-example`.
 
 When you are done, create your route:
 
@@ -2101,7 +2101,7 @@ Check to make sure it was created:
 
     osc get route
     NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
-    ruby-example         ruby-example-sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
+    ruby-example         ruby-example.sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
     ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
 
 And now, you should be able to verify everything is working right:
@@ -2124,19 +2124,34 @@ quota to the `sinatra` project.
 
     osc create -f quota.json -n sinatra
 
+There is currently no default "size" for applications that are created with the
+web console. This means that, whether you think it's a good idea or not, the
+application is actually unbounded -- it can consume as much of a node's
+resources as it wants.
+
+Before we can try to scale our application, we'll need to update the deployment
+to put a memory and CPU limit on the pods. Go ahead and edit the
+`deploymentConfig`, as `joe`:
+
+    osc edit dc/ruby-example-1 -o json
+
+You'll need to find "spec", "containers" and then the "resources" block in
+there. It's after a bunch of `env`ironment variables. Update that "resources"
+block to look like this:
+
+        "resources": {
+          "limits": {
+            "cpu": "10m",
+            "memory": "16Mi"
+          }
+        },
+
 As `joe` scale your application up to three replicas by setting your Replication
 Controller's `replicas` value to 3.
 
     osc get rc
     CONTROLLER       CONTAINER(S)   REPLICAS
     ruby-example-1   ruby-example   1
-
-    osc edit rc ruby-example-1
-
-Alter `replicas`
-
-    spec:
-      replicas: 3
 
 Wait a few seconds and you should see your application scaled up to 3 pods.
 
