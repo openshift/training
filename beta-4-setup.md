@@ -182,7 +182,7 @@ rest of the document.
 Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
 and the following configuration:
 
-* RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
+* RHEL >=7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
 
 The majority of storage requirements are related to Docker and etcd (the data
@@ -292,6 +292,14 @@ Onn **each** VM:
 and is not appropriate for production. Red Hat considers the dm.thinpooldev
 storage option to be the only appropriate configuration for production use.
 
+If you want to configure the storage for Docker, you'll need to first install
+Docker, as the installer currently does not auto-configure this storage setup
+for you.
+
+    yum -y install docker
+
+Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
+
 In order to use dm.thinpooldev you must have an LVM thinpool available, the
 `docker-storage-setup` package will assist you in configuring LVM. However you
 must provision your host to fit one of these three scenarios :
@@ -337,11 +345,12 @@ images and containers on the host.
 
 ### Grab Docker Images (Optional, Recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
-environment happen **faster**, you'll need to first install Docker:
+environment happen **faster**, you'll need to first install Docker if you didn't
+install it when (optionally) configuring the Docker storage previously.
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.6.0-6.el7.x86_64`.
+Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
 
 You'll need to add `--insecure-registry 0.0.0.0/0` to your
 `/etc/sysconfig/docker` `OPTIONS`. Then:
@@ -353,6 +362,7 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
@@ -365,7 +375,6 @@ used during the various labs:
     docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift:v0.4.3
-    docker pull openshift/ruby-20-centos7
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
@@ -1186,6 +1195,9 @@ Here is an example route resource JSON definition:
         "host": "hello-openshift.cloudapps.example.com",
         "to": {
           "name": "hello-openshift-service"
+        },
+        "tls": {
+          "termination": "edge"
         }
       }
     }
