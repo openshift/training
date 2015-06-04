@@ -8,6 +8,6 @@
     "host": "hello-sinatra.cloudapps.example.com",
     "to": {
       "name": "ruby-example"
-    },
+    }
   }
 }
