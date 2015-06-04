@@ -26,6 +26,7 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.5.2.2
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-builder:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.2.2
@@ -33,6 +34,7 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-sti-
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-builder:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.2.2
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-pod:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2 
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-docker-registry:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2 registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
 
 cd
 git clone https://github.com/openshift/training.git -b beta4
@@ -40,13 +42,11 @@ cd ~/training/beta4
 /bin/cp ~/training/beta4/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
-sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 systemctl start dnsmasq
 sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
 systemctl restart iptables
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
-sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 cd
 git clone https://github.com/thoraxe/training.git -b beta4-work
 cd
@@ -54,7 +54,7 @@ rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
-ansible-playbook playbooks/byo/config.yml
+ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
@@ -78,6 +78,9 @@ osadm registry --create \
 --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
 --selector="region=infra" --mount-host=/mnt/registry
+
+# all systems
+sysctl -w net.bridge.bridge-nf-call-iptables=0
 
 #beta3
 systemctl start docker

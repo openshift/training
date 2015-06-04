@@ -367,6 +367,7 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
+    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -483,29 +484,12 @@ There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
 
 ### BUG FIXES
-There are a bunch of bugs with the installation process right now. As of this
-writing, the first install run will fail. Once the installation "completes", run
-the following command on all of your hosts:
+Set a `sysctl` setting:
 
-    sed -i /etc/openshift/node/node-config.yaml \
-    -e 's/^networkPlugin/networkPluginName: ""\n/'
+    sysctl -w net.bridge.bridge-nf-call-iptables=0
 
-Then, restart `openshift-node` on all of your hosts:
-
-    systemctl restart openshift-node
-
-Edit the `/etc/ansible/hosts` file on your master and change the sdn line to:
-
-    openshift_use_openshift_sdn=true
-
-Or use `sed`:
-
-    sed -i /etc/ansible/hosts \
-    -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
-
-Then, run the installer again:
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+This setting is required currently to enable things to talk over the SDN. It
+will soon be added to the installer. You should do this on **all systems**.
 
 ## Regions and Zones
 If you think you're about to learn how to configure regions and zones in
@@ -1214,6 +1198,20 @@ This HAProxy pool ultimately contains all pods that are in a service. Which
 service? The service that corresponds to the `serviceName` directive that you
 see above.
 
+You'll notice that the definition above specifies TLS edge termination. This
+means that the router should provide this route via HTTPS. Because we provided
+no certificate info, the router will provide the default SSL certificate when
+the user connects. Because this is edge termination, user connections to the
+router will be SSL encrypted but the connection between the router and the pods
+is unencrypted.
+
+It is possible to utilize various TLS termination mechanisms, and more details
+is provided in the router documentation:
+
+    http://docs.openshift.org/latest/architecture/core_objects/routing.html#securing-routes
+
+We'll see this edge termination in action shortly.
+
 ### Creating a Wildcard Certificate In order to serve a valid certificate for
 secure access to applications in our cloud domain, we will need to create a key
 and wildcard certificate that the router will use by default for any routes that
@@ -1539,40 +1537,39 @@ Since we are using HAProxy as the router, we can cat the `routes.json` file:
 If you see some content that looks like:
 
     "demo/hello-openshift-service": {
-        "Name": "demo/hello-openshift-service",
-        "EndpointTable": {
-          "10.1.2.2:8080": {
-            "ID": "10.1.2.2:8080",
-            "IP": "10.1.2.2",
-            "Port": "8080"
-          }
-        },
-        "ServiceAliasConfigs": {
-          "hello-openshift.cloudapps.example.com-": {
-            "Host": "hello-openshift.cloudapps.example.com",
-            "Path": "",
-            "TLSTermination": "",
-            "Certificates": null
-          }
+      "Name": "demo/hello-openshift-service",
+      "EndpointTable": {
+        "10.1.0.9:8080": {
+          "ID": "10.1.0.9:8080",
+          "IP": "10.1.0.9",
+          "Port": "8080"
+        }
+      },
+      "ServiceAliasConfigs": {
+        "demo-hello-openshift-route": {
+          "Host": "hello-openshift.cloudapps.example.com",
+          "Path": "",
+          "TLSTermination": "edge",
+          "Certificates": {
+            "hello-openshift.cloudapps.example.com": {
+              "ID": "demo-hello-openshift-route",
+              "Contents": "",
+              "PrivateKey": ""
+            }
+          },
+          "Status": "saved"
         }
       }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
 
-Go ahead and `exit` from the container, and then curl your fancy,
-publicly-accessible OpenShift application!
+Go ahead and `exit` from the container.
 
     [root@router-1-2yefi /]# exit
     exit
-    [root@ose3-master ~]# curl http://hello-openshift.cloudapps.example.com
-    Hello OpenShift!
 
-Hooray!
-
-** The following does not work **
-
-You can also reach the route securely and check that it is using the right certificate:
+You can reach the route securely and check that it is using the right certificate:
 
     curl --cacert /etc/openshift/master/ca.crt \
              https://hello-openshift.cloudapps.example.com
@@ -1589,10 +1586,11 @@ And:
     verify return:1
     [...]
 
-The need for specifying the CA (signer) certificate above is due to the
-assumption that the CA is created self-signed by OpenShift. With a CA or
-all certificates signed by a trusted authority, it would not be necessary
-to specify the CA everywhere.
+Since we used OpenShift's CA to create the wildcard SSL certificate, and since
+that CA is not "installed" in our system, we need to point our tools at that CA
+certificate in order to validate the SSL certificate presented to us by the
+router. With a CA or all certificates signed by a trusted authority, it would
+not be necessary to specify the CA everywhere.
 
 ### The Web Console
 Take a moment to look in the web console to see if you can find everything that
@@ -1826,12 +1824,12 @@ repository + a Dockerfile (so that OpenShift can pull or build the Docker image
 for you).
 
 ### Create a New Project
-As the `root` user, we will create a new project to put our first STI example
-into. Grab the project definition and create it:
+By default, users are allowed to create their own projects. Let's try this now.
+As the `joe` user, we will create a new project to put our first STI example
+into:
 
-    osadm new-project sinatra --display-name="Sinatra Example" \
-    --description="This is your first build on OpenShift 3" \
-    --admin=joe
+    osc new-project sinatra --display-name="Sinatra Example" \
+    --description="This is your first build on OpenShift 3" 
 
 Logged in as `joe` in the web console, if you click the OpenShift image you
 should be returned to the project overview page where you will see the new
@@ -3833,7 +3831,7 @@ To override the the defaults, you can set the variables in your inventory. For e
 
 **Running ansible:**
 
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+    ansible ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
