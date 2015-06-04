@@ -2716,7 +2716,7 @@ run inside of your builder pod. That's what you see by using `build-logs`. The
 other words, the `run` script is what starts the Ruby process for an image that
 was built based on the `ruby-20-rhel7` S2I builder. As `root` run:
 
-    osc log -n wiring \
+    osc logs -n wiring \
     `osc get pods -n wiring | \
     grep "^frontend-" | awk '{print $1}'` |\
     grep -i custom
@@ -2985,9 +2985,7 @@ with the pod that ran our pre-deployment hook.
 
 Inspect this pod's logs:
 
-    osc log deployment-frontend-9-hook-wlqqx -n wiring
-
-**Note:** You'll have to perform this as `root`.
+    osc logs deployment-frontend-9-hook-wlqqx -n wiring
 
 The output likely shows:
 
