@@ -55,6 +55,9 @@ git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
 ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+
+# ansible fixes
+
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
