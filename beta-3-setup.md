@@ -1163,13 +1163,13 @@ As the `root` user, try running it with no options and you should see the note
 that a router is needed:
 
     osadm router
-    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
+    F0529 11:50:57.985423    2610 router.go:143] Router "router" does not exist
     (no service). Pass --create to install.
 
 So, go ahead and do what it says:
 
     osadm router --create
-    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
+    F0529 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
     file path containing credentials for connecting the router to the master
     with --credentials
 
@@ -2014,7 +2014,7 @@ so it's not very useful at the moment.
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 
-**Hint:** It is `simple-openshift-sinatra`.
+**Hint:** It is `ruby-example`.
 
 **Hint:** You will need to use `osc get services` to find it.
 
@@ -2058,8 +2058,8 @@ As `joe` scale your application up to three replicas by setting your Replication
 Controller's `replicas` value to 3.
 
     osc get rc
-    CONTROLLER       CONTAINER(S)   REPLICAS
-    ruby-example-1   ruby-example   1
+    CONTROLLER       CONTAINER(S)   IMAGE(S)                                                                                                SELECTOR                                                   REPLICAS
+    ruby-example-1   ruby-example   172.30.17.88:5000/sinatra/ruby-example:65c87f9ceea1dbd36e813cec05674a6eeb82b98395a8d6aecc2fb2ec30479aa1 deployment=ruby-example-1,deploymentconfig=ruby-example         1
 
     osc edit rc ruby-example-1
 
@@ -2112,7 +2112,7 @@ comes in a template that you can just fire up and start using or hacking on.
 ### A Project for the Quickstart
 As the `root` user, first we'll create a new project:
 
-    openshift admin new-project quickstart --display-name="Quickstart" \
+    osadm new-project quickstart --display-name="Quickstart" \
     --description='A demonstration of a "quickstart/template"' \
     --admin=joe
 
@@ -2160,7 +2160,7 @@ then hit the "Create +" button. We've seen this page before, but now it contains
 something new -- an "instant app(lication)". An instant app is a "special" kind
 of template (really, it just has the "instant-app" tag). The idea behind an
 "instant app" is that, when creating an instance of the template, you will have
-a fully functional application. in this example, our "instant" app is just a
+a fully functional application. In this example, our "instant" app is just a
 simple key-value storage and retrieval webpage.
 
 Click "quickstart-keyvalue-application", and you'll see a modal pop-up that
@@ -2478,7 +2478,7 @@ again:
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
-to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
+to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
