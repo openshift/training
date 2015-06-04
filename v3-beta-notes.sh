@@ -57,6 +57,13 @@ cd ~/openshift-ansible
 ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 # ansible fixes
+sed -i /etc/openshift/node/node-config.yaml \
+-e 's/^networkPlugin/networkPluginName: ""\n/'
+systemctl restart openshift-node
+sysctl -w net.bridge.bridge-nf-call-iptables=0
+
+sed -i /etc/ansible/hosts \
+-e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
 
 useradd joe
 useradd alice

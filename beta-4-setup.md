@@ -499,6 +499,11 @@ Edit the /etc/ansible/hosts file on your master and change the sdn line to:
 
     openshift_use_openshift_sdn=true
 
+Or use `sed`:
+
+    sed -i /etc/ansible/hosts \
+    -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
+
 Set a `sysctl` setting:
 
     sysctl -w net.bridge.bridge-nf-call-iptables=0
