@@ -1,7 +1,7 @@
 #cloud-config
 packages:
 - xfsprogs
-- docker-storage-setup
+- https://copr-be.cloud.fedoraproject.org/results/jdetiber/origin/epel-7-x86_64/docker-storage-setup-0.0.4-2.fc22/d
 
 mounts:
 - [ xvdb ]
@@ -17,6 +17,7 @@ write_files:
 runcmd:
 - systemctl daemon-reload
 - systemctl enable lvm2-lvmetad.service docker-storage-setup.service
+- systemctl start lvm2-lvmetad.service docker-storage-setup.service
 
 users:
 - default

@@ -1,5 +1,3 @@
-vars.yml
 roles
 playbooks
-filter_plugins
 inventory

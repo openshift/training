@@ -3832,6 +3832,10 @@ Running ansible:
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
+### Bootstrap the playbook directories
+
+    ansible-playbook clone_and_setup_repo.yml
+
 ### Configuring the Hosts:
 
     ansible-playbook -i inventory/aws/hosts openshift_setup.yml

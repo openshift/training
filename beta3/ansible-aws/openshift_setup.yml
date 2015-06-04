@@ -1,8 +1,5 @@
 # vim: set ft=ansible:
 ---
-# Checkout openshift-ansible and create some helpful symlinks
-- include: clone_and_setup_repo.yml
-
 # Create the AWS security groups if not already present
 - include: util_playbooks/create_security_groups.yml
 
