@@ -42,15 +42,11 @@ cd ~/training/beta4
 /bin/cp ~/training/beta4/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
-sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 systemctl start dnsmasq
 sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
 systemctl restart iptables
-sysctl -w net.bridge.bridge-nf-call-iptables=0
 
-sysctl -w net.bridge.bridge-nf-call-iptables=0
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
-sed -e '/^nameserver 192.168.133.4/i nameserver 192.168.133.2' -i /etc/resolv.conf
 cd
 git clone https://github.com/thoraxe/training.git -b beta4-work
 cd
@@ -82,6 +78,9 @@ osadm registry --create \
 --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
 --selector="region=infra" --mount-host=/mnt/registry
+
+# all systems
+sysctl -w net.bridge.bridge-nf-call-iptables=0
 
 #beta3
 systemctl start docker

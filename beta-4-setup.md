@@ -287,14 +287,6 @@ Onn **each** VM:
 
         yum -y update
 
-**Note: temporary fix**
-1. Set a `sysctl` setting:
-
-        sysctl -w net.bridge.bridge-nf-call-iptables=0
-
-    This setting is required currently to enable things to talk over the SDN. It
-    will soon be added to the installer.
-
 ### Docker Storage Setup (optional, recommended)
 **IMPORTANT:** The default docker storage configuration uses loopback devices
 and is not appropriate for production. Red Hat considers the dm.thinpooldev
@@ -492,29 +484,12 @@ There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
 
 ### BUG FIXES
-There are a bunch of bugs with the installation process right now. As of this
-writing, the first install run will fail. Once the installation "completes", run
-the following command on all of your hosts:
+Set a `sysctl` setting:
 
-    sed -i /etc/openshift/node/node-config.yaml \
-    -e 's/^networkPlugin/networkPluginName: ""\n/'
+    sysctl -w net.bridge.bridge-nf-call-iptables=0
 
-Then, restart `openshift-node` on all of your hosts:
-
-    systemctl restart openshift-node
-
-Edit the `/etc/ansible/hosts` file on your master and change the sdn line to:
-
-    openshift_use_openshift_sdn=true
-
-Or use `sed`:
-
-    sed -i /etc/ansible/hosts \
-    -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
-
-Then, run the installer again:
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+This setting is required currently to enable things to talk over the SDN. It
+will soon be added to the installer. You should do this on **all systems**.
 
 ## Regions and Zones
 If you think you're about to learn how to configure regions and zones in
