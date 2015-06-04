@@ -367,6 +367,7 @@ On all of your systems, grab the following docker images:
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
+    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -3833,7 +3834,7 @@ To override the the defaults, you can set the variables in your inventory. For e
 
 **Running ansible:**
 
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+    ansible ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
