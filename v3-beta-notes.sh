@@ -90,9 +90,6 @@ osadm registry --create \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
 --selector="region=infra" --mount-host=/mnt/registry
 
-# all systems
-sysctl -w net.bridge.bridge-nf-call-iptables=0
-
 #beta3
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' 
