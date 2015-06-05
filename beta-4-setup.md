@@ -92,6 +92,12 @@
     - [Visit Your Application Again](#visit-your-application-again)
     - [Replication Controllers](#replication-controllers)
     - [Revisit the Webpage](#revisit-the-webpage)
+  - [Using Persistent Storage (Optional)](#using-persistent-storage-optional)
+    - [Export an NFS Volume](#export-an-nfs-volume)
+    - [Allow NFS Access in SELinux Policy](#allow-nfs-access-in-selinux-policy)
+    - [Create a PersistentVolume](#create-a-persistentvolume)
+    - [Claim the PersistentVolume](#claim-the-persistentvolume)
+    - [Use the Claimed Volume](#use-the-claimed-volume)
   - [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
     - [Fork the Repository](#fork-the-repository)
     - [Update the BuildConfig](#update-the-buildconfig)
@@ -2454,6 +2460,239 @@ functional!
 Remember, wiring up apps yourself right now is a little clunky. These things
 will get much easier with future beta drops and will also be more accessible
 from the web console.
+
+## Using Persistent Storage (Optional)
+
+Having a database for development is nice, but what if you actually want the
+data you store to stick around after the DB pod is redeployed? Pods are
+ephemeral, and so is their storage by default. For shared or persistent
+storage, we need a way to specify that pods should use external volumes.
+
+We can do this a number of ways. [Kubernetes provides methods for directly
+specifying the mounting of several different volume
+types.](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md)
+This is perfect if you want to use known external resources. But that's
+not very PaaS-y. If I'm using a PaaS, I might really just rather request a
+chunk of storage and not need a side channel to provision that. OpenShift 3
+provides a mechanism for doing just this.
+
+### Export an NFS Volume
+
+For the purposes of this training, we will just demonstrate the master
+exporting an NFS volume for use as storage by the database. **You would
+almost certainly not want to do this for a real deployment.** If you happen
+to have another host with an NFS export handy, feel free to substitute
+that instead of the master.
+
+As `root` on the master:
+
+1. Ensure that nfs-utils is installed:
+
+        yum install nfs-utils
+
+2. Create the directory we will export:
+
+        mkdir -p /var/export/vol1
+        chown nfsnobody:nfsnobody /var/export/vol1
+        chmod 700 /var/export/vol1
+
+3. Edit `/etc/exports` and add the following line:
+
+        /var/export/vol1 *(rw,sync,all_squash)
+
+4. Enable and start NFS services:
+
+        systemctl enable rpcbind nfs-server
+        systemctl start rpcbind nfs-server nfs-lock nfs-idmap
+
+Note that the volume is owned by `nfsnobody` and access by all remote users
+is "squashed" to be access by this user. This essentially disables user
+permissions for clients mounting the volume. While another configuration
+might be preferable, one problem you may run into is that the container
+cannot modify the permissions of the actual volume directory when mounted.
+In the case of MySQL below, MySQL would like to have the volume belong to
+the `mysql` user, and assumes that it is, which causes problems later.
+Arguably, the container should operate differently. In the long run, we
+probably need to come up with best practices for use of NFS from containers.
+
+### Allow NFS Access in SELinux Policy
+
+By default policy, containers are not allowed to write to NFS mounted
+directories.  We want to do just that with our database, so enable that on
+all nodes where the pod could land (i.e. all of them) with:
+
+    setsebool -P virt_use_nfs=true
+
+Once the ansible-based installer does this automatically, we can remove this
+section from the document.
+
+### Create a PersistentVolume
+
+It is the PaaS administrator's responsibility to define the storage that is
+available to users. Storage is represented by a PersistentVolume that
+encapsulates the details of a particular volume which can be backed by any
+of the [volume types available via
+Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md).
+In this case it will be our NFS volume.
+
+Currently PersistentVolume objects must be created "by hand". Modify the
+`beta4/persistent-volume.json` file as needed if you are using a different
+NFS mount:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolume",
+      "metadata": {
+        "name": "pv0001"
+      },
+      "spec": {
+        "capacity": {
+            "storage": "5Gi"
+            },
+        "accessModes": [ "ReadWriteMany" ],
+        "nfs": {
+            "path": "/var/export/vol1",
+            "server": "ose3-master.osv3.example.com"
+        }
+      }
+    }
+
+Create this object as the `root` (administrative) user:
+
+    # osc create -f persistent-volume.json
+    persistentvolumes/pv0001
+
+This defines a volume for OpenShift projects to use in deployments. The
+storage should correspond to how much is actually available (make each
+volume a separate filesystem if you want to enforce this limit). Take a
+look at it now:
+
+    # osc describe persistentvolumes/pv0001
+    Name:   pv0001
+    Labels: <none>
+    Status: Available
+    Claim:
+
+### Claim the PersistentVolume
+
+Now that the administrator has provided a PersistentVolume, any project can
+make a claim on that storage. We do this by creating a PersistentVolumeClaim
+that specifies what kind and how much storage is desired:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "claim1"
+      },
+      "spec": {
+        "accessModes": [ "ReadWriteMany" ],
+        "resources": {
+          "requests": {
+            "storage": "5Gi"
+          }
+        }
+      }
+    }
+
+We can have `alice` do this in the `wiring` project:
+
+    $ osc create -f persistent-volume-claim.json
+    persistentVolumeClaim/claim1
+
+This claim will be bound to a suitable PersistentVolume (one that is big
+enough and allows the requested accessModes). The user does not have any
+real visibility into PersistentVolumes, including whether the backing
+storage is NFS or something else; they simply know when their claim has
+been filled ("bound" to a PersistentVolume).
+
+    $ osc get pvc
+    NAME      LABELS    STATUS    VOLUME
+    claim1    map[]     Bound     pv0001
+
+If as `root` we now go back and look at our PV, we will also see that it has
+been claimed:
+
+    # osc describe pv/pv0001
+    Name:   pv0001
+    Labels: <none>
+    Status: Bound
+    Claim:  wiring/claim1
+
+The PersistentVolume is now claimed and can't be claimed by any other project.
+
+Although this flow assumes the administrator pre-creates volumes in
+anticipation of their use later, it would be possible to create an external
+process that watches the API for a PersistentVolumeClaim to be created,
+dynamically provisions a corresponding volume, and creates the API object
+to fulfill the claim.
+
+### Use the Claimed Volume
+
+Finally, we need to modify our `database` DeploymentConfig to specify that
+this volume should be mounted where the database will use it. As `alice`:
+
+    $ osc edit dc/database
+
+The part we will need to edit is the pod template. We will need to add two
+parts, a definition of the volume, and where to mount it inside the container.
+
+First, directly under the `template` `spec:` line, add this YAML (indented from the `spec:` line):
+
+          volumes:
+          - name: pvol
+            persistentVolumeClaim:
+              claimName: claim1
+
+Then to have the container mount this, add this YAML after the
+`terminationMessagePath:` line:
+
+            volumeMounts:
+            - mountPath: /var/lib/mysql/data
+              name: pvol
+
+Remember that YAML is sensitive to indentation. The final template should
+look like this:
+
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          deploymentconfig: database
+      spec:
+        volumes:
+        - name: pvol
+          persistentVolumeClaim:
+            claimName: claim1
+        containers:
+        - capabilities: {}
+    [...]
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: pvol
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        serviceAccount: ""
+
+Save and exit. This change to configuration will trigger a new deployment
+of the database, and this time, it will be using the NFS volume we exported
+from master.
+
+Once the new pod has started, go ahead and visit the web page. Add a few values
+via the application. Then delete the database pod and wait for it to come back.
+You should be able to retrieve the same values you entered.
+
+For further confirmation that your database pod is in fact using the NFS
+volume, simply check what is stored there on master:
+
+    # ls /var/export/vol1
+    database-3-n1i2t.pid  ibdata1  ib_logfile0  ib_logfile1  mysql  performance_schema  root
+
+Further information on use of PersistentVolumes is available in the
+[OpenShift Origin documentation](http://docs.openshift.org/latest/dev_guide/volumes.html).
+This is a very new feature, so it is very manual for now, but look for more tooling
+taking advantage of PersistentVolumes to be created in the future.
 
 ## Rollback/Activate and Code Lifecycle
 Not every coder is perfect, and sometimes you want to rollback to a previous
