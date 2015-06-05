@@ -2150,6 +2150,9 @@ options for default domains and etc. Currently, the "default" domain for
 applications is "router.default.local", which is most likely unusable in your
 environment.
 
+**Note:** HTTPS will *not* work for this route, because we have not specified
+any TLS termination.
+
 ### Implications of Quota Enforcement on Scaling
 **THIS SECTION IS BROKEN**
 
@@ -2204,6 +2207,9 @@ Wait a few seconds and you should see your application scaled up to 3 pods.
 You will also notice that these pods were distributed across our two nodes
 "east" and "west". Cool!
 
+**SKIP THIS**
+
+*`
 Now start another build, wait a moment or two for your build to start.
 
     osc start-build ruby-example
@@ -2220,6 +2226,7 @@ automatically start after a minute or two.
 
 **Note:** Once the build is complete a new replication controller is
 created and the old one is no longer used.
+`*
 
 ## Templates, Instant Apps, and "Quickstarts"
 The next example will involve a build of another application, but also a service
@@ -2234,15 +2241,14 @@ This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
 
 ### A Project for the Quickstart
-As the `root` user, first we'll create a new project:
+As `joe`, create a new project:
 
-    openshift admin new-project quickstart --display-name="Quickstart" \
-    --description='A demonstration of a "quickstart/template"' \
-    --admin=joe
+    osc new-project quickstart --display-name="Quickstart" \
+    --description='A demonstration of a "quickstart/template"'
 
-As the `joe` user, we'll set our context to use the corresponding namespace:
+This also changes you to use that project:
 
-    osc project quickstart
+    Now using project "quickstart" on server "https://ose3-master.example.com:8443".
 
 ### A Quick Aside on Templates
 From the [OpenShift

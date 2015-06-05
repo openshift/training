@@ -1,311 +1,370 @@
 {
-  "apiVersion": "v1beta1",
-  "items": [
+  "kind": "Template",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "quickstart-keyvalue-application",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This is an example of a Ruby and MySQL application on OpenShift 3",
+      "iconClass": "icon-ruby",
+      "tags": "instant-app,ruby,mysql"
+    }
+  },
+  "objects": [
     {
-      "apiVersion": "v1beta1",
-      "containerPort": 8080,
-      "id": "frontend",
       "kind": "Service",
-      "port": 5432,
-      "selector": {
-        "name": "frontend"
-      }
-    },
-    {
-      "apiVersion": "v1beta1",
-      "host": "integrated.cloudapps.example.com",
-      "id": "sample-app-secure",
-      "kind": "Route",
+      "apiVersion": "v1beta3",
       "metadata": {
-        "name": "route-edge"
-      },
-      "serviceName": "frontend"
-    },
-    {
-      "apiVersion": "v1beta1",
-      "kind": "ImageStream",
-      "metadata": {
-        "name": "origin-ruby-sample"
-      }
-    },
-    {
-      "apiVersion": "v1beta1",
-      "kind": "ImageStream",
-      "metadata": {
-        "name": "ruby-20-centos7"
+        "name": "frontend",
+        "creationTimestamp": null
       },
       "spec": {
-        "dockerImageRepository": "openshift/ruby-20-centos7"
+        "ports": [
+          {
+            "name": "web",
+            "protocol": "TCP",
+            "port": 5432,
+            "targetPort": 8080,
+            "nodePort": 0
+          }
+        ],
+        "selector": {
+          "name": "frontend"
+        },
+        "portalIP": "",
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      },
+      "status": {
+        "loadBalancer": {}
       }
     },
     {
-      "apiVersion": "v1beta1",
+      "kind": "Route",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "route-edge",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "host": "integrated.cloudapps.example.com",
+        "to": {
+          "kind": "Service",
+          "name": "frontend"
+        }
+      },
+      "status": {}
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "ruby-sample",
+        "creationTimestamp": null
+      },
+      "spec": {},
+      "status": {
+        "dockerImageRepository": ""
+      }
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "ruby-20-rhel7",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/ruby-20-rhel7"
+      },
+      "status": {
+        "dockerImageRepository": ""
+      }
+    },
+    {
       "kind": "BuildConfig",
+      "apiVersion": "v1beta3",
       "metadata": {
         "name": "ruby-sample-build",
+        "creationTimestamp": null,
         "labels": {
           "name": "ruby-sample-build"
-       }
+        }
       },
-      "parameters": {
-        "output": {
-          "to": {
-            "name": "origin-ruby-sample"
+      "spec": {
+        "triggers": [
+          {
+            "type": "github",
+            "github": {
+              "secret": "secret101"
+            }
+          },
+          {
+            "type": "generic",
+            "generic": {
+              "secret": "secret101"
+            }
+          },
+          {
+            "type": "imageChange",
+            "imageChange": {}
           }
-        },
+        ],
         "source": {
+          "type": "Git",
           "git": {
             "uri": "git://github.com/openshift/ruby-hello-world.git",
             "ref": "beta4"
-          },
-          "type": "Git"
+          }
         },
         "strategy": {
-          "stiStrategy": {
-            "image": "openshift/ruby-20-centos7"
-          },
-          "type": "STI"
-        }
-      },
-      "triggers": [
-        {
-          "github": {
-            "secret": "secret101"
-          },
-          "type": "github"
-        },
-        {
-          "generic": {
-            "secret": "secret101"
-          },
-          "type": "generic"
-        },
-        {
-          "imageChange": {
+          "type": "Source",
+          "sourceStrategy": {
             "from": {
-              "name": "ruby-20-centos7"
+              "kind": "ImageStreamTag",
+              "name": "ruby:latest",
+              "namespace": "openshift"
             },
-            "image": "openshift/ruby-20-centos7",
-            "tag": "latest"
-          },
-          "type": "imageChange"
-        }
-      ]
+            "incremental": true
+          }
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "ruby-sample:latest"
+          }
+        },
+        "resources": {}
+      },
+      "status": {
+        "lastVersion": 0
+      }
     },
     {
-      "apiVersion": "v1beta1",
       "kind": "DeploymentConfig",
+      "apiVersion": "v1beta3",
       "metadata": {
-        "name": "frontend"
+        "name": "frontend",
+        "creationTimestamp": null
       },
-      "template": {
-        "controllerTemplate": {
-          "podTemplate": {
-            "desiredState": {
-              "manifest": {
-                "containers": [
-                  {
-                    "env": [
-                      {
-                        "name": "ADMIN_USERNAME",
-                        "value": "${ADMIN_USERNAME}"
-                      },
-                      {
-                        "name": "ADMIN_PASSWORD",
-                        "value": "${ADMIN_PASSWORD}"
-                      },
-                      {
-                        "name": "MYSQL_USER",
-                        "value": "${MYSQL_USER}"
-                      },
-                      {
-                        "name": "MYSQL_PASSWORD",
-                        "value": "${MYSQL_PASSWORD}"
-                      },
-                      {
-                        "name": "MYSQL_DATABASE",
-                        "value": "${MYSQL_DATABASE}"
-                      }
-                    ],
-                    "image": "origin-ruby-sample",
-                    "name": "ruby-helloworld",
-                    "ports": [
-                      {
-                        "containerPort": 8080
-                      }
-                    ]
-                  }
-                ],
-                "version": "v1beta1"
-              }
-            },
+      "spec": {
+        "strategy": {
+          "type": "Recreate"
+        },
+        "triggers": [
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "ruby-helloworld"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "name": "ruby-sample:latest"
+              },
+              "lastTriggeredImage": ""
+            }
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 2,
+        "selector": {
+          "name": "frontend"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
             "labels": {
               "name": "frontend"
             }
           },
-          "replicaSelector": {
-            "name": "frontend"
+          "nodeSelector": {
+            "region": "primary"
           },
-          "replicas": 1
-        },
-        "strategy": {
-          "type": "Recreate",
-          "recreateParams": {
-            "pre": {
-              "failurePolicy": "Abort",
-              "execNewPod": {
-                "containerName": "ruby-helloworld",
-                "command": [
-                  "/bin/true"
+          "spec": {
+            "containers": [
+              {
+                "name": "ruby-helloworld",
+                "image": "ruby-sample",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
                 ],
                 "env": [
                   {
-                    "name": "CUSTOM_VAR1",
-                    "value": "custom_value1"
-                  }
-                ]
-              }
-            },
-            "post": {
-              "failurePolicy": "Ignore",
-              "execNewPod": {
-                "containerName": "ruby-helloworld",
-                "command": [
-                  "/bin/false"
-                ],
-                "env": [
+                    "name": "ADMIN_USERNAME",
+                    "value": "${ADMIN_USERNAME}"
+                  },
                   {
-                    "name": "CUSTOM_VAR2",
-                    "value": "custom_value2"
+                    "name": "ADMIN_PASSWORD",
+                    "value": "${ADMIN_PASSWORD}"
+                  },
+                  {
+                    "name": "MYSQL_USER",
+                    "value": "${MYSQL_USER}"
+                  },
+                  {
+                    "name": "MYSQL_PASSWORD",
+                    "value": "${MYSQL_PASSWORD}"
+                  },
+                  {
+                    "name": "MYSQL_DATABASE",
+                    "value": "${MYSQL_DATABASE}"
                   }
-                ]
+                ],
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "IfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                }
               }
-            }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst",
+            "serviceAccount": ""
           }
         }
       },
-      "triggers": [
-        {
-          "imageChangeParams": {
-            "automatic": true,
-            "containerNames": [
-              "ruby-helloworld"
-            ],
-            "from": {
-              "name": "origin-ruby-sample"
-            },
-            "tag": "latest"
-          },
-          "type": "ImageChange"
-        }
-      ]
+      "status": {}
     },
     {
-      "apiVersion": "v1beta1",
-      "containerPort": 3306,
-      "id": "database",
       "kind": "Service",
-      "port": 5434,
-      "selector": {
-        "name": "database"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "database",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "db",
+            "protocol": "TCP",
+            "port": 5434,
+            "targetPort": 3306,
+            "nodePort": 0
+          }
+        ],
+        "selector": {
+          "name": "database"
+        },
+        "portalIP": "",
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      },
+      "status": {
+        "loadBalancer": {}
       }
     },
     {
-      "apiVersion": "v1beta1",
       "kind": "DeploymentConfig",
+      "apiVersion": "v1beta3",
       "metadata": {
-        "name": "database"
+        "name": "database",
+        "creationTimestamp": null
       },
-      "template": {
-        "controllerTemplate": {
-          "podTemplate": {
-            "desiredState": {
-              "manifest": {
-                "containers": [
-                  {
-                    "env": [
-                      {
-                        "name": "MYSQL_USER",
-                        "value": "${MYSQL_USER}"
-                      },
-                      {
-                        "name": "MYSQL_PASSWORD",
-                        "value": "${MYSQL_PASSWORD}"
-                      },
-                      {
-                        "name": "MYSQL_DATABASE",
-                        "value": "${MYSQL_DATABASE}"
-                      }
-                    ],
-                    "image": "openshift/mysql-55-centos7",
-                    "name": "ruby-helloworld-database",
-                    "ports": [
-                      {
-                        "containerPort": 3306
-                      }
-                    ]
-                  }
-                ],
-                "version": "v1beta1"
-              }
-            },
+      "spec": {
+        "strategy": {
+          "type": "Recreate"
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "database"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
             "labels": {
               "name": "database"
             }
           },
-          "replicaSelector": {
-            "name": "database"
+          "nodeSelector": {
+            "region": "primary"
           },
-          "replicas": 1
-        },
-        "strategy": {
-          "type": "Recreate"
+          "spec": {
+            "containers": [
+              {
+                "name": "ruby-helloworld-database",
+                "image": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7:latest",
+                "ports": [
+                  {
+                    "containerPort": 3306,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "MYSQL_USER",
+                    "value": "${MYSQL_USER}"
+                  },
+                  {
+                    "name": "MYSQL_PASSWORD",
+                    "value": "${MYSQL_PASSWORD}"
+                  },
+                  {
+                    "name": "MYSQL_DATABASE",
+                    "value": "${MYSQL_DATABASE}"
+                  }
+                ],
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "Always",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst",
+            "serviceAccount": ""
+          }
         }
       },
-      "triggers": [
-        {
-          "type": "ConfigChange"
-        }
-      ]
+      "status": {}
     }
   ],
-  "kind": "Template",
-  "metadata": {
-    "annotations": {
-      "description": "This is an example of a Ruby and MySQL application on OpenShift 3",
-      "tags": "instant-app,ruby,mysql",
-      "iconClass" : "icon-ruby"
-    },
-    "name": "quickstart-keyvalue-application"
-  },
   "parameters": [
     {
+      "name": "ADMIN_USERNAME",
       "description": "administrator username",
-      "from": "admin[A-Z0-9]{3}",
       "generate": "expression",
-      "name": "ADMIN_USERNAME"
+      "from": "admin[A-Z0-9]{3}"
     },
     {
+      "name": "ADMIN_PASSWORD",
       "description": "administrator password",
-      "from": "[a-zA-Z0-9]{8}",
       "generate": "expression",
-      "name": "ADMIN_PASSWORD"
+      "from": "[a-zA-Z0-9]{8}"
     },
     {
+      "name": "MYSQL_USER",
       "description": "database username",
-      "from": "user[A-Z0-9]{3}",
       "generate": "expression",
-      "name": "MYSQL_USER"
+      "from": "user[A-Z0-9]{3}"
     },
     {
+      "name": "MYSQL_PASSWORD",
       "description": "database password",
-      "from": "[a-zA-Z0-9]{8}",
       "generate": "expression",
-      "name": "MYSQL_PASSWORD"
+      "from": "[a-zA-Z0-9]{8}"
     },
     {
-      "description": "database name",
       "name": "MYSQL_DATABASE",
+      "description": "database name",
       "value": "root"
     }
   ],
