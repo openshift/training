@@ -483,38 +483,6 @@ configuration to add the extra nodes.
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
 
-### BUG FIXES
-There are a bunch of bugs with the installation process right now. As of this
-writing, the first install run will fail. Once the installation "completes", run
-the following command on all of your hosts:
-
-    sed -i /etc/openshift/node/node-config.yaml \
-    -e 's/^networkPlugin/networkPluginName: ""\n/'
-
-Then, restart openshift-node on all of your hosts:
-
-    systemctl restart openshift-node
-
-Edit the /etc/ansible/hosts file on your master and change the sdn line to:
-
-    openshift_use_openshift_sdn=true
-
-Or use `sed`:
-
-    sed -i /etc/ansible/hosts \
-    -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
-
-Set a `sysctl` setting:
-
-    sysctl -w net.bridge.bridge-nf-call-iptables=0
-
-This setting is required currently to enable things to talk over the SDN. It
-will soon be added to the installer. You should do this on **all systems**.
-
-Then, run the installer again:
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
-
 ## Regions and Zones
 If you think you're about to learn how to configure regions and zones in
 OpenShift 3, you're only partially correct.
@@ -675,45 +643,8 @@ The documentation link has some more complicated examples. The topoligical
 possibilities are endless!
 
 ### Node Labels
-** Bug Fix **
-Another artifact of the installer is that the node labels were not applied at
-installation:
-
-    osc get node
-    NAME                      LABELS                                           STATUS
-    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com   Ready
-    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com    Ready
-    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com    Ready
-
-We can fix this with the `osc label` command. As `root` on your master:
-
-    osc label --overwrite node ose3-master.example.com region=infra zone=default
-    osc label --overwrite node ose3-node1.example.com region=primary zone=east
-    osc label --overwrite node ose3-node2.example.com region=primary zone=west
-
-Remember to edit the command appropriately if your hostnames are different
-
 The assignments of "regions" and "zones" at the node-level are handled by labels
 on the nodes. You can look at how the labels were implemented by doing:
-
-    osc edit node
-
-You should see something like the following in the YAML:
-
-    - apiVersion: v1beta3
-      kind: Node
-      metadata:
-        creationTimestamp: 2015-06-01T19:30:37Z
-        labels:
-          kubernetes.io/hostname: ose3-master.example.com
-          region: infra
-          zone: default
-        name: ose3-master.example.com
-        resourceVersion: "219"
-        selfLink: /api/v1beta3/nodes/ose3-master.example.com
-        uid: ae0ecaa7-0894-11e5-8f4f-525400b33d1d
-
-You should be able to see that the nodes have the labels applied:
 
     osc get nodes
 
