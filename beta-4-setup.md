@@ -1017,6 +1017,9 @@ using `cat`:
             "securityContext": {
               "capabilities": {},
               "privileged": false
+            },
+            "nodeSelector": {
+              "region": "primary"
             }
           }
         ],
@@ -1383,12 +1386,12 @@ The following is a complete definition for a pod with a corresponding service
 and a corresponding route. It also includes a deployment configuration.
 
     {
-      "kind":"Config",
-      "apiVersion":"v1beta3",
-      "metadata":{
-        "name":"hello-service-complete-example"
+      "kind": "Config",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-service-complete-example"
       },
-      "items":[
+      "items": [
         {
           "kind": "Service",
           "apiVersion": "v1beta3",
@@ -1397,7 +1400,7 @@ and a corresponding route. It also includes a deployment configuration.
           },
           "spec": {
             "selector": {
-              "name":"hello-openshift"
+              "name": "hello-openshift"
             },
             "ports": [
               {
@@ -1418,51 +1421,75 @@ and a corresponding route. It also includes a deployment configuration.
             "host": "hello-openshift.cloudapps.example.com",
             "to": {
               "name": "hello-openshift-service"
+            },
+            "tls": {
+              "termination": "edge"
             }
           }
         },
         {
-          "kind": "Pod",
+          "kind": "DeploymentConfig",
           "apiVersion": "v1beta3",
           "metadata": {
-            "name": "hello-openshift",
-            "creationTimestamp": null,
-            "labels": {
-              "name": "hello-openshift"
-            }
+            "name": "hello-openshift"
           },
           "spec": {
-            "containers": [
-              {
-                "name": "hello-openshift",
-                "image": "openshift/hello-openshift:v0.4.3",
-                "ports": [
+            "strategy": {
+              "type": "Recreate",
+              "resources": {}
+            },
+            "replicas": 1,
+            "selector": {
+              "name": "hello-openshift"
+            },
+            "template": {
+              "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                  "name": "hello-openshift"
+                }
+              },
+              "spec": {
+                "containers": [
                   {
-                    "hostPort": 6061,
-                    "containerPort": 8080,
-                    "protocol": "TCP"
+                    "name": "hello-openshift",
+                    "image": "openshift/hello-openshift:v0.4.3",
+                    "ports": [
+                      {
+                        "name": "hello-openshift-tcp-8080",
+                        "containerPort": 8080,
+                        "protocol": "TCP"
+                      }
+                    ],
+                    "resources": {},
+                    "terminationMessagePath": "/dev/termination-log",
+                    "imagePullPolicy": "PullIfNotPresent",
+                    "capabilities": {},
+                    "securityContext": {
+                      "capabilities": {},
+                      "privileged": false
+                    },
+                    "livenessProbe": {
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 1,
+                      "initialDelaySeconds": 10
+                    }
                   }
                 ],
-                "resources": {
-                  "limits": {
-                    "cpu": "10m",
-                    "memory": "16Mi"
-                  }
-                },
-                "terminationMessagePath": "/dev/termination-log",
-                "imagePullPolicy": "IfNotPresent",
-                "capabilities": {},
-                "securityContext": {
-                  "capabilities": {},
-                  "privileged": false
+                "restartPolicy": "Always",
+                "dnsPolicy": "ClusterFirst",
+                "serviceAccount": "",
+                "nodeSelector": {
+                  "region": "primary"
                 }
               }
-            ],
-            "restartPolicy": "Always",
-            "dnsPolicy": "ClusterFirst",
-            "serviceAccount": ""
+            }
           },
-          "status": {}
+          "status": {
+            "latestVersion": 1
+          }
         }
       ]
     }
@@ -1472,10 +1499,10 @@ In the JSON above:
 * There is a pod whose containers have the label `name=hello-openshift-label` and the nodeSelector `region=primary`
 * There is a service:
   * with the id `hello-openshift-service`
-  * with the selector `name=hello-openshift-label`
+  * with the selector `name=hello-openshift`
 * There is a route:
   * with the FQDN `hello-openshift.cloudapps.example.com`
-  * with the `serviceName` directive `hello-openshift-service`
+  * with the `spec` `to` `name=hello-openshift-service`
 
 If we work from the route down to the pod:
 
@@ -1918,8 +1945,8 @@ select the appropriate builder image.
 Perform the following command as `root` in the `beta4`folder in order to add all
 of the builder images:
 
-    osc create -f image-streams-rhel7.json -n openshift
-    osc create -f image-streams-jboss-rhel7.json -n openshift
+    osc create -f image-streams-rhel7.json \
+    -f image-streams-jboss-rhel7.json -n openshift
 
 You will see the following:
 
