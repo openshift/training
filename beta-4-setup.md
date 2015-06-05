@@ -768,7 +768,7 @@ using some sample code.  But, first, some housekeeping.
 Also, don't forget, the materials for these labs are in your `~/training/beta4`
 folder.
 
-### "Resources"
+### Resources
 There are a number of different resource types in OpenShift 3, and, essentially,
 going through the motions of creating/destroying apps, scaling, building and
 etc. all ends up manipulating OpenShift and Kubernetes resources under the
@@ -852,6 +852,28 @@ is displayed.
 **Note:** Once creating the quota, it can take a few moments for it to be fully
 processed. If you get blank output from the `get` or `describe` commands, wait a
 few moments and try again.
+
+### Applying Limit Ranges to Projects
+In order for quotas to be effective you need to also create Limit Ranges
+which set the maximum, minimum, and default allocations of memory and cpu at
+both a pod and container level. Without default values for containers projects
+with quotas will fail because the deloyer and other infrastructure pods are
+unbounded and therefore forbidden.
+
+As `root` in the `training/beta4` folder:
+
+    osc create -f limits.json --namespace=demo
+
+Review your limit ranges
+    osc describe limitranges limits -n demo
+    Name:           limits
+    Type            Resource        Min     Max     Default
+    ----            --------        ---     ---     ---
+    Pod             memory          5Mi     750Mi   -
+    Pod             cpu             10m     500m    -
+    Container       cpu             10m     500m    100m
+    Container       memory          5Mi     750Mi   100Mi
+
 
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
