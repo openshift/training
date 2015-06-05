@@ -51,23 +51,6 @@
           "type": "Recreate",
           "resources": {}
         },
-        "triggers": [
-          {
-            "type": "ImageChange",
-            "imageChangeParams": {
-              "automatic": true,
-              "containerNames": [
-                "hello-openshift"
-              ],
-              "from": {
-                "name": "hello-openshift"
-              }
-            }
-          },
-          {
-            "type": "ConfigChange"
-          }
-        ],
         "replicas": 1,
         "selector": {
           "name": "hello-openshift"
@@ -91,9 +74,6 @@
                     "protocol": "TCP"
                   }
                 ],
-                "env": [
-                  {}
-                ],
                 "resources": {},
                 "terminationMessagePath": "/dev/termination-log",
                 "imagePullPolicy": "PullIfNotPresent",
@@ -113,9 +93,15 @@
             ],
             "restartPolicy": "Always",
             "dnsPolicy": "ClusterFirst",
-            "serviceAccount": ""
+            "serviceAccount": "",
+            "nodeSelector": {
+              "region": "primary"
+            }
           }
         }
+      },
+      "status": {
+        "latestVersion": 1
       }
     }
   ]
