@@ -1527,10 +1527,10 @@ Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
 Docker container is on the master.
 
-We can use `docker exec` to get a bash interactive shell inside the running
+We can use `osc exec` to get a bash interactive shell inside the running
 router container. The following command will do that for us:
 
-    docker exec -it `docker ps | grep haproxy-router | awk {'print $1'}` /bin/bash
+    osc exec -it -p $(osc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
 
 You are now in a bash session *inside* the container running the router.
 
@@ -2005,32 +2005,23 @@ You'll see some output to indicate the build:
 
     ruby-example-1
 
-OpenShift v3 is in a bit of a transition period between authentication
-paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
-performed by "normal" users, even if it makes sense that they should. Don't
-worry, we'll get there. Feel free to try these things as a "normal" user - you
-will get a "forbidden" error.
-
-In order to watch the build logs, you actually need to be a cluster
-administratior right now. So, as `root`, you can do the following things:
-
 We can check on the status of a build (it will switch to "Running" in a few
 moments):
 
-    osc get builds -n sinatra
+    osc get builds
     NAME             TYPE      STATUS     POD
     ruby-example-1   STI       Running   ruby-example-1
 
 The web console would've updated the *Overview* tab for the *Sinatra* project to
 say:
 
-    A build of ruby-example is pending. A new deployment will be
+    A build of ruby-example is running. A new deployment will be
     created automatically once the build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs ruby-example-1 -n sinatra
+    osc build-logs ruby-example-1
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
