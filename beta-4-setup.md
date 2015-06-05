@@ -484,12 +484,36 @@ There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
 
 ### BUG FIXES
+There are a bunch of bugs with the installation process right now. As of this
+writing, the first install run will fail. Once the installation "completes", run
+the following command on all of your hosts:
+
+    sed -i /etc/openshift/node/node-config.yaml \
+    -e 's/^networkPlugin/networkPluginName: ""\n/'
+
+Then, restart openshift-node on all of your hosts:
+
+    systemctl restart openshift-node
+
+Edit the /etc/ansible/hosts file on your master and change the sdn line to:
+
+    openshift_use_openshift_sdn=true
+
+Or use `sed`:
+
+    sed -i /etc/ansible/hosts \
+    -e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
+
 Set a `sysctl` setting:
 
     sysctl -w net.bridge.bridge-nf-call-iptables=0
 
 This setting is required currently to enable things to talk over the SDN. It
 will soon be added to the installer. You should do this on **all systems**.
+
+Then, run the installer again:
+
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Regions and Zones
 If you think you're about to learn how to configure regions and zones in
@@ -993,6 +1017,9 @@ using `cat`:
             "securityContext": {
               "capabilities": {},
               "privileged": false
+            },
+            "nodeSelector": {
+              "region": "primary"
             }
           }
         ],
@@ -1359,12 +1386,12 @@ The following is a complete definition for a pod with a corresponding service
 and a corresponding route. It also includes a deployment configuration.
 
     {
-      "kind":"Config",
-      "apiVersion":"v1beta3",
-      "metadata":{
-        "name":"hello-service-complete-example"
+      "kind": "Config",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-service-complete-example"
       },
-      "items":[
+      "items": [
         {
           "kind": "Service",
           "apiVersion": "v1beta3",
@@ -1373,7 +1400,7 @@ and a corresponding route. It also includes a deployment configuration.
           },
           "spec": {
             "selector": {
-              "name":"hello-openshift"
+              "name": "hello-openshift"
             },
             "ports": [
               {
@@ -1394,51 +1421,75 @@ and a corresponding route. It also includes a deployment configuration.
             "host": "hello-openshift.cloudapps.example.com",
             "to": {
               "name": "hello-openshift-service"
+            },
+            "tls": {
+              "termination": "edge"
             }
           }
         },
         {
-          "kind": "Pod",
+          "kind": "DeploymentConfig",
           "apiVersion": "v1beta3",
           "metadata": {
-            "name": "hello-openshift",
-            "creationTimestamp": null,
-            "labels": {
-              "name": "hello-openshift"
-            }
+            "name": "hello-openshift"
           },
           "spec": {
-            "containers": [
-              {
-                "name": "hello-openshift",
-                "image": "openshift/hello-openshift:v0.4.3",
-                "ports": [
+            "strategy": {
+              "type": "Recreate",
+              "resources": {}
+            },
+            "replicas": 1,
+            "selector": {
+              "name": "hello-openshift"
+            },
+            "template": {
+              "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                  "name": "hello-openshift"
+                }
+              },
+              "spec": {
+                "containers": [
                   {
-                    "hostPort": 6061,
-                    "containerPort": 8080,
-                    "protocol": "TCP"
+                    "name": "hello-openshift",
+                    "image": "openshift/hello-openshift:v0.4.3",
+                    "ports": [
+                      {
+                        "name": "hello-openshift-tcp-8080",
+                        "containerPort": 8080,
+                        "protocol": "TCP"
+                      }
+                    ],
+                    "resources": {},
+                    "terminationMessagePath": "/dev/termination-log",
+                    "imagePullPolicy": "PullIfNotPresent",
+                    "capabilities": {},
+                    "securityContext": {
+                      "capabilities": {},
+                      "privileged": false
+                    },
+                    "livenessProbe": {
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 1,
+                      "initialDelaySeconds": 10
+                    }
                   }
                 ],
-                "resources": {
-                  "limits": {
-                    "cpu": "10m",
-                    "memory": "16Mi"
-                  }
-                },
-                "terminationMessagePath": "/dev/termination-log",
-                "imagePullPolicy": "IfNotPresent",
-                "capabilities": {},
-                "securityContext": {
-                  "capabilities": {},
-                  "privileged": false
+                "restartPolicy": "Always",
+                "dnsPolicy": "ClusterFirst",
+                "serviceAccount": "",
+                "nodeSelector": {
+                  "region": "primary"
                 }
               }
-            ],
-            "restartPolicy": "Always",
-            "dnsPolicy": "ClusterFirst",
-            "serviceAccount": ""
+            }
           },
-          "status": {}
+          "status": {
+            "latestVersion": 1
+          }
         }
       ]
     }
@@ -1448,10 +1499,10 @@ In the JSON above:
 * There is a pod whose containers have the label `name=hello-openshift-label` and the nodeSelector `region=primary`
 * There is a service:
   * with the id `hello-openshift-service`
-  * with the selector `name=hello-openshift-label`
+  * with the selector `name=hello-openshift`
 * There is a route:
   * with the FQDN `hello-openshift.cloudapps.example.com`
-  * with the `serviceName` directive `hello-openshift-service`
+  * with the `spec` `to` `name=hello-openshift-service`
 
 If we work from the route down to the pod:
 
@@ -1894,8 +1945,8 @@ select the appropriate builder image.
 Perform the following command as `root` in the `beta4`folder in order to add all
 of the builder images:
 
-    osc create -f image-streams-rhel7.json -n openshift
-    osc create -f image-streams-jboss-rhel7.json -n openshift
+    osc create -f image-streams-rhel7.json \
+    -f image-streams-jboss-rhel7.json -n openshift
 
 You will see the following:
 
@@ -2068,11 +2119,11 @@ so it's not very useful at the moment.
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 
-**Hint:** It is `simple-openshift-sinatra`.
-
 **Hint:** You will need to use `osc get services` to find it.
 
 **Hint:** Do this as `joe`.
+
+**Hint:** It is `ruby-example`.
 
 When you are done, create your route:
 
@@ -2082,7 +2133,7 @@ Check to make sure it was created:
 
     osc get route
     NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
-    ruby-example         ruby-example-sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
+    ruby-example         ruby-example.sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
     ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
 
 And now, you should be able to verify everything is working right:
@@ -2099,29 +2150,55 @@ options for default domains and etc. Currently, the "default" domain for
 applications is "router.default.local", which is most likely unusable in your
 environment.
 
+**Note:** HTTPS will *not* work for this route, because we have not specified
+any TLS termination.
+
 ### Implications of Quota Enforcement on Scaling
+**THIS SECTION IS BROKEN**
+
+There is currently a bug with quota enforcement. Do **NOT** apply the quota to
+this project. Skip ahead to the scaling part.
+
+** SKIP THIS**
+
+`*
 Quotas have implications one may not immediately realize. As `root` assign a
 quota to the `sinatra` project.
 
     osc create -f quota.json -n sinatra
 
-As `joe` scale your application up to three replicas by setting your Replication
-Controller's `replicas` value to 3.
+There is currently no default "size" for applications that are created with the
+web console. This means that, whether you think it's a good idea or not, the
+application is actually unbounded -- it can consume as much of a node's
+resources as it wants.
 
-    osc get rc
-    CONTROLLER       CONTAINER(S)   REPLICAS
-    ruby-example-1   ruby-example   1
+Before we can try to scale our application, we'll need to update the deployment
+to put a memory and CPU limit on the pods. Go ahead and edit the
+`deploymentConfig`, as `joe`:
 
-    osc edit rc ruby-example-1
+    osc edit dc/ruby-example-1 -o json
 
-Alter `replicas`
+You'll need to find "spec", "containers" and then the "resources" block in
+there. It's after a bunch of `env`ironment variables. Update that "resources"
+block to look like this:
 
-    spec:
-      replicas: 3
+        "resources": {
+          "limits": {
+            "cpu": "10m",
+            "memory": "16Mi"
+          }
+        },
+
+`*
+
+As `joe` scale your application up to three instances using the `osc resize`
+command:
+
+    osc resize --replicas=3 rc/ruby-example-1
 
 Wait a few seconds and you should see your application scaled up to 3 pods.
 
-    osc get pods
+    osc get pods | grep -v "example"
     POD                    IP          CONTAINER(S) ... STATUS  CREATED
     ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
     ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
@@ -2130,6 +2207,9 @@ Wait a few seconds and you should see your application scaled up to 3 pods.
 You will also notice that these pods were distributed across our two nodes
 "east" and "west". Cool!
 
+**SKIP THIS**
+
+*`
 Now start another build, wait a moment or two for your build to start.
 
     osc start-build ruby-example
@@ -2146,6 +2226,7 @@ automatically start after a minute or two.
 
 **Note:** Once the build is complete a new replication controller is
 created and the old one is no longer used.
+`*
 
 ## Templates, Instant Apps, and "Quickstarts"
 The next example will involve a build of another application, but also a service
@@ -2160,15 +2241,14 @@ This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
 
 ### A Project for the Quickstart
-As the `root` user, first we'll create a new project:
+As `joe`, create a new project:
 
-    openshift admin new-project quickstart --display-name="Quickstart" \
-    --description='A demonstration of a "quickstart/template"' \
-    --admin=joe
+    osc new-project quickstart --display-name="Quickstart" \
+    --description='A demonstration of a "quickstart/template"'
 
-As the `joe` user, we'll set our context to use the corresponding namespace:
+This also changes you to use that project:
 
-    osc project quickstart
+    Now using project "quickstart" on server "https://ose3-master.example.com:8443".
 
 ### A Quick Aside on Templates
 From the [OpenShift

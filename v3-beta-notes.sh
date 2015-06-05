@@ -17,7 +17,7 @@ osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 #beta4
 systemctl start docker
-yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' 
+yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
 docker images | grep 0.5.2 | awk {'print $3'} | xargs docker rmi -f
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-haproxy-router:v0.5.2.2
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/ose-deployer:v0.5.2.2
@@ -55,6 +55,17 @@ git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
 cd ~/openshift-ansible
 /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
 ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+
+# ansible fixes
+sed -i /etc/openshift/node/node-config.yaml \
+-e 's/^networkPlugin/networkPluginName: ""\n/'
+systemctl restart openshift-node
+sysctl -w net.bridge.bridge-nf-call-iptables=0
+
+# continue
+sed -i /etc/ansible/hosts \
+-e 's/openshift_use_openshift_sdn=false/openshift_use_openshift_sdn=true/'
+ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
@@ -78,9 +89,6 @@ osadm registry --create \
 --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
 --selector="region=infra" --mount-host=/mnt/registry
-
-# all systems
-sysctl -w net.bridge.bridge-nf-call-iptables=0
 
 #beta3
 systemctl start docker
