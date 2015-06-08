@@ -63,9 +63,9 @@
     - [The Web Console](#the-web-console)
   - [Project Administration](#project-administration)
     - [Deleting a Project](#deleting-a-project)
-  - [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
+  - [Preparing for S2I: the Registry](#preparing-for-s2i-the-registry)
     - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
-  - [STI - What Is It?](#sti---what-is-it)
+  - [S2I - What Is It?](#s2i---what-is-it)
     - [Create a New Project](#create-a-new-project)
     - [Switch Projects](#switch-projects)
     - [A Simple Code Example](#a-simple-code-example)
@@ -92,6 +92,12 @@
     - [Visit Your Application Again](#visit-your-application-again)
     - [Replication Controllers](#replication-controllers)
     - [Revisit the Webpage](#revisit-the-webpage)
+  - [Using Persistent Storage (Optional)](#using-persistent-storage-optional)
+    - [Export an NFS Volume](#export-an-nfs-volume)
+    - [Allow NFS Access in SELinux Policy](#allow-nfs-access-in-selinux-policy)
+    - [Create a PersistentVolume](#create-a-persistentvolume)
+    - [Claim the PersistentVolume](#claim-the-persistentvolume)
+    - [Use the Claimed Volume](#use-the-claimed-volume)
   - [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
     - [Fork the Repository](#fork-the-repository)
     - [Update the BuildConfig](#update-the-buildconfig)
@@ -145,7 +151,7 @@
   - [Connecting to the Server](#connecting-to-the-server)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
   - [Importing ImageStreams](#importing-imagestreams)
-  - [STI Builds](#sti-builds)
+  - [S2I Builds](#s2i-builds)
   - [Setting Environment Variables in Pods](#setting-environment-variables-in-pods)
   - [Git Repository Access](#git-repository-access)
   - [Proxying Docker Pull](#proxying-docker-pull)
@@ -1313,7 +1319,9 @@ To make this acessible publicly, you will need to open this port on your master:
 
     iptables -I OS_FIREWALL_ALLOW -p tcp -m tcp --dport 1936 -j ACCEPT
 
-You will also want to add this rule to `/etc/sysconfig/iptables` as well.
+You will also want to add this rule to `/etc/sysconfig/iptables` as well to keep it
+across reboots. However, don't restart the iptables service, as this would destroy
+docker networking. Use the `iptables` command to change rules on a live system.
 
 Feel free to not open this port if you don't want to make this accessible, or if
 you only want it accessible via port fowarding, etc.
@@ -1697,7 +1705,7 @@ cleanup routine to finish.
 Once the project disappears from `osc get project`, doing `osc get pod -n demo`
 should return no results.
 
-## Preparing for STI: the Registry
+## Preparing for S2I: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
 OpenShift 3 will provide a Docker registry that administrators may run inside
@@ -1819,8 +1827,8 @@ Once there is an endpoint listed, the curl should work and the registry is avail
 Highly available, actually. You should be able to delete the registry pod at any
 point in this training and have it return shortly after with all data intact.
 
-## STI - What Is It?
-STI stands for *source-to-image* and is the process where OpenShift will take
+## S2I - What Is It?
+S2I stands for *source-to-image* and is the process where OpenShift will take
 your application source code and build a Docker image for it. In the real world,
 you would need to have a code repository (where OpenShift can introspect an
 appropriate Docker image to build and use to support the code) or a code
@@ -1829,7 +1837,7 @@ for you).
 
 ### Create a New Project
 By default, users are allowed to create their own projects. Let's try this now.
-As the `joe` user, we will create a new project to put our first STI example
+As the `joe` user, we will create a new project to put our first S2I example
 into:
 
     osc new-project sinatra --display-name="Sinatra Example" \
@@ -1865,7 +1873,7 @@ Let's see some JSON:
 Take a look at the JSON that was generated. You will see some familiar items at
 this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
 
-Essentially, the STI process is as follows:
+Essentially, the S2I process is as follows:
 
 1. OpenShift sets up various components such that it can build source code into
 a Docker image.
@@ -1927,7 +1935,7 @@ all users of the OpenShift environment.
 If you think about one of the important things that OpenShift needs to do, it's
 to be able to deploy newer versions of user applications into Docker containers
 quickly. But an "application" is really two pieces -- the starting image (the
-STI builder) and the application code. While it's "obvious" that we need to
+S2I builder) and the application code. While it's "obvious" that we need to
 update the deployed Docker containers when application code changes, it may not
 have been so obvious that we also need to update the deployed container if the
 **builder** image changes.
@@ -2010,7 +2018,7 @@ moments):
 
     osc get builds
     NAME             TYPE      STATUS     POD
-    ruby-example-1   STI       Running   ruby-example-1
+    ruby-example-1   Source    Running   ruby-example-1
 
 The web console would've updated the *Overview* tab for the *Sinatra* project to
 say:
@@ -2160,11 +2168,11 @@ Now start another build, wait a moment or two for your build to start.
 
     osc get builds
     NAME             TYPE      STATUS     POD
-    ruby-example-1   STI       Complete   ruby-example-1
-    ruby-example-2   STI       New        ruby-example-2
+    ruby-example-1   Source    Complete   ruby-example-1
+    ruby-example-2   Source    New        ruby-example-2
 
 The build never starts, what happened? The quota limits the number of pods in
-this project to three and this includes ephemeral pods like STI builders.
+this project to three and this includes ephemeral pods like S2I builders.
 Resize your application to just one replica and your new build will
 automatically start after a minute or two.
 
@@ -2466,6 +2474,239 @@ Remember, wiring up apps yourself right now is a little clunky. These things
 will get much easier with future beta drops and will also be more accessible
 from the web console.
 
+## Using Persistent Storage (Optional)
+
+Having a database for development is nice, but what if you actually want the
+data you store to stick around after the DB pod is redeployed? Pods are
+ephemeral, and so is their storage by default. For shared or persistent
+storage, we need a way to specify that pods should use external volumes.
+
+We can do this a number of ways. [Kubernetes provides methods for directly
+specifying the mounting of several different volume
+types.](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md)
+This is perfect if you want to use known external resources. But that's
+not very PaaS-y. If I'm using a PaaS, I might really just rather request a
+chunk of storage and not need a side channel to provision that. OpenShift 3
+provides a mechanism for doing just this.
+
+### Export an NFS Volume
+
+For the purposes of this training, we will just demonstrate the master
+exporting an NFS volume for use as storage by the database. **You would
+almost certainly not want to do this for a real deployment.** If you happen
+to have another host with an NFS export handy, feel free to substitute
+that instead of the master.
+
+As `root` on the master:
+
+1. Ensure that nfs-utils is installed:
+
+        yum install nfs-utils
+
+2. Create the directory we will export:
+
+        mkdir -p /var/export/vol1
+        chown nfsnobody:nfsnobody /var/export/vol1
+        chmod 700 /var/export/vol1
+
+3. Edit `/etc/exports` and add the following line:
+
+        /var/export/vol1 *(rw,sync,all_squash)
+
+4. Enable and start NFS services:
+
+        systemctl enable rpcbind nfs-server
+        systemctl start rpcbind nfs-server nfs-lock nfs-idmap
+
+Note that the volume is owned by `nfsnobody` and access by all remote users
+is "squashed" to be access by this user. This essentially disables user
+permissions for clients mounting the volume. While another configuration
+might be preferable, one problem you may run into is that the container
+cannot modify the permissions of the actual volume directory when mounted.
+In the case of MySQL below, MySQL would like to have the volume belong to
+the `mysql` user, and assumes that it is, which causes problems later.
+Arguably, the container should operate differently. In the long run, we
+probably need to come up with best practices for use of NFS from containers.
+
+### Allow NFS Access in SELinux Policy
+
+By default policy, containers are not allowed to write to NFS mounted
+directories.  We want to do just that with our database, so enable that on
+all nodes where the pod could land (i.e. all of them) with:
+
+    setsebool -P virt_use_nfs=true
+
+Once the ansible-based installer does this automatically, we can remove this
+section from the document.
+
+### Create a PersistentVolume
+
+It is the PaaS administrator's responsibility to define the storage that is
+available to users. Storage is represented by a PersistentVolume that
+encapsulates the details of a particular volume which can be backed by any
+of the [volume types available via
+Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md).
+In this case it will be our NFS volume.
+
+Currently PersistentVolume objects must be created "by hand". Modify the
+`beta4/persistent-volume.json` file as needed if you are using a different
+NFS mount:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolume",
+      "metadata": {
+        "name": "pv0001"
+      },
+      "spec": {
+        "capacity": {
+            "storage": "5Gi"
+            },
+        "accessModes": [ "ReadWriteMany" ],
+        "nfs": {
+            "path": "/var/export/vol1",
+            "server": "ose3-master.osv3.example.com"
+        }
+      }
+    }
+
+Create this object as the `root` (administrative) user:
+
+    # osc create -f persistent-volume.json
+    persistentvolumes/pv0001
+
+This defines a volume for OpenShift projects to use in deployments. The
+storage should correspond to how much is actually available (make each
+volume a separate filesystem if you want to enforce this limit). Take a
+look at it now:
+
+    # osc describe persistentvolumes/pv0001
+    Name:   pv0001
+    Labels: <none>
+    Status: Available
+    Claim:
+
+### Claim the PersistentVolume
+
+Now that the administrator has provided a PersistentVolume, any project can
+make a claim on that storage. We do this by creating a PersistentVolumeClaim
+that specifies what kind and how much storage is desired:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "claim1"
+      },
+      "spec": {
+        "accessModes": [ "ReadWriteMany" ],
+        "resources": {
+          "requests": {
+            "storage": "5Gi"
+          }
+        }
+      }
+    }
+
+We can have `alice` do this in the `wiring` project:
+
+    $ osc create -f persistent-volume-claim.json
+    persistentVolumeClaim/claim1
+
+This claim will be bound to a suitable PersistentVolume (one that is big
+enough and allows the requested accessModes). The user does not have any
+real visibility into PersistentVolumes, including whether the backing
+storage is NFS or something else; they simply know when their claim has
+been filled ("bound" to a PersistentVolume).
+
+    $ osc get pvc
+    NAME      LABELS    STATUS    VOLUME
+    claim1    map[]     Bound     pv0001
+
+If as `root` we now go back and look at our PV, we will also see that it has
+been claimed:
+
+    # osc describe pv/pv0001
+    Name:   pv0001
+    Labels: <none>
+    Status: Bound
+    Claim:  wiring/claim1
+
+The PersistentVolume is now claimed and can't be claimed by any other project.
+
+Although this flow assumes the administrator pre-creates volumes in
+anticipation of their use later, it would be possible to create an external
+process that watches the API for a PersistentVolumeClaim to be created,
+dynamically provisions a corresponding volume, and creates the API object
+to fulfill the claim.
+
+### Use the Claimed Volume
+
+Finally, we need to modify our `database` DeploymentConfig to specify that
+this volume should be mounted where the database will use it. As `alice`:
+
+    $ osc edit dc/database
+
+The part we will need to edit is the pod template. We will need to add two
+parts, a definition of the volume, and where to mount it inside the container.
+
+First, directly under the `template` `spec:` line, add this YAML (indented from the `spec:` line):
+
+          volumes:
+          - name: pvol
+            persistentVolumeClaim:
+              claimName: claim1
+
+Then to have the container mount this, add this YAML after the
+`terminationMessagePath:` line:
+
+            volumeMounts:
+            - mountPath: /var/lib/mysql/data
+              name: pvol
+
+Remember that YAML is sensitive to indentation. The final template should
+look like this:
+
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          deploymentconfig: database
+      spec:
+        volumes:
+        - name: pvol
+          persistentVolumeClaim:
+            claimName: claim1
+        containers:
+        - capabilities: {}
+    [...]
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: pvol
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        serviceAccount: ""
+
+Save and exit. This change to configuration will trigger a new deployment
+of the database, and this time, it will be using the NFS volume we exported
+from master.
+
+Once the new pod has started, go ahead and visit the web page. Add a few values
+via the application. Then delete the database pod and wait for it to come back.
+You should be able to retrieve the same values you entered.
+
+For further confirmation that your database pod is in fact using the NFS
+volume, simply check what is stored there on master:
+
+    # ls /var/export/vol1
+    database-3-n1i2t.pid  ibdata1  ib_logfile0  ib_logfile1  mysql  performance_schema  root
+
+Further information on use of PersistentVolumes is available in the
+[OpenShift Origin documentation](http://docs.openshift.org/latest/dev_guide/volumes.html).
+This is a very new feature, so it is very manual for now, but look for more tooling
+taking advantage of PersistentVolumes to be created in the future.
+
 ## Rollback/Activate and Code Lifecycle
 Not every coder is perfect, and sometimes you want to rollback to a previous
 incarnation of your application. Sometimes you then want to go forward to a
@@ -2611,8 +2852,8 @@ And now `get build` again:
 
     osc get build
     NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
-    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
+    ruby-sample-build-1   Source    Complete   ruby-sample-build-1
+    ruby-sample-build-2   Source    Pending    ruby-sample-build-2
 
 You can see that this could have been part of some CI/CD workflow that
 automatically called our webhook once the code was tested.
@@ -2669,7 +2910,7 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
-Generally speaking, this involves modifying the various STI scripts from the
+Generally speaking, this involves modifying the various S2I scripts from the
 builder image. When OpenShift builds your code, it checks to see if any of the
 scripts in the `.sti/bin` folder of your repository override/supercede the
 builder image's scripts. If so, it will execute the repository script instead.
@@ -2719,22 +2960,22 @@ and look at its Docker logs.
 Did You See It?
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
-    ---> CUSTOM STI ASSEMBLE COMPLETE
+    ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 But where's the output from the custom `run` script? The `assemble` script is
 run inside of your builder pod. That's what you see by using `build-logs`. The
 `run` script actually is what is executed to "start" your application's pod. In
 other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` STI builder. As `root` run:
+was built based on the `ruby-20-rhel7` S2I builder. As `root` run:
 
-    osc log -n wiring \
+    osc logs -n wiring \
     `osc get pods -n wiring | \
     grep "^frontend-" | awk '{print $1}'` |\
     grep -i custom
 
 You should see:
 
-    2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I RUN COMPLETE
 
 You will be able to do this as the `alice` user once the proxy development is
 finished -- for the same reason that you cannot view build logs as regular
@@ -2742,7 +2983,7 @@ users, you also can't view pod logs as regular users.
 
 ## Lifecycle Pre and Post Deployment Hooks
 Like in OpenShift 2, we have the capability of "hooks" - performing actions both
-before and after the **deployment**. In other words, once an STI build is
+before and after the **deployment**. In other words, once an S2I build is
 complete, the resulting Docker image is pushed into the registry. Once the push
 is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
 a **deployment**.
@@ -2972,7 +3213,7 @@ another deployment, our current Docker image doesn't have the database migration
 file in it. Nothing really useful would happen.
 
 In order to get the database migration file into the Docker image, we actually
-need to do another build. Remember, the STI process starts with the builder
+need to do another build. Remember, the S2I process starts with the builder
 image, fetches the source code, executes the (customized) assemble script, and
 then pushes the resulting Docker image into the registry. **Then** the
 deployment happens.
@@ -2996,9 +3237,7 @@ with the pod that ran our pre-deployment hook.
 
 Inspect this pod's logs:
 
-    osc log deployment-frontend-9-hook-wlqqx -n wiring
-
-**Note:** You'll have to perform this as `root`.
+    osc logs deployment-frontend-9-hook-wlqqx -n wiring
 
 The output likely shows:
 
@@ -3160,7 +3399,7 @@ that user in the subsequent commands as necessary.
 
 ### Instantiate the Template
 When we imported the imagestreams into the `openshift` namespace earlier, we
-also brought in JBoss EAP and Tomcat STI builder images.
+also brought in JBoss EAP and Tomcat S2I builder images.
 
 There are currently several application templates that can be used with these
 images, except they leverage some features that were not available at the time
@@ -3408,7 +3647,7 @@ mod_authnz_ldap directives are available.
 ### Upcoming changes
 
 We've recently worked with Kubernetes upstream to add API support for Secrets.
-Before GA the need for STI builds in this authentication approach may go away.
+Before GA the need for S2I builds in this authentication approach may go away.
 What this would mean is that admins would run a script to import an Apache
 configuration in to a Secret and the Pod could use this on start up.  In this
 case the Build Config would go away and only a Deployment Config would be
@@ -3690,7 +3929,7 @@ osc delete imagestreams -n openshift --all
 osc create -f image-streams.json -n openshift
 ~~~
 
-## STI Builds
+## S2I Builds
 
 Let's take the sinatra example.  That build uses fetches gems from
 rubygems.org.  The first thing we'll want to do is fork that codebase and

@@ -28,15 +28,15 @@
                     "env": [
                       {
                         "name": "MYSQL_PASSWORD",
-                        "value": "copy-this-from-frontend"
+                        "value": "${MYSQL_PASSWORD}"
                       },
                       {
                         "name": "MYSQL_DATABASE",
-                        "value": "example"
+                        "value": "${MYSQL_DATABASE}"
                       },
                       {
                         "name": "MYSQL_USER",
-                        "value": "example"
+                        "value": "${MYSQL_USER}"
                       }
                     ],
                     "image": "openshift/mysql-55-centos7",
