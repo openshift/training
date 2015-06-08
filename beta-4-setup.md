@@ -2359,9 +2359,9 @@ values and used them for both the frontend and the backend at the exact same
 time. Since we are processing them separately now, some manual intervention is
 required.
 
-This template uses the OpenShift MySQL Docker container, which knows to take some
+This template uses the Red Hat MySQL Docker container, which knows to take some
 env-vars when it fires up (eg: the MySQL user / password). More information on
-the specifics of this container can be found here:
+the upstream of this container can be found here:
 
     https://github.com/openshift/mysql
 
@@ -2434,8 +2434,6 @@ As `alice`, go ahead and find your frontend pod, and then kill it:
 
 You'll see something like:
 
-    pods/deployment-frontend-1-hook-gbnys
-    pods/deployment-frontend-1-hook-ot22m
     pods/frontend-1-b6bgy
 
 That was the generated name of the pod when the replication controller stood it
@@ -2474,9 +2472,14 @@ Go ahead and revisit `http://wiring.cloudapps.example.com` (or your appropriate
 FQDN) in your browser, and you should see that the application is now fully
 functional!
 
-Remember, wiring up apps yourself right now is a little clunky. These things
-will get much easier with future beta drops and will also be more accessible
-from the web console.
+**Note:** There is a process to deploy instances of templates that we already
+used in the "quickstart" case. For some reason, the MySQL database template
+doesn't deploy successfully with the current example. Otherwise we would have
+done 100% of this through the webUI.
+
+Here's the bug for reference:
+
+    https://github.com/openshift/origin/issues/2947
 
 ## Using Persistent Storage (Optional)
 
@@ -2497,7 +2500,7 @@ provides a mechanism for doing just this.
 
 For the purposes of this training, we will just demonstrate the master
 exporting an NFS volume for use as storage by the database. **You would
-almost certainly not want to do this for a real deployment.** If you happen
+almost certainly not want to do this in production.** If you happen
 to have another host with an NFS export handy, feel free to substitute
 that instead of the master.
 
