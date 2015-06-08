@@ -1684,6 +1684,13 @@ access, etc. Check the documentation for more details:
 
 Of course, there be dragons. The basic roles should suffice for most uses.
 
+**Note:** There is a bug that actually prevents the remove-user from removing
+the user:
+
+https://github.com/openshift/origin/issues/2785
+
+It appears to be fixed but may not have made beta4.
+
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
 project administrator, let's go ahead and delete the project. This should also
