@@ -2053,7 +2053,7 @@ deployment status, new pods, and more.
 If you didn't, go to the web console now. The overview page should show that the
 application is running and show the information about the service at the top:
 
-    simple-openshift-sinatra - routing TCP traffic on 172.30.17.20:8080 to port 8080
+    SERVICE: RUBY-EXAMPLE routing traffic on 172.30.17.20 port 8080 - 8080 (tcp)
 
 ### Examining the Build
 If you go back to your console session where you examined the `build-logs`,
@@ -2121,6 +2121,8 @@ any TLS termination.
 There is currently a bug with quota enforcement. Do **NOT** apply the quota to
 this project. Skip ahead to the scaling part.
 
+    https://github.com/openshift/origin/issues/2821
+
 ** SKIP THIS**
 
 `*
@@ -2167,7 +2169,7 @@ Wait a few seconds and you should see your application scaled up to 3 pods.
     ruby-example-3-tzt0z   10.1.0.28   ruby-example ... Running About a minute
 
 You will also notice that these pods were distributed across our two nodes
-"east" and "west". Cool!
+"east" and "west". You can also see this in the web console. Cool!
 
 **SKIP THIS**
 
