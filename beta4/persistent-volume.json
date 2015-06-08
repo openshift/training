@@ -11,7 +11,7 @@
         "accessModes": [ "ReadWriteMany" ],
         "nfs": {
             "path": "/var/export/vol1",
-            "server": "ose3-master.osv3.example.com"
+            "server": "ose3-master.example.com"
         }
       }
     }
