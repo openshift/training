@@ -1496,6 +1496,10 @@ You can verify this with other `osc` commands:
 
     osc get routes
 
+**Note:** May need to force resize:
+
+    https://github.com/openshift/origin/issues/2939
+
 ### Project Status
 OpenShift provides a handy tool, `osc status`, to give you a summary of
 common resources existing in the current project:
@@ -1961,10 +1965,9 @@ paragraph, if the "ruby-20-rhel7" image changed in the Docker repository defined
 by the `ImageStream`, we might automatically trigger a new build of our
 application code.
 
-You may notice that some of the streams above have `rhel` in the name and others
-have `centos`. An organization will likely choose several supported builders and
-databases from Red Hat, but may also create their own builders, DBs, and other
-images. This system provides a great deal of flexibility.
+An organization will likely choose several supported builders and databases from
+Red Hat, but may also create their own builders, DBs, and other images. This
+system provides a great deal of flexibility.
 
 Feel free to look around `image-streams.json` for more details.  As you can see,
 we have provided definitions for EAP and Tomcat builders as well as other DBs
