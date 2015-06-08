@@ -2586,7 +2586,6 @@ Once the ansible-based installer does this automatically, we can remove this
 section from the document.
 
 ### Create a PersistentVolume
-
 It is the PaaS administrator's responsibility to define the storage that is
 available to users. Storage is represented by a PersistentVolume that
 encapsulates the details of a particular volume which can be backed by any
@@ -2611,7 +2610,7 @@ NFS mount:
         "accessModes": [ "ReadWriteMany" ],
         "nfs": {
             "path": "/var/export/vol1",
-            "server": "ose3-master.osv3.example.com"
+            "server": "ose3-master.example.com"
         }
       }
     }
