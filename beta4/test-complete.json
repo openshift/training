@@ -51,6 +51,11 @@
           "type": "Recreate",
           "resources": {}
         },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
         "replicas": 1,
         "selector": {
           "name": "hello-openshift"
@@ -104,9 +109,6 @@
             }
           }
         }
-      },
-      "status": {
-        "latestVersion": 1
       }
     }
   ]
