@@ -2300,22 +2300,14 @@ components manually. Let's take our quickstart example and treat it like two
 separate "applications" that we want to wire together.
 
 ### Create a New Project
-As the `root` user, create another new project for this "wiring" example. This
-time we'll make it belong to `alice`:
-
-    osadm new-project wiring --display-name="Exploring Parameters" \
-    --description='An exploration of wiring using parameters' \
-    --admin=alice
-
 Open a terminal as `alice`:
 
     # su - alice
 
-Then:
+Then, create a project for this example:
 
-    osc project wiring
-
-Remember, your password was probably "redhat".
+    osc new-project wiring --display-name="Exploring Parameters" \
+    --description='An exploration of wiring using parameters'
 
 Log into the web console as `alice`. Can you see `joe`'s projects and content?
 
