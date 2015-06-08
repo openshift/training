@@ -2482,7 +2482,6 @@ Here's the bug for reference:
     https://github.com/openshift/origin/issues/2947
 
 ## Using Persistent Storage (Optional)
-
 Having a database for development is nice, but what if you actually want the
 data you store to stick around after the DB pod is redeployed? Pods are
 ephemeral, and so is their storage by default. For shared or persistent
@@ -2497,7 +2496,6 @@ chunk of storage and not need a side channel to provision that. OpenShift 3
 provides a mechanism for doing just this.
 
 ### Export an NFS Volume
-
 For the purposes of this training, we will just demonstrate the master
 exporting an NFS volume for use as storage by the database. **You would
 almost certainly not want to do this in production.** If you happen
@@ -2506,7 +2504,7 @@ that instead of the master.
 
 As `root` on the master:
 
-1. Ensure that nfs-utils is installed:
+1. Ensure that nfs-utils is installed (**on all systems**):
 
         yum install nfs-utils
 
@@ -2535,8 +2533,49 @@ the `mysql` user, and assumes that it is, which causes problems later.
 Arguably, the container should operate differently. In the long run, we
 probably need to come up with best practices for use of NFS from containers.
 
-### Allow NFS Access in SELinux Policy
+### NFS Firewall
+We will need to open ports on the firewall on the master to enable NFS to
+communicate from the nodes. First, let's add rules for NFS to the running state
+of the firewall:
 
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 20048 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 50825 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT
+
+Next, let's add the rules to `/etc/sysconfig/iptables`. Put them at the top of
+the `OS_FIREWALL_ALLOW` set:
+
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 50825 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 20048 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
+
+Now, we have to edit NFS' configuration to use these ports. First, let's edit
+`/etc/sysconfig/nfs`. Change the RPC option to the following:
+
+    RPCMOUNTDOPTS="-p 20048"
+
+Change the STATD option to the following:
+
+    STATDARG="-p 50825"
+
+Then, edit `/etc/sysctl.conf`:
+
+    fs.nfs.nlm_tcpport=53248
+    fs.nfs.nlm_udpport=53248
+
+Then, persist the `sysctl` changes:
+
+    sysctl -p
+
+Lastly, restart NFS:
+
+    systemctl restart nfs
+
+### Allow NFS Access in SELinux Policy
 By default policy, containers are not allowed to write to NFS mounted
 directories.  We want to do just that with our database, so enable that on
 all nodes where the pod could land (i.e. all of them) with:
