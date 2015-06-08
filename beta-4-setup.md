@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [OpenShift Beta 3](#openshift-beta-3)
+- [OpenShift Beta 4](#openshift-beta-4)
   - [Architecture and Requirements](#architecture-and-requirements)
     - [Architecture](#architecture)
     - [Requirements](#requirements)
@@ -12,6 +12,7 @@
     - [Assumptions](#assumptions)
     - [Git](#git)
     - [Preparing Each VM](#preparing-each-vm)
+    - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
     - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
     - [Clone the Training Repository](#clone-the-training-repository)
   - [Ansible-based Installer](#ansible-based-installer)
@@ -50,8 +51,10 @@
     - [Label Your Nodes](#label-your-nodes)
   - [Services](#services)
   - [Routing](#routing)
+    - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
     - [Creating the Router](#creating-the-router)
     - [Router Placement By Region](#router-placement-by-region)
+    - [Viewing Router Stats](#viewing-router-stats)
   - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
     - [Creating the Definition](#creating-the-definition)
     - [Project Status](#project-status)
@@ -60,9 +63,9 @@
     - [The Web Console](#the-web-console)
   - [Project Administration](#project-administration)
     - [Deleting a Project](#deleting-a-project)
-  - [Preparing for STI: the Registry](#preparing-for-sti-the-registry)
+  - [Preparing for S2I: the Registry](#preparing-for-s2i-the-registry)
     - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
-  - [STI - What Is It?](#sti---what-is-it)
+  - [S2I - What Is It?](#s2i---what-is-it)
     - [Create a New Project](#create-a-new-project)
     - [Switch Projects](#switch-projects)
     - [A Simple Code Example](#a-simple-code-example)
@@ -89,6 +92,12 @@
     - [Visit Your Application Again](#visit-your-application-again)
     - [Replication Controllers](#replication-controllers)
     - [Revisit the Webpage](#revisit-the-webpage)
+  - [Using Persistent Storage (Optional)](#using-persistent-storage-optional)
+    - [Export an NFS Volume](#export-an-nfs-volume)
+    - [Allow NFS Access in SELinux Policy](#allow-nfs-access-in-selinux-policy)
+    - [Create a PersistentVolume](#create-a-persistentvolume)
+    - [Claim the PersistentVolume](#claim-the-persistentvolume)
+    - [Use the Claimed Volume](#use-the-claimed-volume)
   - [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
     - [Fork the Repository](#fork-the-repository)
     - [Update the BuildConfig](#update-the-buildconfig)
@@ -142,7 +151,7 @@
   - [Connecting to the Server](#connecting-to-the-server)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
   - [Importing ImageStreams](#importing-imagestreams)
-  - [STI Builds](#sti-builds)
+  - [S2I Builds](#s2i-builds)
   - [Setting Environment Variables in Pods](#setting-environment-variables-in-pods)
   - [Git Repository Access](#git-repository-access)
   - [Proxying Docker Pull](#proxying-docker-pull)
@@ -156,7 +165,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# OpenShift Beta 3
+# OpenShift Beta 4
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the beta testing is pretty simple. There are
@@ -179,9 +188,8 @@ rest of the document.
 Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
 and the following configuration:
 
-* RHEL 7.1 (Note: 7.1 kernel is required for openvswitch)
+* RHEL >=7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
-* NetworkManager **disabled**
 
 The majority of storage requirements are related to Docker and etcd (the data
 store). Both of their contents live in /var, so it is recommended that the
@@ -195,20 +203,32 @@ them to the *OpenShift Enterprise High Touch Beta* subscription.
 All of your VMs should be on the same logical network and be able to access one
 another.
 
-Forward DNS resolution of hostnames is an **absolute requirement**. This
+In almost all cases, when referencing VMs you must use hostnames and the
+hostnames that you use must match the output of `hostname -f` on each of your
+nodes. Forward DNS resolution of hostnames is an **absolute requirement**. This
 training document assumes the following configuration:
 
 * ose3-master.example.com (master+node)
 * ose3-node1.example.com
 * ose3-node2.example.com
 
+We do our best to point out where you will need to change things if your
+hostnames do not match.
+
 If you cannot create real forward resolving DNS entries in your DNS system, you
 will need to set up your own DNS server in the beta testing environment.
 Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
 setup](#appendix---dnsmasq-setup)
 
-## Setting Up the Environment
+Remember that NetworkManager may make changes to your DNS
+configuration/resolver/etc. You will need to properly configure your interfaces'
+DNS settings and/or configure NetworkManager appropriately.
 
+More information on NetworkManager can be found in this comment:
+
+    https://github.com/openshift/training/issues/193#issuecomment-105693742
+
+## Setting Up the Environment
 ### Use a Terminal Window Manager
 We **strongly** recommend that you use some kind of terminal window manager
 (Screen, Tmux).
@@ -224,15 +244,9 @@ For example:
 
     *.cloudapps.example.com. 300 IN  A 192.168.133.2
 
-In almost all cases, when referencing VMs you must use hostnames and the
-hostnames that you use must match the output of `hostname -f` on each of your
-nodes. By extension, you must at least have all hostname/ip mappings in
-/etc/hosts files or forward DNS should work.
-
 It is possible to use dnsmasq inside of your beta environment to handle these
-duties. See the [appendix on
-dnsmasq](#appendix---dnsmasq-setup) if you can't easily manipulate your existing
-DNS environment.
+duties. See the [appendix on dnsmasq](#appendix---dnsmasq-setup) if you can't
+easily manipulate your existing DNS environment.
 
 ### Assumptions
 In most cases you will see references to "example.com" and other FQDNs related
@@ -257,7 +271,9 @@ can:
         --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
 
-    **Note:** You will have had to register/attach your system first.
+    **Note:** You will have had to register/attach your system first.  Also,
+    *rhel-server-7-ose-beta-rpms* is not a typo.  The name will change at GA to be
+    consistent with the RHEL channel names.
 
 * Import the GPG key for beta:
 
@@ -269,10 +285,6 @@ Onn **each** VM:
 
         yum -y install deltarpm
 
-1. Remove NetworkManager:
-
-        yum -y remove NetworkManager*
-
 1. Install missing packages:
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
@@ -281,13 +293,70 @@ Onn **each** VM:
 
         yum -y update
 
-### Grab Docker Images (Optional, Recommended)
-**If you want** to pre-fetch Docker images to make the first few things in your
-environment happen **faster**, you'll need to first install Docker:
+### Docker Storage Setup (optional, recommended)
+**IMPORTANT:** The default docker storage configuration uses loopback devices
+and is not appropriate for production. Red Hat considers the dm.thinpooldev
+storage option to be the only appropriate configuration for production use.
+
+If you want to configure the storage for Docker, you'll need to first install
+Docker, as the installer currently does not auto-configure this storage setup
+for you.
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.6.0-6.el7.x86_64`.
+Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
+
+In order to use dm.thinpooldev you must have an LVM thinpool available, the
+`docker-storage-setup` package will assist you in configuring LVM. However you
+must provision your host to fit one of these three scenarios :
+
+*  Root filesystem on LVM with free space remaining on the volume group. Run
+`docker-storage-setup` with no additional configuration, it will allocate the
+remaining space for the thinpool.
+
+*  A dedicated LVM volume group where you'd like to reate your thinpool
+
+        echo <<EOF > /etc/sysconfig/docker-storage-setup
+        VG=docker-vg
+        SETUP_LVM_THIN_POOL=yes
+        EOF
+        docker-storage-setup
+
+*  A dedicated block device, which will be used to create a volume group and thinpool
+
+        cat <<EOF > /etc/sysconfig/docker-storage-setup
+        DEVS=/dev/vdc
+        VG=docker-vg
+        SETUP_LVM_THIN_POOL=yes
+        EOF
+        docker-storage-setup
+
+Once complete you should have a thinpool named `docker-pool` and docker should
+be configured to use it in `/etc/sysconfig/docker-storage`.
+
+    # lvs
+    LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
+    docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
+
+    # cat /etc/sysconfig/docker-storage
+    DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
+
+**Note:** If you had previously used docker with loopback storage you should
+clean out `/var/lib/docker` This is a destructive operation and will delete all
+images and containers on the host.
+
+    systemctl stop docker
+    rm -rf /var/lib/docker/*
+    systemctl start docker
+
+### Grab Docker Images (Optional, Recommended)
+**If you want** to pre-fetch Docker images to make the first few things in your
+environment happen **faster**, you'll need to first install Docker if you didn't
+install it when (optionally) configuring the Docker storage previously.
+
+    yum -y install docker
+
+Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
 
 You'll need to add `--insecure-registry 0.0.0.0/0` to your
 `/etc/sysconfig/docker` `OPTIONS`. Then:
@@ -296,21 +365,23 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
     docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
+    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
     docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
     docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
+    docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift:v0.4.3
-    docker pull openshift/ruby-20-centos7
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
@@ -319,7 +390,7 @@ changed and RPM will not overwrite your existing file if you just do a "yum
 update".
 
     yum -y remove docker
-    rm /etc/sysconfig/docker
+    rm /etc/sysconfig/docker*
     yum -y install docker
 
 ### Clone the Training Repository
@@ -331,6 +402,19 @@ On your master, it makes sense to clone the training git repository:
 **REMINDER**
 Almost all of the files for this training are in the training folder you just
 cloned.
+
+### Add Development Users
+In the "real world" your developers would likely be using the OpenShift tools on
+their own machines (`osc` and the web console). For the Beta training, we
+will create user accounts for two non-privileged users of OpenShift, *joe* and
+*alice*, on the master. This is done for convenience and because we'll be using
+`htpasswd` for authentication.
+
+    useradd joe
+    useradd alice
+
+We will come back to these users later. Remember to do this on the `master`
+system, and not the nodes.
 
 ## Ansible-based Installer
 The installer uses Ansible. Eventually there will be an interactive text-based
@@ -377,18 +461,17 @@ The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
     cd
-    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
+    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
     cd ~/openshift-ansible
 
 ### Configure Ansible
 Copy the staged Ansible configuration files to `/etc/ansible`:
 
-    /bin/cp -r ~/training/beta3/ansible/* /etc/ansible/
+    /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
-hostnames, modify /etc/ansible/hosts accordingly. Do not adjust the commented
-lines (`#`) at this time.
+hostnames, modify /etc/ansible/hosts accordingly. 
 
 ### Run the Ansible Installer
 Now we can simply run the Ansible installer:
@@ -403,17 +486,185 @@ Effectively, Ansible is going to install and configure both the master and node
 software on `ose3-master.example.com`. Later, we will modify the Ansible
 configuration to add the extra nodes.
 
-### Add Development Users
-In the "real world" your developers would likely be using the OpenShift tools on
-their own machines (`osc` and the web console). For the Beta training, we
-will create user accounts for two non-privileged users of OpenShift, *joe* and
-*alice*, on the master. This is done for convenience and because we'll be using
-`htpasswd` for authentication.
+There was also some information about "regions" and "zones" in the hosts file.
+Let's talk about those concepts now.
 
-    useradd joe
-    useradd alice
+## Regions and Zones
+If you think you're about to learn how to configure regions and zones in
+OpenShift 3, you're only partially correct.
 
-We will come back to these users later.
+In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
+enable organizations to provide some topologies for application resiliency. Apps
+would be spread throughout the zones in a region and, depending on the way you
+configured OpenShift, you could make different regions accessible to users.
+
+The reason that you're only "partially" correct in your assumption is that, for
+OpenShift 3, Kubernetes doesn't actually care about your topology. In other
+words, OpenShift is "topology agnostic". In fact, OpenShift 3 provides advanced
+controls for implementing whatever topologies you can dream up, leveraging
+filtering and affinity rules to ensure that parts of applications (pods) are
+either grouped together or spread apart.
+
+For the purposes of a simple example, we'll be sticking with the "regions" and
+"zones" theme. But, as you go through these examples, think about what other
+complex topologies you could implement. Perhaps "secure" and "insecure" hosts,
+or other topologies.
+
+First, we need to talk about the "scheduler" and its default configuration.
+
+### Scheduler and Defaults
+The "scheduler" is essentially the OpenShift master. Any time a pod needs to be
+created (instantiated) somewhere, the master needs to figure out where to do
+this. This is called "scheduling". The default configuration for the scheduler
+looks like the following JSON (although this is embedded in the OpenShift code
+and you won't find this in a file):
+
+    {
+      "predicates" : [
+        {"name" : "PodFitsResources"},
+        {"name" : "MatchNodeSelector"},
+        {"name" : "HostName"},
+        {"name" : "PodFitsPorts"},
+        {"name" : "NoDiskConflict"}
+      ],"priorities" : [
+        {"name" : "LeastRequestedPriority", "weight" : 1},
+        {"name" : "ServiceSpreadingPriority", "weight" : 1}
+      ]
+    }
+
+When the scheduler tries to make a decision about pod placement, first it goes
+through "predicates", which essentially filter out the possible nodes we can
+choose. Note that, depending on your predicate configuration, you might end up
+with no possible nodes to choose. This is totally OK (although generally not
+desired).
+
+These default options are documented in the link above, but the quick overview
+is:
+
+* Place pod on a node that has enough resources for it (duh)
+* Place pod on a node that doesn't have a port conflict (duh)
+* Place pod on a node that doesn't have a storage conflict (duh)
+
+And some more obscure ones:
+
+* Place pod on a node whose `NodeSelector` matches
+* Place pod on a node whose hostname matches the `Host` attribute value
+
+The next thing is, of the available nodes after the filters are applied, how do
+we select the "best" one. This is where "priorities" come in. Long story short,
+the various priority functions each get a score, multiplied by the weight, and
+the node with the highest score is selected to host the pod.
+
+Again, the defaults are:
+
+* Choose the node that is "least requested" (the least busy)
+* Spread services around - minimize the number of pods in the same service on
+    the same node
+
+And, for an extremely detailed explanation about what these various
+configuration flags are doing, check out:
+
+    http://docs.openshift.org/latest/admin_guide/scheduler.html
+
+In a small environment, these defaults are pretty sane. Let's look at one of the
+important predicates (filters) before we move on to "regions" and "zones".
+
+### The NodeSelector
+`NodeSelector` is a part of the Pod data model. And, if we think back to our pod
+definition, there was a "label", which is just a key:value pair. In the case of
+a `NodeSelector`, our labels (key:value pairs) are used to help us try to find
+nodes that match, assuming that:
+
+* The scheduler is configured to MatchNodeSelector
+* The end user creating the pod knows which labels are out there
+
+But this use case is also pretty simplistic. It doesn't really allow for a
+topology, and there's not a lot of logic behind it. Also, if I specify a
+NodeSelector label when using MatchNodeSelector and there are no matching nodes,
+my workload will never get scheduled. Bummer.
+
+How can we make this more intelligent? We'll finally use "regions" and "zones".
+
+### Customizing the Scheduler Configuration
+The Ansible installer is configured to understand "regions" and "zones" as a
+matter of convenience. However, for the master (scheduler) to actually do
+something with them requires changing from the default configuration Take a look
+at `/etc/openshift/master/master-config.yaml` and find the line with `schedulerConfigFile`.
+
+You should see:
+
+    schedulerConfigFile: "/etc/openshift/master/scheduler.json"
+
+Then, take a look at `/etc/openshift/master/scheduler.json`. It will have the
+following content:
+
+    {
+      "predicates" : [
+        {"name" : "PodFitsResources"},
+        {"name" : "PodFitsPorts"},
+        {"name" : "NoDiskConflict"},
+        {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
+      ],"priorities" : [
+        {"name" : "LeastRequestedPriority", "weight" : 1},
+        {"name" : "ServiceSpreadingPriority", "weight" : 1},
+        {"name" : "Zone", "weight" : 2, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
+      ]
+    }
+
+To quickly review the above (this explanation sort of assumes that you read the
+scheduler documentation, but it's not critically important):
+
+* Filter out nodes that don't fit the resources, don't have the ports, or have
+    disk conflicts
+* If the pod specifies a label with the key "region", filter nodes by the value.
+
+So, if we have the following nodes and the following labels:
+
+* Node 1 -- "region":"infra"
+* Node 2 -- "region":"primary"
+* Node 3 -- "region":"primary"
+
+If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
+then only Node 1 and Node 2 would be considered.
+
+OK, that takes care of the "region" part. What about the "zone" part?
+
+Our priorities tell us to:
+
+* Score the least-busy node higher
+* Score any nodes who don't already have a pod in this service higher
+* Score any nodes whose zone label's value **does not** match higher
+
+Why do we score a zone that **doesn't** match higher? Note that the definition
+for the Zone priority is a `serviceAntiAffinity` -- anti affinity. In this case,
+our anti affinity rule helps to ensure that we try to get nodes from *different*
+zones to take our pod.
+
+If we consider that our "primary" region might be a certain datacenter, and that
+each "zone" in that datacenter might be on its own power system with its own
+dedicated networking, this would ensure that, within the datacenter, pods of an
+application would be spread across power/network segments.
+
+The documentation link has some more complicated examples. The topoligical
+possibilities are endless!
+
+### Node Labels
+The assignments of "regions" and "zones" at the node-level are handled by labels
+on the nodes. You can look at how the labels were implemented by doing:
+
+    osc get nodes
+
+    NAME                      LABELS                                                                     STATUS
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
+    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
+    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
+
+At this point we have a running OpenShift environment across three hosts, with
+one master and three nodes, divided up into two regions -- "*infra*structure"
+and "primary".
+
+From here we will start to deploy "applications" and other resources into
+OpenShift.
 
 ## Useful OpenShift Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
@@ -427,12 +678,9 @@ window:
 
     journalctl -f -u openshift-master
     journalctl -f -u openshift-node
-    journalctl -f -u openshift-sdn-master
-    journalctl -f -u openshift-sdn-node
 
-**Note:** You will want to do this on the other nodes as they are added, but you
-will not need the `master`-related services. These instructions will not appear
-again.
+**Note:** You will want to do this on the other nodes, but you won't need the
+"-master" service. You may also wish to watch the Docker logs, too.
 
 **Note:** There is an appendix on configuring [Log
 Aggregation](#appendix---infrastructure-log-aggregation)
@@ -449,13 +697,15 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift-passwd
-    htpasswd -b /etc/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift-passwd alice redhat
+    touch /etc/openshift/openshift-passwd
+    htpasswd -b /etc/openshift/openshift-passwd joe redhat
+    htpasswd -b /etc/openshift/openshift-passwd alice redhat
+
+Remember, you created these users previously.
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master.yaml`. We need to edit the `oauthConfig`'s
-`identityProviders` stanza so that it looks like the following:
+`/etc/openshift/master/master-config.yaml`. Ansible was configured to edit
+the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
     - challenge: true
@@ -463,23 +713,12 @@ The OpenShift configuration is kept in a YAML file which currently lives at
       name: apache_auth
       provider:
         apiVersion: v1
-        file: /etc/openshift-passwd
+        file: /etc/openshift/openshift-passwd
         kind: HTPasswdPasswordIdentityProvider
 
-More information on these configuration settings can be found here:
+More information on these configuration settings (and other identity providers) can be found here:
 
     http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
-
-If you're feeling lazy, use your friend `sed`:
-
-    sed -i -e 's/name: anypassword/name: apache_auth/' \
-    -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
-    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift-passwd' \
-    /etc/openshift/master.yaml
-
-Restart `openshift-master`:
-
-    systemctl restart openshift-master
 
 ### A Project for Everything
 V3 has a concept of "projects" to contain a number of different resources:
@@ -515,13 +754,13 @@ Open your browser and visit the following URL:
 
     https://fqdn.of.master:8443
 
-It may take up to 90 seconds for the web console to be available after
-restarting the master (when you changed the authentication settings).
+Be aware that it may take up to 90 seconds for the web console to be available
+any time you restart the master.
 
-You will first need to accept the self-signed SSL certificate. You will then be
-asked for a username and a password. Remembering that we created a user
-previously, `joe`, go ahead and enter that and use the password (redhat) you set
-earlier.
+On your first visit your browser will need to accept the self-signed SSL
+certificate. You will then be asked for a username and a password. Remembering
+that we created a user previously, `joe`, go ahead and enter that and use
+the password (`redhat`) you set earlier.
 
 Once you are in, click the *OpenShift 3 Demo* project. There really isn't
 anything of interest at the moment, because we haven't put anything into our
@@ -532,10 +771,10 @@ At this point you essentially have a sufficiently-functional V3 OpenShift
 environment. It is now time to create the classic "Hello World" application
 using some sample code.  But, first, some housekeeping.
 
-Also, don't forget, the materials for these labs are in your `~/training/beta3`
+Also, don't forget, the materials for these labs are in your `~/training/beta4`
 folder.
 
-### "Resources"
+### Resources
 There are a number of different resource types in OpenShift 3, and, essentially,
 going through the motions of creating/destroying apps, scaling, building and
 etc. all ends up manipulating OpenShift and Kubernetes resources under the
@@ -589,7 +828,7 @@ two quotas to the same namespace.
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal in the `training/beta3` folder:
+to it. Still in a `root` terminal in the `training/beta4` folder:
 
     osc create -f quota.json --namespace=demo
 
@@ -620,6 +859,28 @@ is displayed.
 processed. If you get blank output from the `get` or `describe` commands, wait a
 few moments and try again.
 
+### Applying Limit Ranges to Projects
+In order for quotas to be effective you need to also create Limit Ranges
+which set the maximum, minimum, and default allocations of memory and cpu at
+both a pod and container level. Without default values for containers projects
+with quotas will fail because the deloyer and other infrastructure pods are
+unbounded and therefore forbidden.
+
+As `root` in the `training/beta4` folder:
+
+    osc create -f limits.json --namespace=demo
+
+Review your limit ranges
+    osc describe limitranges limits -n demo
+    Name:           limits
+    Type            Resource        Min     Max     Default
+    ----            --------        ---     ---     ---
+    Pod             memory          5Mi     750Mi   -
+    Pod             cpu             10m     500m    -
+    Container       cpu             10m     500m    100m
+    Container       memory          5Mi     750Mi   100Mi
+
+
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
 him, we can log into a terminal as *joe* and then set up the command line
@@ -632,7 +893,7 @@ Open a terminal as `joe`:
 Then, execute:
 
     osc login -u joe \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
@@ -644,22 +905,22 @@ folder. Take a look at it, and you'll see something like the following:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+        certificate-authority: ../../../../etc/openshift/master/ca.crt
         server: https://ose3-master.example.com:8443
-      name: ose3-master-example-com-8443
+      name: ose3-master-example-com:8443
     contexts:
     - context:
-        cluster: ose3-master-example-com-8443
+        cluster: ose3-master-example-com:8443
         namespace: demo
-        user: joe
-      name: demo
-    current-context: demo
+        user: joe/ose3-master-example-com:8443
+      name: demo/ose3-master-example-com:8443/joe
+    current-context: demo/ose3-master-example-com:8443/joe
     kind: Config
     preferences: {}
     users:
-    - name: joe
+    - name: joe/ose3-master-example-com:8443
       user:
-        token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
+        token: _ebJfOdcHy8TW4XIDxJjOQEC_yJp08zW0xPI-JWWU3c
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, etc.
@@ -674,33 +935,58 @@ go ahead and grab it inside Joe's home folder:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training/beta3
+    cd ~/training/beta4
 
 ### The Hello World Definition JSON
-In the beta3 training folder, you can see the contents of our pod definition by using cat`:
+In the beta4 training folder, you can see the contents of our pod definition by
+using `cat`:
 
     cat hello-pod.json
     {
-      "id": "hello-openshift",
       "kind": "Pod",
-      "apiVersion":"v1beta2",
-      "labels": {
-        "name": "hello-openshift"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-openshift",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-openshift"
+        }
       },
-      "desiredState": {
-        "manifest": {
-          "version": "v1beta1",
-          "id": "hello-openshift",
-          "containers": [{
+      "spec": {
+        "containers": [
+          {
             "name": "hello-openshift",
             "image": "openshift/hello-openshift:v0.4.3",
-            "ports": [{
-              "hostPort": 6061,
-              "containerPort": 8080
-            }]
-          }]
-        }
-      }
+            "ports": [
+              {
+                "hostPort": 36061,
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "10m",
+                "memory": "16Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
+            },
+            "nodeSelector": {
+              "region": "primary"
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     }
 
 In the simplest sense, a *pod* is an application or an instance of something. If
@@ -709,7 +995,7 @@ Reality is more complex, and we will learn more about the terms as we explore
 OpenShift further.
 
 ### Run the Pod
-To create the pod from our JSON file, execute the following:
+As `joe`, to create the pod from our JSON file, execute the following:
 
     osc create -f hello-pod.json
 
@@ -721,18 +1007,17 @@ the pod inside of it. The command should display the ID of the pod:
 Issue a `get pods` to see the details of how it was defined:
 
     osc get pods
-    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                    LABELS                 STATUS    CREATED
-    hello-openshift   10.1.0.6   hello-openshift   openshift/hello-openshift:v0.4.3   ose3-master.example.com/192.168.133.2   name=hello-openshift   Running   10 seconds
+    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
+    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   16 seconds   
+                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   2 seconds   
 
-Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
-see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
-to 6061 on the host and bound to 8080 on the container, along with several other
-`ose-pod` containers.
+The output of this command shows all of the Docker containers in a pod, which
+explains some of the spacing.
 
-    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
-    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.9ac8152d_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_c43c7d54   
-    405d63115a60        openshift3_beta/ose-pod:v0.4.3.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.a01602bc_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_dffebcf1     
-
+On the node where the pod is running (`HOST`), look at the list of Docker
+containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
+should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
+bound to 8080 on the container, along with several other `ose-pod` containers.
 
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
@@ -740,9 +1025,10 @@ container as nothing more than a way for the host OS to get an interface created
 for the corresponding pod to be able to receive traffic. Deeper understanding of
 networking in OpenShift is outside the scope of this material.
 
-To verify that the app is working, you can issue a curl to the app's port:
+To verify that the app is working, you can issue a curl to the app's port *on
+the node where the pod is running*
 
-    curl http://localhost:6061
+    [root@ose3-node1 ~]# curl localhost:36061
     Hello OpenShift!
 
 Hooray!
@@ -761,13 +1047,17 @@ project. You'll see some interesting things:
 ### Quota Usage
 If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 
+You can also use `osc` to determine the current quota usage of your project. As
+`joe`:
+
+    osc describe quota test-quota -n demo
+
 ### Extra Credit
 If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
 
 ### Delete the Pod
-Go ahead and delete this pod so that you don't get confused in later examples. Don't forget to
-do this as the ```joe``` user:
+As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
 
     osc delete pod hello-openshift
 
@@ -784,13 +1074,13 @@ enforcement exercise. The `hello-quota` JSON will attempt to create four
 instances of the "hello-openshift" pod. It will fail when it tries to create the
 fourth, because the quota on this project limits us to three total pods.
 
-Go ahead and use `osc create` and you will see the following:
+As `joe`, go ahead and use `osc create` and you will see the following:
 
-    osc create -f hello-quota.json
-    pods/1-hello-openshift
-    pods/2-hello-openshift
-    pods/3-hello-openshift
-    Error: pods "4-hello-openshift" is forbidden: Limited to 3 pods
+    osc create -f hello-quota.json 
+    pods/hello-openshift-1
+    pods/hello-openshift-2
+    pods/hello-openshift-3
+    Error from server: Pod "hello-openshift-4" is forbidden: Limited to 3 pods
 
 Let's delete these pods quickly. As `joe` again:
 
@@ -798,267 +1088,6 @@ Let's delete these pods quickly. As `joe` again:
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
 check*. Be careful.
-
-## Adding Nodes
-We are getting ready to build out our complete environment and add more
-infrastructure. We will begin by adding our other two nodes.
-
-It is extremely easy to add nodes to an existing OpenShift environment. Return
-to a `root` terminal on your master.
-
-### Modifying the Ansible Configuration
-On your master, edit the `/etc/ansible/hosts` file and uncomment the nodes, or
-add them as appropriate for your DNS/hostnames.
-
-Then, run the ansible playbook again:
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
-
-Once the installer is finished, you can check the status of your environment
-(nodes) with `osc get nodes`. You'll see something like:
-
-    NAME                      LABELS        STATUS
-    ose3-master.example.com   Schedulable   <none>    Ready
-    ose3-node1.example.com    Schedulable   <none>    Ready
-    ose3-node2.example.com    Schedulable   <none>    Ready
-
-## Regions and Zones
-Now that we have a larger OpenShift environment, let's examine more complicated
-application and deployment paradigms. If you think you're about to learn how to
-configure regions and zones in OpenShift 3, you're only partially correct.
-
-In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
-enable organizations to provide some topologies for application resiliency. Apps
-would be spread throughout the zones in a region and, depending on the way you
-configured OpenShift, you could make different regions accessible to users.
-
-The reason that you're only "partially" correct in your assumption is that, for
-OpenShift 3, Kubernetes doesn't actually care about your topology. In other
-words, OpenShift is "topology agnostic". In fact, OpenShift 3 provides advanced
-controls for implementing whatever topologies you can dream up, leveraging
-filtering and affinity rules to ensure that parts of applications (pods) are
-either grouped together or spread apart.
-
-For the purposes of a simple example, we'll be sticking with the "regions" and
-"zones" theme. But, as you go through these examples, think about what other
-complex topologies you could implement.
-
-First, we need to talk about the "scheduler" and its default configuration.
-
-### Scheduler and Defaults
-The "scheduler" is essentially the OpenShift master. Any time a pod needs to be
-created (instantiated) somewhere, the master needs to figure out where to do
-this. This is called "scheduling". The default configuration for the scheduler
-looks like the following JSON (although this is embedded in the OpenShift code
-and you won't find this in a file):
-
-    {
-      "predicates" : [
-        {"name" : "PodFitsResources"},
-        {"name" : "MatchNodeSelector"},
-        {"name" : "HostName"},
-        {"name" : "PodFitsPorts"},
-        {"name" : "NoDiskConflict"}
-      ],"priorities" : [
-        {"name" : "LeastRequestedPriority", "weight" : 1},
-        {"name" : "ServiceSpreadingPriority", "weight" : 1}
-      ]
-    }
-
-When the scheduler tries to make a decision about pod placement, first it goes
-through "predicates", which essentially filter out the possible nodes we can
-choose. Note that, depending on your predicate configuration, you might end up
-with no possible nodes to choose. This is totally OK (although generally not
-desired).
-
-These default options are documented in the link below, but the quick overview
-is:
-
-* Place pod on a node that has enough resources for it (duh)
-* Place pod on a node that doesn't have a port conflict (duh)
-* Place pod on a node that doesn't have a storage conflict (duh)
-
-And some more obscure ones:
-
-* Place pod on a node whose `NodeSelector` matches
-* Place pod on a node whose hostname matches the `Host` attribute value
-
-The next thing is, of the available nodes after the filters are applied, how do
-we select the "best" one. This is where "priorities" come in. Long story short,
-the various priority functions each get a score, multiplied by the weight, and
-the node with the highest score is selected to host the pod.
-
-Again, the defaults are:
-
-* Choose the node that is "least requested" (the least busy)
-* Spread services around - minimize the number of pods in the same service on
-    the same node
-
-And, for an extremely detailed explanation about what these various
-configuration flags are doing, check out:
-
-    http://docs.openshift.org/latest/admin_guide/scheduler.html
-
-In a small environment, these defaults are pretty sane. Let's look at one of the
-important predicates (filters) before we move on to "regions" and "zones".
-
-### The NodeSelector
-`NodeSelector` is a part of the Pod data model. And, if we think back to our pod
-definition, there was a "label", which is just a key:value pair. In the case of
-a `NodeSelector`, our labels (key:value pairs) are used to help us try to find
-nodes that match, assuming that:
-
-* The scheduler is configured to MatchNodeSelector
-* The end user creating the pod knows which labels are out there
-
-But this use case is also pretty simplistic. It doesn't really allow for a
-topology, and there's not a lot of logic behind it. Also, if I specify a
-NodeSelector label when using MatchNodeSelector and there are no matching nodes,
-my workload will never get scheduled. Bummer.
-
-How can we make this more intelligent? We'll finally use "regions" and "zones".
-
-### Customizing the Scheduler Configuration
-The first step is to edit the OpenShift master's configuration to tell it to
-look for a specific scheduler config file. As `root` edit
-`/etc/openshift/master.yaml` and find the line with `schedulerConfigFile`.
-Change it to:
-
-    schedulerConfigFile: "/etc/openshift/scheduler.json"
-
-Then, create `/etc/openshift/scheduler.json` from the training materials:
-
-    /bin/cp -r ~/training/beta3/scheduler.json /etc/openshift/
-
-It will have the following content:
-
-    {
-      "predicates" : [
-        {"name" : "PodFitsResources"},
-        {"name" : "PodFitsPorts"},
-        {"name" : "NoDiskConflict"},
-        {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
-      ],"priorities" : [
-        {"name" : "LeastRequestedPriority", "weight" : 1},
-        {"name" : "ServiceSpreadingPriority", "weight" : 1},
-        {"name" : "Zone", "weight" : 2, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
-      ]
-    }
-
-To quickly review the above (this explanation sort of assumes that you read the
-scheduler documentation, but it's not critically important):
-
-* Filter out nodes that don't fit the resources, don't have the ports, or have
-    disk conflicts
-* If the pod specifies a label with the key "region", filter nodes by the value.
-
-So, if we have the following nodes and the following labels:
-
-* Node 1 -- "region":"primary"
-* Node 2 -- "region":"primary"
-* Node 3 -- "region":"infra"
-
-If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
-then only Node 1 and Node 2 would be considered.
-
-OK, that takes care of the "region" part. What about the "zone" part?
-
-Our priorities tell us to:
-
-* Score the least-busy node higher
-* Score any nodes who don't already have a pod in this service higher
-* Score any nodes whose zone label's value **does not** match higher
-
-Why do we score a zone that **doesn't** match higher? Note that the definition
-for the Zone priority is a `serviceAntiAffinity` -- anti affinity. In this case,
-our anti affinity rule helps to ensure that we try to get nodes from *different*
-zones to take our pod.
-
-If we consider that our "primary" region might be a certain datacenter, and that
-each "zone" in that datacenter might be on its own power system with its own
-dedicated networking, this would ensure that, within the datacenter, pods of an
-application would be spread across power/network segments.
-
-The documentation link has some more complicated examples. The topoligical
-possibilities are endless!
-
-### Restart the Master
-Go ahead and restart the master. This will make the new scheduler take effect.
-As `root` on your master:
-
-    systemctl restart openshift-master
-
-### Label Your Nodes
-Just before configuring the scheduler, we added more nodes. If you perform the
-following as the `root` user:
-
-    osc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
-
-You will have the JSON output of the definition of all of your nodes. Go ahead and
-edit this file. Add the following to the beginning of the `"metadata": {}`
-block for your "master" node inside the files `"items"` list:
-
-    "labels" : {
-      "region" : "infra",
-      "zone" : "NA"
-    },
-
-So the end result should look like (note, indentation is not significant in JSON):
-
-    {
-        "kind": "List",
-        "apiVersion": "v1beta3",
-        "items": [
-            {
-                "kind": "Node",
-                "apiVersion": "v1beta3",
-                "metadata": {
-                    "labels" : {
-                      "region" : "infra",
-                      "zone" : "NA"
-                    },
-                    "name": "ose3-master.example.com",
-                    [...]
-
-
-For your node1, add the following:
-
-    "labels" : {
-      "region" : "primary",
-      "zone" : "east"
-    },
-
-For your node2, add the following:
-
-    "labels" : {
-      "region" : "primary",
-      "zone" : "west"
-    },
-
-Then, as `root` update your nodes using the following:
-
-    osc update node -f ~/nodes.json
-
-Note: At release the user should not need to edit JSON like this; the
-installer should be able to configure nodes initially with desired labels,
-and there should be better tools for changing them afterward.
-
-Note: If you end up getting an error while attempting to update the nodes, review your json. Ensure that there are commas in the previous element to your added label sections.
-
-Check the results to ensure the labels were applied:
-
-    osc get nodes
-
-    NAME                       LABELS                     STATUS
-    ose3-master.example.com    region=infra,zone=NA       Ready
-    ose3-node1.example.com     region=primary,zone=east   Ready
-    ose3-node2.example.com     region=primary,zone=west   Ready
-
-Now there is one final step that is necessary due to a [caching
-bug](https://github.com/openshift/origin/issues/1727#issuecomment-94518311)
-which is not fixed for beta3. Each node needs to be restarted with:
-
-    systemctl restart openshift-node
 
 ## Services
 From the [Kubernetes
@@ -1081,12 +1110,22 @@ If you think back to the simple pod we created earlier, there was a "label":
 Now, let's look at a *service* definition:
 
     {
-      "id": "hello-openshift-service",
       "kind": "Service",
-      "apiVersion": "v1beta1",
-      "port": 27017,
-      "selector": {
-        "name": "hello-openshift"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-service"
+      },
+      "spec": {
+        "selector": {
+          "name":"hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 80,
+            "targetPort": 9376
+          }
+        ]
       }
     }
 
@@ -1118,13 +1157,19 @@ Here is an example route resource JSON definition:
 
     {
       "kind": "Route",
-      "apiVersion": "v1beta1",
+      "apiVersion": "v1beta3",
       "metadata": {
         "name": "hello-openshift-route"
       },
-      "id": "hello-openshift-route",
-      "host": "hello-openshift.cloudapps.example.com",
-      "serviceName": "hello-openshift-service"
+      "spec": {
+        "host": "hello-openshift.cloudapps.example.com",
+        "to": {
+          "name": "hello-openshift-service"
+        },
+        "tls": {
+          "termination": "edge"
+        }
+      }
     }
 
 When the `osc` command is used to create this route, a new instance of a route
@@ -1139,6 +1184,40 @@ This HAProxy pool ultimately contains all pods that are in a service. Which
 service? The service that corresponds to the `serviceName` directive that you
 see above.
 
+You'll notice that the definition above specifies TLS edge termination. This
+means that the router should provide this route via HTTPS. Because we provided
+no certificate info, the router will provide the default SSL certificate when
+the user connects. Because this is edge termination, user connections to the
+router will be SSL encrypted but the connection between the router and the pods
+is unencrypted.
+
+It is possible to utilize various TLS termination mechanisms, and more details
+is provided in the router documentation:
+
+    http://docs.openshift.org/latest/architecture/core_objects/routing.html#securing-routes
+
+We'll see this edge termination in action shortly.
+
+### Creating a Wildcard Certificate In order to serve a valid certificate for
+secure access to applications in our cloud domain, we will need to create a key
+and wildcard certificate that the router will use by default for any routes that
+do not specify a key/cert of their own. OpenShift supplies a command for
+creating a key/cert signed by the OpenShift CA which we will use.  On the
+master, as `root`:
+
+    CA=/etc/openshift/master
+    osadm create-server-cert --signer-cert=$CA/ca.crt \
+          --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
+          --hostnames='*.cloudapps.example.com' \
+          --cert=cloudapps.crt --key=cloudapps.key
+
+Now we need to combine `cloudapps.crt` and `cloudapps.key` with the CA into
+a single PEM format file that the router needs in the next step.
+
+    cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
+
+Make sure you remember where you put this PEM file.
+
 ### Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
 v3 services. It currently supports only HTTP(S) traffic (and "any"
@@ -1146,22 +1225,22 @@ TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
 proxy.
 
 The `openshift3_beta/ose-haproxy-router` container listens on the host network
-interface unlike most containers that listen only on private IPs. The router
+interface, unlike most containers that listen only on private IPs. The router
 proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
 OpenShift's admin command set enables you to deploy router pods automatically.
-As the `root` user, try running it with no options and you should see the note
-that a router is needed:
+As the `root` user, try running it with no options and you will see that
+some options are needed to create the router:
 
     osadm router
-    F0529 11:50:57.985423    2610 router.go:143] Router "router" does not exist
+    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
     (no service). Pass --create to install.
 
 So, go ahead and do what it says:
 
     osadm router --create
-    F0529 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
+    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
     file path containing credentials for connecting the router to the master
     with --credentials
 
@@ -1171,8 +1250,17 @@ up our `.kubeconfig` for the root user, `osadm router` is asking us what
 credentials the *router* should use to communicate. We also need to specify the
 router image, since the tooling defaults to upstream/origin:
 
-    osadm router --create \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
+    osadm router --dry-run \
+    --credentials=/etc/openshift/master/openshift-router.kubeconfig
+
+Adding that would be enough to allow the command to proceed, but if we want
+this router to work for our environment, we also need to specify the beta
+router image (the tooling defaults to upstream/origin otherwise) and we need
+to supply the wildcard cert/key that we created for the cloud domain.
+
+    osadm router --default-cert=cloudapps.router.pem \
+    --credentials=/etc/openshift/master/openshift-router.kubeconfig \
+    --selector='region=infra' \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -1180,19 +1268,32 @@ If this works, you'll see some output:
     services/router
     deploymentConfigs/router
 
-Let's check the pods with the following:
+**Note:** You will have to reference the absolute path of the PEM file if you
+did not run this command in the folder where you created it.
 
-    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
+Let's check the pods:
+
+    osc get pods 
 
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
 
-    POD                   CONTAINER(S)  HOST                                   STATUS
-    deploy-router-1f99mb  deployment    ose3-master.example.com/192.168.133.2  Succeeded
-    router-1-ats7z        router        ose3-node2.example.com/192.168.133.4   Running
+    POD              IP         CONTAINER(S)   IMAGE(S)                                                                 HOST                                    LABELS                                                      STATUS    CREATED      MESSAGE
+    router-1-cutck   10.1.0.4                                                                                           ose3-master.example.com/192.168.133.2   deployment=router-1,deploymentconfig=router,router=router   Running   18 minutes   
+                                router         registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2                                                                                                       Running   18 minutes
 
-Note: You may or may not see the deploy pod, depending on when you run this
-command. Also the router may not end up on the master.
+Note: This output is huge, wide, and ugly. We're working on making it nicer. You
+can chime in here:
+
+    https://github.com/GoogleCloudPlatform/kubernetes/issues/7843
+
+In the above router creation command (`osadm router...`) we also specified
+`--selector`. This flag causes a `nodeSelector` to be placed on all of the pods
+created. If you think back to our "regions" and "zones" conversation, the
+OpenShift environment is currently configured with an *infra*structure region
+called "infra". This `--selector` argument asks OpenShift:
+
+*Please place all of these router pods in the infra region*.
 
 ### Router Placement By Region
 In the very beginning of the documentation, we indicated that a wildcard DNS
@@ -1201,196 +1302,168 @@ request for an FQDN that it knows about, it will proxy the request to a pod for
 a service. But, for that FQDN request to actually reach the router, the FQDN has
 to resolve to whatever the host is where the router is running. Remember, the
 router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
-DNS entry points to the public IP address of the master, we need to ensure that
-the router runs *on* the master.
-
-Remember how we set up regions and zones earlier? In our setup we labeled the
-master with the "infra" region. Without specifying a region or a zone in our
-environment, the router pod had an equal chance of ending up on any node, but we
-can ensure that it always and only lands in the "infra" region (thus, on the
-master) using a NodeSelector.
-
-To do this, we will modify the `deploymentConfig` for the router. If you recall,
-when we created the router we saw both a `deploymentConfig` and `service`
-resource.
-
-We have not discussed DeploymentConfigs (or even Deployments) yet. The brief
-summary is that a DeploymentConfig defines not only the pods (and containers)
-but also how many pods should be created and also transitioning from one pod
-definition to another.  We'll learn a little bit more about deployment
-configurations later.  For now, as `root`, we will use `osc edit` to manipulate
-the router DeploymentConfig and modify the router's pod definition to add a
-NodeSelector, so that router pods will be placed where we want them.  Whew!
-
-    osc edit deploymentConfigs/router
-
-`osc edit` will bring up the default system editor (vi) with a YAML
-representation of the resource, in this case the router's `deploymentConfig`.
-You could also edit it as JSON or use a different editor; see `osc edit --help`.
-
-Note: In future releases, you will be able to supply NodeSelector and other
-labels at creation time rather than editing the object after the fact.
-
-We will specify our NodeSelector within the `podTemplate:` block that
-defines the pods to create. It is easiest to just place it right after
-that line, like this: (indentation *is* significant in YAML)
-
-    [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: infra
-          desiredState:
-            manifest:
-    [...]
-
-Once you save this file and exit the editor, the DeploymentConfig will be
-updated in OpenShift's data store and a new router deployment will be created
-based on the new definition.  It will take at least a few seconds for this to
-happen (possibly longer if the router image has not been pulled to the master
-yet).  Watch `osc get pods` until the router pod has been recreated and assigned
-to the master host.
+DNS entry points to the public IP address of the master, the `--selector` flag
+used above ensures that the router is placed on our master as it's the only node
+with the label `region=infra`.
 
 For a true HA implementation, one would want multiple "infra" nodes and
-multiple, clustered router instances. Look for this to be described in beta4.
+multiple, clustered router instances. We will describe this later.
+
+### Viewing Router Stats
+Haproxy provides a stats page that's visible on port 1936 of your router host.
+Currently the stats page is password protected with a static password, this
+password will be generated using a template parameter in the future, for now the
+password is `cEVu2hUb` and the username is `admin`.
+
+To make this acessible publicly, you will need to open this port on your master:
+
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m tcp --dport 1936 -j ACCEPT
+
+You will also want to add this rule to `/etc/sysconfig/iptables` as well to keep it
+across reboots. However, don't restart the iptables service, as this would destroy
+docker networking. Use the `iptables` command to change rules on a live system.
+
+Feel free to not open this port if you don't want to make this accessible, or if
+you only want it accessible via port fowarding, etc.
+
+**Note**: Unlike OpenShift v2 this router is not specific to a given project, as
+such it's really intended to be viewed by cluster admins rather than project
+admins.
+
+Ensure that port 1936 is accessible and visit:
+
+    http://admin:cEVu2hUb@ose3-master.example.com:1936 
+
+to view your router stats.
 
 ## The Complete Pod-Service-Route
 With a router now available, let's take a look at an entire
 Pod-Service-Route definition template and put all the pieces together.
 
-Don't forget -- the materials are in `~/training/beta3`.
+Don't forget -- the materials are in `~/training/beta4`.
 
 ### Creating the Definition
 The following is a complete definition for a pod with a corresponding service
 and a corresponding route. It also includes a deployment configuration.
 
     {
-      "metadata":{
-        "name":"hello-service-pod-meta"
+      "kind": "Config",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-service-complete-example"
       },
-      "kind":"Config",
-      "apiVersion":"v1beta1",
-      "creationTimestamp":"2014-09-18T18:28:38-04:00",
-      "items":[
+      "items": [
         {
-          "id": "hello-openshift-service",
           "kind": "Service",
-          "apiVersion": "v1beta1",
-          "port": 27017,
-          "containerPort": 8080,
-          "selector": {
-            "name": "hello-openshift"
+          "apiVersion": "v1beta3",
+          "metadata": {
+            "name": "hello-openshift-service"
+          },
+          "spec": {
+            "selector": {
+              "name": "hello-openshift"
+            },
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 27017,
+                "targetPort": 8080
+              }
+            ]
           }
         },
         {
           "kind": "Route",
-          "apiVersion": "v1beta1",
+          "apiVersion": "v1beta3",
           "metadata": {
             "name": "hello-openshift-route"
           },
-          "id": "hello-openshift-route",
-          "host": "hello-openshift.cloudapps.example.com",
-          "serviceName": "hello-openshift-service"
-        },
-        {
-          "apiVersion": "v1beta1",
-          "kind": "ImageStream",
-          "metadata": {
-            "name": "hello-openshift"
+          "spec": {
+            "host": "hello-openshift.cloudapps.example.com",
+            "to": {
+              "name": "hello-openshift-service"
+            },
+            "tls": {
+              "termination": "edge"
+            }
           }
         },
         {
-            "kind": "DeploymentConfig",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "hello-openshift"
+          "kind": "DeploymentConfig",
+          "apiVersion": "v1beta3",
+          "metadata": {
+            "name": "hello-openshift"
+          },
+          "spec": {
+            "strategy": {
+              "type": "Recreate",
+              "resources": {}
             },
-            "triggers": [
-                {
-                  "imageChangeParams": {
-                    "automatic": true,
-                    "containerNames": [
-                      "hello-openshift"
-                    ],
-                    "from": {
-                      "name": "hello-openshift"
-                    },
-                    "tag": "latest"
-                  },
-                  "type": "ImageChange"
-                },
-                {
-                  "type": "ConfigChange"
-                }
-            ],
+            "replicas": 1,
+            "selector": {
+              "name": "hello-openshift"
+            },
             "template": {
-                "strategy": {
-                    "type": "Recreate"
-                },
-                "controllerTemplate": {
-                    "replicas": 1,
-                    "replicaSelector": {
-                        "name": "hello-openshift"
-                    },
-                    "podTemplate": {
-                        "desiredState": {
-                            "manifest": {
-                                "version": "v1beta2",
-                                "id": "",
-                                "volumes": null,
-                                "containers": [
-                                    {
-                                        "name": "hello-openshift",
-                                        "image": "openshift/hello-openshift:v0.4.3",
-                                        "ports": [
-                                            {
-                                                "containerPort": 8080,
-                                                "protocol": "TCP"
-                                            }
-                                        ],
-                                        "resources": {},
-                                        "livenessProbe": {
-                                            "tcpSocket": {
-                                                "port": 8080
-                                            },
-                                            "timeoutSeconds": 1,
-                                            "initialDelaySeconds": 10
-                                        },
-                                        "terminationMessagePath": "/dev/termination-log",
-                                        "imagePullPolicy": "PullIfNotPresent",
-                                        "capabilities": {}
-                                    }
-                                ],
-                                "restartPolicy": {
-                                    "always": {}
-                                },
-                                "dnsPolicy": "ClusterFirst"
-                            }
-                        },
-                        "nodeSelector": {
-                          "region": "primary"
-                        },
-                        "labels": {
-                            "name": "hello-openshift"
-                        }
-                    }
+              "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                  "name": "hello-openshift"
                 }
-            },
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "hello-openshift",
+                    "image": "openshift/hello-openshift:v0.4.3",
+                    "ports": [
+                      {
+                        "name": "hello-openshift-tcp-8080",
+                        "containerPort": 8080,
+                        "protocol": "TCP"
+                      }
+                    ],
+                    "resources": {},
+                    "terminationMessagePath": "/dev/termination-log",
+                    "imagePullPolicy": "PullIfNotPresent",
+                    "capabilities": {},
+                    "securityContext": {
+                      "capabilities": {},
+                      "privileged": false
+                    },
+                    "livenessProbe": {
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 1,
+                      "initialDelaySeconds": 10
+                    }
+                  }
+                ],
+                "restartPolicy": "Always",
+                "dnsPolicy": "ClusterFirst",
+                "serviceAccount": "",
+                "nodeSelector": {
+                  "region": "primary"
+                }
+              }
+            }
+          },
+          "status": {
             "latestVersion": 1
+          }
         }
       ]
     }
 
 In the JSON above:
 
-* There is a pod that has the label `name=hello-openshift` and the nodeSelector `region=primary`
+* There is a pod whose containers have the label `name=hello-openshift-label` and the nodeSelector `region=primary`
 * There is a service:
   * with the id `hello-openshift-service`
   * with the selector `name=hello-openshift`
 * There is a route:
   * with the FQDN `hello-openshift.cloudapps.example.com`
-  * with the `serviceName` directive `hello-openshift-service`
+  * with the `spec` `to` `name=hello-openshift-service`
 
 If we work from the route down to the pod:
 
@@ -1398,22 +1471,22 @@ If we work from the route down to the pod:
 * The pool is for any pods in the service whose ID is `hello-openshift-service`,
     via the `serviceName` directive of the route.
 * The service `hello-openshift-service` includes every pod who has a label
-    `name=hello-openshift`
+    `name=hello-openshift-label`
 * There is a single pod with a single container that has the label
-    `name=hello-openshift`
+    `name=hello-openshift-label`
 
-**Logged in as `joe`,** edit `test-complete.json` and change the `host` stanza for
-the route to have the correct domain, matching the DNS configuration for your
-environment. Once this is done, go ahead and use `osc` to apply it:
+If you are not using the `example.com` domain you will need to edit the route
+portion of `test-complete.json` to match your DNS environment.
+
+**Logged in as `joe`,** go ahead and use `osc` to create everything:
 
     osc create -f test-complete.json
 
- You should see something like the following:
+You should see something like the following:
 
     services/hello-openshift-service
     routes/hello-openshift-route
-    imageStreams/openshift/hello-openshift
-    deploymentConfigs/hello-openshift
+    pods/hello-openshift
 
 You can verify this with other `osc` commands:
 
@@ -1423,20 +1496,22 @@ You can verify this with other `osc` commands:
 
     osc get routes
 
+**Note:** May need to force resize:
+
+    https://github.com/openshift/origin/issues/2939
+
 ### Project Status
 OpenShift provides a handy tool, `osc status`, to give you a summary of
 common resources existing in the current project:
 
     osc status
     In project OpenShift 3 Demo (demo)
+    
+    service hello-openshift-service (172.30.197.132:27017 -> 8080)
+    
+    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
 
-    service hello-openshift-service (172.30.17.237:27017 -> 8080)
-      hello-openshift deploys hello-openshift:latest
-        #1 deployed about a minute ago
-
-    To see more information about a service or deployment config, use 'osc describe service <name>' or 'osc describe dc <name>'.
-    You can use 'osc get pods,svc,dc,bc,builds' to see lists of each of the types described above.
-
+You can use 'osc get all' to see lists of each of the types described above.
 `osc status` does not yet show bare pods or routes. The output will be
 more interesting when we get to builds and deployments.
 
@@ -1464,19 +1539,10 @@ Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
 Docker container is on the master.
 
-We ultimately want the PID of the container running the router so that we can go
-"inside" it. On the master system, as the `root` user, issue the following to
-get the PID of the router:
+We can use `osc exec` to get a bash interactive shell inside the running
+router container. The following command will do that for us:
 
-    docker inspect --format {{.State.Pid}}   \
-      `docker ps | grep haproxy-router | awk '{print $1}'`
-    2239
-
-The output will be a PID -- in this case, the PID is `2239`. We can use
-`nsenter` to jump inside that container:
-
-    nsenter -m -u -n -i -p -t 2239
-    [root@mainrouter /]#
+    osc exec -it -p $(osc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
 
 You are now in a bash session *inside* the container running the router.
 
@@ -1487,41 +1553,60 @@ Since we are using HAProxy as the router, we can cat the `routes.json` file:
 If you see some content that looks like:
 
     "demo/hello-openshift-service": {
-        "Name": "demo/hello-openshift-service",
-        "EndpointTable": {
-          "10.1.2.2:8080": {
-            "ID": "10.1.2.2:8080",
-            "IP": "10.1.2.2",
-            "Port": "8080"
-          }
-        },
-        "ServiceAliasConfigs": {
-          "hello-openshift.cloudapps.example.com-": {
-            "Host": "hello-openshift.cloudapps.example.com",
-            "Path": "",
-            "TLSTermination": "",
-            "Certificates": null
-          }
+      "Name": "demo/hello-openshift-service",
+      "EndpointTable": {
+        "10.1.0.9:8080": {
+          "ID": "10.1.0.9:8080",
+          "IP": "10.1.0.9",
+          "Port": "8080"
+        }
+      },
+      "ServiceAliasConfigs": {
+        "demo-hello-openshift-route": {
+          "Host": "hello-openshift.cloudapps.example.com",
+          "Path": "",
+          "TLSTermination": "edge",
+          "Certificates": {
+            "hello-openshift.cloudapps.example.com": {
+              "ID": "demo-hello-openshift-route",
+              "Contents": "",
+              "PrivateKey": ""
+            }
+          },
+          "Status": "saved"
         }
       }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
 
-Go ahead and `exit` from the container, and then curl your fancy,
-publicly-accessible OpenShift application!
+Go ahead and `exit` from the container.
 
-    [root@mainrouter /]# exit
-    logout
-    # curl http://hello-openshift.cloudapps.example.com
+    [root@router-1-2yefi /]# exit
+    exit
+
+You can reach the route securely and check that it is using the right certificate:
+
+    curl --cacert /etc/openshift/master/ca.crt \
+             https://hello-openshift.cloudapps.example.com
     Hello OpenShift!
 
-Hooray!
+And:
 
-If your machine is capable of resolving the wildcard DNS, you should also be
-able to view this in your web browser:
+    openssl s_client -connect hello.cloudapps.example.com:443 \
+                       -CAfile /etc/openshift/master/ca.crt
+    CONNECTED(00000003)
+    depth=1 CN = openshift-signer@1430768237
+    verify return:1
+    depth=0 CN = *.cloudapps.example.com
+    verify return:1
+    [...]
 
-    http://hello-openshift.cloudapps.example.com
+Since we used OpenShift's CA to create the wildcard SSL certificate, and since
+that CA is not "installed" in our system, we need to point our tools at that CA
+certificate in order to validate the SSL certificate presented to us by the
+router. With a CA or all certificates signed by a trusted authority, it would
+not be necessary to specify the CA everywhere.
 
 ### The Web Console
 Take a moment to look in the web console to see if you can find everything that
@@ -1539,11 +1624,17 @@ at his project, with his project administrator rights he can add her using the
 selected. If you recall earlier, when we logged in as `joe` we ended up in the
 `demo` project. We'll see how to switch projects later.
 
-Open a new terminal window as the `alice` user and the login to OpenShift:
+Open a new terminal window as the `alice` user:
+
+    su - alice
+
+and login to OpenShift:
 
     osc login -u alice \
-    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
+
+You'll interact with the tool as follows:
 
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Password:  <redhat>
@@ -1554,20 +1645,22 @@ Open a new terminal window as the `alice` user and the login to OpenShift:
 `alice` has no projects of her own yet (she is not an administrator on
 anything), so she is automatically configured to look at the `demo` project
 since she has access to it. She has "view" access, so `osc status` and `osc get
-pods` and so forth should show her the same thing as `joe`. However, she cannot
-make changes:
+pods` and so forth should show her the same thing as `joe`:
 
     [alice]$ osc get pods
-    POD                       IP         CONTAINER(S)      IMAGE(S)
-    hello-openshift-1-zdgmt   10.1.2.4   hello-openshift   openshift/hello-openshift
-    [alice]$ osc delete pod hello-openshift-1-zdgmt
-    Error from server: "/api/v1beta1/pods/hello-openshift-1-zdgmt?namespace=demo" is forbidden because alice cannot delete on pods with name "hello-openshift-1-zdgmt" in demo
+    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
+    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   14 minutes   
+                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   14 minutes   
+However, she cannot make changes:
+
+    [alice]$ osc delete pod hello-openshift
+    Error from server: User "alice" cannot delete pods in project "demo"
 
 Also login as `alice` in the web console and confirm that she can view
 the `demo` project.
 
-`joe` could also give `alice` the role of `edit`, which gives her access to all
-activities except for project administration.
+`joe` could also give `alice` the role of `edit`, which gives her access
+to do nearly anything in the project except adjust access.
 
     [joe]$ osadm policy add-role-to-user edit alice
 
@@ -1577,9 +1670,10 @@ another user or upgrade her own access. To allow that, `joe` could give
 
     [joe]$ osadm policy add-role-to-user admin alice
 
-There is no "owner" of a project, and projects can be created without any
-administrator. `alice` or `joe` can remove the `admin` role (or all roles) from
-each other, or themselves, at any time without affecting the existing project.
+There is no "owner" of a project, and projects can certainly be created
+without any administrator. `alice` or `joe` can remove the `admin`
+role (or all roles) from each other or themselves at any time without
+affecting the existing project.
 
     [joe]$ osadm policy remove-user joe
 
@@ -1593,6 +1687,13 @@ access, etc. Check the documentation for more details:
 * https://github.com/openshift/origin/blob/master/docs/proposals/policy.md
 
 Of course, there be dragons. The basic roles should suffice for most uses.
+
+**Note:** There is a bug that actually prevents the remove-user from removing
+the user:
+
+https://github.com/openshift/origin/issues/2785
+
+It appears to be fixed but may not have made beta4.
 
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
@@ -1615,22 +1716,40 @@ cleanup routine to finish.
 Once the project disappears from `osc get project`, doing `osc get pod -n demo`
 should return no results.
 
-Note: As of beta3, a user with the `edit` role can actually delete the project.
-[This will be fixed](https://github.com/openshift/origin/issues/1885).
-
-## Preparing for STI: the Registry
+## Preparing for S2I: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
 OpenShift 3 will provide a Docker registry that administrators may run inside
 the OpenShift environment that will manage images "locally". Let's take a moment
 to set that up.
 
+### Storage for the registry
+The registry is stores docker images and metadata. If you simply deploy a pod
+with the registry, it will use an ephemeral volume that is destroyed once the
+pod exits. Any images anyone has built or pushed into the registry would
+disappear. That would be bad.
+
+What we will do for this demo is use a directory on the master host for
+persistent storage. In production, this directory could be backed by an NFS
+mount supplied from the HA storage solution of your choice. That NFS mount
+could then be shared between multiple hosts for multiple replicas of the
+registry to make the registry HA.
+
+For now we will just show how to specify the directory and the and leave the NFS
+configuration as an exercise. On the master, as `root`, create the storage
+directory with:
+
+    mkdir -p /mnt/registry
+
+### Creating the registry
+
 `osadm` again comes to our rescue with a handy installer for the
 registry. As the `root` user, run the following:
 
     osadm registry --create \
-    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+    --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
+    --selector="region=infra" --mount-host=/mnt/registry
 
 You'll get output like:
 
@@ -1646,7 +1765,7 @@ as root:
     In project default
 
     service docker-registry (172.30.17.196:5000 -> 5000)
-      docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
+      docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry
         #1 deployed about a minute ago
 
     service kubernetes (172.30.17.2:443 -> 443)
@@ -1654,27 +1773,46 @@ as root:
     service kubernetes-ro (172.30.17.1:80 -> 80)
 
     service router (172.30.17.129:80 -> 80)
-      router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-        #2 deployed 8 minutes ago
+      router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router
         #1 deployed 7 minutes ago
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 OpenShift will re-create it) and that the administrative user uses by default.
-One interesting feature of `osc status` is that it lists recent deployments.
-When we created the router and adjusted it, that adjustment resulted in a second
-deployment. We will talk more about deployments when we get into builds.
+One interesting features of `osc status` is that it lists recent deployments.
+When we created the router and registry, each created one deployment.  We will
+talk more about deployments when we get into builds.
 
-Anyway, ultimately you will have a Docker registry that is being hosted by OpenShift
-and that is running on one of your nodes.
+Anyway, you will ultimately have a Docker registry that is being hosted by OpenShift
+and that is running on the master (because we specified "region=infra" as the
+registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl -v `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`/v2/
 
-And you should see:
+And you should see [a 200
+response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
+mostly empty body.  Your IP addresses will almost certainly be different.
 
-    "docker-registry server (dev) (v0.9.0)"
+~~~~
+* About to connect() to 172.30.17.114 port 5000 (#0)
+*   Trying 172.30.17.114...
+* Connected to 172.30.17.114 (172.30.17.114) port 5000 (#0)
+> GET /v2/ HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 172.30.17.114:5000
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Content-Length: 2
+< Content-Type: application/json; charset=utf-8
+< Docker-Distribution-Api-Version: registry/2.0
+< Date: Tue, 26 May 2015 17:18:02 GMT
+<
+* Connection #0 to host 172.30.17.114 left intact
+{}    
+~~~~
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
@@ -1688,49 +1826,20 @@ And you will eventually see something like:
     Name:                   docker-registry
     Labels:                 docker-registry=default
     Selector:               docker-registry=default
-    IP:                     172.30.17.64
+    Type:                   ClusterIP
+    IP:                     172.30.239.41
     Port:                   <unnamed>       5000/TCP
-    Endpoints:              10.1.0.5:5000
+    Endpoints:              <unnamed>       10.1.0.4:5000
     Session Affinity:       None
     No events.
 
-Once there is an endpoint listed, the curl should work.
+Once there is an endpoint listed, the curl should work and the registry is available.
 
-### Registry Placement By Region (optional)
-In the beta environment, as architected, there is no real need for the registry
-to land on any particular node. However, for consistency, you might want to keep
-OpenShift "infrastructure" components on the master's node. We can use our
-previously-defined "infra" region for this purpose.
+Highly available, actually. You should be able to delete the registry pod at any
+point in this training and have it return shortly after with all data intact.
 
-To do this, edit the created DeploymentConfig definition with `osc edit`:
-
-    osc edit dc docker-registry
-
-As before, specify your NodeSelector within the `podTemplate:` block that
-defines the pods to create. It is easiest to just place it right after
-that line, like this: (indentation *is* significant in YAML)
-
-    [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: infra
-          desiredState:
-            manifest:
-    [...]
-
-
-Once you save this file and exit, the DeploymentConfig will be updated and
-a new registry deployment will soon be created with the new definition.
-
-If you are going to move the registry, do it now or don't do it all. As
-dedicated storage volumes did not make the beta3 drop, restarting the registry
-pod will result in an empty registry -- all the images will be lost. This will
-be a Very.Bad.Thing.
-
-## STI - What Is It?
-STI stands for *source-to-image* and is the process where OpenShift will take
+## S2I - What Is It?
+S2I stands for *source-to-image* and is the process where OpenShift will take
 your application source code and build a Docker image for it. In the real world,
 you would need to have a code repository (where OpenShift can introspect an
 appropriate Docker image to build and use to support the code) or a code
@@ -1738,16 +1847,16 @@ repository + a Dockerfile (so that OpenShift can pull or build the Docker image
 for you).
 
 ### Create a New Project
-As the `root` user, we will create a new project to put our first STI example
-into. Grab the project definition and create it:
+By default, users are allowed to create their own projects. Let's try this now.
+As the `joe` user, we will create a new project to put our first S2I example
+into:
 
-    osadm new-project sinatra --display-name="Sinatra Example" \
-    --description="This is your first build on OpenShift 3" \
-    --admin=joe
+    osc new-project sinatra --display-name="Sinatra Example" \
+    --description="This is your first build on OpenShift 3" 
 
-At this point, if you click the OpenShift image on the web console you should be
-returned to the project overview page where you will see the new project show
-up. Go ahead and click the *Sinatra* project - you'll see why soon.
+Logged in as `joe` in the web console, if you click the OpenShift image you
+should be returned to the project overview page where you will see the new
+project show up. Go ahead and click the *Sinatra* project - you'll see why soon.
 
 ### Switch Projects
 As the `joe` user, let's switch to the `sinatra` project:
@@ -1770,12 +1879,12 @@ For this example, we will be using the following application's source code:
 
 Let's see some JSON:
 
-    osc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
+    osc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
 
 Take a look at the JSON that was generated. You will see some familiar items at
 this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
 
-Essentially, the STI process is as follows:
+Essentially, the S2I process is as follows:
 
 1. OpenShift sets up various components such that it can build source code into
 a Docker image.
@@ -1786,53 +1895,48 @@ a Docker image.
 Service.
 
 ### CLI versus Console
-Did you notice that the json returned from `new-app` defaulted to using a
-CentOS builder image?  That is simply a temporary inconvenience until more
-builder selection logic is baked in.  If we had wanted to use the RHEL image we
-could have run:
+There are currently two ways to get from source code to components on OpenShift.
+The CLI has a tool (`new-app`) that can take a source code repository as an
+input and will make its best guesses to configure OpenShift to do what we need
+to build and run the code. You looked at that already.
 
-    osc new-app openshift/ruby-20-rhel7~https://github.com/openshift/simple-openshift-sinatra-sti.git -o json
+You can also just run `osc new-app --help` to see other things that `new-app`
+can help you achieve.
 
-There are a few problems with this.  Namely:
-
-* The `~` syntax is weird
-* It won't even work until we've imported a `openshift/ruby-20-rhel7` `ImageStream`
-
-Over time `new-app` will get smarter so we'll overlook this for now and simply
-show how we can accomplish the same thing with the Console.  However, since the
-Console doesn't have the logic for defaulting to CentOS we have to first tell
-OpenShift about the `ImageStream`s we want to use.  From there we can show an
-example of pointing to code via the web console.  Later examples will use the
-CLI tools.
+The web console also lets you point directly at a source code repository, but
+requires a little bit more input from a user to get things running. Let's go
+through an example of pointing to code via the web console. Later examples will
+use the CLI tools.
 
 ### Adding the Builder ImageStreams
-While the `new-app` CLI tool has some built-in logic to help find a compatible
-builder ImageStream, the web console currently does not have that capability.
-The user will have to first target the code repository, and then select the
-appropriate builder image.
+While `new-app` has some built-in logic to help automatically determine the
+correct builder ImageStream, the web console currently does not have that
+capability. The user will have to first target the code repository, and then
+select the appropriate builder image.
 
-Perform the following command as `root` in the `beta3` folder in order to add all
-of the `ImageStream`s:
+Perform the following command as `root` in the `beta4`folder in order to add all
+of the builder images:
 
-    osc create -f image-streams.json -n openshift
+    osc create -f image-streams-rhel7.json \
+    -f image-streams-jboss-rhel7.json -n openshift
 
 You will see the following:
 
-    imageStreams/ruby-20-rhel7
-    imageStreams/nodejs-010-rhel7
-    imageStreams/perl-516-rhel7
-    imageStreams/python-33-rhel7
-    imageStreams/mysql-55-rhel7
-    imageStreams/postgresql-92-rhel7
-    imageStreams/mongodb-24-rhel7
-    imageStreams/eap-openshift
-    imageStreams/tomcat7-openshift
-    imageStreams/tomcat8-openshift
-    imageStreams/ruby-20-centos7
-    imageStreams/nodejs-010-centos7
-    imageStreams/perl-516-centos7
-    imageStreams/python-33-centos7
-    imageStreams/wildfly-8-centos
+    imageStreams/ruby
+    imageStreams/nodejs
+    imageStreams/perl
+    imageStreams/php
+    imageStreams/python
+    imageStreams/mysql
+    imageStreams/postgresql
+    imageStreams/mongodb
+    imageStreams/jboss-webserver3-tomcat7-openshift
+    imageStreams/jboss-webserver3-tomcat8-openshift
+    imageStreams/jboss-eap6-openshift
+    imageStreams/jboss-amq-62
+    imageStreams/jboss-mysql-55
+    imageStreams/jboss-postgresql-92
+    imageStreams/jboss-mongodb-24
 
 What is the `openshift` project where we added these builders? This is a
 special project that can contain various elements that should be available to
@@ -1842,7 +1946,7 @@ all users of the OpenShift environment.
 If you think about one of the important things that OpenShift needs to do, it's
 to be able to deploy newer versions of user applications into Docker containers
 quickly. But an "application" is really two pieces -- the starting image (the
-STI builder) and the application code. While it's "obvious" that we need to
+S2I builder) and the application code. While it's "obvious" that we need to
 update the deployed Docker containers when application code changes, it may not
 have been so obvious that we also need to update the deployed container if the
 **builder** image changes.
@@ -1861,10 +1965,9 @@ paragraph, if the "ruby-20-rhel7" image changed in the Docker repository defined
 by the `ImageStream`, we might automatically trigger a new build of our
 application code.
 
-You may notice that some of the streams above have `rhel` in the name and others
-have `centos`. An organization will likely choose several supported builders and
-databases from Red Hat, but may also create their own builders, DBs, and other
-images. This system provides a great deal of flexibility.
+An organization will likely choose several supported builders and databases from
+Red Hat, but may also create their own builders, DBs, and other images. This
+system provides a great deal of flexibility.
 
 Feel free to look around `image-streams.json` for more details.  As you can see,
 we have provided definitions for EAP and Tomcat builders as well as other DBs
@@ -1888,7 +1991,7 @@ referenced earlier. Enter this repo in the box:
 
 When you hit "Next" you will then be asked which builder image you want to use.
 This application uses the Ruby language, so make sure to click
-`ruby-20-rhel7:latest`. You'll see a pop-up with some more details asking for
+`ruby:latest`. You'll see a pop-up with some more details asking for
 confirmation. Click "Select image..."
 
 The next screen you see lets you begin to customize the information a little
@@ -1912,25 +2015,6 @@ webhooks, etc), we will have to trigger our build manually in this example.
 By the way, most of these things can (SHOULD!) also be verified in the web
 console. If anything, it looks prettier!
 
-Before starting our build, the default setup for apps created in this way is not
-to have any nodeSelector. So, in order to deploy the built app into the
-"primary" region we will need to edit the deploymentConfig. As `joe` on the
-terminal:
-
-    osc edit deploymentConfigs/ruby-example
-
-Then, remember to add the nodeSelector for the "primary" region:
-
-    [...]
-    template:
-      controllerTemplate:
-        podTemplate:
-          nodeSelector:
-            region: primary
-          desiredState:
-            manifest:
-    [...]
-
 To start our build, as `joe`, execute the following:
 
     osc start-build ruby-example
@@ -1939,32 +2023,23 @@ You'll see some output to indicate the build:
 
     ruby-example-1
 
-OpenShift v3 is in a bit of a transition period between authentication
-paradigms. Suffice it to say that, for this beta drop, certain actions cannot be
-performed by "normal" users, even if it makes sense that they should. Don't
-worry, we'll get there. Feel free to try these things as a "normal" user - you
-will get a "forbidden" error.
-
-In order to watch the build logs, you actually need to be a cluster
-administratior right now. So, as `root`, you can do the following things:
-
 We can check on the status of a build (it will switch to "Running" in a few
 moments):
 
-    osc get builds -n sinatra
+    osc get builds
     NAME             TYPE      STATUS     POD
-    ruby-example-1   STI       Running   ruby-example-1
+    ruby-example-1   Source    Running   ruby-example-1
 
 The web console would've updated the *Overview* tab for the *Sinatra* project to
 say:
 
-    A build of ruby-example is pending. A new deployment will be
+    A build of ruby-example is running. A new deployment will be
     created automatically once the build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs ruby-example-1 -n sinatra
+    osc build-logs ruby-example-1
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
@@ -2006,24 +2081,21 @@ so it's not very useful at the moment.
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 
-**Hint:** It is `ruby-example`.
-
 **Hint:** You will need to use `osc get services` to find it.
 
 **Hint:** Do this as `joe`.
+
+**Hint:** It is `ruby-example`.
 
 When you are done, create your route:
 
     osc create -f sinatra-route.json
 
-**Note:** If you're not using the `example.com` domain, you'll have to edit this
-route to match your domain.
-
 Check to make sure it was created:
 
     osc get route
     NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
-    ruby-example         ruby-example-sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
+    ruby-example         ruby-example.sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
     ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
 
 And now, you should be able to verify everything is working right:
@@ -2040,29 +2112,55 @@ options for default domains and etc. Currently, the "default" domain for
 applications is "router.default.local", which is most likely unusable in your
 environment.
 
+**Note:** HTTPS will *not* work for this route, because we have not specified
+any TLS termination.
+
 ### Implications of Quota Enforcement on Scaling
+**THIS SECTION IS BROKEN**
+
+There is currently a bug with quota enforcement. Do **NOT** apply the quota to
+this project. Skip ahead to the scaling part.
+
+** SKIP THIS**
+
+`*
 Quotas have implications one may not immediately realize. As `root` assign a
 quota to the `sinatra` project.
 
     osc create -f quota.json -n sinatra
 
-As `joe` scale your application up to three replicas by setting your Replication
-Controller's `replicas` value to 3.
+There is currently no default "size" for applications that are created with the
+web console. This means that, whether you think it's a good idea or not, the
+application is actually unbounded -- it can consume as much of a node's
+resources as it wants.
 
-    osc get rc
-    CONTROLLER       CONTAINER(S)   IMAGE(S)                                                                                                SELECTOR                                                   REPLICAS
-    ruby-example-1   ruby-example   172.30.17.88:5000/sinatra/ruby-example:65c87f9ceea1dbd36e813cec05674a6eeb82b98395a8d6aecc2fb2ec30479aa1 deployment=ruby-example-1,deploymentconfig=ruby-example         1
+Before we can try to scale our application, we'll need to update the deployment
+to put a memory and CPU limit on the pods. Go ahead and edit the
+`deploymentConfig`, as `joe`:
 
-    osc edit rc ruby-example-1
+    osc edit dc/ruby-example-1 -o json
 
-Alter `replicas`
+You'll need to find "spec", "containers" and then the "resources" block in
+there. It's after a bunch of `env`ironment variables. Update that "resources"
+block to look like this:
 
-    spec:
-      replicas: 3
+        "resources": {
+          "limits": {
+            "cpu": "10m",
+            "memory": "16Mi"
+          }
+        },
+
+`*
+
+As `joe` scale your application up to three instances using the `osc resize`
+command:
+
+    osc resize --replicas=3 rc/ruby-example-1
 
 Wait a few seconds and you should see your application scaled up to 3 pods.
 
-    osc get pods
+    osc get pods | grep -v "example"
     POD                    IP          CONTAINER(S) ... STATUS  CREATED
     ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
     ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
@@ -2071,22 +2169,26 @@ Wait a few seconds and you should see your application scaled up to 3 pods.
 You will also notice that these pods were distributed across our two nodes
 "east" and "west". Cool!
 
+**SKIP THIS**
+
+*`
 Now start another build, wait a moment or two for your build to start.
 
     osc start-build ruby-example
 
     osc get builds
     NAME             TYPE      STATUS     POD
-    ruby-example-1   STI       Complete   ruby-example-1
-    ruby-example-2   STI       New        ruby-example-2
+    ruby-example-1   Source    Complete   ruby-example-1
+    ruby-example-2   Source    New        ruby-example-2
 
 The build never starts, what happened? The quota limits the number of pods in
-this project to three and this includes ephemeral pods like STI builders.
+this project to three and this includes ephemeral pods like S2I builders.
 Resize your application to just one replica and your new build will
 automatically start after a minute or two.
 
 **Note:** Once the build is complete a new replication controller is
 created and the old one is no longer used.
+`*
 
 ## Templates, Instant Apps, and "Quickstarts"
 The next example will involve a build of another application, but also a service
@@ -2100,17 +2202,15 @@ will come in a later lab.
 This example is effectively a "quickstart" -- a pre-defined application that
 comes in a template that you can just fire up and start using or hacking on.
 
-
 ### A Project for the Quickstart
-As the `root` user, first we'll create a new project:
+As `joe`, create a new project:
 
-    osadm new-project quickstart --display-name="Quickstart" \
-    --description='A demonstration of a "quickstart/template"' \
-    --admin=joe
+    osc new-project quickstart --display-name="Quickstart" \
+    --description='A demonstration of a "quickstart/template"'
 
-As the `joe` user, we'll set our context to use the corresponding namespace:
+This also changes you to use that project:
 
-    osc project quickstart
+    Now using project "quickstart" on server "https://ose3-master.example.com:8443".
 
 ### A Quick Aside on Templates
 From the [OpenShift
@@ -2136,23 +2236,20 @@ This portion of the template's JSON tells OpenShift to generate an expression
 using a regex-like string that will be presented as ADMIN_USERNAME.
 
 ### Adding the Template
-Go ahead and do the following as `root` in the `~/training/beta3` folder:
+Go ahead and do the following as `root` in the `~/training/beta4` folder:
 
     osc create -f integrated-template.json -n openshift
 
 What did you just do? The `integrated-template.json` file defined a template. By
 "creating" it, you have added it to the `openshift` project.
 
-**Note:** If you're not using the `example.com` domain, you'll have to edit the
-route in the template to match your domain. It is hard-coded at this time.
-
 ### Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and
 then hit the "Create +" button. We've seen this page before, but now it contains
 something new -- an "instant app(lication)". An instant app is a "special" kind
-of template (really, it just has the "instant-app" tag). The idea behind an
+of template (relaly, it just has the "instant-app" tag). The idea behind an
 "instant app" is that, when creating an instance of the template, you will have
-a fully functional application. In this example, our "instant" app is just a
+a fully functional application. in this example, our "instant" app is just a
 simple key-value storage and retrieval webpage.
 
 Click "quickstart-keyvalue-application", and you'll see a modal pop-up that
@@ -2177,7 +2274,7 @@ The cool thing about the template is that it has a built-in route. The not so
 cool thing is that route is not configurable at the moment. But, it's there!
 
 If you click "Browse" and then "Services" you will see that there is a route for
-the *frontend* service (or whatever your domain is):
+the *frontend* service:
 
     `integrated.cloudapps.example.com`
 
@@ -2194,11 +2291,6 @@ actually use the application!
 
 **Note: HTTPS will *not* work for this example because the form submission was
 written with HTTP links. Be sure to use HTTP. **
-
-### Placing Your App (Optional)
-If you want this app to run in the "primary" region, you'll have to edit the
-deployment configuration like you did previously. If you move your database
-after you've added data to it, your data will be lost. Do you know why?
 
 ## Creating and Wiring Disparate Components
 Quickstarts are great, but sometimes a developer wants to build up the various
@@ -2229,7 +2321,7 @@ Before continuing, `alice` will also need the training repository:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training/beta3
+    cd ~/training/beta4
 
 ### Stand Up the Frontend
 The first step will be to stand up the frontend of our application. For
@@ -2254,10 +2346,6 @@ Go ahead and create the configuration:
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
 before continuing.
-
-The same things hold true regarding nodeSelectors for this example as
-in the previous examples -- you will have to modify the deployment configuration
-if you want to restrict this app to run in the "primary" region.
 
 ### Visit Your Application
 Once the new build is finished and the frontend service's endpoint has been
@@ -2396,6 +2484,239 @@ Remember, wiring up apps yourself right now is a little clunky. These things
 will get much easier with future beta drops and will also be more accessible
 from the web console.
 
+## Using Persistent Storage (Optional)
+
+Having a database for development is nice, but what if you actually want the
+data you store to stick around after the DB pod is redeployed? Pods are
+ephemeral, and so is their storage by default. For shared or persistent
+storage, we need a way to specify that pods should use external volumes.
+
+We can do this a number of ways. [Kubernetes provides methods for directly
+specifying the mounting of several different volume
+types.](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md)
+This is perfect if you want to use known external resources. But that's
+not very PaaS-y. If I'm using a PaaS, I might really just rather request a
+chunk of storage and not need a side channel to provision that. OpenShift 3
+provides a mechanism for doing just this.
+
+### Export an NFS Volume
+
+For the purposes of this training, we will just demonstrate the master
+exporting an NFS volume for use as storage by the database. **You would
+almost certainly not want to do this for a real deployment.** If you happen
+to have another host with an NFS export handy, feel free to substitute
+that instead of the master.
+
+As `root` on the master:
+
+1. Ensure that nfs-utils is installed:
+
+        yum install nfs-utils
+
+2. Create the directory we will export:
+
+        mkdir -p /var/export/vol1
+        chown nfsnobody:nfsnobody /var/export/vol1
+        chmod 700 /var/export/vol1
+
+3. Edit `/etc/exports` and add the following line:
+
+        /var/export/vol1 *(rw,sync,all_squash)
+
+4. Enable and start NFS services:
+
+        systemctl enable rpcbind nfs-server
+        systemctl start rpcbind nfs-server nfs-lock nfs-idmap
+
+Note that the volume is owned by `nfsnobody` and access by all remote users
+is "squashed" to be access by this user. This essentially disables user
+permissions for clients mounting the volume. While another configuration
+might be preferable, one problem you may run into is that the container
+cannot modify the permissions of the actual volume directory when mounted.
+In the case of MySQL below, MySQL would like to have the volume belong to
+the `mysql` user, and assumes that it is, which causes problems later.
+Arguably, the container should operate differently. In the long run, we
+probably need to come up with best practices for use of NFS from containers.
+
+### Allow NFS Access in SELinux Policy
+
+By default policy, containers are not allowed to write to NFS mounted
+directories.  We want to do just that with our database, so enable that on
+all nodes where the pod could land (i.e. all of them) with:
+
+    setsebool -P virt_use_nfs=true
+
+Once the ansible-based installer does this automatically, we can remove this
+section from the document.
+
+### Create a PersistentVolume
+
+It is the PaaS administrator's responsibility to define the storage that is
+available to users. Storage is represented by a PersistentVolume that
+encapsulates the details of a particular volume which can be backed by any
+of the [volume types available via
+Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md).
+In this case it will be our NFS volume.
+
+Currently PersistentVolume objects must be created "by hand". Modify the
+`beta4/persistent-volume.json` file as needed if you are using a different
+NFS mount:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolume",
+      "metadata": {
+        "name": "pv0001"
+      },
+      "spec": {
+        "capacity": {
+            "storage": "5Gi"
+            },
+        "accessModes": [ "ReadWriteMany" ],
+        "nfs": {
+            "path": "/var/export/vol1",
+            "server": "ose3-master.osv3.example.com"
+        }
+      }
+    }
+
+Create this object as the `root` (administrative) user:
+
+    # osc create -f persistent-volume.json
+    persistentvolumes/pv0001
+
+This defines a volume for OpenShift projects to use in deployments. The
+storage should correspond to how much is actually available (make each
+volume a separate filesystem if you want to enforce this limit). Take a
+look at it now:
+
+    # osc describe persistentvolumes/pv0001
+    Name:   pv0001
+    Labels: <none>
+    Status: Available
+    Claim:
+
+### Claim the PersistentVolume
+
+Now that the administrator has provided a PersistentVolume, any project can
+make a claim on that storage. We do this by creating a PersistentVolumeClaim
+that specifies what kind and how much storage is desired:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "claim1"
+      },
+      "spec": {
+        "accessModes": [ "ReadWriteMany" ],
+        "resources": {
+          "requests": {
+            "storage": "5Gi"
+          }
+        }
+      }
+    }
+
+We can have `alice` do this in the `wiring` project:
+
+    $ osc create -f persistent-volume-claim.json
+    persistentVolumeClaim/claim1
+
+This claim will be bound to a suitable PersistentVolume (one that is big
+enough and allows the requested accessModes). The user does not have any
+real visibility into PersistentVolumes, including whether the backing
+storage is NFS or something else; they simply know when their claim has
+been filled ("bound" to a PersistentVolume).
+
+    $ osc get pvc
+    NAME      LABELS    STATUS    VOLUME
+    claim1    map[]     Bound     pv0001
+
+If as `root` we now go back and look at our PV, we will also see that it has
+been claimed:
+
+    # osc describe pv/pv0001
+    Name:   pv0001
+    Labels: <none>
+    Status: Bound
+    Claim:  wiring/claim1
+
+The PersistentVolume is now claimed and can't be claimed by any other project.
+
+Although this flow assumes the administrator pre-creates volumes in
+anticipation of their use later, it would be possible to create an external
+process that watches the API for a PersistentVolumeClaim to be created,
+dynamically provisions a corresponding volume, and creates the API object
+to fulfill the claim.
+
+### Use the Claimed Volume
+
+Finally, we need to modify our `database` DeploymentConfig to specify that
+this volume should be mounted where the database will use it. As `alice`:
+
+    $ osc edit dc/database
+
+The part we will need to edit is the pod template. We will need to add two
+parts, a definition of the volume, and where to mount it inside the container.
+
+First, directly under the `template` `spec:` line, add this YAML (indented from the `spec:` line):
+
+          volumes:
+          - name: pvol
+            persistentVolumeClaim:
+              claimName: claim1
+
+Then to have the container mount this, add this YAML after the
+`terminationMessagePath:` line:
+
+            volumeMounts:
+            - mountPath: /var/lib/mysql/data
+              name: pvol
+
+Remember that YAML is sensitive to indentation. The final template should
+look like this:
+
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          deploymentconfig: database
+      spec:
+        volumes:
+        - name: pvol
+          persistentVolumeClaim:
+            claimName: claim1
+        containers:
+        - capabilities: {}
+    [...]
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: pvol
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        serviceAccount: ""
+
+Save and exit. This change to configuration will trigger a new deployment
+of the database, and this time, it will be using the NFS volume we exported
+from master.
+
+Once the new pod has started, go ahead and visit the web page. Add a few values
+via the application. Then delete the database pod and wait for it to come back.
+You should be able to retrieve the same values you entered.
+
+For further confirmation that your database pod is in fact using the NFS
+volume, simply check what is stored there on master:
+
+    # ls /var/export/vol1
+    database-3-n1i2t.pid  ibdata1  ib_logfile0  ib_logfile1  mysql  performance_schema  root
+
+Further information on use of PersistentVolumes is available in the
+[OpenShift Origin documentation](http://docs.openshift.org/latest/dev_guide/volumes.html).
+This is a very new feature, so it is very manual for now, but look for more tooling
+taking advantage of PersistentVolumes to be created in the future.
+
 ## Rollback/Activate and Code Lifecycle
 Not every coder is perfect, and sometimes you want to rollback to a previous
 incarnation of your application. Sometimes you then want to go forward to a
@@ -2470,7 +2791,7 @@ again:
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
-to `git://github.com/alice/ruby-hello-world.git`. Save and exit
+to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
 the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
@@ -2541,8 +2862,8 @@ And now `get build` again:
 
     osc get build
     NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   STI       Complete   ruby-sample-build-1
-    ruby-sample-build-2   STI       Pending    ruby-sample-build-2
+    ruby-sample-build-1   Source    Complete   ruby-sample-build-1
+    ruby-sample-build-2   Source    Pending    ruby-sample-build-2
 
 You can see that this could have been part of some CI/CD workflow that
 automatically called our webhook once the code was tested.
@@ -2599,7 +2920,7 @@ cool. Let's now roll forward (activate) the typo-enabled application:
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
-Generally speaking, this involves modifying the various STI scripts from the
+Generally speaking, this involves modifying the various S2I scripts from the
 builder image. When OpenShift builds your code, it checks to see if any of the
 scripts in the `.sti/bin` folder of your repository override/supercede the
 builder image's scripts. If so, it will execute the repository script instead.
@@ -2649,22 +2970,22 @@ and look at its Docker logs.
 Did You See It?
 
     2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
-    ---> CUSTOM STI ASSEMBLE COMPLETE
+    ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 But where's the output from the custom `run` script? The `assemble` script is
 run inside of your builder pod. That's what you see by using `build-logs`. The
 `run` script actually is what is executed to "start" your application's pod. In
 other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` STI builder. As `root` run:
+was built based on the `ruby-20-rhel7` S2I builder. As `root` run:
 
-    osc log -n wiring \
+    osc logs -n wiring \
     `osc get pods -n wiring | \
     grep "^frontend-" | awk '{print $1}'` |\
     grep -i custom
 
 You should see:
 
-    2015-04-27T22:23:24.110630393Z ---> CUSTOM STI RUN COMPLETE
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I RUN COMPLETE
 
 You will be able to do this as the `alice` user once the proxy development is
 finished -- for the same reason that you cannot view build logs as regular
@@ -2672,7 +2993,7 @@ users, you also can't view pod logs as regular users.
 
 ## Lifecycle Pre and Post Deployment Hooks
 Like in OpenShift 2, we have the capability of "hooks" - performing actions both
-before and after the **deployment**. In other words, once an STI build is
+before and after the **deployment**. In other words, once an S2I build is
 complete, the resulting Docker image is pushed into the registry. Once the push
 is complete, OpenShift detects an `ImageChange` and, if so configured, triggers
 a **deployment**.
@@ -2688,9 +3009,7 @@ Since we already have our `wiring` app pointing at our forked code repository,
 let's go ahead and add a database migration file. In the `beta3` folder you will
 find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
 of the `ruby-hello-world` repository that you forked. If you don't add this file
-to the right folder, the rest of the steps will fail. You will want to make sure
-that you add this to the `beta3` branch of your forked repository, since that is
-the branch we are looking for when we do our builds.
+to the right folder, the rest of the steps will fail.
 
 ### Examining the Deployment Configuration
 Since we are talking about **deployments**, let's look at our
@@ -2904,7 +3223,7 @@ another deployment, our current Docker image doesn't have the database migration
 file in it. Nothing really useful would happen.
 
 In order to get the database migration file into the Docker image, we actually
-need to do another build. Remember, the STI process starts with the builder
+need to do another build. Remember, the S2I process starts with the builder
 image, fetches the source code, executes the (customized) assemble script, and
 then pushes the resulting Docker image into the registry. **Then** the
 deployment happens.
@@ -2928,9 +3247,7 @@ with the pod that ran our pre-deployment hook.
 
 Inspect this pod's logs:
 
-    osc log deployment-frontend-9-hook-wlqqx -n wiring
-
-**Note:** You'll have to perform this as `root`.
+    osc logs deployment-frontend-9-hook-wlqqx -n wiring
 
 The output likely shows:
 
@@ -3032,9 +3349,6 @@ httpd. So we'll add on a service and route for web access.
 
     osc create -f wordpress-addition.json
 
-**Note:** If you're not using the `example.com` domain, you'll have to edit this
-route to match your domain.
-
 ### Test Your Application
 You should be able to visit:
 
@@ -3088,10 +3402,6 @@ If you have a Java application whose Maven configuration uses local
 repositories, or has no Maven requirements, you could probably substitute that
 code repository for the one below.
 
-Note: Please ensure the correct EAP image stream has been added by verifying the *jboss-eap6-openshift* imagestream is available:
-
-    osc get is -n openshift | grep jboss-eap6-openshift
-
 ### Create a Project
 Using the skills you have learned earlier in the training, create a new project
 for the EAP example. Choose a user as the administrator, and make sure to use
@@ -3099,7 +3409,7 @@ that user in the subsequent commands as necessary.
 
 ### Instantiate the Template
 When we imported the imagestreams into the `openshift` namespace earlier, we
-also brought in JBoss EAP and Tomcat STI builder images.
+also brought in JBoss EAP and Tomcat S2I builder images.
 
 There are currently several application templates that can be used with these
 images, except they leverage some features that were not available at the time
@@ -3111,7 +3421,7 @@ some variables.
 
 If you simply execute the following:
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-beta3/eap/eap6-basic-sti.json
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json
 
 You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
 use in this template. Since beta3 doesn't support these, we will have to do some
@@ -3129,11 +3439,11 @@ The following command will:
 * pipe this into `osc create` so that the template becomes an actionable
     configuration
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-beta3/eap/eap6-basic-sti.json \
+    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json \
     | sed -e 's/${APPLICATION_NAME}/helloworld/' \
     -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
     -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
-    -e 's/${GENERIC_TRIGGER_SECRET}/secret/' \
+    -e 's/${GENERIC_TRIGGER_SECRET/secret/' \
     -e 's/${EAP_RELEASE}/6.4/' \
     -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
     -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
@@ -3182,7 +3492,7 @@ helloworld application does not use a "ROOT.war". If you don't understand this,
 it's because Java is confusing.
 
 ## Conclusion
-This concludes the Beta 3 training. Look for more example applications to come!
+This concludes the Beta 4 training. Look for more example applications to come!
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
@@ -3190,7 +3500,7 @@ file. If you do not have the ability to manipulate DNS in your environment, or
 just want a quick and dirty way to set up DNS, you can install dnsmasq on one of
 your nodes. Do **not** install DNSMasq on your master. OpenShift now has an
 internal DNS service provided by Go's "SkyDNS" that is used for internal service
-communication, which will be explored more in beta4.
+communication.
 
     yum -y install dnsmasq
 
@@ -3207,9 +3517,10 @@ You will need to ensure the following, or fix the following:
 * Your hostnames for your machines match the entries in `/etc/hosts`
 * Your `cloudapps` domain points to the correct node ip in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
-* The first `nameserver` in `/etc/resolv.conf` on the node running dnsmasq should be 127.0.0.1 and the second nameserver should be your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8); alternatively put upstream resolver as `server=8.8.8.8` in `/etc/dnsmasq.conf`
-* the other nodes' and master's `/etc/resolv.conf` points to the IP address of the node
+* Your master and nodes `/etc/resolv.conf` points to the IP address of the node
   running DNSMasq as the first nameserver
+* The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
+  to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
 * That you also open port 53 (UDP) to allow DNS queries to hit the node
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
@@ -3240,7 +3551,7 @@ wildcard space:
     ;; ANSWER SECTION:
     foo.cloudapps.example.com 0 IN A 192.168.133.2
     ...
-    
+
 # APPENDIX - LDAP Authentication
 OpenShift currently supports several authentication methods for obtaining API
 tokens.  While OpenID or one of the supported Oauth providers are preferred,
@@ -3273,7 +3584,7 @@ follows:
     osc create -f openldap-example.json
 
 That will create a pod from an OpenLDAP image hosted externally on the Docker
-Hub.  You can find the source for it [here](beta3/images/openldap-example/).
+Hub.  You can find the source for it [here](beta4/images/openldap-example/).
 
 To test the example LDAP service you can run the following:
 
@@ -3311,7 +3622,7 @@ No arguments are required but the help output will show you the defaults:
     --git-repo git://github.com/brenton/basicauthurl-example.git
 
 Once you run the helper script it will output the configuration changes
-required for `/etc/openshift/master.yaml` as well as create
+required for `/etc/openshift/master/master-config.yaml` as well as create
 `basicauthurl.json`.  You can now feed that to `osc`:
 
     osc create -f basicauthurl.json
@@ -3324,16 +3635,16 @@ deployment.
 When the build finished you can run the following command to test that the
 Service is responding correctly:
 
-    curl -v -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    curl -v -u joe:redhat --cacert /etc/openshift/master/ca.crt \
         --resolve basicauthurl.example.com:443:`osc get services | grep basicauthurl | awk '{print $4}'` \
         https://basicauthurl.example.com/validate
 
 In that case in order for SNI to work correctly we had to trick curl with the `--resolve` flag.  If wildcard DNS is set up in your environment to point to the router then the following should test the service end to end:
 
-    curl -u joe:redhat --cacert /var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+    curl -u joe:redhat --cacert /etc/openshift/master/ca.crt \
         https://basicauthurl.example.com/validate
 
-If you've made the required changes to `/etc/openshift/mmaster.yaml` and
+If you've made the required changes to `/etc/openshift/master/master-config.yaml` and
 restarted `openshift-master` then you should now be able to log it with the
 example users `joe` and `alice` with the password `redhat`.
 
@@ -3346,7 +3657,7 @@ mod_authnz_ldap directives are available.
 ### Upcoming changes
 
 We've recently worked with Kubernetes upstream to add API support for Secrets.
-Before GA the need for STI builds in this authentication approach may go away.
+Before GA the need for S2I builds in this authentication approach may go away.
 What this would mean is that admins would run a script to import an Apache
 configuration in to a Secret and the Pod could use this on start up.  In this
 case the Build Config would go away and only a Deployment Config would be
@@ -3357,30 +3668,30 @@ Docker supports import/save of Images via tarball. These instructions are
 general and may not be 100% accurate for the current release. You can do
 something like the following on your connected machine:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull openshift/ruby-20-centos7
+    docker pull openshift/mysql-55-centos7
     docker pull openshift/hello-openshift
+    docker pull centos:centos7
 
 This will fetch all of the images. You can then save them to a tarball:
 
-    docker save -o beta3-images.tar \
-    registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest \
-    registry.access.redhat.com/openshift3_beta/ruby-20-rhel7 \
-    registry.access.redhat.com/openshift3_beta/mysql-55-rhel7 \
-    openshift/hello-openshift
+    docker save -o beta1-images.tar \
+    registry.access.redhat.com/openshift3_beta/ose-haproxy-router \
+    registry.access.redhat.com/openshift3_beta/ose-deployer \
+    registry.access.redhat.com/openshift3_beta/ose-sti-builder \
+    registry.access.redhat.com/openshift3_beta/ose-docker-builder \
+    registry.access.redhat.com/openshift3_beta/ose-pod \
+    registry.access.redhat.com/openshift3_beta/ose-docker-registry \
+    openshift/ruby-20-centos7 \
+    openshift/mysql-55-centos7 \
+    openshift/hello-openshift \
+    centos:centos7
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
 space**
@@ -3414,13 +3725,16 @@ to limit some of what it returns:
 
 # APPENDIX - Troubleshooting
 
-An experimental diagnostics command is in progress for OpenShift v3, to hopefully
-be included in the openshift binary for the next release. For now, you can download
-the one for beta3 under [Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
+(STUB)
+
+An experimental diagnostics command is in progress for OpenShift v3.
+Once merged it should be available as `openshift ex diagnostics`. There may
+be out-of-band updated versions of diagnostics under
+[Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
 Running this may save you some time by pointing you in the right direction
 for common issues. This is very much still under development however.
 
-Common problems
+**Common problems**
 
 * All of a sudden authentication seems broken for non-admin users.  Whenever I run osc commands I see output such as:
 
@@ -3431,14 +3745,17 @@ Common problems
         MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}]
         failed (401) 401 Unauthorized: Unauthorized
 
-    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the client config.
+    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
 
+        # The login command creates a .kubeconfig file in the CWD.
+        # But we need it to exist in ~/.kube
+        cd ~/.kube
 
-        # If a stale token exists it will prevent the beta3 login command from working
-        rm ~/.config/openshift/.config
+        # If a stale token exists it will prevent the beta4 login command from working
+        rm .kubeconfig
 
         osc login \
-        --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
+        --certificate-authority=/etc/openshift/master/ca.crt \
         --cluster=master --server=https://ose3-master.example.com:8443 \
         --namespace=[INSERT NAMESPACE HERE]
 
@@ -3449,10 +3766,15 @@ Common problems
         https://ose3-master.example.net:8443/api/v1beta1/pods?namespace=default:
         x509: certificate signed by unknown authority
 
-    This generally means you do not have a client config file at all, as it should
-    supply the certificate authority for validating the master. You could also
-    have the wrong CA in your client config. You should probably regenerate
-    your client config as in the previous suggestion.
+    Check the value of $KUBECONFIG:
+
+        echo $kubeconfig
+
+    If you don't see anything, you may have changed your `.bash_profile` but
+    have not yet sourced it. Make sure that you followed the step of adding
+    `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
+
+        source ~/.bash_profile
 
 * When issuing a `curl` to my service, I see `curl: (56) Recv failure:
     Connection reset by peer`
@@ -3617,7 +3939,7 @@ osc delete imagestreams -n openshift --all
 osc create -f image-streams.json -n openshift
 ~~~
 
-## STI Builds
+## S2I Builds
 
 Let's take the sinatra example.  That build uses fetches gems from
 rubygems.org.  The first thing we'll want to do is fork that codebase and
@@ -3656,7 +3978,6 @@ be done for configuring a `Pod`'s proxy at runtime:
                       },
     ...
 
-
 ## Git Repository Access
 
 In most of the beta examples code has been hosted on GitHub.  This is strictly
@@ -3689,6 +4010,7 @@ in shell format:
     NO_PROXY=mycompany.com
     HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
     HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
+
 
 ## Future Considerations
 
@@ -3724,7 +4046,8 @@ configure the entire AWS environment, too.
 
     # host group for nodes
     [nodes]
-    ec2-52-6-179-239.compute-1.amazonaws.com #The master
+    ec2-52-6-179-239.compute-1.amazonaws.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" #The master
+    ec2-52-4-251-128.compute-1.amazonaws.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
     ... <additional node hosts go here> ...
 
 **Testing the Auto-detected Values:**
@@ -3761,8 +4084,7 @@ The output will be similar to:
     ...
 
 Next, we'll need to override the detected defaults if they are not what we expect them to be
-
-* hostname
+- hostname
   * Should resolve to the internal ip from the instances themselves.
   * openshift_hostname will override.
 * ip
@@ -3775,16 +4097,14 @@ Next, we'll need to override the detected defaults if they are not what we expec
   * Should be the externally accessible ip associated with the instance
   * openshift_public_ip will override
 
-To override the the defaults, you can set the variables in your inventory. For
-example, if using AWS and managing dns externally, you can override the host
-public hostname as follows:
+To override the the defaults, you can set the variables in your inventory. For example, if using AWS and managing dns externally, you can override the host public hostname as follows:
 
     [masters]
-    ec2-52-6-179-239.compute-1.amazonaws.com openshift_public_hostname=ose3-master.public.example.com
+    ec2-52-6-179-239.compute-1.amazonaws.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" openshift_public_hostname=ose3-master.public.example.com
 
-Running ansible:
+**Running ansible:**
 
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+    ansible ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
@@ -3850,9 +4170,9 @@ the --certificate-authority flag or otherwise import the CA into your host's
 certificate authority. If you do not import or specify the CA you will be
 prompted to accept an untrusted certificate which is not recommended.
 
-The CA is created on your master in `/var/lib/openshift/openshift.local.certificates/ca/cert.crt`
+The CA is created on your master in `/etc/openshift/master/ca.crt`
 
-    C:\Users\test\Downloads> osc --certificate-authority="cert.crt"
+    C:\Users\test\Downloads> osc --certificate-authority="ca.crt"
     OpenShift server [[https://localhost:8443]]: https://ose3-master.example.com:8443
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Username: joe

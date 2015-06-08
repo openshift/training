@@ -1,0 +1,26 @@
+# vim: set ft=ansible:
+---
+- name: Clone the openshift-ansible repo and setup path links
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  sudo: no
+  vars:
+    checkout_dir: /tmp/openshift-training/openshift-ansible/
+    git_repo: https://github.com/detiber/openshift-ansible.git
+    repo_branch: v3-beta4
+  tasks:
+  - git:
+      dest: "{{ checkout_dir }}"
+      force: yes
+      repo: "{{ git_repo }}"
+      update: yes
+      version: "{{ repo_branch }}"
+  - file:
+      state: link
+      src: "{{ checkout_dir }}/{{ item }}"
+      dest: "{{ item }}"
+    with_items:
+    - inventory
+    - playbooks
+    - roles
