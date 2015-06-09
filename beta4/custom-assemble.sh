@@ -1,10 +1,4 @@
-#!/bin/bash -e
-#
-# Default STI assemble script for the ruby-2.0 image.
-#
-
-# For SCL enablement
-source .bashrc
+#!/bin/bash
 
 function rake_assets_precompile() {
   [ -n $DISABLE_ASSET_COMPILATION ] && return
@@ -12,11 +6,16 @@ function rake_assets_precompile() {
   [ ! -f Rakefile ] && return
   ! grep " rails " Gemfile.lock >/dev/null && return
   ! grep " execjs " Gemfile.lock >/dev/null && return
-  ! ruby_context "bundle exec 'rake -T'" | grep "assets:precompile" >/dev/null && return
+  ! bundle exec 'rake -T' | grep "assets:precompile" >/dev/null && return
 
   echo "---> Starting asset compilation."
-  ruby_context "bundle exec rake assets:precompile"
+  bundle exec rake assets:precompile
 }
+
+# For SCL enablement
+source .bashrc
+
+set -e
 
 echo "---> Installing application source"
 cp -Rf /tmp/src/* ./
@@ -37,16 +36,16 @@ if [ -f Gemfile ]; then
   fi
 
   echo "---> Running 'bundle install ${ADDTL_BUNDLE_ARGS}'"
-  ruby_context "bundle install --path ./bundle ${ADDTL_BUNDLE_ARGS}"
+  bundle install --path ./bundle ${ADDTL_BUNDLE_ARGS}
 
   echo "---> Cleaning up unused ruby gems"
-  ruby_context "bundle clean -V"
+  bundle clean -V
 fi
 
 if [[ "$RAILS_ENV" == "production" || "$RACK_ENV" == "production" ]]; then
   rake_assets_precompile
 fi
 
-echo "---> CUSTOM STI ASSEMBLE COMPLETE"
+echo "---> CUSTOM S2I ASSEMBLE COMPLETE"
 
 # TODO: Add `rake db:migrate` if linked with DB container

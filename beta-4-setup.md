@@ -2684,14 +2684,16 @@ dynamically provisions a corresponding volume, and creates the API object
 to fulfill the claim.
 
 ### Use the Claimed Volume
-
 Finally, we need to modify our `database` DeploymentConfig to specify that
 this volume should be mounted where the database will use it. As `alice`:
 
     $ osc edit dc/database
 
 The part we will need to edit is the pod template. We will need to add two
-parts, a definition of the volume, and where to mount it inside the container.
+parts: 
+
+* a definition of the volume
+* where to mount it inside the container
 
 First, directly under the `template` `spec:` line, add this YAML (indented from the `spec:` line):
 
@@ -2735,12 +2737,35 @@ Save and exit. This change to configuration will trigger a new deployment
 of the database, and this time, it will be using the NFS volume we exported
 from master.
 
+### Restart the Frontend
+Any values or data we had inserted previously just got blown away. The
+`deploymentConfig` update caused a new MySQL pod to be launched. Since this is
+the first time the pod was launched with persistent data, any previous data was
+lost.
+
+Additionally, the Frontend pod will perform a database initialization when it
+starts up. Since we haven't restarted the frontend, our database is actually
+bare. If you try to use the app now, you'll get "Internal Server Error".
+
+Go ahead and kill the Frontend pod like we did previously to cause it to
+restart:
+
+     osc delete pod `osc get pod | grep front | awk {'print $1'}`
+
 Once the new pod has started, go ahead and visit the web page. Add a few values
 via the application. Then delete the database pod and wait for it to come back.
 You should be able to retrieve the same values you entered.
 
+Remember, to quickly delete the Database pod you can do the following:
+
+    osc delete pod/`osc get pod | grep -e "database-[0-9]" | awk {'print $1'}`
+
+**Note:** This doesn't seem to work right now, but we're not sure why. I think
+it has to do with Ruby's persistent connection to the MySQL service not going
+away gracefully, or something. Killing the frontend again will definitely work.
+
 For further confirmation that your database pod is in fact using the NFS
-volume, simply check what is stored there on master:
+volume, simply check what is stored there on `master`:
 
     # ls /var/export/vol1
     database-3-n1i2t.pid  ibdata1  ib_logfile0  ib_logfile1  mysql  performance_schema  root
@@ -2792,7 +2817,7 @@ frontend:
       source:
         git:
           uri: git://github.com/openshift/ruby-hello-world.git
-          ref: beta3
+          ref: beta4
         type: Git
       strategy:
         stiStrategy:
@@ -2824,7 +2849,7 @@ again:
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
-to `git://github.com/openshift/ruby-hello-world.git`. Save and exit
+to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
 If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
@@ -2870,7 +2895,7 @@ To find the webhook URL, you can visit the web console, click into the
 project, click on *Browse* and then on *Builds*. You'll see two webhook
 URLs. Copy the *Generic* one. It should look like:
 
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
 
 If you look at the `frontend-config.json` file that you created earlier,
 you'll notice the same "secret101" entries in triggers. These are
@@ -2889,7 +2914,7 @@ You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
 
 And now `get build` again:
 
@@ -2977,23 +3002,15 @@ your Github repository for your application from the previous lab, find the
 
 **Note:** If you know how to Git(hub), you can do this via your shell.
 
-Now do the same thing for the file called `custom-run.sh` in the `beta3`
-directory.  The only difference is that this time the file will be called `run`
-in your repository's `.sti/bin` directory. There is currently a bug that
-requires that both of these files be present in the `.sti/bin` folder:
-
-    https://github.com/openshift/source-to-image/issues/173
-
-Once the files are added, we can now do another build. The only difference in
-the "custom" assemble and run scripts will be executed and log some extra
-output.  We will see that shortly.
+Once the file is added, we can now do another build. The "custom" assemble
+script will log some extra data.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
 
 ### Watch the Build Logs
 Using the skills you have learned, watch the build logs for this build. If you
@@ -3006,23 +3023,19 @@ Did You See It?
     ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 But where's the output from the custom `run` script? The `assemble` script is
-run inside of your builder pod. That's what you see by using `build-logs`. The
+run inside of your builder pod. That's what you see by using `build-logs` - the
+output of the assemble script. The
 `run` script actually is what is executed to "start" your application's pod. In
 other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` S2I builder. As `root` run:
+was built based on the `ruby-20-rhel7` S2I builder. 
 
-    osc logs -n wiring \
-    `osc get pods -n wiring | \
-    grep "^frontend-" | awk '{print $1}'` |\
-    grep -i custom
+To look inside the builder pod, as `alice`:
 
-You should see:
+    osc logs `osc get pod | grep -e "[0-9]-build" | tail -1 | awk {'print $1'}` | grep CUSTOM
 
-    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I RUN COMPLETE
+You should see something similar to:
 
-You will be able to do this as the `alice` user once the proxy development is
-finished -- for the same reason that you cannot view build logs as regular
-users, you also can't view pod logs as regular users.
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 ## Lifecycle Pre and Post Deployment Hooks
 Like in OpenShift 2, we have the capability of "hooks" - performing actions both
