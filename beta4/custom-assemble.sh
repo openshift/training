@@ -19,6 +19,11 @@ function rake_assets_precompile() {
   bundle exec rake assets:precompile
 }
 
+# For SCL enablement
+source .bashrc
+
+set -e
+
 if [ "$(ls /tmp/artifacts/ 2>/dev/null)" ]; then
   echo "Restoring build artifacts"
   mv /tmp/artifacts/* $HOME/.
