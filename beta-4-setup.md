@@ -3474,33 +3474,27 @@ The template assumes that the imageStream exists in our current project, but
 that is not the case. The EAP imageStream exists in the `openshift` namespace.
 So we need to edit the resulting `buildConfig` and specify that.
 
-    osc edit bc helloworld -o json
+    osc edit bc helloworld
 
 You will need to edit the `strategy` section to look like the following:
 
-    "strategy": {
-        "type": "Source",
-        "sourceStrategy": {
-            "from": {
-                "kind": "ImageStreamTag",
-                "name": "jboss-eap6-openshift:6.4",
-                "namespace": "openshift"
-            }
-        }
-    },
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap6-openshift:6.4
+          namespace: openshift
 
-### Run the EAP Build
-Once done, save and exit, which will update the `buildConfig`. Then, start the
-build as `joe`:
+**REMEMBER** indentation is *important* in YAML.
 
-    osc start-build helloworld
-
-You can watch the build if you choose, or just look at the web console and wait
-for it to finish. If you do watch the build, you might notice some Maven errors.
-These are non-critical and will not affect the success or failure of the build.
+### Watch the Build
+In a few moments a build will start. You can watch the build if you choose, or
+just look at the web console and wait for it to finish. If you do watch the
+build, you might notice some Maven errors.  These are non-critical and will not
+affect the success or failure of the build.
 
 ### Visit Your Application
-We specified a route when the template was processed, so you should be able to
+We specified a route via defining the application hostname, so you should be able to
 visit your app at:
 
     http://helloworld.cloudapps.example.com/jboss-helloworld
