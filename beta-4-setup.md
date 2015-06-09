@@ -3023,23 +3023,19 @@ Did You See It?
     ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 But where's the output from the custom `run` script? The `assemble` script is
-run inside of your builder pod. That's what you see by using `build-logs`. The
+run inside of your builder pod. That's what you see by using `build-logs` - the
+output of the assemble script. The
 `run` script actually is what is executed to "start" your application's pod. In
 other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` S2I builder. As `root` run:
+was built based on the `ruby-20-rhel7` S2I builder. 
 
-    osc logs -n wiring \
-    `osc get pods -n wiring | \
-    grep "^frontend-" | awk '{print $1}'` |\
-    grep -i custom
+To look inside the builder pod, as `alice`:
 
-You should see:
+    osc logs `osc get pod | grep -e "[0-9]-build" | tail -1 | awk {'print $1'}` | grep CUSTOM
 
-    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I RUN COMPLETE
+You should see something similar to:
 
-You will be able to do this as the `alice` user once the proxy development is
-finished -- for the same reason that you cannot view build logs as regular
-users, you also can't view pod logs as regular users.
+    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I ASSEMBLE COMPLETE
 
 ## Lifecycle Pre and Post Deployment Hooks
 Like in OpenShift 2, we have the capability of "hooks" - performing actions both
