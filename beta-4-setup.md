@@ -4167,7 +4167,7 @@ of the `osc` command.
 
 ## Downloading The Clients
 
-Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.4.3.2/x86_64/product-downloads)
+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
 to download the Beta3 clients. You will need to sign into Customer Portal using
 an account that includes the OpenShift Enterprise High Touch Beta entitlements.
 
