@@ -433,8 +433,7 @@ Disable EPEL so that it is not accidentally used later:
 
     sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
 
-There's currently a bug in the latest Ansible version, so we need to use a
-slightly older one. Install the packages for Ansible:
+Install the packages for Ansible:
 
     yum -y --enablerepo=epel install ansible
 
@@ -2632,7 +2631,6 @@ look at it now:
     Claim:
 
 ### Claim the PersistentVolume
-
 Now that the administrator has provided a PersistentVolume, any project can
 make a claim on that storage. We do this by creating a PersistentVolumeClaim
 that specifies what kind and how much storage is desired:
