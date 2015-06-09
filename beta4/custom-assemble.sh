@@ -1,27 +1,39 @@
 #!/bin/bash -e
 #
-# Default STI assemble script for the ruby-2.0 image.
+# Default STI assemble script for the 'ruby-20-centos' image.
 #
 
-# For SCL enablement
-source .bashrc
+if [ "$1" = "-h" ]; then
+  exec /opt/ruby/bin/usage
+fi
 
 function rake_assets_precompile() {
-  [ -n $DISABLE_ASSET_COMPILATION ] && return
+  [ -f .sti/markers/disable_asset_compilation ] && return
   [ ! -f Gemfile ] && return
   [ ! -f Rakefile ] && return
   ! grep " rails " Gemfile.lock >/dev/null && return
   ! grep " execjs " Gemfile.lock >/dev/null && return
-  ! ruby_context "bundle exec 'rake -T'" | grep "assets:precompile" >/dev/null && return
+  ! bundle exec "rake -T" | grep "assets:precompile" >/dev/null && return
 
   echo "---> Starting asset compilation."
-  ruby_context "bundle exec rake assets:precompile"
+  bundle exec rake assets:precompile
 }
 
-echo "---> Installing application source"
-cp -Rf /tmp/src/* ./
+if [ "$(ls /tmp/artifacts/ 2>/dev/null)" ]; then
+  echo "Restoring build artifacts"
+  mv /tmp/artifacts/* $HOME/.
+fi
 
+APP_RUNTIME_DIR="${HOME}/src"
+APP_SRC_DIR="/tmp/src"
+
+echo "---> Installing application source"
+mkdir -p ${APP_RUNTIME_DIR}
+cp -Rf ${APP_SRC_DIR}/* ${APP_RUNTIME_DIR}/
+
+pushd "$APP_RUNTIME_DIR/${APP_ROOT}" >/dev/null
 echo "---> Building your Ruby application from source"
+
 if [ -f Gemfile ]; then
   ADDTL_BUNDLE_ARGS=""
   if [ -f Gemfile.lock ]; then
@@ -35,18 +47,21 @@ if [ -f Gemfile ]; then
   else
     BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}
   fi
-
+  # We can't use 'exec' here because it will exit from the script after the
+  # bundle install command finish. Thus the bundle install cannot receive SIGINT
+  # from console (ctrl+c)
+  #
   echo "---> Running 'bundle install ${ADDTL_BUNDLE_ARGS}'"
-  ruby_context "bundle install --path ./bundle ${ADDTL_BUNDLE_ARGS}"
+  bundle install --path ${HOME}/bundle ${ADDTL_BUNDLE_ARGS}
 
   echo "---> Cleaning up unused ruby gems"
-  ruby_context "bundle clean -V"
+  bundle clean -V
 fi
 
 if [[ "$RAILS_ENV" == "production" || "$RACK_ENV" == "production" ]]; then
   rake_assets_precompile
 fi
 
-echo "---> CUSTOM STI ASSEMBLE COMPLETE"
-
 # TODO: Add `rake db:migrate` if linked with DB container
+
+popd >/dev/null

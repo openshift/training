@@ -3002,23 +3002,15 @@ your Github repository for your application from the previous lab, find the
 
 **Note:** If you know how to Git(hub), you can do this via your shell.
 
-Now do the same thing for the file called `custom-run.sh` in the `beta3`
-directory.  The only difference is that this time the file will be called `run`
-in your repository's `.sti/bin` directory. There is currently a bug that
-requires that both of these files be present in the `.sti/bin` folder:
-
-    https://github.com/openshift/source-to-image/issues/173
-
-Once the files are added, we can now do another build. The only difference in
-the "custom" assemble and run scripts will be executed and log some extra
-output.  We will see that shortly.
+Once the file is added, we can now do another build. The "custom" assemble
+script will log some extra data.
 
 ### Kick Off a Build
 Our old friend `curl` is back:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build/secret101/generic?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
 
 ### Watch the Build Logs
 Using the skills you have learned, watch the build logs for this build. If you
