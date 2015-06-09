@@ -46,6 +46,6 @@ if [[ "$RAILS_ENV" == "production" || "$RACK_ENV" == "production" ]]; then
   rake_assets_precompile
 fi
 
-echo "---> CUSTOM STI ASSEMBLE COMPLETE"
+echo "---> CUSTOM S2I ASSEMBLE COMPLETE"
 
 # TODO: Add `rake db:migrate` if linked with DB container
