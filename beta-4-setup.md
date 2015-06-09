@@ -3391,11 +3391,10 @@ can easily delete only the things with this label:
 
     buildConfigs/centos7-wordpress
     builds/centos7-wordpress-1
-    deploymentConfigs/centos7-wordpress
+    imageStreams/centos
     imageStreams/centos7-wordpress
-    pods/centos7-wordpress-1
-    pods/centos7-wordpress-1-j64ck
-    replicationControllers/centos7-wordpress-1
+    deploymentConfigs/centos7-wordpress
+    replicationcontrollers/centos7-wordpress-1
     services/centos7-wordpress
 
 Notice that the things we created from wordpress-addition.json didn't
@@ -3430,81 +3429,75 @@ that user in the subsequent commands as necessary.
 When we imported the imagestreams into the `openshift` namespace earlier, we
 also brought in JBoss EAP and Tomcat S2I builder images.
 
-There are currently several application templates that can be used with these
-images, except they leverage some features that were not available at the time
-beta3 was cut.
+Take a look at the `eap6-basic-sti.json` in the `beta4` folder.  You'll see that
+there are a number of bash-style variables (`${SOMETHING}`) in use in this
+template. This template is already configured to use the EAP builder image, so
+we can use the web console to simply isntantiate it in the desired way.
 
-We can still use them, but not in the same way we used the "Quickstart" template
-arlier. We will have to process them from the CLI and massage them to substitute
-some variables.
-
-If you simply execute the following:
-
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json
-
-You'll see that there are a number of bash-style variables (`${SOMETHING}`) in
-use in this template. Since beta3 doesn't support these, we will have to do some
-manual substitution. This template is already configured to use the EAP builder
-image.
-
-The following command will:
+We want to:
 
 * set the application name to *helloworld*
-* create a route for *helloworld.cloudapps.example.com*
+* set the application hostname to *helloworld.cloudapps.example.com*
+* set the Git URI to
+    *https://github.com/jboss-developer/jboss-eap-quickstarts/*
+* set the Git ref to *6.4.x*
+* set the Git context dir to *helloworld*
 * set Github and Generic trigger secrets to *secret*
-* set the correct EAP image release
-* set the Git repository URI, reference, and folder (where to get the source
-    code)
-* pipe this into `osc create` so that the template becomes an actionable
-    configuration
 
-    osc process -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap6-basic-sti.json \
-    | sed -e 's/${APPLICATION_NAME}/helloworld/' \
-    -e 's/${APPLICATION_HOSTNAME}/helloworld.cloudapps.example.com/' \
-    -e 's/${GITHUB_TRIGGER_SECRET}/secret/' \
-    -e 's/${GENERIC_TRIGGER_SECRET/secret/' \
-    -e 's/${EAP_RELEASE}/6.4/' \
-    -e 's/${GIT_URI}/https:\/\/github.com\/jboss-developer\/jboss-eap-quickstarts/' \
-    -e 's/${GIT_REF}/6.4.x/' -e 's/${GIT_CONTEXT_DIR}/helloworld/' \
-    | osc create -f -
+Ok, we're ready:
+
+1. Add the `eap6-basic-sti.json` template to your project using the commandline:
+
+        osc create -f eap6-basic-sti.json
+
+1. Go into the web console.
+
+1. Find the project you created and click on it.
+
+1. Click the "Create..." button.
+
+1. Click the "Browse all templates..." button.
+
+1. Click the "eap6-basic-sti" example.
+
+1. Click "Select template".
+
+Now that you are on the overview page, you'll have to click "Edit Paremeters"
+and fill in the values with the things we wanted above. Hit "Create" when you
+are done.
+
+In the UI you will see a bunch of things get created -- several services, some
+routes, and etc.
 
 ### Update the BuildConfig
 The template assumes that the imageStream exists in our current project, but
 that is not the case. The EAP imageStream exists in the `openshift` namespace.
 So we need to edit the resulting `buildConfig` and specify that.
 
-    osc edit bc helloworld -o json
+    osc edit bc helloworld
 
 You will need to edit the `strategy` section to look like the following:
 
-    "strategy": {
-        "type": "STI",
-        "stiStrategy": {
-            "tag": "6.4",
-            "from": {
-                "kind": "ImageStream",
-                "name": "jboss-eap6-openshift",
-                "namespace": "openshift"
-            },
-            "clean": true
-        }
-    },
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap6-openshift:6.4
+          namespace: openshift
 
-### Run the EAP Build
-Once done, save and exit, which will update the `buildConfig`. Then, start the
-build as `joe`:
+**REMEMBER** indentation is *important* in YAML.
 
-    osc start-build helloworld
-
-You can watch the build if you choose, or just look at the web console and wait
-for it to finish. If you do watch the build, you might notice some Maven errors.
-These are non-critical and will not affect the success or failure of the build.
+### Watch the Build
+In a few moments a build will start. You can watch the build if you choose, or
+just look at the web console and wait for it to finish. If you do watch the
+build, you might notice some Maven errors.  These are non-critical and will not
+affect the success or failure of the build.
 
 ### Visit Your Application
-We specified a route when the template was processed, so you should be able to
+We specified a route via defining the application hostname, so you should be able to
 visit your app at:
 
-    helloworld.cloudapps.example.com/jboss-helloworld
+    http://helloworld.cloudapps.example.com/jboss-helloworld
 
 The reason that it is "/jboss-helloworld" and not just "/" is because the
 helloworld application does not use a "ROOT.war". If you don't understand this,
