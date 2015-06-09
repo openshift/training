@@ -3391,11 +3391,10 @@ can easily delete only the things with this label:
 
     buildConfigs/centos7-wordpress
     builds/centos7-wordpress-1
-    deploymentConfigs/centos7-wordpress
+    imageStreams/centos
     imageStreams/centos7-wordpress
-    pods/centos7-wordpress-1
-    pods/centos7-wordpress-1-j64ck
-    replicationControllers/centos7-wordpress-1
+    deploymentConfigs/centos7-wordpress
+    replicationcontrollers/centos7-wordpress-1
     services/centos7-wordpress
 
 Notice that the things we created from wordpress-addition.json didn't
