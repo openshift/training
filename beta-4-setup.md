@@ -3049,39 +3049,21 @@ The *pre*-deployment hook is executed just *before* the new image is deployed.
 The *post*-deployment hook is executed just *after* the new image is deployed.
 
 How is this accomplished? OpenShift will actually spin-up an *extra* instance of
-your built image, execute your hook script(s), and then shut down. Neat, huh?
+your built image, execute your hook script(s), and then shut the instance down.
+Neat, huh?
 
 Since we already have our `wiring` app pointing at our forked code repository,
-let's go ahead and add a database migration file. In the `beta3` folder you will
+let's go ahead and add a database migration file. In the `beta4` folder you will
 find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
 of the `ruby-hello-world` repository that you forked. If you don't add this file
 to the right folder, the rest of the steps will fail.
 
-### Examining the Deployment Configuration
-Since we are talking about **deployments**, let's look at our
-`DeploymentConfig`s. As the `alice` user in the `wiring` project:
-
-    osc get dc
-
-You should see something like:
-
-    NAME       TRIGGERS       LATEST VERSION
-    database   ConfigChange   1
-    frontend   ImageChange    7
-
-Since we are trying to associate a Rails database migration hook with our
-application, we are ultimately talking about a deployment of the frontend. If
-you edit the frontend's `DeploymentConfig`:
-
-    osc edit dc frontend -ojson
-
-Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
-easier as it is indentation-insensitive.
-
-You should see a section that looks like the following:
+### Examining Deployment Hooks
+Take a look at the following JSON:
 
     "strategy": {
         "type": "Recreate",
+        "resource": {},
         "recreateParams": {
             "pre": {
                 "failurePolicy": "Abort",
@@ -3116,8 +3098,8 @@ You should see a section that looks like the following:
         }
     },
 
-As you can see, we have both a *pre* and *post* deployment hook defined. They
-don't actually do anything useful. But they are good examples.
+You can see that both a *pre* and *post* deployment hook are defined. They don't
+actually do anything useful. But they are good examples.
 
 The pre-deployment hook executes "/bin/true" whose exit code is always 0 --
 success. If for some reason this failed (non-zero exit), our policy would be to
@@ -3132,11 +3114,34 @@ information can be found in the documentation:
 
     http://docs.openshift.org/latest/dev_guide/deployments.html
 
-Note that these hooks are not defined by default - OpenShift did not
-automatically generate them. If you look at the original JSON for the frontend
-(`frontend-template.json`), you'll see that they are already there.
-
 ### Modifying the Hooks
+Since we are talking about **deployments**, let's look at our
+`DeploymentConfig`s. As the `alice` user in the `wiring` project:
+
+    osc get dc
+
+You should see something like:
+
+    NAME       TRIGGERS       LATEST VERSION
+    database   ConfigChange   1
+    frontend   ImageChange    7
+
+Since we are trying to associate a Rails database migration hook with our
+application, we are ultimately talking about a deployment of the frontend. If
+you edit the frontend's `DeploymentConfig` as `alice`:
+
+    osc edit dc frontend -ojson
+
+Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+easier as it is indentation-insensitive. Find the section that looks like the
+following before continuing:
+
+    "spec": {
+        "strategy": {
+            "type": "Recreate",
+            "resources": {}
+        },
+
 A Rails migration is commonly performed when we have added/modified the database
 as part of our code change. In the case of a pre- or post-deployment hook, it
 would make sense to:
@@ -3146,9 +3151,6 @@ would make sense to:
 
 Otherwise we could end up with our new code deployed but our database schema
 would not match. This could be a *Real Bad Thing (TM)*.
-
-Since you should still have the `osc edit` session up, go ahead and delete the
-section for the `post`-deployment hook.
 
 In the case of the `ruby-20` builder image, we are actually using RHEL7 and the
 Red Hat Software Collections (SCL) to get our Ruby 2.0 support. So, the command
@@ -3182,19 +3184,15 @@ looks like:
 
 This is great, but actually manipulating the database requires that we talk
 **to** the database. Talking to the database requires a user and a password.
+Smartly, our hook pods inherit the same environment variables as the main
+deployed pods, so we'll have access to the same datbase information.
 
-The pre- and post-deployment hook `env`ironments do not automatically inherit
-the environment variables normally defined in the pod template. If we want to
-make the database environment variables available during our hook, we need to
-additionally define them. The current example in our `deploymentConfig` shows
-the definition of some environment variables as part of the hooks. It looks very
-similar to the `podTemplate` section, too. In fact, you can just copy and paste
-the `env` section from the `podTemplate` section into your `pre` section.
-
-So, in the end, you will have something that looks like:
+Looking at the original hook example in the previous section, and our command
+reference above, in the end, you will have something that looks like:
 
     "strategy": {
         "type": "Recreate",
+        "resources": {},
         "recreateParams": {
             "pre": {
                 "failurePolicy": "Abort",
@@ -3206,44 +3204,14 @@ So, in the end, you will have something that looks like:
                         "ror40",
                         "cd /opt/openshift/src ; bundle exec rake db:migrate"
                     ],
-                    "env": [
-                        {
-                            "name": "ADMIN_USERNAME",
-                            "key": "ADMIN_USERNAME",
-                            "value": "adminTLY"
-                        },
-                        {
-                            "name": "ADMIN_PASSWORD",
-                            "key": "ADMIN_PASSWORD",
-                            "value": "PMPuNmFY"
-                        },
-                        {
-                            "name": "MYSQL_USER",
-                            "key": "MYSQL_USER",
-                            "value": "userFXW"
-                        },
-                        {
-                            "name": "MYSQL_PASSWORD",
-                            "key": "MYSQL_PASSWORD",
-                            "value": "24JHg7iV"
-                        },
-                        {
-                            "name": "MYSQL_DATABASE",
-                            "key": "MYSQL_DATABASE",
-                            "value": "root"
-                        }
-                    ],
                     "containerName": "ruby-helloworld"
                 }
             },
         }
     },
 
-Yours might look slightly different, because it is likely OpenShift generated
-different passwords for you. Remember, indentation isn't critical in JSON, but
-closing brackets and braces are.
-
-When you are done editing the deployment config, save and quit your editor.
+Remember, indentation isn't critical in JSON, but closing brackets and braces
+are. When you are done editing the deployment config, save and quit your editor.
 
 ### Quickly Clean Up
 When we did our previous builds and rollbacks and etc, we ended up with a lot of
@@ -3254,7 +3222,7 @@ their logs any longer.
 For now, we can clean up by doing the following as `alice`:
 
     osc get pod |\
-    grep -E "lifecycle|sti-build" |\
+    grep -E "[0-9]-build" |\
     awk {'print $1'} |\
     xargs -r osc delete pod
 
@@ -3278,51 +3246,60 @@ As `alice`:
 
     osc start-build ruby-sample-build
 
+Or go into the web console and click the "Start Build" button in the Builds
+area.
+
 ### Verify the Migration
-Once the build is complete, you should see something like the following output
+About a minute after the build completes, you should see something like the following output
 of `osc get pod` as `alice`:
 
-    POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                       HOST                                    LABELS                                                                                                                  STATUS      CREATED
-    database-1-6lvao                   10.1.0.13   ruby-helloworld-database   registry.access.redhat.com/openshift3_beta/mysql-55-rhel7                                                      ose3-master.example.com/192.168.133.2   deployment=database-1,deploymentconfig=database,name=database,template=application-template-stibuild                    Running     2 hours
-    deployment-frontend-9-hook-wlqqx               lifecycle                  172.30.17.24:5000/wiring/origin-ruby-sample:85e3393a2827ae4ce42ea6abf45a08e42d7c0d5f527f6415d35a4d4847392ed1   ose3-master.example.com/192.168.133.2   <none>                                                                                                                  Succeeded   4 minutes
-    frontend-9-cb4u9                   10.1.0.56   ruby-helloworld            172.30.17.24:5000/wiring/origin-ruby-sample:85e3393a2827ae4ce42ea6abf45a08e42d7c0d5f527f6415d35a4d4847392ed1   ose3-master.example.com/192.168.133.2   deployment=frontend-9,deploymentconfig=frontend,name=frontend,template=application-template-stibuild                    Running     3 minutes
-    ruby-sample-build-6                            sti-build                  openshift3_beta/ose-sti-builder:v0.4.3.2                                                                       ose3-master.example.com/192.168.133.2   build=ruby-sample-build-6,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded   5 minutes
+    POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                                HOST                                    LABELS                                                                                                                  STATUS       CREATED         MESSAGE
+    database-2-rj72q                   10.1.0.15                                                                                                                                                      ose3-master.example.com/192.168.133.2   deployment=database-2,deploymentconfig=database,name=database                                                           Running      About an hour   
+                                                   ruby-helloworld-database   registry.access.redhat.com/openshift3_beta/mysql-55-rhel7                                                                                                                                                                                                                               Running      About an hour   
+    deployment-frontend-7-hook-4i8ch                                                                                                                                                                  ose3-node1.example.com/192.168.133.3    <none>                                                                                                                  Succeeded    41 seconds      
+                                                   lifecycle                  172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Terminated   36 seconds      exit code 0
+    frontend-7-nnnxz                   10.1.1.24                                                                                                                                                      ose3-node1.example.com/192.168.133.3    deployment=frontend-7,deploymentconfig=frontend,name=frontend                                                           Running      29 seconds      
+                                                   ruby-helloworld            172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Running      26 seconds      
+    ruby-sample-build-7-build                                                                                                                                                                         ose3-master.example.com/192.168.133.2   build=ruby-sample-build-7,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded    2 minutes       
+                                                   sti-build                  openshift3_beta/ose-sti-builder:v0.5.2.2                                                                                                                                                                                                                                                Terminated   2 minutes       exit code 0
+
+Yes, it's ugly, thanks for reminding us.
 
 You'll see that there is a single `hook`/`lifecycle` pod -- this corresponds
 with the pod that ran our pre-deployment hook.
 
 Inspect this pod's logs:
 
-    osc logs deployment-frontend-9-hook-wlqqx -n wiring
+    osc logs deployment-frontend-7-hook-4i8ch
 
-The output likely shows:
+The output should show something like:
 
-    2015-04-29T22:17:30.928941999Z == 1 SampleTable: migrating
-    ===================================================
-    2015-04-29T22:17:30.929014043Z -- create_table(:sample_table)
-    2015-04-29T22:17:30.929021057Z    -> 0.0995s
-    2015-04-29T22:17:30.929024656Z == 1 SampleTable: migrated (0.0999s)
-    ==========================================
-    2015-04-29T22:17:30.929027404Z
+    == 1 SampleTable: migrating ===================================================
+    -- create_table(:sample_table)
+       -> 0.1075s
+    == 1 SampleTable: migrated (0.1078s) ==========================================
 
 If you have no output, you may have forgotten to actually put the migration file
 in your repo. Without that file, the migration does nothing, which produces no
 output.
 
 For giggles, you can even talk directly to the database on its service IP/port
-using the `mysql` client and the environment variables.
+using the `mysql` client and the environment variables (you would need the
+`mysql` package installed on your master, for example).
 
 As `alice`, find your database:
 
-    NAME       LABELS                                   SELECTOR        IP            PORT(S)
-    database   template=application-template-stibuild   name=database   172.30.17.5   5434/TCP
+    [alice@ose3-master beta4]$ osc get service
+    NAME       LABELS    SELECTOR        IP(S)            PORT(S)
+    database   <none>    name=database   172.30.108.133   5434/TCP
+    frontend   <none>    name=frontend   172.30.229.16    5432/TCP
 
 Then, somewhere inside your OpenShift environment, use the `mysql` client to
 connect to this service and dump the table that we created:
 
     mysql -u userJKL \
       -p 5678efgh \
-      -h 172.30.17.208 \
+      -h 172.30.108.133 \
       -P 5434 \
       -e 'show tables; describe sample_table;' \
       root
@@ -3360,27 +3337,23 @@ happens:
 This all looks good for now.
 
 ### Create a Project
-As `root`, create a new project for Wordpress for `alice`:
+As `alice`, go ahead and create a new project:
 
-    osadm new-project wordpress --display-name="Wordpress" \
-    --description='Building an arbitrary Wordpress Docker image' \
-    --admin=alice
-
-As `alice`:
-
-    osc project wordpress
+    osc new-project wordpress --display-name="Wordpress" \
+    --description='Building an arbitrary Wordpress Docker image'
 
 ### Build Wordpress
 Let's choose the Wordpress example:
 
     osc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
 
-    services/centos7-wordpress
+    imageStreams/centos
     imageStreams/centos7-wordpress
     buildConfigs/centos7-wordpress
     deploymentConfigs/centos7-wordpress
-    Service "centos7-wordpress" created at 172.30.17.91:22 to talk to pods over port 22.
+    services/centos7-wordpress
     A build was created - you can run `osc start-build centos7-wordpress` to start it.
+    Service "centos7-wordpress" created at 172.30.135.252 with port mappings 22.
 
 Then, start the build:
 
