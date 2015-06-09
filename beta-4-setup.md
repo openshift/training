@@ -4155,12 +4155,9 @@ of the `osc` command.
 
 ## Downloading The Clients
 
-Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.4.3.2/x86_64/product-downloads)
-to download the Beta3 clients. You will need to sign into Customer Portal using
+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
+to download the Beta4 clients. You will need to sign into Customer Portal using
 an account that includes the OpenShift Enterprise High Touch Beta entitlements.
-
-**Note**: Certain versions of Internet Explorer will save the Windows
-client without the .exe extension. Please rename the file to `osc.exe`.
 
 ## Log In To Your OpenShift Environment
 
