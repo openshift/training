@@ -9,7 +9,7 @@ The following is an overview of the OpenShift features covered in beta 4:
 - Improvements and enhancements in the CLI and UI
 - Expanded documentation/explanations
 
-[The specific documentation for beta 3 is here.](beta-4-setup.md)
+[The specific documentation for beta 4 is here.](beta-4-setup.md)
 
 # Old Information
 The following info is provided for historical purposes only. It is no longer
