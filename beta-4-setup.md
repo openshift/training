@@ -870,6 +870,7 @@ As `root` in the `training/beta4` folder:
     osc create -f limits.json --namespace=demo
 
 Review your limit ranges
+
     osc describe limitranges limits -n demo
     Name:           limits
     Type            Resource        Min     Max     Default
@@ -1197,12 +1198,14 @@ is provided in the router documentation:
 
 We'll see this edge termination in action shortly.
 
-### Creating a Wildcard Certificate In order to serve a valid certificate for
-secure access to applications in our cloud domain, we will need to create a key
-and wildcard certificate that the router will use by default for any routes that
-do not specify a key/cert of their own. OpenShift supplies a command for
-creating a key/cert signed by the OpenShift CA which we will use.  On the
-master, as `root`:
+### Creating a Wildcard Certificate
+In order to serve a valid certificate for secure access to applications in our
+cloud domain, we will need to create a key and wildcard certificate that the
+router will use by default for any routes that do not specify a key/cert of their
+own. OpenShift supplies a command for creating a key/cert signed by the OpenShift
+CA which we will use.
+
+On the master, as `root`:
 
     CA=/etc/openshift/master
     osadm create-server-cert --signer-cert=$CA/ca.crt \
