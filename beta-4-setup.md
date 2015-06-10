@@ -2901,6 +2901,12 @@ URLs. Copy the *Generic* one. It should look like:
 
     https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
 
+**Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
+webUI. Note the correct syntax above. This is fixed already, but did not make it
+in:
+
+    https://github.com/openshift/origin/issues/2981
+
 If you look at the `frontend-config.json` file that you created earlier,
 you'll notice the same "secret101" entries in triggers. These are
 basically passwords so that just anyone on the web can't trigger the
