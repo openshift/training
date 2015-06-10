@@ -3451,6 +3451,10 @@ Ok, we're ready:
 
         osc create -f eap6-basic-sti.json
 
+1. Create the secret for the EAP template:
+
+        osc create -f eap-app-secret.json
+
 1. Go into the web console.
 
 1. Find the project you created and click on it.
