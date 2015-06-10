@@ -3526,7 +3526,7 @@ it's because Java is confusing.
 This concludes the Beta 4 training. Look for more example applications to come!
 
 # APPENDIX - DNSMasq setup
-In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
+In this training repository is a sample [dnsmasq.conf](./beta4/dnsmasq.conf) file and a sample `hosts`
 file. If you do not have the ability to manipulate DNS in your environment, or
 just want a quick and dirty way to set up DNS, you can install dnsmasq on one of
 your nodes. Do **not** install DNSMasq on your master. OpenShift now has an
