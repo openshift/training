@@ -98,6 +98,7 @@
     - [Create a PersistentVolume](#create-a-persistentvolume)
     - [Claim the PersistentVolume](#claim-the-persistentvolume)
     - [Use the Claimed Volume](#use-the-claimed-volume)
+    - [Restart the Frontend](#restart-the-frontend)
   - [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
     - [Fork the Repository](#fork-the-repository)
     - [Update the BuildConfig](#update-the-buildconfig)
@@ -112,7 +113,7 @@
     - [Kick Off a Build](#kick-off-a-build)
     - [Watch the Build Logs](#watch-the-build-logs)
   - [Lifecycle Pre and Post Deployment Hooks](#lifecycle-pre-and-post-deployment-hooks)
-    - [Examining the Deployment Configuration](#examining-the-deployment-configuration)
+    - [Examining Deployment Hooks](#examining-deployment-hooks)
     - [Modifying the Hooks](#modifying-the-hooks)
     - [Quickly Clean Up](#quickly-clean-up)
     - [Build Again](#build-again)
@@ -126,7 +127,7 @@
     - [Create a Project](#create-a-project-1)
     - [Instantiate the Template](#instantiate-the-template)
     - [Update the BuildConfig](#update-the-buildconfig-1)
-    - [Run the EAP Build](#run-the-eap-build)
+    - [Watch the Build](#watch-the-build)
     - [Visit Your Application](#visit-your-application-1)
   - [Conclusion](#conclusion)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
@@ -3450,6 +3451,10 @@ Ok, we're ready:
 
         osc create -f eap6-basic-sti.json
 
+1. Create the secret for the EAP template:
+
+        osc create -f eap-app-secret.json
+
 1. Go into the web console.
 
 1. Find the project you created and click on it.
@@ -4167,12 +4172,9 @@ of the `osc` command.
 
 ## Downloading The Clients
 
-Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.4.3.2/x86_64/product-downloads)
-to download the Beta3 clients. You will need to sign into Customer Portal using
+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
+to download the Beta4 clients. You will need to sign into Customer Portal using
 an account that includes the OpenShift Enterprise High Touch Beta entitlements.
-
-**Note**: Certain versions of Internet Explorer will save the Windows
-client without the .exe extension. Please rename the file to `osc.exe`.
 
 ## Log In To Your OpenShift Environment
 
