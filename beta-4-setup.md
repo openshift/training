@@ -471,7 +471,12 @@ Copy the staged Ansible configuration files to `/etc/ansible`:
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
-hostnames, modify /etc/ansible/hosts accordingly. 
+hostnames, modify `/etc/ansible/hosts` accordingly. 
+
+Also, if you are using multiple NICs and will be trying to direct various
+traffic to different places, you will need to take a look at [Generic Cloud
+Install](#generic-cloud-install) to learn more about the syntax of Ansible's
+`hosts` file.
 
 ### Run the Ansible Installer
 Now we can simply run the Ansible installer:
