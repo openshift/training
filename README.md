@@ -3,7 +3,19 @@ OpenShift V3 will be introduced with a series of beta releases. This document
 provides an overview of the training materials for each beta release and what
 that release covers.
 
-## V3 Beta 3
+## V3 Beta 4
+The following is an overview of the OpenShift features covered in beta 4:
+- Features of Beta 1, Beta 2 and Beta 3
+- Improvements and enhancements in the CLI and UI
+- Expanded documentation/explanations
+
+[The specific documentation for beta 4 is here.](beta-4-setup.md)
+
+# Old Information
+The following info is provided for historical purposes only. It is no longer
+relevant, and may not even work
+
+## V3 Beta 3 (DEPRECATED)
 The following is an overview of the OpenShift features covered in beta 3:
 - Features of Beta 1 and Beta 2
 - Templates/Quickstarts from the console
@@ -15,10 +27,6 @@ The following is an overview of the OpenShift features covered in beta 3:
 - Expanded documentation/explanations
 
 [The specific documentation for beta 3 is here.](beta-3-setup.md)
-
-# Old Information
-The following info is provided for historical purposes only. It is no longer
-relevant, and may not even work
 
 ## V3 Beta 2 (DEPRECATED)
 The following is an overview of the OpenShift features covered in beta 2:
