@@ -49,7 +49,7 @@
     - [Quota Enforcement](#quota-enforcement)
   - [Services](#services)
   - [Routing](#routing)
-    - [Creating a Wildcard Certificate In order to serve a valid certificate for](#creating-a-wildcard-certificate-in-order-to-serve-a-valid-certificate-for)
+    - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
     - [Creating the Router](#creating-the-router)
     - [Router Placement By Region](#router-placement-by-region)
     - [Viewing Router Stats](#viewing-router-stats)
