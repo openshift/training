@@ -48,7 +48,7 @@ systemctl restart iptables
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 cd
-git clone https://github.com/thoraxe/training.git -b beta4-work
+git clone https://github.com/openshift/training
 cd
 rm -rf openshift-ansible
 git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
