@@ -488,7 +488,7 @@ If you looked at the Ansible hosts file, note that our master
 section.
 
 Effectively, Ansible is going to install and configure node software on all the
-nodes and master software just on `ae-master.example.com` .
+nodes and master software just on `ose3-master.example.com` .
 
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
@@ -1239,7 +1239,7 @@ interface, unlike most containers that listen only on private IPs. The router
 proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
-AE's admin command set enables you to deploy router pods automatically.
+OpenShift's admin command set enables you to deploy router pods automatically.
 Let's try to create one:
 
     osadm router
