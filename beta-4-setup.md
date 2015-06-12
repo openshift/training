@@ -3538,6 +3538,11 @@ communication.
 Replace `/etc/dnsmasq.conf` with the one from this repository, and replace
 `/etc/hosts` with the `hosts` file from this repository.
 
+Copy your current `/etc/resolv.conf` to a new file such as
+`/etc/resolv.conf.upstream`.  Ensure you *only* have an upstream
+resolver there (eg: Google DNS @ `8.8.8.8`), not the address of your
+dnsmasq server.
+
 Enable and start the dnsmasq service:
 
     systemctl enable dnsmasq; systemctl start dnsmasq
@@ -3550,9 +3555,8 @@ You will need to ensure the following, or fix the following:
 * Each of your systems has the same `/etc/hosts` file
 * Your master and nodes `/etc/resolv.conf` points to the IP address of the node
   running DNSMasq as the first nameserver
-* The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
-  to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
-* That you also open port 53 (UDP) to allow DNS queries to hit the node
+* Your dnsmasq instance uses the `resolv-file` option to point to `/etc/resolv.conf.upstream` only.
+* That you also open port 53 (TCP and UDP) to allow DNS queries to hit the node
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
 that your hosts in the `example.com` domain resolve, that any other DNS requests
