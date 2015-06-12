@@ -8,6 +8,13 @@ The following is an overview of the OpenShift features covered in beta 4:
 - Features of Beta 1, Beta 2 and Beta 3
 - Improvements and enhancements in the CLI and UI
 - Expanded documentation/explanations
+- Integrated sdn into OpenShift
+  -- No separate openshift-sdn-node and openshift-sdn-master packages or services
+     You should remove openshift-sdn-master and openshift-sdn-node packages or
+     preferably reprovision your environment when installing Beta 4
+  -- Openvswitch based implementation provided via 'openshift-sdn-ovs' plugin
+     package and configuring `networkPluginName: redhat/openshift-ovs-subnet` on
+     master and nodes. Ansible does this for you by default.
 
 [The specific documentation for beta 4 is here.](beta-4-setup.md)
 
