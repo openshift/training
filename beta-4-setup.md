@@ -487,9 +487,8 @@ If you looked at the Ansible hosts file, note that our master
 (ose3-master.example.com) was present in both the `master` and the `node`
 section.
 
-Effectively, Ansible is going to install and configure both the master and node
-software on `ose3-master.example.com`. Later, we will modify the Ansible
-configuration to add the extra nodes.
+Effectively, Ansible is going to install and configure node software on all the
+nodes and master software just on `ose3-master.example.com` .
 
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
@@ -868,7 +867,7 @@ few moments and try again.
 In order for quotas to be effective you need to also create Limit Ranges
 which set the maximum, minimum, and default allocations of memory and cpu at
 both a pod and container level. Without default values for containers projects
-with quotas will fail because the deloyer and other infrastructure pods are
+with quotas will fail because the deployer and other infrastructure pods are
 unbounded and therefore forbidden.
 
 As `root` in the `training/beta4` folder:
@@ -885,7 +884,6 @@ Review your limit ranges
     Pod             cpu             10m     500m    -
     Container       cpu             10m     500m    100m
     Container       memory          5Mi     750Mi   100Mi
-
 
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
@@ -1024,6 +1022,10 @@ On the node where the pod is running (`HOST`), look at the list of Docker
 containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
 should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
 bound to 8080 on the container, along with several other `ose-pod` containers.
+
+    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
+    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.b69b23ff_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
+    405d63115a60        openshift3_beta/ose-pod:v0.5.2.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
 
 The `openshift3_beta/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
@@ -1238,19 +1240,10 @@ proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
 OpenShift's admin command set enables you to deploy router pods automatically.
-As the `root` user, try running it with no options and you will see that
-some options are needed to create the router:
+Let's try to create one:
 
     osadm router
-    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
-    (no service). Pass --create to install.
-
-So, go ahead and do what it says:
-
-    osadm router --create
-    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
-    file path containing credentials for connecting the router to the master
-    with --credentials
+    error: router could not be created; you must specify a .kubeconfig file path containing credentials for connecting the router to the master with --credentials
 
 Just about every form of communication with OpenShift components is secured by
 SSL and uses various certificates and authentication methods. Even though we set
@@ -1516,10 +1509,12 @@ common resources existing in the current project:
     In project OpenShift 3 Demo (demo)
     
     service hello-openshift-service (172.30.197.132:27017 -> 8080)
-    
-    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
+      hello-openshift deploys docker.io/openshift/hello-openshift:v0.4.3
+        #1 deployed 3 minutes ago - 1 pod
 
-You can use 'osc get all' to see lists of each of the types described above.
+    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
+    You can use 'osc get all' to see lists of each of the types described above.
+
 `osc status` does not yet show bare pods or routes. The output will be
 more interesting when we get to builds and deployments.
 
@@ -1545,7 +1540,7 @@ to access the service via the route.
 ### Verifying the Routing
 Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
-Docker container is on the master.
+Docker container is on the master. Log in there as `root`.
 
 We can use `osc exec` to get a bash interactive shell inside the running
 router container. The following command will do that for us:
@@ -1584,6 +1579,7 @@ If you see some content that looks like:
           "Status": "saved"
         }
       }
+    }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
@@ -1659,6 +1655,7 @@ pods` and so forth should show her the same thing as `joe`:
     POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
     hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   14 minutes   
                                  hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   14 minutes   
+
 However, she cannot make changes:
 
     [alice]$ osc delete pod hello-openshift
@@ -1732,7 +1729,7 @@ the OpenShift environment that will manage images "locally". Let's take a moment
 to set that up.
 
 ### Storage for the registry
-The registry is stores docker images and metadata. If you simply deploy a pod
+The registry stores docker images and metadata. If you simply deploy a pod
 with the registry, it will use an ephemeral volume that is destroyed once the
 pod exits. Any images anyone has built or pushed into the registry would
 disappear. That would be bad.
@@ -1743,7 +1740,7 @@ mount supplied from the HA storage solution of your choice. That NFS mount
 could then be shared between multiple hosts for multiple replicas of the
 registry to make the registry HA.
 
-For now we will just show how to specify the directory and the and leave the NFS
+For now we will just show how to specify the directory and leave the NFS
 configuration as an exercise. On the master, as `root`, create the storage
 directory with:
 
@@ -1769,7 +1766,6 @@ to see what happened. This would also be a good time to try out `osc status`
 as root:
 
     osc status
-
     In project default
 
     service docker-registry (172.30.17.196:5000 -> 5000)
@@ -1788,7 +1784,7 @@ The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 OpenShift will re-create it) and that the administrative user uses by default.
 One interesting features of `osc status` is that it lists recent deployments.
-When we created the router and registry, each created one deployment.  We will
+When we created the router and registry, each created one deployment. We will
 talk more about deployments when we get into builds.
 
 Anyway, you will ultimately have a Docker registry that is being hosted by OpenShift
@@ -1797,30 +1793,28 @@ registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl -v `osc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`/v2/
+    curl -v `osc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
 
 And you should see [a 200
 response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
-mostly empty body.  Your IP addresses will almost certainly be different.
+mostly empty body. Your IP addresses will almost certainly be different.
 
-~~~~
-* About to connect() to 172.30.17.114 port 5000 (#0)
-*   Trying 172.30.17.114...
-* Connected to 172.30.17.114 (172.30.17.114) port 5000 (#0)
-> GET /v2/ HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: 172.30.17.114:5000
-> Accept: */*
->
-< HTTP/1.1 200 OK
-< Content-Length: 2
-< Content-Type: application/json; charset=utf-8
-< Docker-Distribution-Api-Version: registry/2.0
-< Date: Tue, 26 May 2015 17:18:02 GMT
-<
-* Connection #0 to host 172.30.17.114 left intact
-{}    
-~~~~
+    * About to connect() to 172.30.53.223 port 5000 (#0)
+    *   Trying 172.30.53.223...
+    * Connected to 172.30.53.223 (172.30.53.223) port 5000 (#0)
+    > GET /v2/ HTTP/1.1
+    > User-Agent: curl/7.29.0
+    > Host: 172.30.53.223:5000
+    > Accept: */*
+    >
+    < HTTP/1.1 200 OK
+    < Content-Length: 2
+    < Content-Type: application/json; charset=utf-8
+    < Docker-Distribution-Api-Version: registry/2.0
+    < Date: Thu, 11 Jun 2015 13:07:11 GMT
+    <
+    * Connection #0 to host 172.30.53.223 left intact
+    {}
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
