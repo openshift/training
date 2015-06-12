@@ -1,0 +1,70 @@
+# vim: set ft=ansible:
+---
+- name: Configure the security groups
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  sudo: no
+  vars:
+    ec2_region: "{{ lookup('env', 'EC2_REGION')
+                    | default('us-east-1', true) }}"
+  tasks:
+  - name: Create ec2 node security group
+    ec2_group:
+      region: "{{ ec2_region }}"
+      name: openshift-v3-training-node
+      description: OpenShift v3 Training Node Security Group
+      rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 10250
+        to_port: 10250
+        group_name: openshift-v3-training-master
+        group_desc: OpenShift v3 Training Master Security Group
+      - proto: udp
+        from_port: 4789
+        to_port: 4789
+        group_name: openshift-v3-training-node
+      rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  - name: Create ec2 master security group
+    ec2_group:
+      region: "{{ ec2_region }}"
+      name: openshift-v3-training-master
+      description: OpenShift v3 Training Master Security Group
+      rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 53
+        to_port: 53
+        group_name: openshift-v3-training-node
+      - proto: udp
+        from_port: 53
+        to_port: 53
+        group_name: openshift-v3-training-node
+      - proto: tcp
+        from_port: 8443
+        to_port: 8443
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 4001
+        to_port: 4001
+        group_name: openshift-v3-training-node
+      rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0

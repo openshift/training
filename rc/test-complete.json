@@ -1,0 +1,115 @@
+{
+  "kind": "Config",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "hello-service-complete-example"
+  },
+  "items": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-openshift-service"
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 27017,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Route",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-openshift-route"
+      },
+      "spec": {
+        "host": "hello-openshift.cloudapps.example.com",
+        "to": {
+          "name": "hello-openshift-service"
+        },
+        "tls": {
+          "termination": "edge"
+        }
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-openshift"
+      },
+      "spec": {
+        "strategy": {
+          "type": "Recreate",
+          "resources": {}
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "name": "hello-openshift"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "hello-openshift",
+                "image": "openshift/hello-openshift:v0.4.3",
+                "ports": [
+                  {
+                    "name": "hello-openshift-tcp-8080",
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "10m",
+                    "memory": "16Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "PullIfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                },
+                "livenessProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "timeoutSeconds": 1,
+                  "initialDelaySeconds": 10
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst",
+            "serviceAccount": "",
+            "nodeSelector": {
+              "region": "primary"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
