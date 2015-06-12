@@ -11,20 +11,25 @@ beta release these are the steps that can be followed:
 docker rm -f $(docker ps -a -q)
 docker rmi -f $(docker images -q)
 
-yum erase "*openshift*" "docker*"
+systemctl stop openshift-master openshift-node docker
+
+yum -y erase "*openshift*" "docker*"
+# So your repo cache isn't out of date
+yum clean all
 
 # Erase all knowledge of the openshift units
 systemctl reset-failed
 systemctl daemon-reload
 
 # Remove data, config, and training materials
-rm -rf /var/lib/openshift/
-rm /etc/sysconfig/*openshift*
-rm /etc/sysconfig/docker*
+rm -rf /var/lib/openshift
+rm -rf /etc/sysconfig/*openshift*
+rm -rf /etc/sysconfig/docker*
 rm -rf /etc/openshift/*
 rm -rf /root/.config/openshift
 rm -rf /root/training
 rm -rf /root/openshift-ansible
+rm -rf /var/lib/docker
 
 # In case this was still around from a previous install
 rm -rf /root/.kube/
