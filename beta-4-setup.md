@@ -903,7 +903,7 @@ Then, execute:
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
 our tool at the CA file.
 
-The `login` process created a file called `.config` in the `~/.config/openshift`
+The `login` process created a file called named `~/.config/openshift/config`
 folder. Take a look at it, and you'll see something like the following:
 
     apiVersion: v1
