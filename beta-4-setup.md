@@ -2523,7 +2523,8 @@ As `root` on the master:
 4. Enable and start NFS services:
 
         systemctl enable rpcbind nfs-server
-        systemctl start rpcbind nfs-server nfs-lock nfs-idmap
+        systemctl start rpcbind nfs-server nfs-lock 
+        systemctl start nfs-idmap
 
 Note that the volume is owned by `nfsnobody` and access by all remote users
 is "squashed" to be access by this user. This essentially disables user
