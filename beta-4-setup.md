@@ -379,9 +379,10 @@ On all of your systems, grab the following docker images:
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
-    docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
+    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/php-55-rhel7:v0.5.2.2
+    docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift:v0.5.2.2
     docker pull openshift/hello-openshift:v0.4.3
 
 **Note:** If you built your VM for a previous beta version and at some point
@@ -2483,10 +2484,51 @@ Here's the bug for reference:
 
     https://github.com/openshift/origin/issues/2947
 
+## A Simple PHP Example
+Let's take some time to build a simple PHP example. Using PHP will make it easy
+for us to demonstrate persistent storage.
+
+### Create a PHP Project
+As `alice`, create a project called `php-upload`.
+
+### Build the App
+The source code for the application is here:
+
+    https://github.com/rjleaf/openshift-php-upload-demo
+
+Using the skills you've learned so far, get this code running in your new
+project. Remember that you'll have to select the PHP builder and that you will
+need to remember to start your build.
+
+### Create a Route
+Using the skills you've learned so far, modify the Sinatra app route JSON to
+create a route for your PHP application.
+
+### Test Your App
+Once the app is built and the route is created, you should be able to access
+your application. If your route was `upload.cloudapps.example.com` and you went
+to it, you'll notice that you just get the Apache "Welcome" page. That's because
+our app doesn't have an `index.html`. You'll need to go to:
+
+    upload.cloudapps.example.com/form.html
+
+You'll see that this is a simple file uploader app. Files go into a folder
+`/uploaded` and that folder's index can be viewed.
+
+Go ahead and upload an image file, and then see if you can view it.
+
+### Kill Your Pod
+Use the `osc delete` command to kill the deployed instance of your application.
+Then try to view the file you just uploaded. Notice a problem? We had no
+persistent storage attached to the application. When the pod was killed, the
+temporary changes to the local filesystem were lost.
+
+Fortunately, OpenShift 3 provides a mechanism to attach persistent (external)
+storage to applications. This mechanism could apply to anything, not just simple
+uploaded files. Think databases and other services.
+
 ## Using Persistent Storage (Optional)
-Having a database for development is nice, but what if you actually want the
-data you store to stick around after the DB pod is redeployed? Pods are
-ephemeral, and so is their storage by default. For shared or persistent
+Pods are ephemeral, and so is their storage by default. For shared or persistent
 storage, we need a way to specify that pods should use external volumes.
 
 We can do this a number of ways. [Kubernetes provides methods for directly
@@ -2502,25 +2544,25 @@ For the purposes of this training, we will just demonstrate the master
 exporting an NFS volume for use as storage by the database. **You would
 almost certainly not want to do this in production.** If you happen
 to have another host with an NFS export handy, feel free to substitute
-that instead of the master.
+that instead of setting the following up on the master.
 
-As `root` on the master:
-
-1. Ensure that nfs-utils is installed (**on all systems**):
+Ensure that nfs-utils is installed (**on all systems**):
 
         yum install nfs-utils
 
-2. Create the directory we will export:
+Then, as `root` on the master:
+
+1. Create the directory we will export:
 
         mkdir -p /var/export/vol1
         chown nfsnobody:nfsnobody /var/export/vol1
         chmod 700 /var/export/vol1
 
-3. Edit `/etc/exports` and add the following line:
+1. Edit `/etc/exports` and add the following line:
 
         /var/export/vol1 *(rw,sync,all_squash)
 
-4. Enable and start NFS services:
+1. Enable and start NFS services:
 
         systemctl enable rpcbind nfs-server
         systemctl start rpcbind nfs-server nfs-lock 
@@ -2537,9 +2579,9 @@ Arguably, the container should operate differently. In the long run, we
 probably need to come up with best practices for use of NFS from containers.
 
 ### NFS Firewall
-We will need to open ports on the firewall on the master to enable NFS to
-communicate from the nodes. First, let's add rules for NFS to the running state
-of the firewall:
+We will need to open ports on the firewall on the master to enable the nodes to
+communicate with us over NFS. First, let's add rules for NFS to the running
+state of the firewall on the master as `root`:
 
     iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
     iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
@@ -2604,7 +2646,7 @@ NFS mount:
       "apiVersion": "v1",
       "kind": "PersistentVolume",
       "metadata": {
-        "name": "pv0001"
+        "name": "phpvolume"
       },
       "spec": {
         "capacity": {
@@ -2621,15 +2663,15 @@ NFS mount:
 Create this object as the `root` (administrative) user:
 
     # osc create -f persistent-volume.json
-    persistentvolumes/pv0001
+    persistentvolumes/phpvolume
 
 This defines a volume for OpenShift projects to use in deployments. The
 storage should correspond to how much is actually available (make each
 volume a separate filesystem if you want to enforce this limit). Take a
 look at it now:
 
-    # osc describe persistentvolumes/pv0001
-    Name:   pv0001
+    # osc describe persistentvolumes/phpvolume
+    Name:   phpvolume
     Labels: <none>
     Status: Available
     Claim:
@@ -2643,7 +2685,7 @@ that specifies what kind and how much storage is desired:
       "apiVersion": "v1",
       "kind": "PersistentVolumeClaim",
       "metadata": {
-        "name": "claim1"
+        "name": "phpclaim"
       },
       "spec": {
         "accessModes": [ "ReadWriteMany" ],
@@ -2655,7 +2697,7 @@ that specifies what kind and how much storage is desired:
       }
     }
 
-We can have `alice` do this in the `wiring` project:
+We can have `alice` do this in the project you created:
 
     $ osc create -f persistent-volume-claim.json
     persistentVolumeClaim/claim1
@@ -2668,16 +2710,16 @@ been filled ("bound" to a PersistentVolume).
 
     $ osc get pvc
     NAME      LABELS    STATUS    VOLUME
-    claim1    map[]     Bound     pv0001
+    phpclaim  map[]     Bound     phpvolume
 
 If as `root` we now go back and look at our PV, we will also see that it has
 been claimed:
 
-    # osc describe pv/pv0001
-    Name:   pv0001
+    # osc describe pv/phpvolume
+    Name:   phpvolume
     Labels: <none>
     Status: Bound
-    Claim:  wiring/claim1
+    Claim:  upload/phpclaim
 
 The PersistentVolume is now claimed and can't be claimed by any other project.
 
@@ -2688,10 +2730,13 @@ dynamically provisions a corresponding volume, and creates the API object
 to fulfill the claim.
 
 ### Use the Claimed Volume
-Finally, we need to modify our `database` DeploymentConfig to specify that
-this volume should be mounted where the database will use it. As `alice`:
+Finally, we need to modify the `DeploymentConfig` to specify that this volume
+should be mounted where the database will use it. As `alice`:
 
-    $ osc edit dc/database
+    $ osc edit dc/upload
+
+**Note:** This assumes you named your app `upload` when you created it. You may
+need to figure out what the name of your `DeploymentConfig` is.
 
 The part we will need to edit is the pod template. We will need to add two
 parts: 
@@ -2702,16 +2747,16 @@ parts:
 First, directly under the `template` `spec:` line, add this YAML (indented from the `spec:` line):
 
           volumes:
-          - name: pvol
+          - name: php-upload-volume
             persistentVolumeClaim:
-              claimName: claim1
+              claimName: phpclaim
 
 Then to have the container mount this, add this YAML after the
 `terminationMessagePath:` line:
 
             volumeMounts:
-            - mountPath: /var/lib/mysql/data
-              name: pvol
+            - mountPath: /opt/openshift/src/uploaded
+              name: php-upload-volume
 
 Remember that YAML is sensitive to indentation. The final template should
 look like this:
@@ -2723,16 +2768,16 @@ look like this:
           deploymentconfig: database
       spec:
         volumes:
-        - name: pvol
+        - name: php-upload-volume
           persistentVolumeClaim:
-            claimName: claim1
+            claimName: phpclaim
         containers:
         - capabilities: {}
     [...]
           terminationMessagePath: /dev/termination-log
           volumeMounts:
-          - mountPath: /var/lib/mysql/data
-            name: pvol
+          - mountPath: /opt/openshift/src/uploaded
+            name: php-upload-volume
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         serviceAccount: ""
@@ -2741,39 +2786,15 @@ Save and exit. This change to configuration will trigger a new deployment
 of the database, and this time, it will be using the NFS volume we exported
 from master.
 
-### Restart the Frontend
-Any values or data we had inserted previously just got blown away. The
-`deploymentConfig` update caused a new MySQL pod to be launched. Since this is
-the first time the pod was launched with persistent data, any previous data was
-lost.
+### Revisit and Reupload
+Go back to your application and upload a file. Did it work?
 
-Additionally, the Frontend pod will perform a database initialization when it
-starts up. Since we haven't restarted the frontend, our database is actually
-bare. If you try to use the app now, you'll get "Internal Server Error".
+On your master as `root`, check out the contents of `/var/export/vol1`. Do you
+see your file?
 
-Go ahead and kill the Frontend pod like we did previously to cause it to
-restart:
-
-     osc delete pod `osc get pod | grep front | awk {'print $1'}`
-
-Once the new pod has started, go ahead and visit the web page. Add a few values
-via the application. Then delete the database pod and wait for it to come back.
-You should be able to retrieve the same values you entered.
-
-Remember, to quickly delete the Database pod you can do the following:
-
-    osc delete pod/`osc get pod | grep -e "database-[0-9]" | awk {'print $1'}`
-
-**Note:** The Ruby application doesn't bother trying to reconnect to the
-database once it goes away and comes back, so you will need to kill the
-front-end pod as well. We'll try to either update the Ruby app with some
-intelligence or write a different example.
-
-For further confirmation that your database pod is in fact using the NFS
-volume, simply check what is stored there on `master`:
-
-    # ls /var/export/vol1
-    database-3-n1i2t.pid  ibdata1  ib_logfile0  ib_logfile1  mysql  performance_schema  root
+### Kill the Pod
+Go ahead and kill the pod again, and wait for it to come back up. Now try to
+view your file again. Did it work? Great!
 
 Further information on use of PersistentVolumes is available in the
 [OpenShift Origin documentation](http://docs.openshift.org/latest/dev_guide/volumes.html).
