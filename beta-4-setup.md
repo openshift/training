@@ -2763,9 +2763,10 @@ Remember, to quickly delete the Database pod you can do the following:
 
     osc delete pod/`osc get pod | grep -e "database-[0-9]" | awk {'print $1'}`
 
-**Note:** This doesn't seem to work right now, but we're not sure why. I think
-it has to do with Ruby's persistent connection to the MySQL service not going
-away gracefully, or something. Killing the frontend again will definitely work.
+**Note:** The Ruby application doesn't bother trying to reconnect to the
+database once it goes away and comes back, so you will need to kill the
+front-end pod as well. We'll try to either update the Ruby app with some
+intelligence or write a different example.
 
 For further confirmation that your database pod is in fact using the NFS
 volume, simply check what is stored there on `master`:
