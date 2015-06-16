@@ -62,7 +62,7 @@ two quotas to the same namespace.
 At this point we have created our "demo" project, so let's apply the quota above
 to it. Still in a `root` terminal in the `training/beta4` folder:
 
-    oc create -f quota.json --namespace=demo
+    oc create -f quota.json -n demo
 
 If you want to see that it was created:
 
@@ -98,7 +98,7 @@ both a pod and container level. Without default values for containers projects
 with quotas will fail because the deployer and other infrastructure pods are
 unbounded and therefore forbidden.
 
-As `root` in the `training/beta4` folder:
+As `root` in the `training/content` folder:
 
     oc create -f limits.json --namespace=demo
 
