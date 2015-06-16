@@ -15,6 +15,27 @@ osc get $resource; echo -e "\n\n"; done
 
 osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
+#ga/rc
+systemctl start docker
+yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
+docker images | grep 0.5.2 | awk {'print $3'} | xargs docker rmi -f
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-image-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router registry.access.redhat.com/openshift3/ose-haproxy-router
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer registry.access.redhat.com/openshift3/ose-deployer
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder registry.access.redhat.com/openshift3/ose-sti-builder
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-image-builder registry.access.redhat.com/openshift3/ose-sti-image-builder
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-builder registry.access.redhat.com/openshift3/ose-docker-builder
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod registry.access.redhat.com/openshift3/ose-pod 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry registry.access.redhat.com/openshift3/ose-docker-registry
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
+
 #beta4
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 

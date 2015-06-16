@@ -1,23 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [Architecture and Requirements](#architecture-and-requirements)
-  - [Architecture](#architecture)
-  - [Requirements](#requirements)
-- [Preparing the Environment](#preparing-the-environment)
-  - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
-  - [DNS](#dns)
-  - [Assumptions](#assumptions)
-  - [Git](#git)
-  - [Preparing Each VM](#preparing-each-vm)
-  - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
-  - [Grab Docker Images (optional, recommended)](#grab-docker-images-optional-recommended)
-  - [Clone the Training Repository](#clone-the-training-repository)
-  - [Add Development Users](#add-development-users)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 # Architecture and Requirements
 ## Architecture
 The examples in this documentation assume the following architecture. There are
@@ -217,24 +197,24 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-image-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
     docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
-    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/php-55-rhel7:v0.5.2.2
-    docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift:v0.5.2.2
-    docker pull openshift/hello-openshift:v0.4.3
+    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
+    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
+    docker pull registry.access.redhat.com/openshift3_beta/php-55-rhel7
+    docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
+    docker pull openshift/hello-openshift
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
