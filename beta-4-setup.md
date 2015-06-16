@@ -2671,7 +2671,7 @@ To find the webhook URL, you can visit the web console, click into the
 project, click on *Browse* and then on *Builds*. You'll see two webhook
 URLs. Copy the *Generic* one. It should look like:
 
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
 
 **Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
 webUI. Note the correct syntax above. This is fixed already, but did not make it
@@ -2696,7 +2696,7 @@ You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
 
 And now `get build` again:
 
@@ -3109,7 +3109,7 @@ Our old friend `curl` is back:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
 
 ### Watch the Build Logs
 Using the skills you have learned, watch the build logs for this build. If you
