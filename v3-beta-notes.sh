@@ -45,6 +45,45 @@ docker tag ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7 registry.acce
 docker tag ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4 registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4
 docker pull openshift/hello-openshift
 
+cd
+git clone https://github.com/openshift/training.git
+cd ~/training/content
+/bin/cp ~/training/content/dnsmasq.conf /etc/
+restorecon -rv /etc/dnsmasq.conf
+sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
+systemctl start dnsmasq
+sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
+systemctl restart iptables
+
+sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
+cd
+git clone https://github.com/openshift/training
+cd
+rm -rf openshift-ansible
+git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
+cd ~/openshift-ansible
+/bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
+ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+useradd joe
+useradd alice
+touch /etc/openshift/openshift-passwd
+htpasswd -b /etc/openshift/openshift-passwd joe redhat
+htpasswd -b /etc/openshift/openshift-passwd alice redhat
+CA=/etc/openshift/master
+osadm create-server-cert --signer-cert=$CA/ca.crt \
+      --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
+      --hostnames='*.cloudapps.example.com' \
+      --cert=cloudapps.crt --key=cloudapps.key
+cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
+osadm router --default-cert=cloudapps.router.pem \
+--credentials=/etc/openshift/master/openshift-router.kubeconfig \
+--selector='region=infra' \
+--images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+mkdir -p /mnt/registry
+osadm registry --create \
+--credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+--images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
+--selector="region=infra" --mount-host=/mnt/registry
 #beta4
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
