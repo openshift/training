@@ -56,7 +56,7 @@ default configuration for CLI operations currently is to be the `master-admin`
 user, which is allowed to create projects. We can use the "admin"
 OpenShift command to create a project, and assign an administrative user to it:
 
-    osadm new-project demo --display-name="OpenShift 3 Demo" \
+    oadm new-project demo --display-name="OpenShift 3 Demo" \
     --description="This is the first demo project with OpenShift v3" \
     --admin=joe
 
