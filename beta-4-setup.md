@@ -2573,17 +2573,17 @@ Remember that a `BuildConfig`(uration) tells OpenShift how to do a build.
 Still as the `alice` user, take a look at the current `BuildConfig` for our
 frontend:
 
-    osc get buildconfig ruby-sample-build -o yaml
+    osc get buildconfig ruby-example -o yaml
     apiVersion: v1beta1
     kind: BuildConfig
     metadata:
       creationTimestamp: 2015-03-10T15:40:26-04:00
       labels:
         template: application-template-stibuild
-      name: ruby-sample-build
+      name: ruby-example
       namespace: wiring
       resourceVersion: "831"
-      selfLink: /osapi/v1beta1/buildConfigs/ruby-sample-build?namespace=wiring
+      selfLink: /osapi/v1beta1/buildConfigs/ruby-example?namespace=wiring
       uid: 4cff2e5e-c75d-11e4-806e-525400b33d1d
     parameters:
       output:
@@ -2621,14 +2621,14 @@ As you can see, the current configuration points at the
 ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
 again:
 
-    osc edit bc ruby-sample-build
+    osc edit bc ruby-example
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
 to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
-If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
+If you again run `osc get buildconfig ruby-example -o yaml` you should see
 that the `uri` has been updated.
 
 ### Change the Code
@@ -2671,7 +2671,7 @@ To find the webhook URL, you can visit the web console, click into the
 project, click on *Browse* and then on *Builds*. You'll see two webhook
 URLs. Copy the *Generic* one. It should look like:
 
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-example/webhooks/secret101/generic
 
 **Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
 webUI. Note the correct syntax above. This is fixed already, but did not make it
@@ -2696,14 +2696,14 @@ You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-example/webhooks/secret101/generic
 
 And now `get build` again:
 
     osc get build
     NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   Source    Complete   ruby-sample-build-1
-    ruby-sample-build-2   Source    Pending    ruby-sample-build-2
+    ruby-example-1   Source    Complete   ruby-example-1
+    ruby-example-2   Source    Pending    ruby-example-2
 
 You can see that this could have been part of some CI/CD workflow that
 automatically called our webhook once the code was tested.
@@ -3109,7 +3109,7 @@ Our old friend `curl` is back:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-example/webhooks/secret101/generic
 
 ### Watch the Build Logs
 Using the skills you have learned, watch the build logs for this build. If you
@@ -3343,7 +3343,7 @@ deployment happens.
 
 As `alice`:
 
-    osc start-build ruby-sample-build
+    osc start-build ruby-example
 
 Or go into the web console and click the "Start Build" button in the Builds
 area.
@@ -3359,7 +3359,7 @@ of `osc get pod` as `alice`:
                                                    lifecycle                  172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Terminated   36 seconds      exit code 0
     frontend-7-nnnxz                   10.1.1.24                                                                                                                                                      ose3-node1.example.com/192.168.133.3    deployment=frontend-7,deploymentconfig=frontend,name=frontend                                                           Running      29 seconds      
                                                    ruby-helloworld            172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Running      26 seconds      
-    ruby-sample-build-7-build                                                                                                                                                                         ose3-master.example.com/192.168.133.2   build=ruby-sample-build-7,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded    2 minutes       
+    ruby-example-7-build                                                                                                                                                                         ose3-master.example.com/192.168.133.2   build=ruby-example-7,buildconfig=ruby-example,name=ruby-example,template=application-template-stibuild   Succeeded    2 minutes       
                                                    sti-build                  openshift3_beta/ose-sti-builder:v0.5.2.2                                                                                                                                                                                                                                                Terminated   2 minutes       exit code 0
 
 Yes, it's ugly, thanks for reminding us.
