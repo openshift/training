@@ -2549,7 +2549,7 @@ The output will look something like:
     "DATABASE_PORT_3306_TCP_ADDR=172.30.249.174",
 
 ### Revisit the Webpage
-Go ahead and revisit `http://wiring.cloudapps.example.com` (or your appropriate
+Go ahead and revisit `http://ruby-hello-world.wiring.cloudapps.example.com` (or your appropriate
 FQDN) in your browser, and you should see that the application is now fully
 functional!
 
@@ -2714,7 +2714,7 @@ You can also check the web interface (logged in as `alice`) and see
 that the build is running. Once it is complete, point your web browser
 at the application:
 
-    http://wiring.cloudapps.example.com/
+    http://ruby-hello-world.wiring.cloudapps.example.com/
 
 You should see your big fat typo.
 
