@@ -722,7 +722,7 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
     identityProviders:
     - challenge: true
       login: true
-      name: apache_auth
+      name: htpasswd_auth
       provider:
         apiVersion: v1
         file: /etc/openshift/openshift-passwd
@@ -2333,6 +2333,82 @@ argument's sake, this could have just as easily been brand new vanilla code.
 However, to make things faster, we'll start with an application that already is
 looking for a DB, but won't fail spectacularly if one isn't found.
 
+The frontend application comes from the following code repository:
+
+    https://github.com/openshift/ruby-hello-world
+
+We want to use the beta branch. We can use the `new-app` command to help get
+this started for us. As `alice` go ahead and do the following:
+
+    osc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world#beta4
+
+You should see something like the following:
+
+    imageStreams/ruby-hello-world
+    buildConfigs/ruby-hello-world
+    deploymentConfigs/ruby-hello-world
+    services/ruby-hello-world
+    A build was created - you can run `osc start-build ruby-hello-world` to
+    start it.
+    Service "ruby-hello-world" created at 172.30.39.167 with port mappings 8080.
+
+**Note:** There is a bug in the `new-app` subcommand:
+
+    https://bugzilla.redhat.com/show_bug.cgi?id=1232003
+
+You will need to manually update the BuildConfig to add the `openshift`
+namespace:
+
+    osc edit bc/ruby-hello-world
+
+Make your `strategy` section look like the following:
+
+      strategy:
+        sourceStrategy:
+          from:
+            kind: ImageStreamTag
+            name: ruby:latest
+            namespace: openshift
+
+Save and exit the editor.
+
+Since we know that we want to talk to a database eventually, let's take a moment
+to add the environment variables for it. Conveniently, there is an `env`
+subcommand to `osc`. As `alice`, we can use it like so:
+
+    osc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb
+
+If you want to double-check, you can verify using the following:
+
+    osc env dc/ruby-hello-world --list
+    # deploymentconfigs ruby-hello-world, container ruby-hello-world
+    MYSQL_USER=root
+    MYSQL_PASSWORD=redhat
+    MYSQL_DATABASE=mydb
+
+Go ahead and kick off your build from the web console. Take a look at your
+deployment there, too. You should see the environment variables as well.
+
+### Expose the Service
+The `osc` command has a nifty subcommand called `expose` that will take a
+service and automatically create a route for us. It will do this in the defined
+cloud domain and in the current project as an additional "namespace" of sorts.
+For example, the steps above resulted in a service called "ruby-hello-world". We
+can use `expose` against it:
+
+    osc expose service ruby-hello-world
+
+After a few moments:
+
+    osc get route
+    NAME               HOST/PORT                                       PATH      SERVICE            LABELS
+    ruby-hello-world   ruby-hello-world.wiring.cloudapps.example.com             ruby-hello-world 
+
+Now you should be able to access your application with your browser! Go ahead
+and do that now. You'll notice that the frontend is happy to run without a
+database, but is not all that exciting. We'll fix that in a moment.
+
+### Create the Database
 Go ahead and process the frontend template and then examine it:
 
     osc process -f frontend-template.json > frontend-config.json
