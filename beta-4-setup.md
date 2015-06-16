@@ -2775,8 +2775,8 @@ project. Remember that you'll have to select the PHP builder and that you will
 need to remember to start your build.
 
 ### Create a Route
-Using the skills you've learned so far, modify the Sinatra app route JSON to
-create a route for your PHP application.
+Using the skills you've learned so far, use the `expose` subcommand to create a
+route for your app.
 
 ### Test Your App
 Once the app is built and the route is created, you should be able to access
@@ -3074,6 +3074,63 @@ Further information on use of PersistentVolumes is available in the
 [OpenShift Origin documentation](http://docs.openshift.org/latest/dev_guide/volumes.html).
 This is a very new feature, so it is very manual for now, but look for more tooling
 taking advantage of PersistentVolumes to be created in the future.
+
+## More Exec Examples
+The whole time that we have been working with OpenShift 3 so far we have not
+been dealing with SSH and our containers. In fact, the builder images provided
+by Red Hat do not have an SSH daemon installed and port 22 is never exposed by
+any services.
+
+That does not mean, though, that you cannot access the inside of your
+application containers. There is an `exec` subcommand that lets you execute
+arbitrary commands inside of your containers. We've previously used `osc exec`
+to get a session inside our router, but that was as the cluster administrator.
+Regular users can `exec`, too!
+
+### Introduction to exec
+Still in your PHP project, take a look at the help for `exec`:
+
+    osc exec -h
+    Execute a command in a container.
+    
+    Usage: 
+      osc exec -p POD -c CONTAINER -- COMMAND [args...] [options]
+    
+    Examples:
+      // Get output from running 'date' in ruby-container from pod 123456-7890
+      $ osc exec -p 123456-7890 -c ruby-container date
+    
+      // Switch to raw terminal mode, sends stdin to 'bash' in ruby-container from pod 123456-780 and sends stdout/stderr from 'bash' back to the client
+      $ osc exec -p 123456-7890 -c ruby-container -i -t -- bash -il
+    
+    Options:
+      -c, --container='': Container name
+      -p, --pod='': Pod name
+      -i, --stdin=false: Pass stdin to the container
+      -t, --tty=false: Stdin is a TTY
+    
+    Use "osc --help" for a list of all commands available in osc.
+    Use "osc options" for a list of global command-line options (applies to all commands).
+
+To start, let's try to look at the filesystem of our PHP application. Find the
+ID if your pod and then try something like the following:
+
+    osc exec -p upload-2-8no16 -- ls -l /opt/openshift/src
+    total 8
+    -rw-r--r--. 1 default default 365 Jun 15 09:18 form.html
+    -rw-r--r--. 1 default default 700 Jun 15 09:18 upload.php
+    drwx------. 2   65534   65534  33 Jun 15 09:55 uploaded
+
+We can create a file and put some content in it, too:
+
+    osc exec -p upload-2-8no16 -- /bin/bash -c 'echo "foo" > /opt/openshift/src/bar'
+
+You should be able to visit your PHP application and see the content of the file
+"bar".
+
+Lastly, you can execute an interactive bash session inside the container, too.
+
+    osc exec -it -p upload-2-8no16 -- /bin/bash -il
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
