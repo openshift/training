@@ -197,22 +197,22 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-image-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
-    docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
-    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3/ose-deployer
+    docker pull registry.access.redhat.com/openshift3/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift3/ose-sti-image-builder
+    docker pull registry.access.redhat.com/openshift3/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3/ose-pod
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
+    docker pull registry.access.redhat.com/openshift3/sti-basicauthurl:latest
+    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/php-55-rhel7
+    docker pull registry.access.redhat.com/openshift3/ruby-20-rhel7
+    docker pull registry.access.redhat.com/openshift3/mysql-55-rhel7
+    docker pull registry.access.redhat.com/openshift3/php-55-rhel7
     docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift
 

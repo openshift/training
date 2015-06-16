@@ -18,7 +18,7 @@ osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 #ga/rc
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
-docker images | grep 0.5.2 | awk {'print $3'} | xargs docker rmi -f
+docker images -q | xargs docker rmi -f
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder
@@ -27,6 +27,10 @@ docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-b
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry
 docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover
+docker pull ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7
+docker pull ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7
+docker pull ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7
+docker pull ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router registry.access.redhat.com/openshift3/ose-haproxy-router
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer registry.access.redhat.com/openshift3/ose-deployer
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder registry.access.redhat.com/openshift3/ose-sti-builder
@@ -35,6 +39,11 @@ docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-bu
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod registry.access.redhat.com/openshift3/ose-pod 
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry registry.access.redhat.com/openshift3/ose-docker-registry
 docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
+docker tag ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7 registry.access.redhat.com/openshift/ruby-20-rhel7
+docker tag ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7 registry.access.redhat.com/openshift/mysql-55-rhel7
+docker tag ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7 registry.access.redhat.com/openshift/php-55-rhel7
+docker tag ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4 registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4
+docker pull openshift/hello-openshift
 
 #beta4
 systemctl start docker
