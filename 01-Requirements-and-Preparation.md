@@ -216,7 +216,7 @@ used during the various labs:
     docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift
 
-**Note:** If you built your VM for a previous beta version and at some point
+**Note:** If you built your VM for a previous (beta) version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
 Docker after removing `/etc/sysconfig/docker`. The options in the config file
 changed and RPM will not overwrite your existing file if you just do a "yum
@@ -238,8 +238,8 @@ cloned.
 
 ## Add Development Users
 In the "real world" your developers would likely be using the OpenShift tools on
-their own machines (`osc` and the web console). For the Beta training, we
-will create user accounts for two non-privileged users of OpenShift, *joe* and
+their own machines (`osc` and the web console). For these examples, we will
+create user accounts for two non-privileged users of OpenShift, *joe* and
 *alice*, on the master. This is done for convenience and because we'll be using
 `htpasswd` for authentication.
 
@@ -248,3 +248,23 @@ will create user accounts for two non-privileged users of OpenShift, *joe* and
 
 We will come back to these users later. Remember to do this on the `master`
 system, and not the nodes.
+
+## Useful OpenShift Logs
+RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
+`/var/log/messages` any longer. You will need to use `journalctl`.
+
+Since we are running all of the components in higher loglevels, it is suggested
+that you use your terminal emulator to set up windows for each process. If you
+are familiar with the Ruby Gem, `tmuxinator`, there is a config file in the
+training repository. Otherwise, you should run each of the following in its own
+window:
+
+    journalctl -f -u openshift-master
+    journalctl -f -u openshift-node
+
+**Note:** You will want to do this on the other nodes, but you won't need the
+"-master" service. You may also wish to watch the Docker logs, too.
+
+**Note:** There is an appendix on configuring [Log
+Aggregation](#appendix---infrastructure-log-aggregation)
+
