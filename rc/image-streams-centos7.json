@@ -1,0 +1,177 @@
+{
+  "apiVersion": "v1beta3",
+  "kind": "ImageStreamList",
+  "items": [
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "ruby"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/ruby-20-centos7",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description": "Build and run Ruby 2.0 applications",
+              "iconClass": "icon-ruby",
+              "tags": "builder,ruby",
+              "version": "2.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "nodejs"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/nodejs-010-centos7",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description" : "Build and run NodeJS 0.10 applications",
+              "iconClass" : "icon-nodejs",
+              "tags" : "builder,nodejs",
+              "version" : "0.10"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "perl"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/perl-516-centos7",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description": "Build and run Perl 5.16 applications",
+              "iconClass": "icon-perl",
+              "tags": "builder,perl",
+              "version": "5.16"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "php"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/php-55-centos7",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description": "Build and run PHP 5.5 applications",
+              "iconClass": "icon-php",
+              "tags": "builder,php",
+              "version": "5.5"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "python"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/python-33-centos7",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description": "Build and run Python 3.3 applications",
+              "iconClass": "icon-python",
+              "tags": "builder,python",
+              "version": "3.3"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "wildfly"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/wildfly-8-centos",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description" : "Build and run Java applications on Wildfly 8",
+              "iconClass" : "icon-wildfly",
+              "tags" : "builder,wildfly,java",
+              "version" : "8"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "mysql"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/mysql-55-centos7",
+        "tags": [
+          {
+            "name":"latest"
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "postgresql"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/postgresql-92-centos7",
+        "tags": [
+          {
+            "name":"latest"
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1beta3",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "mongodb"
+      },
+      "spec": {
+        "dockerImageRepository": "openshift/mongodb-24-centos7",
+        "tags": [
+          {
+            "name":"latest"
+          }
+        ]
+      }
+    }
+  ]
+}

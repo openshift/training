@@ -1,0 +1,27 @@
+#cloud-config
+packages:
+- xfsprogs
+- docker-storage-setup
+
+mounts:
+- [ xvdb ]
+
+write_files:
+- content: |
+    DEVS=/dev/xvdb
+    VG=docker_vg
+  path: /etc/sysconfig/docker-storage-setup
+  owner: root:root
+  permissions: '0644'
+
+runcmd:
+- systemctl daemon-reload
+- systemctl enable lvm2-lvmetad.service docker-storage-setup.service
+
+users:
+- default
+
+system_info:
+  default_user:
+    name: openshift
+

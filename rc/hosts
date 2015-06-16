@@ -1,0 +1,5 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6                           
+192.168.133.2 ose3-master.example.com ose3-master                                                        
+192.168.133.3 ose3-node1.example.com ose3-node1                                                          
+192.168.133.4 ose3-node2.example.com ose3-node2
