@@ -3075,7 +3075,7 @@ Further information on use of PersistentVolumes is available in the
 This is a very new feature, so it is very manual for now, but look for more tooling
 taking advantage of PersistentVolumes to be created in the future.
 
-## "SSH" Into Applications - osc exec
+## More Exec Examples
 The whole time that we have been working with OpenShift 3 so far we have not
 been dealing with SSH and our containers. In fact, the builder images provided
 by Red Hat do not have an SSH daemon installed and port 22 is never exposed by
@@ -3083,7 +3083,9 @@ any services.
 
 That does not mean, though, that you cannot access the inside of your
 application containers. There is an `exec` subcommand that lets you execute
-arbitrary commands inside of your containers.
+arbitrary commands inside of your containers. We've previously used `osc exec`
+to get a session inside our router, but that was as the cluster administrator.
+Regular users can `exec`, too!
 
 ### Introduction to exec
 Still in your PHP project, take a look at the help for `exec`:
@@ -3119,7 +3121,16 @@ ID if your pod and then try something like the following:
     -rw-r--r--. 1 default default 700 Jun 15 09:18 upload.php
     drwx------. 2   65534   65534  33 Jun 15 09:55 uploaded
 
+We can create a file and put some content in it, too:
 
+    osc exec -p upload-2-8no16 -- /bin/bash -c 'echo "foo" > /opt/openshift/src/bar'
+
+You should be able to visit your PHP application and see the content of the file
+"bar".
+
+Lastly, you can execute an interactive bash session inside the container, too.
+
+    osc exec -it -p upload-2-8no16 -- /bin/bash -il
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
