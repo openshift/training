@@ -357,7 +357,7 @@ images and containers on the host.
     rm -rf /var/lib/docker/*
     systemctl start docker
 
-### Grab Docker Images (Optional, Recommended)
+### Grab Docker Images (optional, recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
 environment happen **faster**, you'll need to first install Docker if you didn't
 install it when (optionally) configuring the Docker storage previously.
@@ -497,6 +497,15 @@ section.
 
 Effectively, Ansible is going to install and configure node software on all the
 nodes and master software just on `ose3-master.example.com` .
+
+### Add Cloud Domain
+If you want default routes (we'll talk about these later) to automatically get
+the right domain (the one you configured earlier with your wildcard DNS), then
+you should edit `/etc/sysconfig/openshift-master` and add the following:
+
+    OPENSHIFT_ROUTE_SUBDOMAIN=cloudapps.example.com
+
+Or modify it appropriately for your domain.
 
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
@@ -2352,6 +2361,20 @@ You should see something like the following:
     start it.
     Service "ruby-hello-world" created at 172.30.39.167 with port mappings 8080.
 
+The syntax of the command tells us:
+
+* I want to create a new application
+* using the ruby builder image in the openshift namespace
+* based off of the code in a git repository
+* and using the "beta4" branch
+
+**Note:** The beta4 state of the `new-app` subcommand doesn't support the
+`--selector` argument, so your frontend pods will potentially land in the
+"infrastructure" region. You can edit the DeploymentConfig to specify a
+nodeSelector (look at the sample JSON earlier in the training material) but it's
+not important. All the other JSON examples included nodeSelectors so you didn't
+need to worry about it previously.
+
 **Note:** There is a bug in the `new-app` subcommand:
 
     https://bugzilla.redhat.com/show_bug.cgi?id=1232003
@@ -2404,83 +2427,51 @@ After a few moments:
     NAME               HOST/PORT                                       PATH      SERVICE            LABELS
     ruby-hello-world   ruby-hello-world.wiring.cloudapps.example.com             ruby-hello-world 
 
+Take a look at that hostname. It is
+
+* the service name
+* the namespace name
+* the route domain
+
+all concatenated together. In the future the `expose` command will allow a
+hostname to be specified directly.
+
 Now you should be able to access your application with your browser! Go ahead
 and do that now. You'll notice that the frontend is happy to run without a
 database, but is not all that exciting. We'll fix that in a moment.
 
-### Create the Database
-Go ahead and process the frontend template and then examine it:
+### Add the Database Template
+Earlier we added a template to the `openshift` namespace to make it available
+for all users. Now we'll demonstrate adding a template to our own project. In
+the `beta4` folder there is a `mysql-template.json` file. As `alice`, go ahead
+and add it to your project:
 
-    osc process -f frontend-template.json > frontend-config.json
+    osc create -f mysql-template.json
 
-**Note:** If you are using a different domain, you will need to edit the route
-before running `create`.
+You'll see:
 
-In the config, you will see that a DB password and other parameters have been
-generated (remember the template and parameter info from earlier?).
+    templates/mysql-ephemeral
 
-Go ahead and create the configuration:
+### Create the Database From the Web Console
+Go to the web console and make sure you are logged in as `joe` and using the
+`wiring` project. You should see your front-end already there. Click the
+"Create..." button and then the "Browse all templates..." button. You should see
+the `mysql-ephemeral` template. Click it and then click "Select template".
 
-    osc create -f frontend-config.json
+You will need to edit the parameters of this template, because the defaults will
+not work for us. Change the `DATABASE_SERVICE_NAME` to be "database", because
+that is what service the frontend expects to connect to. Make sure that the
+MySQL user, password and database match whatever values you specified in the
+previous labs.
 
-As soon as you create this, all of the resources will be created *and* a build
-will be started for you. Let's go ahead and wait until this build completes
-before continuing.
-
-### Visit Your Application
-Once the new build is finished and the frontend service's endpoint has been
-updated, visit your application. The frontend configuration contained a route
-for `wiring.cloudapps.example.com`. You should see a note that the database is
-missing. So, let's create it!
-
-### Create the Database Config
-Remember, `osc process` will examine a template, generate any desired
-parameters, and spit out a JSON `config`uration that can be `create`d with
-`osc`.
-
-Processing the template for the db will generate some values for the DB root
-user and password, but they don't actually match what was previously generated
-when we set up the front-end. In the "quickstart" example, we generated these
-values and used them for both the frontend and the backend at the exact same
-time. Since we are processing them separately now, some manual intervention is
-required.
-
-This template uses the Red Hat MySQL Docker container, which knows to take some
-env-vars when it fires up (eg: the MySQL user / password). More information on
-the upstream of this container can be found here:
-
-    https://github.com/openshift/mysql
-
-Take a look at the frontend configuration (`frontend-config.json`) and find the
-value for `MYSQL_USER`. For example, `userMXG`. Then insert these values into
-the template using the `process` command and create the result:
-
-    grep -A 1 MYSQL_* frontend-config.json
-                                                "name": "MYSQL_USER",
-                                                "key": "MYSQL_USER",
-                                                "value": "userMXG"
-    --
-                                                "name": "MYSQL_PASSWORD",
-                                                "key": "MYSQL_PASSWORD",
-                                                "value": "slDrggRv"
-    --
-                                                "name": "MYSQL_DATABASE",
-                                                "key": "MYSQL_DATABASE",
-                                                "value": "root"
-
-    osc process -f db-template.json \
-        -v MYSQL_USER=userMXG,MYSQL_PASSWORD=slDrggRv,MYSQL_DATABASE=root \
-        | osc create -f -
-
-`osc process` can be passed values for parameters, which will override
-auto-generation.
+Click the "Create" button when you are ready.
 
 It may take a little while for the MySQL container to download (if you didn't
 pre-fetch it). It's a good idea to verify that the database is running before
 continuing.  If you don't happen to have a MySQL client installed you can still
 verify MySQL is running with curl:
 
-    curl `osc get services | grep database | awk '{print $4}'`:5434
+    curl `osc get services | grep database | awk '{print $4}'`:3306
 
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
@@ -2507,7 +2498,7 @@ The replication controller is configured to ensure that we always have the
 desired number of replicas (instances) running. We can look at how many that
 should be:
 
-    osc describe rc frontend-1
+    osc describe rc ruby-hello-world-1
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
@@ -2516,56 +2507,254 @@ longer see the database error!
 
 As `alice`, go ahead and find your frontend pod, and then kill it:
 
-    osc delete pod `osc get pod | grep front | awk '{print $1}'`
+    osc delete pod `osc get pod | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}'`
 
 You'll see something like:
 
-    pods/frontend-1-b6bgy
+    pods/ruby-hello-world-1-wcxiw
 
 That was the generated name of the pod when the replication controller stood it
-up the first time. You also see some deployment hook pods. We will talk about
-deployment hooks a bit later.
+up the first time.
 
 After a few moments, we can look at the list of pods again:
 
-    osc get pod | grep front
+    osc get pod | grep world
 
 And we should see a different name for the pod this time:
 
-    frontend-1-0fs20
+    ruby-hello-world-1-4ikbl
 
 This shows that, underneath the covers, the RC restarted our pod. Since it was
 restarted, it should have a value for the `DATABASE_SERVICE_HOST` environment
 variable. Go to the node where the pod is running, and find the Docker container
 id as `root`:
 
-    docker inspect `docker ps | grep wiring | grep front | grep run | awk \
+    docker inspect `docker ps | grep hello-world | grep run | awk \
     '{print $1}'` | grep DATABASE
 
 The output will look something like:
 
-    "MYSQL_DATABASE=root",
-    "DATABASE_PORT_5434_TCP_ADDR=172.30.17.106",
-    "DATABASE_PORT=tcp://172.30.17.106:5434",
-    "DATABASE_PORT_5434_TCP=tcp://172.30.17.106:5434",
-    "DATABASE_PORT_5434_TCP_PROTO=tcp",
-    "DATABASE_SERVICE_HOST=172.30.17.106",
-    "DATABASE_SERVICE_PORT=5434",
-    "DATABASE_PORT_5434_TCP_PORT=5434",
+    "MYSQL_DATABASE=mydb",
+    "DATABASE_SERVICE_PORT_MYSQL=3306",
+    "DATABASE_SERVICE_PORT=3306",
+    "DATABASE_PORT=tcp://172.30.249.174:3306",
+    "DATABASE_PORT_3306_TCP=tcp://172.30.249.174:3306",
+    "DATABASE_PORT_3306_TCP_PROTO=tcp",
+    "DATABASE_SERVICE_HOST=172.30.249.174",
+    "DATABASE_PORT_3306_TCP_PORT=3306",
+    "DATABASE_PORT_3306_TCP_ADDR=172.30.249.174",
 
 ### Revisit the Webpage
 Go ahead and revisit `http://wiring.cloudapps.example.com` (or your appropriate
 FQDN) in your browser, and you should see that the application is now fully
 functional!
 
-**Note:** There is a process to deploy instances of templates that we already
-used in the "quickstart" case. For some reason, the MySQL database template
-doesn't deploy successfully with the current example. Otherwise we would have
-done 100% of this through the webUI.
+## Rollback/Activate and Code Lifecycle
+Not every coder is perfect, and sometimes you want to rollback to a previous
+incarnation of your application. Sometimes you then want to go forward to a
+newer version, too.
 
-Here's the bug for reference:
+The next few labs require that you have a Github account. We will take Alice's
+"wiring" application and modify its front-end and then rebuild. We'll roll-back
+to the original version, and then go forward to our re-built version.
 
-    https://github.com/openshift/origin/issues/2947
+### Fork the Repository
+Our wiring example's frontend service uses the following Github repository:
+
+    https://github.com/openshift/ruby-hello-world
+
+Go ahead and fork this into your own account by clicking the *Fork* Button at
+the upper right.
+
+### Update the BuildConfig
+Remember that a `BuildConfig`(uration) tells OpenShift how to do a build.
+Still as the `alice` user, take a look at the current `BuildConfig` for our
+frontend:
+
+    osc get buildconfig ruby-sample-build -o yaml
+    apiVersion: v1beta1
+    kind: BuildConfig
+    metadata:
+      creationTimestamp: 2015-03-10T15:40:26-04:00
+      labels:
+        template: application-template-stibuild
+      name: ruby-sample-build
+      namespace: wiring
+      resourceVersion: "831"
+      selfLink: /osapi/v1beta1/buildConfigs/ruby-sample-build?namespace=wiring
+      uid: 4cff2e5e-c75d-11e4-806e-525400b33d1d
+    parameters:
+      output:
+        to:
+          kind: ImageStream
+          name: origin-ruby-sample
+      source:
+        git:
+          uri: git://github.com/openshift/ruby-hello-world.git
+          ref: beta4
+        type: Git
+      strategy:
+        stiStrategy:
+          builderImage: openshift/ruby-20-rhel7
+          image: openshift/ruby-20-rhel7
+        type: STI
+    triggers:
+    - github:
+        secret: secret101
+      type: github
+    - generic:
+        secret: secret101
+      type: generic
+    - imageChange:
+        from:
+          name: ruby-20-rhel7
+        image: openshift/ruby-20-rhel7
+        imageRepositoryRef:
+          name: ruby-20-rhel7
+        tag: latest
+      type: imageChange
+
+As you can see, the current configuration points at the
+`openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
+ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
+again:
+
+    osc edit bc ruby-sample-build
+
+Change the "uri" reference to match the name of your Github
+repository. Assuming your github user is `alice`, you would point it
+to `git://github.com/alice/ruby-hello-world.git`. Save and exit
+the editor.
+
+If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
+that the `uri` has been updated.
+
+### Change the Code
+Github's web interface will let you make edits to files. Go to your forked
+repository (eg: https://github.com/alice/ruby-hello-world), select the `beta3`
+branch, and find the file `main.erb` in the `views` folder.
+
+Change the following HTML:
+
+    <div class="page-header" align=center>
+      <h1> Welcome to an OpenShift v3 Demo App! </h1>
+    </div>
+
+To read (with the typo):
+
+    <div class="page-header" align=center>
+      <h1> This is my crustom demo! </h1>
+    </div>
+
+You can edit code on Github by clicking the pencil icon which is next to the
+"History" button. Provide some nifty commit message like "Personalizing the
+application."
+
+If you know how to use Git/Github, you can just do this "normally".
+
+### Start a Build with a Webhook
+Webhooks are a way to integrate external systems into your OpenShift
+environment so that they can fire off OpenShift builds. Generally
+speaking, one would make code changes, update the code repository, and
+then some process would hit OpenShift's webhook URL in order to start
+a build with the new code.
+
+Your GitHub account has the capability to configure a webhook to request
+whenever a commit is pushed to a specific branch; however, it would only
+be able to make a request against your OpenShift master if that master
+is exposed on the Internet, so you will probably need to simulate the
+request manually for now.
+
+To find the webhook URL, you can visit the web console, click into the
+project, click on *Browse* and then on *Builds*. You'll see two webhook
+URLs. Copy the *Generic* one. It should look like:
+
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
+
+**Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
+webUI. Note the correct syntax above. This is fixed already, but did not make it
+in:
+
+    https://github.com/openshift/origin/issues/2981
+
+If you look at the `frontend-config.json` file that you created earlier,
+you'll notice the same "secret101" entries in triggers. These are
+basically passwords so that just anyone on the web can't trigger the
+build with knowledge of the name only. You could of course have adjusted
+the passwords or had the template generate randomized ones.
+
+This time, in order to run a build for the frontend, we'll use `curl` to hit our
+webhook URL.
+
+First, look at the list of builds:
+
+    osc get build
+
+You should see that the first build had completed. Then, `curl`:
+
+    curl -i -H "Accept: application/json" \
+    -H "X-HTTP-Method-Override: PUT" -X POST -k \
+    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
+
+And now `get build` again:
+
+    osc get build
+    NAME                  TYPE      STATUS     POD
+    ruby-sample-build-1   Source    Complete   ruby-sample-build-1
+    ruby-sample-build-2   Source    Pending    ruby-sample-build-2
+
+You can see that this could have been part of some CI/CD workflow that
+automatically called our webhook once the code was tested.
+
+You can also check the web interface (logged in as `alice`) and see
+that the build is running. Once it is complete, point your web browser
+at the application:
+
+    http://wiring.cloudapps.example.com/
+
+You should see your big fat typo.
+
+**Note: Remember that it can take a minute for your service endpoint to get
+updated. You might get a `503` error if you try to access the application before
+this happens.**
+
+Since we failed to properly test our application, and our ugly typo has made it
+into production, a nastygram from corporate marketing has told us that we need
+to revert to the previous version, ASAP.
+
+If you log into the web console as `alice` and find the `Deployments` section of
+the `Browse` menu, you'll see that there are two deployments of our frontend: 1
+and 2.
+
+You can also see this information from the cli by doing:
+
+    osc get replicationcontroller
+
+The semantics of this are that a `DeploymentConfig` ensures a
+`ReplicationController` is created to manage the deployment of the built `Image`
+from the `ImageStream`.
+
+Simple, right?
+
+### Rollback
+You can rollback a deployment using the CLI. Let's go and checkout what a rollback to
+`frontend-1` would look like:
+
+    osc rollback frontend-1 --dry-run
+
+Since it looks OK, let's go ahead and do it:
+
+    osc rollback frontend-1
+
+If you look at the `Browse` tab of your project, you'll see that in the `Pods`
+section there is a `frontend-3...` pod now. After a few moments, revisit the
+application in your web browser, and you should see the old "Welcome..." text.
+
+### Activate
+Corporate marketing called again. They think the typo makes us look hip and
+cool. Let's now roll forward (activate) the typo-enabled application:
+
+    osc rollback frontend-2
 
 ## A Simple PHP Example
 Let's take some time to build a simple PHP example. Using PHP will make it easy
@@ -2883,213 +3072,6 @@ Further information on use of PersistentVolumes is available in the
 [OpenShift Origin documentation](http://docs.openshift.org/latest/dev_guide/volumes.html).
 This is a very new feature, so it is very manual for now, but look for more tooling
 taking advantage of PersistentVolumes to be created in the future.
-
-## Rollback/Activate and Code Lifecycle
-Not every coder is perfect, and sometimes you want to rollback to a previous
-incarnation of your application. Sometimes you then want to go forward to a
-newer version, too.
-
-The next few labs require that you have a Github account. We will take Alice's
-"wiring" application and modify its front-end and then rebuild. We'll roll-back
-to the original version, and then go forward to our re-built version.
-
-### Fork the Repository
-Our wiring example's frontend service uses the following Github repository:
-
-    https://github.com/openshift/ruby-hello-world
-
-Go ahead and fork this into your own account by clicking the *Fork* Button at
-the upper right.
-
-### Update the BuildConfig
-Remember that a `BuildConfig`(uration) tells OpenShift how to do a build.
-Still as the `alice` user, take a look at the current `BuildConfig` for our
-frontend:
-
-    osc get buildconfig ruby-sample-build -o yaml
-    apiVersion: v1beta1
-    kind: BuildConfig
-    metadata:
-      creationTimestamp: 2015-03-10T15:40:26-04:00
-      labels:
-        template: application-template-stibuild
-      name: ruby-sample-build
-      namespace: wiring
-      resourceVersion: "831"
-      selfLink: /osapi/v1beta1/buildConfigs/ruby-sample-build?namespace=wiring
-      uid: 4cff2e5e-c75d-11e4-806e-525400b33d1d
-    parameters:
-      output:
-        to:
-          kind: ImageStream
-          name: origin-ruby-sample
-      source:
-        git:
-          uri: git://github.com/openshift/ruby-hello-world.git
-          ref: beta4
-        type: Git
-      strategy:
-        stiStrategy:
-          builderImage: openshift/ruby-20-rhel7
-          image: openshift/ruby-20-rhel7
-        type: STI
-    triggers:
-    - github:
-        secret: secret101
-      type: github
-    - generic:
-        secret: secret101
-      type: generic
-    - imageChange:
-        from:
-          name: ruby-20-rhel7
-        image: openshift/ruby-20-rhel7
-        imageRepositoryRef:
-          name: ruby-20-rhel7
-        tag: latest
-      type: imageChange
-
-As you can see, the current configuration points at the
-`openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
-ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
-again:
-
-    osc edit bc ruby-sample-build
-
-Change the "uri" reference to match the name of your Github
-repository. Assuming your github user is `alice`, you would point it
-to `git://github.com/alice/ruby-hello-world.git`. Save and exit
-the editor.
-
-If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
-that the `uri` has been updated.
-
-### Change the Code
-Github's web interface will let you make edits to files. Go to your forked
-repository (eg: https://github.com/alice/ruby-hello-world), select the `beta3`
-branch, and find the file `main.erb` in the `views` folder.
-
-Change the following HTML:
-
-    <div class="page-header" align=center>
-      <h1> Welcome to an OpenShift v3 Demo App! </h1>
-    </div>
-
-To read (with the typo):
-
-    <div class="page-header" align=center>
-      <h1> This is my crustom demo! </h1>
-    </div>
-
-You can edit code on Github by clicking the pencil icon which is next to the
-"History" button. Provide some nifty commit message like "Personalizing the
-application."
-
-If you know how to use Git/Github, you can just do this "normally".
-
-### Start a Build with a Webhook
-Webhooks are a way to integrate external systems into your OpenShift
-environment so that they can fire off OpenShift builds. Generally
-speaking, one would make code changes, update the code repository, and
-then some process would hit OpenShift's webhook URL in order to start
-a build with the new code.
-
-Your GitHub account has the capability to configure a webhook to request
-whenever a commit is pushed to a specific branch; however, it would only
-be able to make a request against your OpenShift master if that master
-is exposed on the Internet, so you will probably need to simulate the
-request manually for now.
-
-To find the webhook URL, you can visit the web console, click into the
-project, click on *Browse* and then on *Builds*. You'll see two webhook
-URLs. Copy the *Generic* one. It should look like:
-
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
-
-**Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
-webUI. Note the correct syntax above. This is fixed already, but did not make it
-in:
-
-    https://github.com/openshift/origin/issues/2981
-
-If you look at the `frontend-config.json` file that you created earlier,
-you'll notice the same "secret101" entries in triggers. These are
-basically passwords so that just anyone on the web can't trigger the
-build with knowledge of the name only. You could of course have adjusted
-the passwords or had the template generate randomized ones.
-
-This time, in order to run a build for the frontend, we'll use `curl` to hit our
-webhook URL.
-
-First, look at the list of builds:
-
-    osc get build
-
-You should see that the first build had completed. Then, `curl`:
-
-    curl -i -H "Accept: application/json" \
-    -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
-
-And now `get build` again:
-
-    osc get build
-    NAME                  TYPE      STATUS     POD
-    ruby-sample-build-1   Source    Complete   ruby-sample-build-1
-    ruby-sample-build-2   Source    Pending    ruby-sample-build-2
-
-You can see that this could have been part of some CI/CD workflow that
-automatically called our webhook once the code was tested.
-
-You can also check the web interface (logged in as `alice`) and see
-that the build is running. Once it is complete, point your web browser
-at the application:
-
-    http://wiring.cloudapps.example.com/
-
-You should see your big fat typo.
-
-**Note: Remember that it can take a minute for your service endpoint to get
-updated. You might get a `503` error if you try to access the application before
-this happens.**
-
-Since we failed to properly test our application, and our ugly typo has made it
-into production, a nastygram from corporate marketing has told us that we need
-to revert to the previous version, ASAP.
-
-If you log into the web console as `alice` and find the `Deployments` section of
-the `Browse` menu, you'll see that there are two deployments of our frontend: 1
-and 2.
-
-You can also see this information from the cli by doing:
-
-    osc get replicationcontroller
-
-The semantics of this are that a `DeploymentConfig` ensures a
-`ReplicationController` is created to manage the deployment of the built `Image`
-from the `ImageStream`.
-
-Simple, right?
-
-### Rollback
-You can rollback a deployment using the CLI. Let's go and checkout what a rollback to
-`frontend-1` would look like:
-
-    osc rollback frontend-1 --dry-run
-
-Since it looks OK, let's go ahead and do it:
-
-    osc rollback frontend-1
-
-If you look at the `Browse` tab of your project, you'll see that in the `Pods`
-section there is a `frontend-3...` pod now. After a few moments, revisit the
-application in your web browser, and you should see the old "Welcome..." text.
-
-### Activate
-Corporate marketing called again. They think the typo makes us look hip and
-cool. Let's now roll forward (activate) the typo-enabled application:
-
-    osc rollback frontend-2
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
