@@ -46,7 +46,7 @@ docker tag ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4 reg
 docker pull openshift/hello-openshift
 
 cd
-git clone https://github.com/openshift/training.git
+git clone https://github.com/thoraxe/training.git -b GA-work
 cd ~/training/content
 /bin/cp ~/training/content/dnsmasq.conf /etc/
 restorecon -rv /etc/dnsmasq.conf
