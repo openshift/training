@@ -100,7 +100,7 @@ unbounded and therefore forbidden.
 
 As `root` in the `training/content` folder:
 
-    oc create -f limits.json --namespace=demo
+    oc create -f limits.json -n demo
 
 Review your limit ranges
 
@@ -131,13 +131,13 @@ Then, execute:
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
 our tool at the CA file.
 
-The `login` process created a file called named `~/.config/openshift/config`
+The `login` process created a file called named `~/.kube/config`
 folder. Take a look at it, and you'll see something like the following:
 
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: ../../../../etc/openshift/master/ca.crt
+        certificate-authority: ../../../etc/openshift/master/ca.crt
         server: https://ose3-master.example.com:8443
       name: ose3-master-example-com:8443
     contexts:
@@ -152,14 +152,10 @@ folder. Take a look at it, and you'll see something like the following:
     users:
     - name: joe/ose3-master-example-com:8443
       user:
-        token: _ebJfOdcHy8TW4XIDxJjOQEC_yJp08zW0xPI-JWWU3c
+        token: zXv6pSi0Hw3tT6T7hqlnnyDjypel1BcUBUO2vavHDcE
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, etc.
-
-**Note:** See the [troubleshooting guide](#appendix---troubleshooting) for
-details on how to fetch a new token once this one expires.  The installer sets
-the default token lifetime to 4 hours.
 
 ## Grab the Training Repo Again
 Since Joe and Alice can't access the training folder in root's home directory,
@@ -176,7 +172,7 @@ using `cat`:
     cat hello-pod.json
     {
       "kind": "Pod",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-openshift",
         "creationTimestamp": null,
@@ -188,7 +184,7 @@ using `cat`:
         "containers": [
           {
             "name": "hello-openshift",
-            "image": "openshift/hello-openshift:v0.4.3",
+            "image": "openshift/hello-openshift",
             "ports": [
               {
                 "hostPort": 36061,
