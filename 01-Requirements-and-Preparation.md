@@ -259,7 +259,7 @@ cloned.
 
 ## Add Development Users
 In the "real world" your developers would likely be using the OpenShift tools on
-their own machines (`osc` and the web console). For these examples, we will
+their own machines (`oc` and the web console). For these examples, we will
 create user accounts for two non-privileged users of OpenShift, *joe* and
 *alice*, on the master. This is done for convenience and because we'll be using
 `htpasswd` for authentication.

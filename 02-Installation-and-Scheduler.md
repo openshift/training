@@ -280,7 +280,7 @@ does not work. You'll have to fix this manually:
 The assignments of "regions" and "zones" at the node-level are handled by labels
 on the nodes. You can look at how the labels were implemented by doing:
 
-    osc get nodes
+    oc get nodes
 
     NAME                      LABELS                                                                     STATUS
     ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
