@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [OpenShift Beta 4](#openshift-beta-4)
+- [OpenShift RC](#openshift-rc)
   - [Architecture and Requirements](#architecture-and-requirements)
     - [Architecture](#architecture)
     - [Requirements](#requirements)
@@ -166,7 +166,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# OpenShift Beta 4
+# OpenShift RC
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the beta testing is pretty simple. There are
@@ -366,21 +366,21 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-image-builder:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/sti-basicauthurl:latest
-    docker pull registry.access.redhat.com/openshift3_beta/ose-keepalived-ipfailover:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/ose-deployer:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/ose-sti-builder:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/ose-sti-image-builder:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/ose-docker-builder:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/ose-pod:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry:v0.6.1.0
+    docker pull registry.access.redhat.com/openshift3/sti-basicauthurl:latest
+    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v0.6.1.0
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
+    docker pull registry.access.redhat.com/openshift3/ruby-20-rhel7
+    docker pull registry.access.redhat.com/openshift3/mysql-55-rhel7
     docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift:v0.4.3
 
@@ -406,7 +406,7 @@ cloned.
 
 ### Add Development Users
 In the "real world" your developers would likely be using the OpenShift tools on
-their own machines (`osc` and the web console). For the Beta training, we
+their own machines (`oc` and the web console). For the Beta training, we
 will create user accounts for two non-privileged users of OpenShift, *joe* and
 *alice*, on the master. This is done for convenience and because we'll be using
 `htpasswd` for authentication.
@@ -461,17 +461,17 @@ The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
     cd
-    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
+    git clone https://github.com/detiber/openshift-ansible.git -b v3-rc
     cd ~/openshift-ansible
 
 ### Configure Ansible
 Copy the staged Ansible configuration files to `/etc/ansible`:
 
-    /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
+    /bin/cp -r ~/training/rc/ansible/* /etc/ansible/
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
-hostnames, modify `/etc/ansible/hosts` accordingly. 
+hostnames, modify `/etc/ansible/hosts` accordingly.
 
 Also, if you are using multiple NICs and will be trying to direct various
 traffic to different places, you will need to take a look at [Generic Cloud
@@ -656,7 +656,7 @@ possibilities are endless!
 The assignments of "regions" and "zones" at the node-level are handled by labels
 on the nodes. You can look at how the labels were implemented by doing:
 
-    osc get nodes
+    oc get nodes
 
     NAME                      LABELS                                                                     STATUS
     ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
@@ -775,7 +775,7 @@ At this point you essentially have a sufficiently-functional V3 OpenShift
 environment. It is now time to create the classic "Hello World" application
 using some sample code.  But, first, some housekeeping.
 
-Also, don't forget, the materials for these labs are in your `~/training/beta4`
+Also, don't forget, the materials for these labs are in your `~/training/rc`
 folder.
 
 ### Resources
@@ -832,19 +832,19 @@ two quotas to the same namespace.
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal in the `training/beta4` folder:
+to it. Still in a `root` terminal in the `training/rc` folder:
 
-    osc create -f quota.json --namespace=demo
+    oc create -f quota.json --namespace=demo
 
 If you want to see that it was created:
 
-    osc get -n demo quota
+    oc get -n demo quota
     NAME
     test-quota
 
 And if you want to verify limits or examine usage:
 
-    osc describe quota test-quota -n demo
+    oc describe quota test-quota -n demo
     Name:                   test-quota
     Resource                Used    Hard
     --------                ----    ----
@@ -870,13 +870,13 @@ both a pod and container level. Without default values for containers projects
 with quotas will fail because the deployer and other infrastructure pods are
 unbounded and therefore forbidden.
 
-As `root` in the `training/beta4` folder:
+As `root` in the `training/rc` folder:
 
-    osc create -f limits.json --namespace=demo
+    oc create -f limits.json --namespace=demo
 
 Review your limit ranges
 
-    osc describe limitranges limits -n demo
+    oc describe limitranges limits -n demo
     Name:           limits
     Type            Resource        Min     Max     Default
     ----            --------        ---     ---     ---
@@ -896,7 +896,7 @@ Open a terminal as `joe`:
 
 Then, execute:
 
-    osc login -u joe \
+    oc login -u joe \
     --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
@@ -939,10 +939,10 @@ go ahead and grab it inside Joe's home folder:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training/beta4
+    cd ~/training/rc
 
 ### The Hello World Definition JSON
-In the beta4 training folder, you can see the contents of our pod definition by
+In the rc training folder, you can see the contents of our pod definition by
 using `cat`:
 
     cat hello-pod.json
@@ -1001,7 +1001,7 @@ OpenShift further.
 ### Run the Pod
 As `joe`, to create the pod from our JSON file, execute the following:
 
-    osc create -f hello-pod.json
+    oc create -f hello-pod.json
 
 Remember, we've "logged in" to OpenShift and our project, so this will create
 the pod inside of it. The command should display the ID of the pod:
@@ -1010,24 +1010,24 @@ the pod inside of it. The command should display the ID of the pod:
 
 Issue a `get pods` to see the details of how it was defined:
 
-    osc get pods
+    oc get pods
     POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
-    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   16 seconds   
-                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   2 seconds   
+    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   16 seconds
+                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   2 seconds
 
 The output of this command shows all of the Docker containers in a pod, which
 explains some of the spacing.
 
 On the node where the pod is running (`HOST`), look at the list of Docker
 containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
-should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
+should see an `openshift3/ose-pod` container bound to 36061 on the host and
 bound to 8080 on the container, along with several other `ose-pod` containers.
 
     CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
     ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.b69b23ff_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
-    405d63115a60        openshift3_beta/ose-pod:v0.5.2.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
+    405d63115a60        openshift3/ose-pod:v0.6.1.0   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
 
-The `openshift3_beta/ose-pod` container exists because of the way network
+The `openshift3/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
 container as nothing more than a way for the host OS to get an interface created
 for the corresponding pod to be able to receive traffic. Deeper understanding of
@@ -1055,10 +1055,10 @@ project. You'll see some interesting things:
 ### Quota Usage
 If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 
-You can also use `osc` to determine the current quota usage of your project. As
+You can also use `oc` to determine the current quota usage of your project. As
 `joe`:
 
-    osc describe quota test-quota -n demo
+    oc describe quota test-quota -n demo
 
 ### Extra Credit
 If you try to curl the pod IP and port, you get "connection refused". See if you
@@ -1067,7 +1067,7 @@ can figure out why.
 ### Delete the Pod
 As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
 
-    osc delete pod hello-openshift
+    oc delete pod hello-openshift
 
 Take a moment to think about what this pod exercise really did -- it referenced
 an arbitrary Docker image, made sure to fetch it (if it wasn't present), and
@@ -1082,9 +1082,9 @@ enforcement exercise. The `hello-quota` JSON will attempt to create four
 instances of the "hello-openshift" pod. It will fail when it tries to create the
 fourth, because the quota on this project limits us to three total pods.
 
-As `joe`, go ahead and use `osc create` and you will see the following:
+As `joe`, go ahead and use `oc create` and you will see the following:
 
-    osc create -f hello-quota.json 
+    oc create -f hello-quota.json
     pods/hello-openshift-1
     pods/hello-openshift-2
     pods/hello-openshift-3
@@ -1092,7 +1092,7 @@ As `joe`, go ahead and use `osc create` and you will see the following:
 
 Let's delete these pods quickly. As `joe` again:
 
-    osc delete pod --all
+    oc delete pod --all
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
 check*. Be careful.
@@ -1138,7 +1138,7 @@ Now, let's look at a *service* definition:
     }
 
 The *service* has a `selector` element. In this case, it is a key:value pair of
-`name:hello-openshift`. If you looked at the output of `osc get pods` on your
+`name:hello-openshift`. If you looked at the output of `oc get pods` on your
 master, you saw that the `hello-openshift` pod has a label:
 
     name=hello-openshift
@@ -1156,7 +1156,7 @@ and that is where the routing tier comes in.
 ## Routing
 The OpenShift routing tier is how FQDN-destined traffic enters the OpenShift
 environment so that it can ultimately reach pods. In a simplification of the
-process, the `openshift3_beta/ose-haproxy-router` container we will create below
+process, the `openshift3/ose-haproxy-router` container we will create below
 is a pre-configured instance of HAProxy as well as some of the OpenShift
 framework. The OpenShift instance running in this container watches for route
 resources on the OpenShift master.
@@ -1180,7 +1180,7 @@ Here is an example route resource JSON definition:
       }
     }
 
-When the `osc` command is used to create this route, a new instance of a route
+When the `oc` command is used to create this route, a new instance of a route
 *resource* is created inside OpenShift's data store. This route resource is
 affiliated with a service.
 
@@ -1234,7 +1234,7 @@ v3 services. It currently supports only HTTP(S) traffic (and "any"
 TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
 proxy.
 
-The `openshift3_beta/ose-haproxy-router` container listens on the host network
+The `openshift3/ose-haproxy-router` container listens on the host network
 interface, unlike most containers that listen only on private IPs. The router
 proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
@@ -1262,7 +1262,7 @@ to supply the wildcard cert/key that we created for the cloud domain.
     osadm router --default-cert=cloudapps.router.pem \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig \
     --selector='region=infra' \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
 
 If this works, you'll see some output:
 
@@ -1274,14 +1274,14 @@ did not run this command in the folder where you created it.
 
 Let's check the pods:
 
-    osc get pods 
+    oc get pods
 
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
 
     POD              IP         CONTAINER(S)   IMAGE(S)                                                                 HOST                                    LABELS                                                      STATUS    CREATED      MESSAGE
-    router-1-cutck   10.1.0.4                                                                                           ose3-master.example.com/192.168.133.2   deployment=router-1,deploymentconfig=router,router=router   Running   18 minutes   
-                                router         registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2                                                                                                       Running   18 minutes
+    router-1-cutck   10.1.0.4                                                                                           ose3-master.example.com/192.168.133.2   deployment=router-1,deploymentconfig=router,router=router   Running   18 minutes
+                                router         registry.access.redhat.com/openshift3/ose-haproxy-router:v0.6.1.0                                                                                                       Running   18 minutes
 
 Note: This output is huge, wide, and ugly. We're working on making it nicer. You
 can chime in here:
@@ -1333,7 +1333,7 @@ admins.
 
 Ensure that port 1936 is accessible and visit:
 
-    http://admin:cEVu2hUb@ose3-master.example.com:1936 
+    http://admin:cEVu2hUb@ose3-master.example.com:1936
 
 to view your router stats.
 
@@ -1341,7 +1341,7 @@ to view your router stats.
 With a router now available, let's take a look at an entire
 Pod-Service-Route definition template and put all the pieces together.
 
-Don't forget -- the materials are in `~/training/beta4`.
+Don't forget -- the materials are in `~/training/rc`.
 
 ### Creating the Definition
 The following is a complete definition for a pod with a corresponding service
@@ -1479,9 +1479,9 @@ If we work from the route down to the pod:
 If you are not using the `example.com` domain you will need to edit the route
 portion of `test-complete.json` to match your DNS environment.
 
-**Logged in as `joe`,** go ahead and use `osc` to create everything:
+**Logged in as `joe`,** go ahead and use `oc` to create everything:
 
-    osc create -f test-complete.json
+    oc create -f test-complete.json
 
 You should see something like the following:
 
@@ -1489,33 +1489,33 @@ You should see something like the following:
     routes/hello-openshift-route
     pods/hello-openshift
 
-You can verify this with other `osc` commands:
+You can verify this with other `oc` commands:
 
-    osc get pods
+    oc get pods
 
-    osc get services
+    oc get services
 
-    osc get routes
+    oc get routes
 
 **Note:** May need to force resize:
 
     https://github.com/openshift/origin/issues/2939
 
 ### Project Status
-OpenShift provides a handy tool, `osc status`, to give you a summary of
+OpenShift provides a handy tool, `oc status`, to give you a summary of
 common resources existing in the current project:
 
-    osc status
+    oc status
     In project OpenShift 3 Demo (demo)
-    
+
     service hello-openshift-service (172.30.197.132:27017 -> 8080)
       hello-openshift deploys docker.io/openshift/hello-openshift:v0.4.3
         #1 deployed 3 minutes ago - 1 pod
 
-    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
-    You can use 'osc get all' to see lists of each of the types described above.
+    To see more information about a Service or DeploymentConfig, use 'oc describe service <name>' or 'oc describe dc <name>'.
+    You can use 'oc get all' to see lists of each of the types described above.
 
-`osc status` does not yet show bare pods or routes. The output will be
+`oc status` does not yet show bare pods or routes. The output will be
 more interesting when we get to builds and deployments.
 
 ### Verifying the Service
@@ -1523,15 +1523,15 @@ Services are not externally accessible without a route being defined, because
 they always listen on "local" IP addresses (eg: 172.x.x.x). However, if you have
 access to the OpenShift environment, you can still test a service.
 
-    osc get services
+    oc get services
     NAME                      LABELS    SELECTOR                     IP              PORT(S)
     hello-openshift-service   <none>    name=hello-openshift-label   172.30.17.229   27017/TCP
 
 We can see that the service has been defined based on the JSON we used earlier.
-If the output of `osc get pods` shows that our pod is running, we can try to
+If the output of `oc get pods` shows that our pod is running, we can try to
 access the service:
 
-    curl `osc get services | grep hello-openshift | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl `oc get services | grep hello-openshift | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
     Hello OpenShift!
 
 This is a good sign! It means that, if the router is working, we should be able
@@ -1542,10 +1542,10 @@ Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
 Docker container is on the master. Log in there as `root`.
 
-We can use `osc exec` to get a bash interactive shell inside the running
+We can use `oc exec` to get a bash interactive shell inside the running
 router container. The following command will do that for us:
 
-    osc exec -it -p $(osc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
+    oc exec -it -p $(oc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
 
 You are now in a bash session *inside* the container running the router.
 
@@ -1634,7 +1634,7 @@ Open a new terminal window as the `alice` user:
 
 and login to OpenShift:
 
-    osc login -u alice \
+    oc login -u alice \
     --certificate-authority=/etc/openshift/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
@@ -1648,17 +1648,17 @@ You'll interact with the tool as follows:
 
 `alice` has no projects of her own yet (she is not an administrator on
 anything), so she is automatically configured to look at the `demo` project
-since she has access to it. She has "view" access, so `osc status` and `osc get
+since she has access to it. She has "view" access, so `oc status` and `oc get
 pods` and so forth should show her the same thing as `joe`:
 
-    [alice]$ osc get pods
+    [alice]$ oc get pods
     POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
-    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   14 minutes   
-                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   14 minutes   
+    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   14 minutes
+                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   14 minutes
 
 However, she cannot make changes:
 
-    [alice]$ osc delete pod hello-openshift
+    [alice]$ oc delete pod hello-openshift
     Error from server: User "alice" cannot delete pods in project "demo"
 
 Also login as `alice` in the web console and confirm that she can view
@@ -1698,7 +1698,7 @@ the user:
 
 https://github.com/openshift/origin/issues/2785
 
-It appears to be fixed but may not have made beta4.
+It appears to be fixed but may not have made rc.
 
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
@@ -1707,18 +1707,18 @@ end up deleting all the pods, and other resources, too.
 
 As the `alice` user:
 
-    osc delete project demo
+    oc delete project demo
 
 If you quickly go to the web console and return to the top page, you'll see a
 warning icon that will pop-up a hover tip saying the project is marked for
 deletion.
 
-If you switch to the `root` user and issue `osc get project` you will see that
-the demo project's status is "Terminating". If you do an `osc get pod -n demo`
+If you switch to the `root` user and issue `oc get project` you will see that
+the demo project's status is "Terminating". If you do an `oc get pod -n demo`
 you may see the pods, still. It takes about 60 seconds for the project deletion
 cleanup routine to finish.
 
-Once the project disappears from `osc get project`, doing `osc get pod -n demo`
+Once the project disappears from `oc get project`, doing `oc get pod -n demo`
 should return no results.
 
 ## Preparing for S2I: the Registry
@@ -1753,7 +1753,7 @@ registry. As the `root` user, run the following:
 
     osadm registry --create \
     --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
+    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}' \
     --selector="region=infra" --mount-host=/mnt/registry
 
 You'll get output like:
@@ -1761,15 +1761,15 @@ You'll get output like:
     services/docker-registry
     deploymentConfigs/docker-registry
 
-You can use `osc get pods`, `osc get services`, and `osc get deploymentconfig`
-to see what happened. This would also be a good time to try out `osc status`
+You can use `oc get pods`, `oc get services`, and `oc get deploymentconfig`
+to see what happened. This would also be a good time to try out `oc status`
 as root:
 
-    osc status
+    oc status
     In project default
 
     service docker-registry (172.30.17.196:5000 -> 5000)
-      docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry
+      docker-registry deploys registry.access.redhat.com/openshift3/ose-docker-registry
         #1 deployed about a minute ago
 
     service kubernetes (172.30.17.2:443 -> 443)
@@ -1777,13 +1777,13 @@ as root:
     service kubernetes-ro (172.30.17.1:80 -> 80)
 
     service router (172.30.17.129:80 -> 80)
-      router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router
+      router deploys registry.access.redhat.com/openshift3/ose-haproxy-router
         #1 deployed 7 minutes ago
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 OpenShift will re-create it) and that the administrative user uses by default.
-One interesting features of `osc status` is that it lists recent deployments.
+One interesting features of `oc status` is that it lists recent deployments.
 When we created the router and registry, each created one deployment. We will
 talk more about deployments when we get into builds.
 
@@ -1793,7 +1793,7 @@ registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl -v `osc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
+    curl -v `oc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
 
 And you should see [a 200
 response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
@@ -1821,7 +1821,7 @@ after the pod is running for the service proxy to update the endpoints necessary
 to fulfill your request. You can check if your service has finished updating its
 endpoints with:
 
-    osc describe service docker-registry
+    oc describe service docker-registry
 
 And you will eventually see something like:
 
@@ -1853,8 +1853,8 @@ By default, users are allowed to create their own projects. Let's try this now.
 As the `joe` user, we will create a new project to put our first S2I example
 into:
 
-    osc new-project sinatra --display-name="Sinatra Example" \
-    --description="This is your first build on OpenShift 3" 
+    oc new-project sinatra --display-name="Sinatra Example" \
+    --description="This is your first build on OpenShift 3"
 
 Logged in as `joe` in the web console, if you click the OpenShift image you
 should be returned to the project overview page where you will see the new
@@ -1863,7 +1863,7 @@ project show up. Go ahead and click the *Sinatra* project - you'll see why soon.
 ### Switch Projects
 As the `joe` user, let's switch to the `sinatra` project:
 
-    osc project sinatra
+    oc project sinatra
 
 You should see:
 
@@ -1881,7 +1881,7 @@ For this example, we will be using the following application's source code:
 
 Let's see some JSON:
 
-    osc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
+    oc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
 
 Take a look at the JSON that was generated. You will see some familiar items at
 this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
@@ -1902,7 +1902,7 @@ The CLI has a tool (`new-app`) that can take a source code repository as an
 input and will make its best guesses to configure OpenShift to do what we need
 to build and run the code. You looked at that already.
 
-You can also just run `osc new-app --help` to see other things that `new-app`
+You can also just run `oc new-app --help` to see other things that `new-app`
 can help you achieve.
 
 The web console also lets you point directly at a source code repository, but
@@ -1916,10 +1916,10 @@ correct builder ImageStream, the web console currently does not have that
 capability. The user will have to first target the code repository, and then
 select the appropriate builder image.
 
-Perform the following command as `root` in the `beta4`folder in order to add all
+Perform the following command as `root` in the `rc`folder in order to add all
 of the builder images:
 
-    osc create -f image-streams-rhel7.json \
+    oc create -f image-streams-rhel7.json \
     -f image-streams-jboss-rhel7.json -n openshift
 
 You will see the following:
@@ -2002,12 +2002,12 @@ long. Enter something sensible like "*ruby-example*", then scroll to the bottom
 and click "Create".
 
 At this point, OpenShift has created several things for you. Use the "Browse"
-tab to poke around and find them. You can also use `osc status` as the `joe`
+tab to poke around and find them. You can also use `oc status` as the `joe`
 user, too.
 
 If you run (as `joe`):
 
-    osc get pods
+    oc get pods
 
 You will see that there are currently no pods. That is because we have not
 actually gone through a build yet. While OpenShift has the capability of
@@ -2019,7 +2019,7 @@ console. If anything, it looks prettier!
 
 To start our build, as `joe`, execute the following:
 
-    osc start-build ruby-example
+    oc start-build ruby-example
 
 You'll see some output to indicate the build:
 
@@ -2028,7 +2028,7 @@ You'll see some output to indicate the build:
 We can check on the status of a build (it will switch to "Running" in a few
 moments):
 
-    osc get builds
+    oc get builds
     NAME             TYPE      STATUS     POD
     ruby-example-1   Source    Running   ruby-example-1
 
@@ -2041,7 +2041,7 @@ say:
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
 
-    osc build-logs ruby-example-1
+    oc build-logs ruby-example-1
 
 **Note: If the build isn't "Running" yet, or the sti-build container hasn't been
 deployed yet, build-logs will give you an error. Just wait a few moments and
@@ -2067,7 +2067,7 @@ What were they?
 Using the information you found in the web console, try to see if your service
 is working (as the `joe` user):
 
-    curl `osc get service | grep example | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl `oc get service | grep example | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
     Hello, Sinatra!
 
 So, from a simple code repository with a few lines of Ruby, we have successfully
@@ -2083,7 +2083,7 @@ so it's not very useful at the moment.
 Remember that routes are associated with services, so, determine the id of your
 services from the service output you looked at above.
 
-**Hint:** You will need to use `osc get services` to find it.
+**Hint:** You will need to use `oc get services` to find it.
 
 **Hint:** Do this as `joe`.
 
@@ -2091,11 +2091,11 @@ services from the service output you looked at above.
 
 When you are done, create your route:
 
-    osc create -f sinatra-route.json
+    oc create -f sinatra-route.json
 
 Check to make sure it was created:
 
-    osc get route
+    oc get route
     NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
     ruby-example         ruby-example.sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
     ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
@@ -2131,7 +2131,7 @@ this project. Skip ahead to the scaling part.
 Quotas have implications one may not immediately realize. As `root` assign a
 quota to the `sinatra` project.
 
-    osc create -f quota.json -n sinatra
+    oc create -f quota.json -n sinatra
 
 There is currently no default "size" for applications that are created with the
 web console. This means that, whether you think it's a good idea or not, the
@@ -2142,7 +2142,7 @@ Before we can try to scale our application, we'll need to update the deployment
 to put a memory and CPU limit on the pods. Go ahead and edit the
 `deploymentConfig`, as `joe`:
 
-    osc edit dc/ruby-example-1 -o json
+    oc edit dc/ruby-example-1 -o json
 
 You'll need to find "spec", "containers" and then the "resources" block in
 there. It's after a bunch of `env`ironment variables. Update that "resources"
@@ -2157,14 +2157,14 @@ block to look like this:
 
 `*
 
-As `joe` scale your application up to three instances using the `osc resize`
+As `joe` scale your application up to three instances using the `oc resize`
 command:
 
-    osc resize --replicas=3 rc/ruby-example-1
+    oc resize --replicas=3 rc/ruby-example-1
 
 Wait a few seconds and you should see your application scaled up to 3 pods.
 
-    osc get pods | grep -v "example"
+    oc get pods | grep -v "example"
     POD                    IP          CONTAINER(S) ... STATUS  CREATED
     ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
     ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
@@ -2178,9 +2178,9 @@ You will also notice that these pods were distributed across our two nodes
 *`
 Now start another build, wait a moment or two for your build to start.
 
-    osc start-build ruby-example
+    oc start-build ruby-example
 
-    osc get builds
+    oc get builds
     NAME             TYPE      STATUS     POD
     ruby-example-1   Source    Complete   ruby-example-1
     ruby-example-2   Source    New        ruby-example-2
@@ -2209,7 +2209,7 @@ comes in a template that you can just fire up and start using or hacking on.
 ### A Project for the Quickstart
 As `joe`, create a new project:
 
-    osc new-project quickstart --display-name="Quickstart" \
+    oc new-project quickstart --display-name="Quickstart" \
     --description='A demonstration of a "quickstart/template"'
 
 This also changes you to use that project:
@@ -2240,9 +2240,9 @@ This portion of the template's JSON tells OpenShift to generate an expression
 using a regex-like string that will be presented as ADMIN_USERNAME.
 
 ### Adding the Template
-Go ahead and do the following as `root` in the `~/training/beta4` folder:
+Go ahead and do the following as `root` in the `~/training/rc` folder:
 
-    osc create -f integrated-template.json -n openshift
+    oc create -f integrated-template.json -n openshift
 
 What did you just do? The `integrated-template.json` file defined a template. By
 "creating" it, you have added it to the `openshift` project.
@@ -2308,7 +2308,7 @@ Open a terminal as `alice`:
 
 Then, create a project for this example:
 
-    osc new-project wiring --display-name="Exploring Parameters" \
+    oc new-project wiring --display-name="Exploring Parameters" \
     --description='An exploration of wiring using parameters'
 
 Log into the web console as `alice`. Can you see `joe`'s projects and content?
@@ -2317,7 +2317,7 @@ Before continuing, `alice` will also need the training repository:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training/beta4
+    cd ~/training/rc
 
 ### Stand Up the Frontend
 The first step will be to stand up the frontend of our application. For
@@ -2327,7 +2327,7 @@ looking for a DB, but won't fail spectacularly if one isn't found.
 
 Go ahead and process the frontend template and then examine it:
 
-    osc process -f frontend-template.json > frontend-config.json
+    oc process -f frontend-template.json > frontend-config.json
 
 **Note:** If you are using a different domain, you will need to edit the route
 before running `create`.
@@ -2337,7 +2337,7 @@ generated (remember the template and parameter info from earlier?).
 
 Go ahead and create the configuration:
 
-    osc create -f frontend-config.json
+    oc create -f frontend-config.json
 
 As soon as you create this, all of the resources will be created *and* a build
 will be started for you. Let's go ahead and wait until this build completes
@@ -2350,9 +2350,9 @@ for `wiring.cloudapps.example.com`. You should see a note that the database is
 missing. So, let's create it!
 
 ### Create the Database Config
-Remember, `osc process` will examine a template, generate any desired
+Remember, `oc process` will examine a template, generate any desired
 parameters, and spit out a JSON `config`uration that can be `create`d with
-`osc`.
+`oc`.
 
 Processing the template for the db will generate some values for the DB root
 user and password, but they don't actually match what was previously generated
@@ -2384,11 +2384,11 @@ the template using the `process` command and create the result:
                                                 "key": "MYSQL_DATABASE",
                                                 "value": "root"
 
-    osc process -f db-template.json \
+    oc process -f db-template.json \
         -v MYSQL_USER=userMXG,MYSQL_PASSWORD=slDrggRv,MYSQL_DATABASE=root \
-        | osc create -f -
+        | oc create -f -
 
-`osc process` can be passed values for parameters, which will override
+`oc process` can be passed values for parameters, which will override
 auto-generation.
 
 It may take a little while for the MySQL container to download (if you didn't
@@ -2396,7 +2396,7 @@ pre-fetch it). It's a good idea to verify that the database is running before
 continuing.  If you don't happen to have a MySQL client installed you can still
 verify MySQL is running with curl:
 
-    curl `osc get services | grep database | awk '{print $4}'`:5434
+    curl `oc get services | grep database | awk '{print $4}'`:5434
 
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
@@ -2417,13 +2417,13 @@ container.
 The easiest way to get this going? Just nuke the existing pod. There is a
 replication controller running for both the frontend and backend:
 
-    osc get replicationcontroller
+    oc get replicationcontroller
 
 The replication controller is configured to ensure that we always have the
 desired number of replicas (instances) running. We can look at how many that
 should be:
 
-    osc describe rc frontend-1
+    oc describe rc frontend-1
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
@@ -2432,7 +2432,7 @@ longer see the database error!
 
 As `alice`, go ahead and find your frontend pod, and then kill it:
 
-    osc delete pod `osc get pod | grep front | awk '{print $1}'`
+    oc delete pod `oc get pod | grep front | awk '{print $1}'`
 
 You'll see something like:
 
@@ -2444,7 +2444,7 @@ deployment hooks a bit later.
 
 After a few moments, we can look at the list of pods again:
 
-    osc get pod | grep front
+    oc get pod | grep front
 
 And we should see a different name for the pod this time:
 
@@ -2596,7 +2596,7 @@ Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/v
 In this case it will be our NFS volume.
 
 Currently PersistentVolume objects must be created "by hand". Modify the
-`beta4/persistent-volume.json` file as needed if you are using a different
+`rc/persistent-volume.json` file as needed if you are using a different
 NFS mount:
 
     {
@@ -2619,7 +2619,7 @@ NFS mount:
 
 Create this object as the `root` (administrative) user:
 
-    # osc create -f persistent-volume.json
+    # oc create -f persistent-volume.json
     persistentvolumes/pv0001
 
 This defines a volume for OpenShift projects to use in deployments. The
@@ -2627,7 +2627,7 @@ storage should correspond to how much is actually available (make each
 volume a separate filesystem if you want to enforce this limit). Take a
 look at it now:
 
-    # osc describe persistentvolumes/pv0001
+    # oc describe persistentvolumes/pv0001
     Name:   pv0001
     Labels: <none>
     Status: Available
@@ -2656,7 +2656,7 @@ that specifies what kind and how much storage is desired:
 
 We can have `alice` do this in the `wiring` project:
 
-    $ osc create -f persistent-volume-claim.json
+    $ oc create -f persistent-volume-claim.json
     persistentVolumeClaim/claim1
 
 This claim will be bound to a suitable PersistentVolume (one that is big
@@ -2665,14 +2665,14 @@ real visibility into PersistentVolumes, including whether the backing
 storage is NFS or something else; they simply know when their claim has
 been filled ("bound" to a PersistentVolume).
 
-    $ osc get pvc
+    $ oc get pvc
     NAME      LABELS    STATUS    VOLUME
     claim1    map[]     Bound     pv0001
 
 If as `root` we now go back and look at our PV, we will also see that it has
 been claimed:
 
-    # osc describe pv/pv0001
+    # oc describe pv/pv0001
     Name:   pv0001
     Labels: <none>
     Status: Bound
@@ -2690,10 +2690,10 @@ to fulfill the claim.
 Finally, we need to modify our `database` DeploymentConfig to specify that
 this volume should be mounted where the database will use it. As `alice`:
 
-    $ osc edit dc/database
+    $ oc edit dc/database
 
 The part we will need to edit is the pod template. We will need to add two
-parts: 
+parts:
 
 * a definition of the volume
 * where to mount it inside the container
@@ -2753,7 +2753,7 @@ bare. If you try to use the app now, you'll get "Internal Server Error".
 Go ahead and kill the Frontend pod like we did previously to cause it to
 restart:
 
-     osc delete pod `osc get pod | grep front | awk {'print $1'}`
+     oc delete pod `oc get pod | grep front | awk {'print $1'}`
 
 Once the new pod has started, go ahead and visit the web page. Add a few values
 via the application. Then delete the database pod and wait for it to come back.
@@ -2761,7 +2761,7 @@ You should be able to retrieve the same values you entered.
 
 Remember, to quickly delete the Database pod you can do the following:
 
-    osc delete pod/`osc get pod | grep -e "database-[0-9]" | awk {'print $1'}`
+    oc delete pod/`oc get pod | grep -e "database-[0-9]" | awk {'print $1'}`
 
 **Note:** This doesn't seem to work right now, but we're not sure why. I think
 it has to do with Ruby's persistent connection to the MySQL service not going
@@ -2800,7 +2800,7 @@ Remember that a `BuildConfig`(uration) tells OpenShift how to do a build.
 Still as the `alice` user, take a look at the current `BuildConfig` for our
 frontend:
 
-    osc get buildconfig ruby-sample-build -o yaml
+    oc get buildconfig ruby-sample-build -o yaml
     apiVersion: v1beta1
     kind: BuildConfig
     metadata:
@@ -2820,7 +2820,7 @@ frontend:
       source:
         git:
           uri: git://github.com/openshift/ruby-hello-world.git
-          ref: beta4
+          ref: rc
         type: Git
       strategy:
         stiStrategy:
@@ -2845,17 +2845,17 @@ frontend:
 
 As you can see, the current configuration points at the
 `openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
-ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
+ahead and re-point our configuration. Our friend `oc edit` comes to the rescue
 again:
 
-    osc edit bc ruby-sample-build
+    oc edit bc ruby-sample-build
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
 to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
-If you again run `osc get buildconfig ruby-sample-build -o yaml` you should see
+If you again run `oc get buildconfig ruby-sample-build -o yaml` you should see
 that the `uri` has been updated.
 
 ### Change the Code
@@ -2900,7 +2900,7 @@ URLs. Copy the *Generic* one. It should look like:
 
     https://ose3-master.example.com:8443/osapi/v1beta1/buildConfigHooks/ruby-sample-build//github?namespace=wiring
 
-**Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
+**Note**: As of the cut of RC, the generic webhook URL was incorrect in the
 webUI. Note the correct syntax above. This is fixed already, but did not make it
 in:
 
@@ -2917,7 +2917,7 @@ webhook URL.
 
 First, look at the list of builds:
 
-    osc get build
+    oc get build
 
 You should see that the first build had completed. Then, `curl`:
 
@@ -2927,7 +2927,7 @@ You should see that the first build had completed. Then, `curl`:
 
 And now `get build` again:
 
-    osc get build
+    oc get build
     NAME                  TYPE      STATUS     POD
     ruby-sample-build-1   Source    Complete   ruby-sample-build-1
     ruby-sample-build-2   Source    Pending    ruby-sample-build-2
@@ -2957,7 +2957,7 @@ and 2.
 
 You can also see this information from the cli by doing:
 
-    osc get replicationcontroller
+    oc get replicationcontroller
 
 The semantics of this are that a `DeploymentConfig` ensures a
 `ReplicationController` is created to manage the deployment of the built `Image`
@@ -2969,11 +2969,11 @@ Simple, right?
 You can rollback a deployment using the CLI. Let's go and checkout what a rollback to
 `frontend-1` would look like:
 
-    osc rollback frontend-1 --dry-run
+    oc rollback frontend-1 --dry-run
 
 Since it looks OK, let's go ahead and do it:
 
-    osc rollback frontend-1
+    oc rollback frontend-1
 
 If you look at the `Browse` tab of your project, you'll see that in the `Pods`
 section there is a `frontend-3...` pod now. After a few moments, revisit the
@@ -2983,7 +2983,7 @@ application in your web browser, and you should see the old "Welcome..." text.
 Corporate marketing called again. They think the typo makes us look hip and
 cool. Let's now roll forward (activate) the typo-enabled application:
 
-    osc rollback frontend-2
+    oc rollback frontend-2
 
 ## Customized Build and Run Processes
 OpenShift v3 supports customization of both the build and run processes.
@@ -3036,11 +3036,11 @@ run inside of your builder pod. That's what you see by using `build-logs` - the
 output of the assemble script. The
 `run` script actually is what is executed to "start" your application's pod. In
 other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` S2I builder. 
+was built based on the `ruby-20-rhel7` S2I builder.
 
 To look inside the builder pod, as `alice`:
 
-    osc logs `osc get pod | grep -e "[0-9]-build" | tail -1 | awk {'print $1'}` | grep CUSTOM
+    oc logs `oc get pod | grep -e "[0-9]-build" | tail -1 | awk {'print $1'}` | grep CUSTOM
 
 You should see something similar to:
 
@@ -3062,7 +3062,7 @@ your built image, execute your hook script(s), and then shut the instance down.
 Neat, huh?
 
 Since we already have our `wiring` app pointing at our forked code repository,
-let's go ahead and add a database migration file. In the `beta4` folder you will
+let's go ahead and add a database migration file. In the `rc` folder you will
 find a file called `1_sample_table.rb`. Add this file to the `db/migrate` folder
 of the `ruby-hello-world` repository that you forked. If you don't add this file
 to the right folder, the rest of the steps will fail.
@@ -3127,7 +3127,7 @@ information can be found in the documentation:
 Since we are talking about **deployments**, let's look at our
 `DeploymentConfig`s. As the `alice` user in the `wiring` project:
 
-    osc get dc
+    oc get dc
 
 You should see something like:
 
@@ -3139,9 +3139,9 @@ Since we are trying to associate a Rails database migration hook with our
 application, we are ultimately talking about a deployment of the frontend. If
 you edit the frontend's `DeploymentConfig` as `alice`:
 
-    osc edit dc frontend -ojson
+    oc edit dc frontend -ojson
 
-Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+Yes, the default for `oc edit` is to use YAML. For this exercise, JSON will be
 easier as it is indentation-insensitive. Find the section that looks like the
 following before continuing:
 
@@ -3230,10 +3230,10 @@ their logs any longer.
 
 For now, we can clean up by doing the following as `alice`:
 
-    osc get pod |\
+    oc get pod |\
     grep -E "[0-9]-build" |\
     awk {'print $1'} |\
-    xargs -r osc delete pod
+    xargs -r oc delete pod
 
 This will get rid of all of our old build and lifecycle pods. The lifecycle pods
 are the pre- and post-deployment hook pods, and the sti-build pods are the pods
@@ -3253,24 +3253,24 @@ deployment happens.
 
 As `alice`:
 
-    osc start-build ruby-sample-build
+    oc start-build ruby-sample-build
 
 Or go into the web console and click the "Start Build" button in the Builds
 area.
 
 ### Verify the Migration
 About a minute after the build completes, you should see something like the following output
-of `osc get pod` as `alice`:
+of `oc get pod` as `alice`:
 
     POD                                IP          CONTAINER(S)               IMAGE(S)                                                                                                                HOST                                    LABELS                                                                                                                  STATUS       CREATED         MESSAGE
-    database-2-rj72q                   10.1.0.15                                                                                                                                                      ose3-master.example.com/192.168.133.2   deployment=database-2,deploymentconfig=database,name=database                                                           Running      About an hour   
-                                                   ruby-helloworld-database   registry.access.redhat.com/openshift3_beta/mysql-55-rhel7                                                                                                                                                                                                                               Running      About an hour   
-    deployment-frontend-7-hook-4i8ch                                                                                                                                                                  ose3-node1.example.com/192.168.133.3    <none>                                                                                                                  Succeeded    41 seconds      
+    database-2-rj72q                   10.1.0.15                                                                                                                                                      ose3-master.example.com/192.168.133.2   deployment=database-2,deploymentconfig=database,name=database                                                           Running      About an hour
+                                                   ruby-helloworld-database   registry.access.redhat.com/openshift3/mysql-55-rhel7                                                                                                                                                                                                                               Running      About an hour
+    deployment-frontend-7-hook-4i8ch                                                                                                                                                                  ose3-node1.example.com/192.168.133.3    <none>                                                                                                                  Succeeded    41 seconds
                                                    lifecycle                  172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Terminated   36 seconds      exit code 0
-    frontend-7-nnnxz                   10.1.1.24                                                                                                                                                      ose3-node1.example.com/192.168.133.3    deployment=frontend-7,deploymentconfig=frontend,name=frontend                                                           Running      29 seconds      
-                                                   ruby-helloworld            172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Running      26 seconds      
-    ruby-sample-build-7-build                                                                                                                                                                         ose3-master.example.com/192.168.133.2   build=ruby-sample-build-7,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded    2 minutes       
-                                                   sti-build                  openshift3_beta/ose-sti-builder:v0.5.2.2                                                                                                                                                                                                                                                Terminated   2 minutes       exit code 0
+    frontend-7-nnnxz                   10.1.1.24                                                                                                                                                      ose3-node1.example.com/192.168.133.3    deployment=frontend-7,deploymentconfig=frontend,name=frontend                                                           Running      29 seconds
+                                                   ruby-helloworld            172.30.118.110:5000/wiring/origin-ruby-sample@sha256:2984cfcae1dd42c257bd2f79284293df8992726ae24b43470e6ffd08affc3dfd                                                                                                                                                                   Running      26 seconds
+    ruby-sample-build-7-build                                                                                                                                                                         ose3-master.example.com/192.168.133.2   build=ruby-sample-build-7,buildconfig=ruby-sample-build,name=ruby-sample-build,template=application-template-stibuild   Succeeded    2 minutes
+                                                   sti-build                  openshift3/ose-sti-builder:v0.6.1.0                                                                                                                                                                                                                                                Terminated   2 minutes       exit code 0
 
 Yes, it's ugly, thanks for reminding us.
 
@@ -3279,7 +3279,7 @@ with the pod that ran our pre-deployment hook.
 
 Inspect this pod's logs:
 
-    osc logs deployment-frontend-7-hook-4i8ch
+    oc logs deployment-frontend-7-hook-4i8ch
 
 The output should show something like:
 
@@ -3298,7 +3298,7 @@ using the `mysql` client and the environment variables (you would need the
 
 As `alice`, find your database:
 
-    [alice@ose3-master beta4]$ osc get service
+    [alice@ose3-master rc]$ oc get service
     NAME       LABELS    SELECTOR        IP(S)            PORT(S)
     database   <none>    name=database   172.30.108.133   5434/TCP
     frontend   <none>    name=frontend   172.30.229.16    5432/TCP
@@ -3338,44 +3338,44 @@ image:
     https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
 
 We've taken the content of this subfolder and placed it in the GitHub
-`openshift/centos7-wordpress` repository. Let's run `osc new-app` and see what
+`openshift/centos7-wordpress` repository. Let's run `oc new-app` and see what
 happens:
 
-    osc new-app https://github.com/openshift/centos7-wordpress.git -o yaml
+    oc new-app https://github.com/openshift/centos7-wordpress.git -o yaml
 
 This all looks good for now.
 
 ### Create a Project
 As `alice`, go ahead and create a new project:
 
-    osc new-project wordpress --display-name="Wordpress" \
+    oc new-project wordpress --display-name="Wordpress" \
     --description='Building an arbitrary Wordpress Docker image'
 
 ### Build Wordpress
 Let's choose the Wordpress example:
 
-    osc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
+    oc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
 
     imageStreams/centos
     imageStreams/centos7-wordpress
     buildConfigs/centos7-wordpress
     deploymentConfigs/centos7-wordpress
     services/centos7-wordpress
-    A build was created - you can run `osc start-build centos7-wordpress` to start it.
+    A build was created - you can run `oc start-build centos7-wordpress` to start it.
     Service "centos7-wordpress" created at 172.30.135.252 with port mappings 22.
 
 Then, start the build:
 
-    osc start-build centos7-wordpress
+    oc start-build centos7-wordpress
 
 **Note: This can take a *really* long time to build.**
 
 You will need a route for this application, as `curl` won't do a whole lot for
-us here. Additionally, `osc new-app` currently has a bug in the way services are
+us here. Additionally, `oc new-app` currently has a bug in the way services are
 detected, so we'll have a service for SSH (thus port 22 above) but not one for
 httpd. So we'll add on a service and route for web access.
 
-    osc create -f wordpress-addition.json
+    oc create -f wordpress-addition.json
 
 ### Test Your Application
 You should be able to visit:
@@ -3392,11 +3392,11 @@ you allow it, developers can actually simply build Docker containers as their
 ### Application Resource Labels
 
 You may have wondered about the `-l name=wordpress` in the invocation above. This
-applies a label to all of the resources created by `osc new-app` so that they can
+applies a label to all of the resources created by `oc new-app` so that they can
 be easily distinguished from any other resources in a project. For example, we
 can easily delete only the things with this label:
 
-    osc delete all -l name=wordpress
+    oc delete all -l name=wordpress
 
     buildConfigs/centos7-wordpress
     builds/centos7-wordpress-1
@@ -3409,12 +3409,12 @@ can easily delete only the things with this label:
 Notice that the things we created from wordpress-addition.json didn't
 have this label, so they didn't get deleted:
 
-    osc get services
+    oc get services
 
     NAME                      LABELS    SELECTOR                             IP             PORT(S)
     wordpress-httpd-service   <none>    deploymentconfig=centos7-wordpress   172.30.17.83   80/TCP
 
-    osc get route
+    oc get route
 
     NAME              HOST/PORT                         PATH      SERVICE                   LABELS
     wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service
@@ -3438,7 +3438,7 @@ that user in the subsequent commands as necessary.
 When we imported the imagestreams into the `openshift` namespace earlier, we
 also brought in JBoss EAP and Tomcat S2I builder images.
 
-Take a look at the `eap6-basic-sti.json` in the `beta4` folder.  You'll see that
+Take a look at the `eap6-basic-sti.json` in the `rc` folder.  You'll see that
 there are a number of bash-style variables (`${SOMETHING}`) in use in this
 template. This template is already configured to use the EAP builder image, so
 we can use the web console to simply isntantiate it in the desired way.
@@ -3457,11 +3457,11 @@ Ok, we're ready:
 
 1. Add the `eap6-basic-sti.json` template to your project using the commandline:
 
-        osc create -f eap6-basic-sti.json
+        oc create -f eap6-basic-sti.json
 
 1. Create the secret for the EAP template:
 
-        osc create -f eap-app-secret.json
+        oc create -f eap-app-secret.json
 
 1. Go into the web console.
 
@@ -3487,7 +3487,7 @@ The template assumes that the imageStream exists in our current project, but
 that is not the case. The EAP imageStream exists in the `openshift` namespace.
 So we need to edit the resulting `buildConfig` and specify that.
 
-    osc edit bc helloworld
+    oc edit bc helloworld
 
 You will need to edit the `strategy` section to look like the following:
 
@@ -3517,11 +3517,11 @@ helloworld application does not use a "ROOT.war". If you don't understand this,
 it's because Java is confusing.
 
 ## Conclusion
-This concludes the Beta 4 training. Look for more example applications to come!
+This concludes the RC training. Look for more example applications to come!
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample
-[dnsmasq.conf](./beta4/dnsmasq.conf) file and a sample [hosts](./beta4/hosts)
+[dnsmasq.conf](./rc/dnsmasq.conf) file and a sample [hosts](./rc/hosts)
 file. If you do not have the ability to manipulate DNS in your
 environment, or just want a quick and dirty way to set up DNS, you can
 install dnsmasq on one of your nodes. Do **not** install DNSMasq on
@@ -3611,17 +3611,17 @@ possible to change the ldap server that is used at any time.
 For convenience the example LDAP server can be deployed on OpenShift as
 follows:
 
-    osc create -f openldap-example.json
+    oc create -f openldap-example.json
 
 That will create a pod from an OpenLDAP image hosted externally on the Docker
-Hub.  You can find the source for it [here](beta4/images/openldap-example/).
+Hub.  You can find the source for it [here](rc/images/openldap-example/).
 
 To test the example LDAP service you can run the following:
 
     yum -y install openldap-clients
     ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com" \
                -s sub "(objectclass=*)" -w redhat \
-               -h `osc get services | grep openldap-example-service | awk '{print $4}'`
+               -h `oc get services | grep openldap-example-service | awk '{print $4}'`
 
 You should see ldif output that shows the example.com users.
 
@@ -3653,20 +3653,20 @@ No arguments are required but the help output will show you the defaults:
 
 Once you run the helper script it will output the configuration changes
 required for `/etc/openshift/master/master-config.yaml` as well as create
-`basicauthurl.json`.  You can now feed that to `osc`:
+`basicauthurl.json`.  You can now feed that to `oc`:
 
-    osc create -f basicauthurl.json
+    oc create -f basicauthurl.json
 
 At this point everything is in place to start the build which will trigger the
 deployment.
 
-    osc start-build basicauthurl-build
+    oc start-build basicauthurl-build
 
 When the build finished you can run the following command to test that the
 Service is responding correctly:
 
     curl -v -u joe:redhat --cacert /etc/openshift/master/ca.crt \
-        --resolve basicauthurl.example.com:443:`osc get services | grep basicauthurl | awk '{print $4}'` \
+        --resolve basicauthurl.example.com:443:`oc get services | grep basicauthurl | awk '{print $4}'` \
         https://basicauthurl.example.com/validate
 
 In that case in order for SNI to work correctly we had to trick curl with the `--resolve` flag.  If wildcard DNS is set up in your environment to point to the router then the following should test the service end to end:
@@ -3698,12 +3698,12 @@ Docker supports import/save of Images via tarball. These instructions are
 general and may not be 100% accurate for the current release. You can do
 something like the following on your connected machine:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3/ose-deployer
+    docker pull registry.access.redhat.com/openshift3/ose-sti-builder
+    docker pull registry.access.redhat.com/openshift3/ose-docker-builder
+    docker pull registry.access.redhat.com/openshift3/ose-pod
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
     docker pull openshift/ruby-20-centos7
     docker pull openshift/mysql-55-centos7
     docker pull openshift/hello-openshift
@@ -3712,12 +3712,12 @@ something like the following on your connected machine:
 This will fetch all of the images. You can then save them to a tarball:
 
     docker save -o beta1-images.tar \
-    registry.access.redhat.com/openshift3_beta/ose-haproxy-router \
-    registry.access.redhat.com/openshift3_beta/ose-deployer \
-    registry.access.redhat.com/openshift3_beta/ose-sti-builder \
-    registry.access.redhat.com/openshift3_beta/ose-docker-builder \
-    registry.access.redhat.com/openshift3_beta/ose-pod \
-    registry.access.redhat.com/openshift3_beta/ose-docker-registry \
+    registry.access.redhat.com/openshift3/ose-haproxy-router \
+    registry.access.redhat.com/openshift3/ose-deployer \
+    registry.access.redhat.com/openshift3/ose-sti-builder \
+    registry.access.redhat.com/openshift3/ose-docker-builder \
+    registry.access.redhat.com/openshift3/ose-pod \
+    registry.access.redhat.com/openshift3/ose-docker-registry \
     openshift/ruby-20-centos7 \
     openshift/mysql-55-centos7 \
     openshift/hello-openshift \
@@ -3741,17 +3741,17 @@ master-admin to find everything:
 
     for resource in build buildconfig images imagestream deploymentconfig \
     route replicationcontroller service pod; do echo -e "Resource: $resource"; \
-    osc get $resource; echo -e "\n\n"; done
+    oc get $resource; echo -e "\n\n"; done
 
-Deleting a project with `osc delete project` should delete all of its resources,
+Deleting a project with `oc delete project` should delete all of its resources,
 but you may need help finding things in the default project (where
 infrastructure items are). Deleting the default project is not recommended.
 
 # APPENDIX - Pretty Output
-If the output of `osc get pods` is a little too busy, you can use the following
+If the output of `oc get pods` is a little too busy, you can use the following
 to limit some of what it returns:
 
-    osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
+    oc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 # APPENDIX - Troubleshooting
 
@@ -3766,7 +3766,7 @@ for common issues. This is very much still under development however.
 
 **Common problems**
 
-* All of a sudden authentication seems broken for non-admin users.  Whenever I run osc commands I see output such as:
+* All of a sudden authentication seems broken for non-admin users.  Whenever I run oc commands I see output such as:
 
         F0310 14:59:59.219087   30319 get.go:164] request
         [&{Method:GET URL:https://ose3-master.example.com:8443/api/v1beta1/pods?namespace=demo
@@ -3775,21 +3775,21 @@ for common issues. This is very much still under development however.
         MultipartForm:<nil> Trailer:map[] RemoteAddr: RequestURI: TLS:<nil>}]
         failed (401) 401 Unauthorized: Unauthorized
 
-    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the osc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
+    In most cases if admin (certificate) auth is still working this means the token is invalid.  Soon there will be more polish in the oc tooling to handle this edge case automatically but for now the simplist thing to do is to recreate the .kubeconfig.
 
         # The login command creates a .kubeconfig file in the CWD.
         # But we need it to exist in ~/.kube
         cd ~/.kube
 
-        # If a stale token exists it will prevent the beta4 login command from working
+        # If a stale token exists it will prevent the rc login command from working
         rm .kubeconfig
 
-        osc login \
+        oc login \
         --certificate-authority=/etc/openshift/master/ca.crt \
         --cluster=master --server=https://ose3-master.example.com:8443 \
         --namespace=[INSERT NAMESPACE HERE]
 
-* When using an "osc" command like "osc get pods" I see a "certificate signed by
+* When using an "oc" command like "oc get pods" I see a "certificate signed by
     unknown authority error":
 
         F0212 16:15:52.195372   13995 create.go:79] Post
@@ -3818,7 +3818,7 @@ for common issues. This is very much still under development however.
 
     To find out if the endpoints have been updated you can run:
 
-    `osc describe service $name_of_service` and check the value of `Endpoints:`
+    `oc describe service $name_of_service` and check the value of `Endpoints:`
 
 # APPENDIX - Infrastructure Log Aggregation
 Given the distributed nature of OpenShift you may find it beneficial to
@@ -3965,8 +3965,8 @@ systemctl restart openshift-master
 If you had previously imported ImageStreams without the proxy configuration to can re-run the process as follows:
 
 ~~~
-osc delete imagestreams -n openshift --all
-osc create -f image-streams.json -n openshift
+oc delete imagestreams -n openshift --all
+oc create -f image-streams.json -n openshift
 ~~~
 
 ## S2I Builds
@@ -4179,27 +4179,27 @@ Each host will be created with an 'openshift' user that has passwordless sudo co
 
 # APPENDIX - Linux, Mac, and Windows clients
 
-The OpenShift client `osc` is available for Linux, Mac OSX, and Windows. You
+The OpenShift client `oc` is available for Linux, Mac OSX, and Windows. You
 can use these clients to perform all tasks in this documentation that make use
-of the `osc` command.
+of the `oc` command.
 
 ## Downloading The Clients
 
 Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
-to download the Beta4 clients. You will need to sign into Customer Portal using
+to download the rc clients. You will need to sign into Customer Portal using
 an account that includes the OpenShift Enterprise High Touch Beta entitlements.
 
 ## Log In To Your OpenShift Environment
 
-You will need to log into your environment using `osc login` as you have
-elsewhere. If you have access to the CA certificate you can pass it to osc with
+You will need to log into your environment using `oc login` as you have
+elsewhere. If you have access to the CA certificate you can pass it to oc with
 the --certificate-authority flag or otherwise import the CA into your host's
 certificate authority. If you do not import or specify the CA you will be
 prompted to accept an untrusted certificate which is not recommended.
 
 The CA is created on your master in `/etc/openshift/master/ca.crt`
 
-    C:\Users\test\Downloads> osc --certificate-authority="ca.crt"
+    C:\Users\test\Downloads> oc --certificate-authority="ca.crt"
     OpenShift server [[https://localhost:8443]]: https://ose3-master.example.com:8443
     Authentication required for https://ose3-master.example.com:8443 (openshift)
     Username: joe
@@ -4210,7 +4210,7 @@ The CA is created on your master in `/etc/openshift/master/ca.crt`
 
 On Mac OSX and Linux you will need to make the file executable
 
-    chmod +x osc
+    chmod +x oc
 
 In the future users will be able to download clients directly from the OpenShift
 console rather than needing to visit Customer Portal.
