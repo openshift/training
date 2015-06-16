@@ -1,6 +1,6 @@
 {
     "kind": "Template",
-    "apiVersion": "v1beta1",
+    "apiVersion": "v1",
     "metadata": {
         "annotations": {
             "iconClass" : "icon-jboss",
@@ -74,10 +74,10 @@
             "value": ""
         }
     ],
-    "items": [
+    "objects": [
         {
             "kind": "Service",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "spec": {
                 "ports": [
                     {
@@ -101,7 +101,7 @@
         },
         {
             "kind": "Service",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "spec": {
                 "ports": [
                     {
@@ -125,7 +125,7 @@
         },
         {
             "kind": "Service",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "spec": {
                 "ports": [
                     {
@@ -150,7 +150,7 @@
         },
         {
             "kind": "Route",
-            "apiVersion": "v1beta1",
+            "apiVersion": "v1",
             "id": "${APPLICATION_NAME}-http-route",
             "metadata": {
                 "name": "${APPLICATION_NAME}-http-route",
@@ -161,12 +161,16 @@
                     "description": "Route for application's http service."
                 }
             },
-            "host": "${APPLICATION_HOSTNAME}",
-            "serviceName": "${APPLICATION_NAME}-http-service"
+            "spec": {
+                "host": "${APPLICATION_HOSTNAME}",
+                "to": {
+                    "name": "${APPLICATION_NAME}-http-service"
+                }
+            }
         },
         {
             "kind": "Route",
-            "apiVersion": "v1beta1",
+            "apiVersion": "v1",
             "id": "${APPLICATION_NAME}-https-route",
             "metadata": {
                 "name": "${APPLICATION_NAME}-https-route",
@@ -177,15 +181,19 @@
                     "description": "Route for application's https service."
                 }
             },
-            "host": "${APPLICATION_HOSTNAME}",
-            "serviceName": "${APPLICATION_NAME}-https-service",
-            "tls": {
-                "termination" : "passthrough"
+            "spec": {
+                "host": "${APPLICATION_HOSTNAME}",
+                "to": {
+                    "name": "${APPLICATION_NAME}-https-service"
+                },
+                "tls": {
+                    "termination" : "passthrough"
+                }
             }
         },
         {
             "kind": "ImageStream",
-            "apiVersion": "v1beta1",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "${APPLICATION_NAME}",
                 "labels": {
@@ -195,38 +203,14 @@
         },
         {
             "kind": "BuildConfig",
-            "apiVersion": "v1beta1",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "${APPLICATION_NAME}",
                 "labels": {
                     "application": "${APPLICATION_NAME}"
                 }
             },
-            "triggers": [
-                {
-                    "type": "github",
-                    "github": {
-                        "secret": "${GITHUB_TRIGGER_SECRET}"
-                    }
-                },
-                {
-                    "type": "generic",
-                    "generic": {
-                        "secret": "${GENERIC_TRIGGER_SECRET}"
-                    }
-                },
-                {
-                    "type": "imageChange",
-                    "imageChange": {
-                        "image": "registry.access.redhat.com/jboss-eap-6/eap-openshift:${EAP_RELEASE}",
-                        "from": {
-                            "name": "jboss-eap6-openshift"
-                        },
-                        "tag": "${EAP_RELEASE}"
-                    }
-                }
-            ],
-            "parameters": {
+            "spec": {
                 "source": {
                     "type": "Git",
                     "git": {
@@ -236,144 +220,146 @@
                     "contextDir":"${GIT_CONTEXT_DIR}"
                 },
                 "strategy": {
-                    "type": "STI",
-                    "stiStrategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
                         "from": {
-                            "name": "jboss-eap6-openshift"
-                        },
-                        "tag": "${EAP_RELEASE}",
-                        "clean": true
+                            "kind": "ImageStreamTag",
+                            "name": "jboss-eap6-openshift:${EAP_RELEASE}"
+                        }
                     }
                 },
                 "output": {
                     "to": {
                         "name": "${APPLICATION_NAME}"
                     }
-                }
+                },
+                "triggers": [
+                    {
+                        "type": "github",
+                        "github": {
+                            "secret": "${GITHUB_TRIGGER_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "generic",
+                        "generic": {
+                            "secret": "${GENERIC_TRIGGER_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "imageChange",
+                        "imageChange": {}
+                    }
+                ]
             }
         },
         {
             "kind": "DeploymentConfig",
-            "apiVersion": "v1beta1",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "${APPLICATION_NAME}",
                 "labels": {
                     "application": "${APPLICATION_NAME}"
                 }
             },
-            "triggers": [
-                {
-                    "type": "ImageChange",
-                    "imageChangeParams": {
-                        "automatic": true,
-                        "containerNames": [
-                            "${APPLICATION_NAME}"
-                        ],
-                        "from": {
-                            "name": "${APPLICATION_NAME}"
-                        },
-                        "tag": "latest"
-                    }
-                }
-            ],
-            "template": {
+            "spec": {
                 "strategy": {
                     "type": "Recreate"
                 },
-                "controllerTemplate": {
-                    "replicas": 1,
-                    "replicaSelector": {
-                        "deploymentConfig": "${APPLICATION_NAME}"
-                    },
-                    "podTemplate": {
-                        "desiredState": {
-                            "manifest": {
-                                "version": "v1beta1",
-                                "containers": [
-                                    {
-                                        "name": "${APPLICATION_NAME}",
-                                        "image": "${APPLICATION_NAME}",
-                                        "imagePullPolicy": "PullAlways",
-                                        "volumeMounts": [
-                                            {
-                                                "name": "eap-keystore-volume",
-                                                "mountPath": "/etc/eap-secret-volume",
-                                                "readOnly": true
-                                            }
-                                        ],
-                                        "readinessProbe": {
-                                            "exec": {
-                                                "command": [
-                                                    "/bin/bash",
-                                                    "-c",
-                                                    "/opt/eap/bin/jboss-cli.sh --connect ':read-attribute(name=server-state)' | grep -iq running"
-                                                ]
-                                            }
-                                        },
-                                        "ports": [
-                                            {
-                                                "name": "${APPLICATION_NAME}-tcp-8080",
-                                                "containerPort": 8080,
-                                                "protocol": "TCP"
-                                            },
-                                            {
-                                                "name": "${APPLICATION_NAME}-tcp-8443",
-                                                "containerPort": 8443,
-                                                "protocol": "TCP"
-                                            },
-                                            {
-                                                "name": "${APPLICATION_NAME}-ping-8888",
-                                                "containerPort": 8888,
-                                                "protocol": "TCP"
-                                            }
-                                        ],
-                                        "env": [
-                                            {
-                                                "name": "OPENSHIFT_DNS_PING_SERVICE_NAME",
-                                                "value": "${APPLICATION_NAME}-ping"
-                                            },
-                                            {
-                                                "name": "OPENSHIFT_DNS_PING_SERVICE_PORT",
-                                                "value": "8888"
-                                            },
-                                            {
-                                                "name": "EAP_HTTPS_KEYSTORE_DIR",
-                                                "value": "/etc/eap-secret-volume"
-                                            },
-                                            {
-                                                "name": "EAP_HTTPS_KEYSTORE",
-                                                "value": "${EAP_HTTPS_KEYSTORE}"
-                                            },
-                                            {
-                                                "name": "EAP_HTTPS_NAME",
-                                                "value": "${EAP_HTTPS_NAME}"
-                                            },
-                                            {
-                                                "name": "EAP_HTTPS_PASSWORD",
-                                                "value": "${EAP_HTTPS_PASSWORD}"
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "volumes": [
-                                    {
-                                        "name": "eap-keystore-volume",
-                                        "source": {
-                                            "secret": {
-                                                "target": {
-                                                    "kind": "Secret",
-                                                    "name": "${EAP_HTTPS_SECRET}"
-                                                }
-                                            }
-                                        }
-                                    }
-                                ]
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPLICATION_NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStream",
+                                "name": "${APPLICATION_NAME}"
                             }
-                        },
+                        }
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                },
+                "template": {
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
                         "labels": {
                             "deploymentConfig": "${APPLICATION_NAME}",
                             "application": "${APPLICATION_NAME}"
                         }
+                    },
+                    "spec": {
+                        "serviceAccount": "eap-service-account",
+                        "containers": [
+                            {
+                                "name": "${APPLICATION_NAME}",
+                                "image": "${APPLICATION_NAME}",
+                                "imagePullPolicy": "Always",
+                                "volumeMounts": [
+                                    {
+                                        "name": "eap-keystore-volume",
+                                        "mountPath": "/etc/eap-secret-volume",
+                                        "readOnly": true
+                                    }
+                                ],
+                                "ports": [
+                                    {
+                                        "name": "${APPLICATION_NAME}-tcp-8080",
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "name": "${APPLICATION_NAME}-tcp-8443",
+                                        "containerPort": 8443,
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "name": "${APPLICATION_NAME}-ping-8888",
+                                        "containerPort": 8888,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "OPENSHIFT_DNS_PING_SERVICE_NAME",
+                                        "value": "${APPLICATION_NAME}-ping"
+                                    },
+                                    {
+                                        "name": "OPENSHIFT_DNS_PING_SERVICE_PORT",
+                                        "value": "8888"
+                                    },
+                                    {
+                                        "name": "EAP_HTTPS_KEYSTORE_DIR",
+                                        "value": "/etc/eap-secret-volume"
+                                    },
+                                    {
+                                        "name": "EAP_HTTPS_KEYSTORE",
+                                        "value": "${EAP_HTTPS_KEYSTORE}"
+                                    },
+                                    {
+                                        "name": "EAP_HTTPS_NAME",
+                                        "value": "${EAP_HTTPS_NAME}"
+                                    },
+                                    {
+                                        "name": "EAP_HTTPS_PASSWORD",
+                                        "value": "${EAP_HTTPS_PASSWORD}"
+                                    }
+                                ]
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "name": "eap-keystore-volume",
+                                "secret": {
+                                    "secretName": "${EAP_HTTPS_SECRET}"
+                                }
+                            }
+                        ]
                     }
                 }
             }
