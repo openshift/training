@@ -235,26 +235,51 @@ the pod inside of it. The command should display the ID of the pod:
 Issue a `get pods` to see the details of how it was defined:
 
     oc get pods
-    POD               IP         CONTAINER(S)      IMAGE(S)                           HOST                                   LABELS                 STATUS    CREATED      MESSAGE
-    hello-openshift   10.1.1.2                                                        ose3-node1.example.com/192.168.133.3   name=hello-openshift   Running   16 seconds   
-                                 hello-openshift   openshift/hello-openshift:v0.4.3                                                                 Running   2 seconds   
+    NAME              READY     REASON    RESTARTS   AGE
+    hello-openshift   1/1       Running   0          3m
 
-The output of this command shows all of the Docker containers in a pod, which
-explains some of the spacing.
+To find out more information about this pod, use `describe`:
 
-On the node where the pod is running (`HOST`), look at the list of Docker
+    oc describe pod hello-openshift
+    Name:                           hello-openshift
+    Image(s):                       openshift/hello-openshift
+    Host:                           ose3-master.example.com/192.168.133.2
+    Labels:                         name=hello-openshift
+    Status:                         Running
+    IP:                             10.1.0.3
+    Replication Controllers:        <none>
+    Containers:
+      hello-openshift:
+        Image:              openshift/hello-openshift
+        State:              Running
+          Started:          Tue, 16 Jun 2015 17:13:17 -0400
+        Ready:              True
+        Restart Count:      0
+    Conditions:
+      Type          Status
+      Ready         True 
+    Events:
+      FirstSeen                             LastSeen                        Count   From                                    SubobjectPath                           Reason          Message
+      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {scheduler }                                                                    scheduled       Successfully assigned hello-openshift to ose3-master.example.com
+      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       pulled          Successfully pulled image "openshift3/ose-pod:v0.6.1.0"
+      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       created         Created with docker id 273ed184353e1f861ee9aa71e364c0cdfd1caf5a62c0fbbf6117cd6d5e9bc105
+      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       started         Started with docker id 273ed184353e1f861ee9aa71e364c0cdfd1caf5a62c0fbbf6117cd6d5e9bc105
+      Tue, 16 Jun 2015 17:13:17 -0400       Tue, 16 Jun 2015 17:13:17 -0400 1       {kubelet ose3-master.example.com}       spec.containers{hello-openshift}        created         Created with docker id 4827cf917252bf0aefb6ad5e147f40b3f6ab525d0cbaa26cc5f6fd18654b5bff
+      Tue, 16 Jun 2015 17:13:17 -0400       Tue, 16 Jun 2015 17:13:17 -0400 1       {kubelet ose3-master.example.com}       spec.containers{hello-openshift}        started         Started with docker id 4827cf917252bf0aefb6ad5e147f40b3f6ab525d0cbaa26cc5f6fd18654b5bff
+
+On the node where the pod is running (`Host`), look at the list of Docker
 containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
-should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
+should see an `openshift3/ose-pod` container bound to 36061 on the host and
 bound to 8080 on the container, along with several other `ose-pod` containers.
 
-    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
-    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.b69b23ff_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
-    405d63115a60        openshift3_beta/ose-pod:v0.5.2.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-openshift_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
+    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                     NAMES
+    4827cf917252        openshift/hello-openshift:latest   "/hello-openshift"   2 minutes ago       Up 2 minutes                                  k8s_hello-openshift.d44dd8de_hello-openshift_demo_8125e12c-146c-11e5-8947-525400b33d1d_911c4fba   
+    273ed184353e        openshift3/ose-pod:v0.6.1.0        "/pod"               2 minutes ago       Up 2 minutes        0.0.0.0:36061->8080/tcp   k8s_POD.b5bfe575_hello-openshift_demo_8125e12c-146c-11e5-8947-525400b33d1d_612b6999
 
-The `openshift3_beta/ose-pod` container exists because of the way network
-namespacing works in Kubernetes. For the sake of simplicity, think of the
-container as nothing more than a way for the host OS to get an interface created
-for the corresponding pod to be able to receive traffic. Deeper understanding of
+The `openshift3/ose-pod` container exists because of the way network namespacing
+works in Kubernetes. For the sake of simplicity, think of the container as
+nothing more than a way for the host OS to get an interface created for the
+corresponding pod to be able to receive traffic. Deeper understanding of
 networking in OpenShift is outside the scope of this material.
 
 To verify that the app is working, you can issue a curl to the app's port *on

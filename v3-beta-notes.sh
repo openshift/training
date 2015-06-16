@@ -31,14 +31,14 @@ docker pull ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7
 docker pull ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7
 docker pull ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7
 docker pull ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router registry.access.redhat.com/openshift3/ose-haproxy-router
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer registry.access.redhat.com/openshift3/ose-deployer
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder registry.access.redhat.com/openshift3/ose-sti-builder
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-image-builder registry.access.redhat.com/openshift3/ose-sti-image-builder
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-builder registry.access.redhat.com/openshift3/ose-docker-builder
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod registry.access.redhat.com/openshift3/ose-pod 
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry registry.access.redhat.com/openshift3/ose-docker-registry
-docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router registry.access.redhat.com/openshift3/ose-haproxy-router:v0.6.1.0 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer registry.access.redhat.com/openshift3/ose-deployer:v0.6.1.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder registry.access.redhat.com/openshift3/ose-sti-builder:v0.6.1.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-image-builder registry.access.redhat.com/openshift3/ose-sti-image-builder:v0.6.1.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-builder registry.access.redhat.com/openshift3/ose-docker-builder:v0.6.1.0 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod registry.access.redhat.com/openshift3/ose-pod:v0.6.1.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry registry.access.redhat.com/openshift3/ose-docker-registry:v0.6.1.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v0.6.1.0
 docker tag ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7 registry.access.redhat.com/openshift/ruby-20-rhel7
 docker tag ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7 registry.access.redhat.com/openshift/mysql-55-rhel7
 docker tag ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7 registry.access.redhat.com/openshift/php-55-rhel7
