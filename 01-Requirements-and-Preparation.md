@@ -1,3 +1,24 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Architecture and Requirements](#architecture-and-requirements)
+  - [Architecture](#architecture)
+  - [Requirements](#requirements)
+- [Preparing the Environment](#preparing-the-environment)
+  - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
+  - [DNS](#dns)
+  - [Assumptions](#assumptions)
+  - [Git](#git)
+  - [Preparing Each VM](#preparing-each-vm)
+  - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
+  - [Grab Docker Images (optional, recommended)](#grab-docker-images-optional-recommended)
+  - [Clone the Training Repository](#clone-the-training-repository)
+  - [Add Development Users](#add-development-users)
+  - [Useful OpenShift Logs](#useful-openshift-logs)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Architecture and Requirements
 ## Architecture
 The examples in this documentation assume the following architecture. There are

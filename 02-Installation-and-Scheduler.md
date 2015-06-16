@@ -1,3 +1,24 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Ansible-based Installer](#ansible-based-installer)
+  - [Install Ansible](#install-ansible)
+  - [Generate SSH Keys](#generate-ssh-keys)
+  - [Distribute SSH Keys](#distribute-ssh-keys)
+  - [Clone the Ansible Repository](#clone-the-ansible-repository)
+  - [Configure Ansible](#configure-ansible)
+  - [Modify Hosts](#modify-hosts)
+  - [Run the Ansible Installer](#run-the-ansible-installer)
+  - [Add Cloud Domain](#add-cloud-domain)
+- [Regions and Zones](#regions-and-zones)
+  - [Scheduler and Defaults](#scheduler-and-defaults)
+  - [The NodeSelector](#the-nodeselector)
+  - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
+  - [Node Labels](#node-labels)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Ansible-based Installer
 The installer uses Ansible. Eventually there will be an interactive text-based
 CLI installer that leverages Ansible under the covers. For now, we have to
