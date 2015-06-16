@@ -57,12 +57,12 @@ systemctl restart iptables
 
 sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 cd
-git clone https://github.com/openshift/training
+git clone https://github.com/thoraxe/training -b GA-work
 cd
 rm -rf openshift-ansible
-git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
+git clone https://github.com/detiber/openshift-ansible.git -b rc
 cd ~/openshift-ansible
-/bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
+/bin/cp -r ~/training/content/ansible/* /etc/ansible/
 ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 useradd joe
 useradd alice
