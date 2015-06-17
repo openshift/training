@@ -86,7 +86,7 @@
                   }
                 },
                 "terminationMessagePath": "/dev/termination-log",
-                "imagePullPolicy": "PullIfNotPresent",
+                "imagePullPolicy": "IfNotPresent",
                 "capabilities": {},
                 "securityContext": {
                   "capabilities": {},
