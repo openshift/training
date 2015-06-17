@@ -442,7 +442,7 @@ You should see something like the following:
 
     services/hello-openshift-service
     routes/hello-openshift-route
-    pods/hello-openshift
+    deploymentconfigs/hello-openshift
 
 You can verify this with other `oc` commands:
 
@@ -452,9 +452,9 @@ You can verify this with other `oc` commands:
 
     oc get routes
 
-**Note:** May need to force resize:
+    oc get rc
 
-    https://github.com/openshift/origin/issues/2939
+    oc get dc
 
 ## Project Status
 OpenShift provides a handy tool, `oc status`, to give you a summary of
@@ -463,10 +463,10 @@ common resources existing in the current project:
     oc status
     In project OpenShift 3 Demo (demo)
     
-    service hello-openshift-service (172.30.197.132:27017 -> 8080)
-      hello-openshift deploys docker.io/openshift/hello-openshift:v0.4.3
-        #1 deployed 3 minutes ago - 1 pod
-
+    service hello-openshift-service (172.30.252.29:27017 -> 8080)
+      hello-openshift deploys docker.io/openshift/hello-openshift:v0.4.3 
+        #1 deployed about a minute ago - 1 pod
+    
     To see more information about a Service or DeploymentConfig, use 'oc describe service <name>' or 'oc describe dc <name>'.
     You can use 'oc get all' to see lists of each of the types described above.
 
@@ -512,13 +512,14 @@ If you see some content that looks like:
 
     "demo/hello-openshift-service": {
       "Name": "demo/hello-openshift-service",
-      "EndpointTable": {
-        "10.1.0.9:8080": {
-          "ID": "10.1.0.9:8080",
-          "IP": "10.1.0.9",
-          "Port": "8080"
+      "EndpointTable": [
+        {
+          "ID": "10.1.2.2:8080",
+          "IP": "10.1.2.2",
+          "Port": "8080",
+          "TargetName": "hello-openshift-1-6a4i8"
         }
-      },
+      ],
       "ServiceAliasConfigs": {
         "demo-hello-openshift-route": {
           "Host": "hello-openshift.cloudapps.example.com",
@@ -531,20 +532,19 @@ If you see some content that looks like:
               "PrivateKey": ""
             }
           },
-          "Status": "saved"
+          "Status": ""
         }
       }
-    }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in OpenShift and added the corresponding configuration to HAProxy.
 
 Go ahead and `exit` from the container.
 
-    [root@router-1-2yefi /]# exit
-    exit
+    bash-4.2$ exit
 
-You can reach the route securely and check that it is using the right certificate:
+As `joe`, you can reach the route securely and check that it is using the right
+certificate:
 
     curl --cacert /etc/openshift/master/ca.crt \
              https://hello-openshift.cloudapps.example.com
