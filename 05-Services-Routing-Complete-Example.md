@@ -6,7 +6,6 @@
 - [Routing](#routing)
   - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
   - [Creating the Router](#creating-the-router)
-  - [Router Placement By Region](#router-placement-by-region)
   - [Viewing Router Stats](#viewing-router-stats)
 - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
   - [Creating the Definition](#creating-the-definition)
