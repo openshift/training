@@ -64,6 +64,9 @@ git clone https://github.com/detiber/openshift-ansible.git -b rc
 cd ~/openshift-ansible
 /bin/cp -r ~/training/content/ansible/* /etc/ansible/
 ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+oc label node/ose3-master.example.com region=infra zone=default
+oc label node/ose3-node1.example.com region=primary zone=east
+oc label node/ose3-node2.example.com region=primary zone=west
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd

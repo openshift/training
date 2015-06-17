@@ -163,7 +163,7 @@ go ahead and grab it inside Joe's home folder:
 
     cd
     git clone https://github.com/openshift/training.git
-    cd ~/training/beta4
+    cd ~/training/content
 
 ## The Hello World Definition JSON
 In the beta4 training folder, you can see the contents of our pod definition by
@@ -307,7 +307,7 @@ If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 You can also use `osc` to determine the current quota usage of your project. As
 `joe`:
 
-    oc describe quota test-quota -n demo
+    oc describe quota test-quota
 
 ## Extra Credit
 If you try to curl the pod IP and port, you get "connection refused". See if you

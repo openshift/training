@@ -122,23 +122,15 @@ can:
         --enable="rhel-7-server-rpms" \
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
-        --enable="rhel-server-7-ose-beta-rpms"
+        --enable="rhel-7-server-ose-rpms"
 
-    **Note:** You will have had to register/attach your system first.  Also,
-    *rhel-server-7-ose-beta-rpms* is not a typo.  The name will change at GA to be
-    consistent with the RHEL channel names.
-
-* Import the GPG key for beta:
-
-        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
-
-Onn **each** VM:
+On **each** VM:
 
 1. Install deltarpm to make package updates a little faster:
 
         yum -y install deltarpm
 
-1. Install missing packages:
+1. Install useful missing packages:
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
 
@@ -149,7 +141,8 @@ Onn **each** VM:
 ## Docker Storage Setup (optional, recommended)
 **IMPORTANT:** The default docker storage configuration uses loopback devices
 and is not appropriate for production. Red Hat considers the dm.thinpooldev
-storage option to be the only appropriate configuration for production use.
+storage option to be the only appropriate configuration for production use at
+this time.
 
 If you want to configure the storage for Docker, you'll need to first install
 Docker, as the installer currently does not auto-configure this storage setup
