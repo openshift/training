@@ -84,7 +84,7 @@ oadm router --default-cert=cloudapps.router.pem \
 --selector='region=infra' \
 --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
 mkdir -p /mnt/registry
-osadm registry --create \
+oadm registry --create \
 --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
 --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
 --selector="region=infra" --mount-host=/mnt/registry
