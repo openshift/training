@@ -81,6 +81,7 @@
     - [Adding the Template](#adding-the-template)
     - [Create an Instance of the Template](#create-an-instance-of-the-template)
     - [Using Your App](#using-your-app)
+    - [Placing Your App (Optional)](#placing-your-app-optional)
   - [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
     - [Create a New Project](#create-a-new-project-1)
     - [Stand Up the Frontend](#stand-up-the-frontend)

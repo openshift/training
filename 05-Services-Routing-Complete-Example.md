@@ -1,3 +1,22 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Services](#services)
+- [Routing](#routing)
+  - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
+  - [Creating the Router](#creating-the-router)
+  - [Router Placement By Region](#router-placement-by-region)
+  - [Viewing Router Stats](#viewing-router-stats)
+- [The Complete Pod-Service-Route](#the-complete-pod-service-route)
+  - [Creating the Definition](#creating-the-definition)
+  - [Project Status](#project-status)
+  - [Verifying the Service](#verifying-the-service)
+  - [Verifying the Routing](#verifying-the-routing)
+  - [The Web Console](#the-web-console)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Services
 From the [Kubernetes
 documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/services.md):
