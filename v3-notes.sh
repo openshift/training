@@ -72,16 +72,17 @@ useradd alice
 touch /etc/openshift/openshift-passwd
 htpasswd -b /etc/openshift/openshift-passwd joe redhat
 htpasswd -b /etc/openshift/openshift-passwd alice redhat
+cd
 CA=/etc/openshift/master
-osadm create-server-cert --signer-cert=$CA/ca.crt \
+oadm create-server-cert --signer-cert=$CA/ca.crt \
       --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
       --hostnames='*.cloudapps.example.com' \
       --cert=cloudapps.crt --key=cloudapps.key
 cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
-osadm router --default-cert=cloudapps.router.pem \
+oadm router --default-cert=cloudapps.router.pem \
 --credentials=/etc/openshift/master/openshift-router.kubeconfig \
 --selector='region=infra' \
---images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+--images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
 mkdir -p /mnt/registry
 osadm registry --create \
 --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
