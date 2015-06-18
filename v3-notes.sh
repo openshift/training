@@ -92,6 +92,9 @@ oadm registry --create \
 --images='registry.access.redhat.com/openshift3/ose-${component}:${version}' \
 --selector="region=infra" --mount-host=/mnt/registry \
 --service-account=registry
+
+cat image-streams-rhel7.json  | sed -e 's/registry.access.redhat.com/ci.dev.openshift.redhat.com:5000/' -e ':begin;$!N;s/"metadata": {\n/"metadata": { "annotations": { "openshift.io\/image.insecureRepository": "true" },/;tbegin' -e 's/openshift3/openshift/' | oc create -f - -n openshift
+
 #beta4
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 

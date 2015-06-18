@@ -230,8 +230,8 @@ select the appropriate builder image.
 Perform the following command as `root` in the `beta4`folder in order to add all
 of the builder images:
 
-    oc create -f image-streams-rhel7.json \
-    -f image-streams-jboss-rhel7.json -n openshift
+    oc create -f image-streams-rhel7.json -f jboss-image-streams.json \
+    -n openshift
 
 You will see the following:
 
