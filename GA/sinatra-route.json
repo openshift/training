@@ -1,0 +1,13 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "ruby-example-route"
+  },
+  "spec": {
+    "host": "hello-sinatra.go.openshift.me",
+    "to": {
+      "name": "ruby-example"
+    }
+  }
+}
