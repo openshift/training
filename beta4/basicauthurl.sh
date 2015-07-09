@@ -54,14 +54,14 @@ sed -i "s@%%ROUTE%%@${ROUTE}@" basicauthurl.json
 # need a way to inject their own git url
 sed -i "s@%%GIT_REPO%%@${GIT_REPO}@" basicauthurl.json
 
-pushd /var/lib/openshift > /dev/null
+pushd /etc/openshift/master > /dev/null
   if [ "$FORCE" = "1" ]; then
-    rm -rf openshift.local.certificates/basicauthurl
+    rm basicauthurl-*
   fi
 
-  if [ ! -d "openshift.local.certificates/basicauthurl" ]; then
+  if [ ! -f "basicauthurl-cert.crt" ]; then
     echo "Creating server certificate for $ROUTE"
-    openshift admin create-server-cert --cert='openshift.local.certificates/basicauthurl/cert.crt' --hostnames="${ROUTE}" --key='openshift.local.certificates/basicauthurl/key.key'
+	openshift admin create-server-cert --signer-cert=/etc/openshift/master/ca.crt --signer-serial=/etc/openshift/master/ca.serial.txt --signer-key=/etc/openshift/master/ca.key --cert='basicauthurl-cert.crt' --hostnames="${ROUTE}" --key='basicauthurl-key.key'
   else
     echo "Found preexiting certificates.  Use --force to force regeneration."
   fi
@@ -69,13 +69,13 @@ popd > /dev/null
 
 
 echo "Generating basicauthurl.json..."
-CERT=`cat /var/lib/openshift/openshift.local.certificates/ca/cert.crt | sed ':a;N;$!ba;s/\n/%%NEWLINE%%/g'`
+CERT=`cat /etc/openshift/master/ca.crt | sed ':a;N;$!ba;s/\n/%%NEWLINE%%/g'`
 sed -i "s@%%OPENSHIFT_CA_DATA%%@${CERT}@" basicauthurl.json
 
-CERT=`cat /var/lib/openshift/openshift.local.certificates/basicauthurl/cert.crt | sed ':a;N;$!ba;s/\n/%%NEWLINE%%/g'`
+CERT=`cat /etc/openshift/master/basicauthurl-cert.crt | sed ':a;N;$!ba;s/\n/%%NEWLINE%%/g'`
 sed -i "s@%%OPENSHIFT_CERT_DATA%%@${CERT}@" basicauthurl.json
 
-CERT=`cat /var/lib/openshift/openshift.local.certificates/basicauthurl/key.key | sed ':a;N;$!ba;s/\n/%%NEWLINE%%/g'`
+CERT=`cat /etc/openshift/master/basicauthurl-key.key | sed ':a;N;$!ba;s/\n/%%NEWLINE%%/g'`
 sed -i "s@%%OPENSHIFT_KEY_DATA%%@${CERT}@" basicauthurl.json
 
 # It was horrible to deal with escaping newlines in bash and sed so I'm doing
@@ -85,7 +85,7 @@ sed -i 's/%%NEWLINE%%/\\n/g' basicauthurl.json
 # needs to print our the config change needed for master.yaml
 echo "You can now run 'osc create -f basicauthurl.json"
 echo ""
-echo "Replace the identityProvider in /etc/openshift/master.yaml and add the following:"
+echo "Replace the identityProvider in /etc/openshift/master/master-config.yaml and add the following:"
 echo "
   identityProviders:
   - challenge: true
@@ -95,5 +95,5 @@ echo "
       apiVersion: v1
       kind: BasicAuthPasswordIdentityProvider
       url: https://${ROUTE}/validate
-      ca: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
+      ca: /etc/openshift/master/ca.crt
 "
