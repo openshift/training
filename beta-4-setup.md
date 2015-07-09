@@ -670,7 +670,7 @@ each "zone" in that datacenter might be on its own power system with its own
 dedicated networking, this would ensure that, within the datacenter, pods of an
 application would be spread across power/network segments.
 
-The documentation link has some more complicated examples. The topoligical
+The documentation link has some more complicated examples. The topological
 possibilities are endless!
 
 ### Node Labels
