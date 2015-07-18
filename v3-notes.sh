@@ -15,6 +15,86 @@ osc get $resource; echo -e "\n\n"; done
 
 osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
+#ga/rc
+systemctl start docker
+yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
+docker images  | grep -v jboss | awk {'print $3'} | xargs -r docker rmi -f
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-image-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-builder
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry
+docker pull docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover
+docker pull ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7
+docker pull ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7
+docker pull ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-haproxy-router registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.0 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-deployer registry.access.redhat.com/openshift3/ose-deployer:v3.0.0.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-builder registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-sti-image-builder registry.access.redhat.com/openshift3/ose-sti-image-builder:v3.0.0.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-builder registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.0 
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-pod registry.access.redhat.com/openshift3/ose-pod:v3.0.0.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-docker-registry registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.0
+docker tag docker-buildvm-rhose.usersys.redhat.com:5000/openshift3/ose-keepalived-ipfailover registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v3.0.0.0
+docker tag ci.dev.openshift.redhat.com:5000/openshift/ruby-20-rhel7 registry.access.redhat.com/openshift/ruby-20-rhel7
+docker tag ci.dev.openshift.redhat.com:5000/openshift/mysql-55-rhel7 registry.access.redhat.com/openshift/mysql-55-rhel7
+docker tag ci.dev.openshift.redhat.com:5000/openshift/php-55-rhel7 registry.access.redhat.com/openshift/php-55-rhel7
+docker pull ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4
+docker tag ce-registry.usersys.redhat.com:5000/jboss-eap-6/eap-openshift:6.4 registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4
+docker pull openshift/hello-openshift
+
+cd
+git clone https://github.com/thoraxe/training.git -b GA-work
+cd ~/training/content
+/bin/cp ~/training/content/dnsmasq.conf /etc/
+restorecon -rv /etc/dnsmasq.conf
+sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
+systemctl start dnsmasq
+sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
+systemctl restart iptables
+
+sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
+cd
+git clone https://github.com/thoraxe/training -b GA-work
+cd
+rm -rf openshift-ansible
+git clone https://github.com/openshift/openshift-ansible.git
+cd ~/openshift-ansible
+/bin/cp -r ~/training/content/ansible/* /etc/ansible/
+ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+oc label node/ose3-master.example.com region=infra zone=default
+oc label node/ose3-node1.example.com region=primary zone=east
+oc label node/ose3-node2.example.com region=primary zone=west
+useradd joe
+useradd alice
+touch /etc/openshift/openshift-passwd
+htpasswd -b /etc/openshift/openshift-passwd joe redhat
+htpasswd -b /etc/openshift/openshift-passwd alice redhat
+cd
+CA=/etc/openshift/master
+oadm create-server-cert --signer-cert=$CA/ca.crt \
+      --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
+      --hostnames='*.cloudapps.example.com' \
+      --cert=cloudapps.crt --key=cloudapps.key
+cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
+oadm router --default-cert=cloudapps.router.pem \
+--credentials=/etc/openshift/master/openshift-router.kubeconfig \
+--selector='region=infra' \
+--images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
+mkdir -p /mnt/registry
+echo '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"registry"}}' \
+| oc create -f -
+oc get scc privileged -o yaml | sed -e '$ a- system:serviceaccount:default:registry' | oc update -f -
+oadm registry --create \
+--credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+--images='registry.access.redhat.com/openshift3/ose-${component}:${version}' \
+--selector="region=infra" --mount-host=/mnt/registry \
+--service-account=registry
+
+cat image-streams-rhel7.json  | sed -e 's/registry.access.redhat.com/ci.dev.openshift.redhat.com:5000/' -e ':begin;$!N;s/"metadata": {\n/"metadata": { "annotations": { "openshift.io\/image.insecureRepository": "true" },/;tbegin' -e 's/openshift3/openshift/' | oc create -f - -n openshift
+
 #beta4
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
