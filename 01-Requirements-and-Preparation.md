@@ -134,6 +134,13 @@ On **each** VM:
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
 
+1. Install prerequisites for the installer:
+
+        yum -y install python-virtualenv gcc
+
+    The installer complies python dependencies on the fly, which is why we
+    require `gcc`.
+
 1. Update:
 
         yum -y update

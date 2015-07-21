@@ -19,34 +19,20 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Ansible-based Installer
-The installer uses Ansible. Eventually there will be an interactive text-based
-CLI installer that leverages Ansible under the covers. For now, we have to
-invoke Ansible manually.
-
-## Install Ansible
-Ansible currently comes from the EPEL repository.
-
-Install EPEL:
-
-    yum -y install \
-    http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-
-Disable EPEL so that it is not accidentally used later:
-
-    sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
-
-Install the packages for Ansible:
-
-    yum -y --enablerepo=epel install ansible
+# Instlalation and Scheduler
+Much like with OpenShift Enterprise 2.x and prior, we provide a convenient
+web-sourced installer at `http://install.openshift.com`. First, we must prepare
+for using the installer.
 
 ## Generate SSH Keys
-Because of the way Ansible works, SSH key distribution is required. First,
-generate an SSH key on your master, where we will run Ansible:
+The installer uses ssh underneath the covers to access the hosts in the
+environment and configure them. To do this without passwords, we require that
+SSH keys be generated and distributed. The standaard tool to do this is
+`ssh-keygen`. You can run it with no arguments:
 
     ssh-keygen
 
-Do *not* use a password.
+Do *not* use a password when prompted.
 
 ## Distribute SSH Keys
 An easy way to distribute your SSH keys is by using a `bash` loop:
@@ -55,48 +41,155 @@ An easy way to distribute your SSH keys is by using a `bash` loop:
     ose3-node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
     $host; done
 
-Remember, if your FQDNs are different, you would have to modify the loop
+Remember, if your FQDNs are different, you would have to modify the command
 accordingly.
 
-## Clone the Ansible Repository
-The configuration files for the Ansible installer are currently available on
-Github. Clone the repository:
+## Run the Installer
+Go ahead and run the installer:
 
-    cd
-    git clone https://github.com/detiber/openshift-ansible.git -b rc
-    cd ~/openshift-ansible
+    sh <(curl -s https://install.openshift.com/ose/)
 
-## Configure Ansible
-Copy the staged Ansible configuration files to `/etc/ansible`:
+It will take a few moments to download and compile its dependencies, and then it
+will run. You will be prompted to answer various questions about your
+environment. The first screen, once ready, will look like:
 
-    /bin/cp -r ~/training/beta4/ansible/* /etc/ansible/
+    Welcome to the OpenShift Enterprise 3 installation.
+    
+    Please confirm that following prerequisites have been met:
+    
+    * All systems where OpenShift will be installed are running Red Hat Enterprise
+      Linux 7.
+    * All systems are properly subscribed to the required OpenShift Enterprise 3
+      repositories.
+    * All systems have run docker-storage-setup (part of the Red Hat docker RPM).
+    * All systems have working DNS that resolves not only from the perspective of
+      the installer but also from within the cluster.
+    
+    When the process completes you will have a default configuration for Masters
+    and Nodes.  For ongoing environment maintenance it's recommended that the
+    official Ansible playbooks be used.
+    
+    For more information on installation prerequisites please see:
+    https://docs.openshift.com/enterprise/latest/admin_guide/install/prerequisites.html
+    
+    Are you ready to continue?  y/Y to confirm, or n/N to abort [n]: 
 
-## Modify Hosts
-If you are not using the "example.com" domain and the training example
-hostnames, modify `/etc/ansible/hosts` accordingly. 
+Type `y` and hit enter to continue.
 
-Also, if you are using multiple NICs and will be trying to direct various
-traffic to different places, you will need to take a look at [Generic Cloud
-Install](#generic-cloud-install) to learn more about the syntax of Ansible's
-`hosts` file.
+## Define installation user
+The installer supports operation as non-root, but, for this training, we will
+use root. We have already distributed our ssh keys as root. You will see a
+prompt like:
 
-## Run the Ansible Installer
-Now we can simply run the Ansible installer:
+    This installation process will involve connecting to remote hosts via ssh.  Any
+    account may be used however if a non-root account is used it must have
+    passwordless sudo access.
+    
+    User for ssh access [root]: 
 
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+Hit enter to conintue.
 
-If you looked at the Ansible hosts file, note that our master
-(ose3-master.example.com) was present in both the `master` and the `node`
-section.
+## Master Configuration
+The next step is to configure master(s). After pressing a key to continue, the
+default system editor will open. Be sure to specify our lone master:
 
-Effectively, Ansible is going to install and configure node software on all the
-nodes and master software just on `ose3-master.example.com` .
+    ose3-master.example.com
+
+Save and exit the editor. You will be asked to confirm:
+
+    1) ose3-master.example.com
+    Please confirm the following masters.  y/Y to confirm, or n/N to edit [n]: 
+
+Type `y` and hit enter to coninue.
+
+## Node Configuration
+The next step is to configure node(s). After pressing a key to continue, the
+default system editor will open. You will notice that your master is already
+present. **Do not delete it**. The master **must** be configured as a node
+presently, because this is how it is able to participate on / access the SDN.
+The master needs to be able to access some of the deployed application instances
+(pods).
+
+Be sure to enter all nodes:
+
+    ose3-node1.example.com
+    ose3-node2.example.com
+
+Save and exit the editor. You will be asked to confirm:
+
+    1) ose3-master.example.com
+    2) ose3-node1.example.com
+    3) ose3-node2.example.com
+    Please confirm the following nodes.  y/Y to confirm, or n/N to edit [n]:
+
+Type `y` and hit enter to continue.
+
+## General Confirmation
+The installer will now show you an overview of the installation details. You
+should see something like the following:
+
+    ose3-node2.example.com,192.168.133.4,192.168.133.4,ose3-node2.example.com,ose3-node2.example.com
+    ose3-node1.example.com,192.168.133.3,192.168.133.3,ose3-node1.example.com,ose3-node1.example.com
+    ose3-master.example.com,192.168.133.2,192.168.133.2,ose3-master.example.com,ose3-master.example.com
+    
+    # Everything after this line is ignored.
+    
+    Format:
+    
+    installation host,IP,public IP,hostname,public hostname
+    
+    Notes:
+     * The installation host is the hostname from the installer's perspective.
+     * The IP of the host should be the internal IP of the instance.
+     * The public IP should be the externally accessible IP associated with the instance
+     * The hostname should resolve to the internal IP from the instances
+       themselves.
+     * The public hostname should resolve to the external ip from hosts outside of
+       the cloud.
+
+If you are installing in a cloud-like environment (AWS, OpenStack, etc), please
+take special note of the *Notes* section, as it contains very important details
+about how to change the final configuration to handle public vs private
+resources and etc.
+
+When you are satisfied, save and exit the editor.
+
+## Finish the Installation
+You will now see something like the following:
+
+    Ready to run installation process.
+    
+    If changes are needed to the values recorded by the installer please update /root/.config/openshift/installer.cfg.yml.
+    
+    Proceed? y/Y to confirm, or n/N to exit [y]: 
+
+Type `y` and hit enter to finish the installation. You will then begin to see
+the installer do its work. At the end of the installation process, you should
+see something like the following:
+
+    PLAY RECAP ******************************************************************** 
+    localhost                  : ok=9    changed=0    unreachable=0    failed=0   
+    ose3-master.example.com    : ok=144  changed=36   unreachable=0    failed=0   
+    ose3-node1.example.com     : ok=43   changed=13   unreachable=0    failed=0   
+    ose3-node2.example.com     : ok=43   changed=13   unreachable=0    failed=0   
+
+    
+    The installation was successful!
+    
+    If this is your first time installing please take a look at the Administrator
+    Guide for advanced options related to routing, storage, authentication and much
+    more:
+    
+    http://docs.openshift.com/enterprise/latest/admin_guide/overview.html
+
+Press any key to continue and exit the installer. You now have a working
+OpenShift Enterprise environment!
 
 ## Add Cloud Domain
 If you want default routes (we'll talk about these later) to automatically get
 the right domain (the one you configured earlier with your wildcard DNS), then
-you should edit `/etc/openshift/master/master-config.yaml` and add the following
-to the last line of the file:
+you should edit `/etc/openshift/master/master-config.yaml` and edit the
+following:
 
     routingConfig:
       subdomain: cloudapps.example.com
@@ -185,7 +278,7 @@ Again, the defaults are:
 And, for an extremely detailed explanation about what these various
 configuration flags are doing, check out:
 
-    http://docs.openshift.org/latest/admin_guide/scheduler.html
+    https://docs.openshift.com/enterprise/3.0/admin_guide/scheduler.html
 
 In a small environment, these defaults are pretty sane. Let's look at one of the
 important predicates (filters) before we move on to "regions" and "zones".
@@ -220,15 +313,16 @@ Then, take a look at `/etc/openshift/master/scheduler.json`. It will have the
 following content:
 
     {
-      "predicates" : [
-        {"name" : "PodFitsResources"},
-        {"name" : "PodFitsPorts"},
-        {"name" : "NoDiskConflict"},
-        {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
-      ],"priorities" : [
-        {"name" : "LeastRequestedPriority", "weight" : 1},
-        {"name" : "ServiceSpreadingPriority", "weight" : 1},
-        {"name" : "Zone", "weight" : 2, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
+      "predicates": [
+        {"name": "MatchNodeSelector"},
+        {"name": "PodFitsResources"},
+        {"name": "PodFitsPorts"},
+        {"name": "NoDiskConflict"},
+        {"name": "Region", "argument": {"serviceAffinity" : {"labels" : ["region"]}}}
+      ],"priorities": [
+        {"name": "LeastRequestedPriority", "weight": 1},
+        {"name": "ServiceSpreadingPriority", "weight": 1},
+        {"name": "Zone", "weight" : 2, "argument": {"serviceAntiAffinity" : {"label": "zone"}}}
       ]
     }
 
@@ -246,7 +340,7 @@ So, if we have the following nodes and the following labels:
 * Node 3 -- "region":"primary"
 
 If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
-then only Node 1 and Node 2 would be considered.
+then only Node 2 and Node 3 would be considered.
 
 OK, that takes care of the "region" part. What about the "zone" part?
 
@@ -283,13 +377,38 @@ on the nodes. You can look at how the labels were implemented by doing:
     oc get nodes
 
     NAME                      LABELS                                                                     STATUS
-    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready,SchedulingDisabled
     ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
     ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
 
 At this point we have a running OpenShift environment across three hosts, with
 one master and three nodes, divided up into two regions -- "*infra*structure"
-and "primary".
+and "primary". *BUT* the master is currently tagged as "SchedulingDisabled". The
+installer will, by default, not configure the master's node to receive workload
+(SchedulingDisabled).
+
+## Make Master Schedulable
+We can use the `oc edit` command to make the master schedulable (allow it to
+receive workloads).
+
+    oc edit node ose3-master.example.com
+
+You will see a bunch of YAML come up in your default editor. Make sure that you
+**delete** the following line:
+
+      unschedulable: true
+
+Make sure that you do not change any indentation/spacing on any of the other
+lines. Save and exit your editor, and then run the following:
+
+    oc get node
+
+You should see that now your master is set to receive workloads:
+
+    NAME                      LABELS                                                                     STATUS
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
+    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
+    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
 
 From here we will start to deploy "applications" and other resources into
 OpenShift.
