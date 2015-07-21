@@ -211,15 +211,14 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3/ose-deployer
-    docker pull registry.access.redhat.com/openshift3/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3/ose-sti-image-builder
-    docker pull registry.access.redhat.com/openshift3/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3/ose-pod
-    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
-    docker pull registry.access.redhat.com/openshift3/sti-basicauthurl:latest
-    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-deployer:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-sti-image-builder:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-pod:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1
+    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v3.0.0.1
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
