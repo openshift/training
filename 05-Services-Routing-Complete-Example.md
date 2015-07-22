@@ -49,28 +49,94 @@ Now, let's look at a *service* definition:
         "ports": [
           {
             "protocol": "TCP",
-            "port": 80,
-            "targetPort": 9376
+            "port": 8888,
+            "targetPort": 8080
           }
         ]
       }
     }
 
 The *service* has a `selector` element. In this case, it is a key:value pair of
-`name:hello-openshift`. If you looked at the output of `oc get pods` on your
+`app:hello-openshift`. If you looked at the output of `oc get pods` on your
 master, you saw that the `hello-openshift` pod has a label:
 
     name=hello-openshift
 
 The definition of the *service* tells Kubernetes that any pods with the label
 "name=hello-openshift" are associated, and should have traffic distributed
-amongst them. In other words, the service itself is the "connection to the
-network", so to speak, or the input point to reach all of the pods. Generally
-speaking, pod containers should not bind directly to ports on the host. We'll
-see more about this later.
+amongst them. In other words, the service provides an abstraction layer, and is
+the input point to reach all of the pods. Generally speaking, pod containers
+should not bind directly to ports on the host. We'll see more about this later.
 
-But, to really be useful, we want to make our application accessible via a FQDN,
+To really be useful, we want to make our application accessible via a FQDN,
 and that is where the routing tier comes in.
+
+## Creating a Service
+We can create a service from the command line with JSON or YAML just like we
+created the pod. The `hello-service.json` file has the service definition we saw
+above. Go ahead and create the service:
+
+    oc create -f hello-service.json
+
+## Examine the Service
+`oc describe` will usually tell us some interesting things about a resource.
+Let's look at the service we just created:
+
+    oc describe service hello-service
+    Name:                   hello-service
+    Labels:                 <none>
+    Selector:               name=hello-openshift
+    Type:                   ClusterIP
+    IP:                     172.30.42.80
+    Port:                   <unnamed>       8888/TCP
+    Endpoints:              <none>
+    Session Affinity:       None
+    No events.
+
+We see that the service was assigned an IP address. This IP address will persist
+for the life of the service. This can make it very convenient for other people
+to actually use our service/application within an OpenShift environment. They
+don't have to keep track of our pods manually.
+
+Right now there are no endpoints in the service -- there are no matching pods.
+Let's fix that.
+
+## Add Pods to the Service
+We can use our quota test file to launch some pods again. These pods all have
+the label "name:hello-openshift". When we create them, and they finally come to
+life, we should see them come up in the service's endpoint list.
+
+Go ahead and create them again:
+
+    oc create -f hello-quota.json
+
+You'll still get the error about quota -- we're still trying to create 4 pods
+when we're only allowed 3. 
+
+Wait a few moments and then describe your service:
+
+    oc describe service hello-service
+    Name:                   hello-service
+    Labels:                 <none>
+    Selector:               name=hello-openshift
+    Type:                   ClusterIP
+    IP:                     172.30.42.80
+    Port:                   <unnamed>       8888/TCP
+    Endpoints:              10.1.0.6:8080,10.1.1.3:8080,10.1.1.4:8080
+    Session Affinity:       None
+    No events.
+
+Now we have several endpoints behind this service. If you look at the web
+console, you'll see these 3 pods all associated with our *hello-service*.
+
+If you do a curl of the service, you should see your application (remember to
+substitute whatever service IP matches your environment):
+
+    curl 172.30.42.80:8888
+    Hello OpenShift!
+
+This is well and good, but what if I want to access this application from
+outside the OpenShift environment?
 
 # Routing
 The OpenShift routing tier is how FQDN-destined traffic enters the OpenShift
@@ -91,6 +157,7 @@ Here is an example route resource JSON definition:
       "spec": {
         "host": "hello-openshift.cloudapps.example.com",
         "to": {
+          "kind": "Service",
           "name": "hello-openshift-service"
         },
         "tls": {
@@ -121,7 +188,7 @@ is unencrypted.
 It is possible to utilize various TLS termination mechanisms, and more details
 is provided in the router documentation:
 
-    http://docs.openshift.org/latest/architecture/core_objects/routing.html#securing-routes
+    https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/routes.html#secured-routes
 
 We'll see this edge termination in action shortly.
 
@@ -169,8 +236,8 @@ Let's try to create a router:
 Just about every form of communication with OpenShift components is secured by
 SSL and uses various certificates and authentication methods. Even though we set
 up our `.kubeconfig` for the root user, `oadm router` is asking us what
-credentials the *router* should use to communicate. We also need to specify the
-router image, since the tooling defaults to upstream/origin:
+credentials the *router* should use to communicate with the master. We also need
+to specify the router image, since the tooling defaults to upstream/origin:
 
     oadm router --dry-run \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig
@@ -178,11 +245,13 @@ router image, since the tooling defaults to upstream/origin:
 Adding that would be enough to allow the command to proceed, but if we want
 this router to work for our environment, we also need to specify the 
 router image (the tooling defaults to upstream/origin otherwise) and we need
-to supply the wildcard cert/key that we created for the cloud domain.
+to supply the wildcard cert/key that we created for the cloud domain. Since the
+`router` command will create all of the resources in the *default* project, and
+the *default* project has the `nodeSelector` for the *infra* region, the router
+pod will land there.
 
     oadm router --default-cert=cloudapps.router.pem \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig \
-    --selector='region=infra' \
     --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -190,14 +259,14 @@ If this works, you'll see some output:
     password for stats user admin has been set to Cwwk96Huso
     deploymentconfigs/router
     services/router
-    
+ 
 **Note:** You will have to reference the absolute path of the PEM file if you
 did not run this command in the folder where you created it.
 
 **Note:** You will want to keep that password handy. But you can get it by
 looking at the DeploymentConfiguration later. Don't worry.
 
-Let's check the pods:
+Let's check the pods as `root`:
 
     oc get pods 
 
@@ -206,14 +275,6 @@ few moments (it may take up to a few minutes):
 
     NAME             READY     REASON    RESTARTS   AGE
     router-1-rt6qk   1/1       Running   0          20s
-
-In the above router creation command (`oadm router...`) we also specified
-`--selector`. This flag causes a `nodeSelector` to be placed on all of the pods
-created. If you think back to our "regions" and "zones" conversation, the
-OpenShift environment is currently configured with an *infra*structure region
-called "infra". This `--selector` argument asks OpenShift:
-
-*Please place all of these router pods in the infra region*.
 
 If you `describe` the router pod, you will see that it is running on the master:
 
@@ -249,16 +310,17 @@ entry is required and should point at the master. When the router receives a
 request for an FQDN that it knows about, it will proxy the request to a pod for
 a service. But, for that FQDN request to actually reach the router, the FQDN has
 to resolve to whatever the host is where the router is running. Remember, the
-router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
-DNS entry points to the public IP address of the master, the `--selector` flag
-used above ensures that the router is placed on our master as it's the only node
-with the label `region=infra`.
+router is bound to ports 80 and 443 on the *host* interface. Our wildcard
+DNS entry points to the public IP address of the master, and the configuration
+of our *default* project ensures that the router will only ever land in the
+*infra* region. Since there is only one node in the *infra* region (the master),
+we know we can point the wildcard DNS entry at the master and we'll be all set.
 
 For a true HA implementation, one would want multiple "infra" nodes and
 multiple, clustered router instances. Please see the "high availability"
 documentation for more information on how tihs can be achieved:
 
-    http://docs.openshift.org/latest/admin_guide/high_availability.html
+    https://docs.openshift.com/enterprise/3.0/admin_guide/high_availability.html
 
 ## Viewing Router Stats
 Haproxy provides a stats page that's visible on port 1936 of your router host.
@@ -275,15 +337,15 @@ master:
 
 You will also want to add this rule to `/etc/sysconfig/iptables` as well to keep
 it across reboots. However, don't restart the iptables service, as this would
-destroy the rules that had already been created by Openshift. Use the `iptables`
-command to change rules on a live system.
+destroy the rules that have already been created by Openshift. Use the
+`iptables` command to change rules on a live system.
 
 Feel free to not open this port if you don't want to make this accessible, or if
 you only want it accessible via port fowarding, etc.
 
 **Note**: Unlike OpenShift v2 this router is not specific to a given project, as
-such it's really intended to be viewed by cluster admins rather than project
-admins.
+such it's really intended to be viewed by OpenShift admins rather than project
+admins or application developers.
 
 Ensure that port 1936 is accessible and visit:
 
@@ -291,9 +353,62 @@ Ensure that port 1936 is accessible and visit:
 
 to view your router stats.
 
+## Exposing a Route
+If you've been following along closely, right now you have three pods that all
+belong to a service. We previously asked the question "How can we make this
+service accessible to users outside of OpenShift?" and the answer was via the
+routing layer.
+
+Let's go ahead and actually create a route for this service by `expose`ing it.
+
+As `joe`, execute the following:
+
+    oc expose service hello-service -l name=hello-openshift
+
+Wait a couple of moments, and then look at the routes with the following:
+
+    oc get route
+    NAME            HOST/PORT                                  PATH      SERVICE         LABELS
+    hello-service   hello-service.demo.cloudapps.example.com             hello-service   name=hello-openshift
+
+The `expose` command created a route for us. The `-l name=hello-openshift` added
+a label to this route resource, too. Since we didn't specify an FQDN with the
+command, OpenShift programmatically generates our route with the format of:
+
+    <service_name>.<project_name>.<cloud_domain>
+
+In our master's config we had configured the routing subdomain as
+`cloudapps.example.com`. The project we're working in is `demo` and the service
+name was `hello-service`. That's how the `HOST/PORT` was chosen.
+
+If you configured your wildcard DNS correctly, you should be able to curl this
+and see your application:
+
+    curl hello-service.demo.cloudapps.example.com
+    Hello OpenShift!
+
+Hooray!
+
 # The Complete Pod-Service-Route
-With a router now available, let's take a look at an entire
-Pod-Service-Route definition template and put all the pieces together.
+The previous steps essentially build an "application" from scratch with lots of
+individual JSON components. However, we can have a single JSON `List` that
+describes all of the resources we want to create.
+
+First, let's delete everything we previously created:
+
+    oc delete all -l name=hello-openshift
+
+You will see something like:
+
+    routes/hello-service
+    services/hello-service
+    pods/hello-openshift-1
+    pods/hello-openshift-2
+    pods/hello-openshift-3
+
+Since everything we created had a specific label, we can also delete everything
+with that specific label. Using labels makes it very easy to find and operate on
+resources in OpenShift.
 
 Don't forget -- the materials are in `~/training/content`.
 
@@ -354,6 +469,11 @@ and a corresponding route. It also includes a deployment configuration.
               "type": "Recreate",
               "resources": {}
             },
+            "triggers": [
+              {
+                "type": "ConfigChange"
+              }
+            ],
             "replicas": 1,
             "selector": {
               "name": "hello-openshift"
@@ -377,9 +497,14 @@ and a corresponding route. It also includes a deployment configuration.
                         "protocol": "TCP"
                       }
                     ],
-                    "resources": {},
+                    "resources": {
+                      "limits": {
+                        "cpu": "10m",
+                        "memory": "16Mi"
+                      }
+                    },
                     "terminationMessagePath": "/dev/termination-log",
-                    "imagePullPolicy": "PullIfNotPresent",
+                    "imagePullPolicy": "IfNotPresent",
                     "capabilities": {},
                     "securityContext": {
                       "capabilities": {},
@@ -402,9 +527,6 @@ and a corresponding route. It also includes a deployment configuration.
                 }
               }
             }
-          },
-          "status": {
-            "latestVersion": 1
           }
         }
       ]
@@ -478,8 +600,8 @@ they always listen on "local" IP addresses (eg: 172.x.x.x). However, if you have
 access to the OpenShift environment, you can still test a service.
 
     oc get services
-    NAME                      LABELS    SELECTOR                     IP              PORT(S)
-    hello-openshift-service   <none>    name=hello-openshift-label   172.30.17.229   27017/TCP
+    NAME                      LABELS                 SELECTOR               IP(S)           PORT(S)
+    hello-openshift-service   name=hello-openshift   name=hello-openshift   172.30.185.26   27017/TCP
 
 We can see that the service has been defined based on the JSON we used earlier.
 If the output of `oc get pods` shows that our pod is running, we can try to
@@ -501,7 +623,10 @@ router container. The following command will do that for us:
 
     oc exec -it -p $(oc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
 
-You are now in a bash session *inside* the container running the router.
+You are now in a bash session *inside* the container running the router. We'll
+talk more about `oc exec` later. For now, just realize that OpenShift is letting
+you operate an interactive process inside a running Docker container in the
+OpenShift environment.
 
 Since we are using HAProxy as the router, we can cat the `routes.json` file:
 

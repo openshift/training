@@ -421,6 +421,24 @@ You should see that now your master is set to receive workloads:
     ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
     ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
 
+## Tweak Default Project
+The *default* project/namespace is a special one where we will put some of our
+infrastructure-related resources. This project does not have a `nodeSelector` by
+default. Since we have configured a default `nodeSelector`, and it is not the
+*infra* region, we need to make a tweak so that things that go in the *infra*
+region.
+
+Execute the following:
+
+    oc edit namespace default
+
+In the annotations list, add this line:
+
+    openshift.io/node-selector: region=infra
+
+Save and exit the editor. Remember, indentation matters -- this entry should be
+at the same indentation level as the rest of the `openshift.io` items.
+
 From here we will start to deploy "applications" and other resources into
 OpenShift.
 
