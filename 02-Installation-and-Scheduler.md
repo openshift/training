@@ -2,20 +2,22 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Ansible-based Installer](#ansible-based-installer)
-  - [Install Ansible](#install-ansible)
+- [Instlalation and Scheduler](#instlalation-and-scheduler)
   - [Generate SSH Keys](#generate-ssh-keys)
   - [Distribute SSH Keys](#distribute-ssh-keys)
-  - [Clone the Ansible Repository](#clone-the-ansible-repository)
-  - [Configure Ansible](#configure-ansible)
-  - [Modify Hosts](#modify-hosts)
-  - [Run the Ansible Installer](#run-the-ansible-installer)
+  - [Run the Installer](#run-the-installer)
+  - [Define installation user](#define-installation-user)
+  - [Master Configuration](#master-configuration)
+  - [Node Configuration](#node-configuration)
+  - [General Confirmation](#general-confirmation)
+  - [Finish the Installation](#finish-the-installation)
   - [Add Cloud Domain](#add-cloud-domain)
 - [Regions and Zones](#regions-and-zones)
   - [Scheduler and Defaults](#scheduler-and-defaults)
   - [The NodeSelector](#the-nodeselector)
   - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
   - [Node Labels](#node-labels)
+  - [Make Master Schedulable](#make-master-schedulable)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

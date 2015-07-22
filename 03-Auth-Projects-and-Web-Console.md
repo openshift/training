@@ -42,7 +42,11 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
 
 More information on these configuration settings (and other identity providers) can be found here:
 
-    http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
+    https://docs.openshift.com/enterprise/3.0/admin_guide/configuring_authentication.html
+
+Restart your master once you have edited the config:
+
+    systemctl restart openshift-master
 
 ## A Project for Everything
 V3 has a concept of "projects" to contain a number of different resources:

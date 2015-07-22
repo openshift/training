@@ -71,8 +71,6 @@ defaults.
     Fractional assignment is allowed. For fractional assignment, the
     **m**illicore may be used (eg: 200m = 0.2 KCU)
 
-More details on CPU will come in later betas and documentation.
-
 We will get into a description of what pods, services and replication
 controllers are over the next few labs. Lastly, we can ignore "resourcequotas",
 as it is a bit of a trick so that Kubernetes doesn't accidentally try to apply
@@ -213,10 +211,6 @@ using `cat`:
               }
             ],
             "resources": {
-              "limits": {
-                "cpu": "10m",
-                "memory": "16Mi"
-              }
             },
             "terminationMessagePath": "/dev/termination-log",
             "imagePullPolicy": "IfNotPresent",
@@ -237,12 +231,11 @@ using `cat`:
       "status": {}
     }
 
-In the simplest sense, a *pod* is an application or an instance of something. If
-you are familiar with OpenShift V2 terminology, it is similar to a *gear*.
-Reality is more complex, and we will learn more about the terms as we explore
-OpenShift further.
+In the simplest sense, a *pod* is an instance of something. If you are familiar
+with OpenShift V2 terminology, it is similar to a *gear*.  Reality is more
+complex, and we will learn more about the terms as we explore OpenShift further.
 
-## Run the Pod
+## Create the Pod
 As `joe`, to create the pod from our JSON file, execute the following:
 
     oc create -f hello-pod.json

@@ -34,6 +34,7 @@ docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
 docker pull openshift/hello-openshift
 
 for node in ose3-master ose3-node1 ose3-node2; do ssh root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"; done
+sh root@ose3-node2 "systemctl start dnsmasq"
 
 cd
 git clone https://github.com/thoraxe/training.git -b GA-work

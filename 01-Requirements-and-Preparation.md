@@ -122,7 +122,7 @@ can:
         --enable="rhel-7-server-rpms" \
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
-        --enable="rhel-7-server-ose-rpms"
+        --enable="rhel-7-server-ose-3.0-rpms"
 
 On **each** VM:
 
