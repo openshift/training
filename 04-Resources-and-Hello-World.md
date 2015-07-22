@@ -9,7 +9,8 @@
   - [Login](#login)
   - [Grab the Training Repo Again](#grab-the-training-repo-again)
   - [The Hello World Definition JSON](#the-hello-world-definition-json)
-  - [Run the Pod](#run-the-pod)
+  - [Create the Pod](#create-the-pod)
+  - [Examining the Created Pod](#examining-the-created-pod)
   - [Looking at the Pod in the Web Console](#looking-at-the-pod-in-the-web-console)
   - [Quota Usage](#quota-usage)
   - [Extra Credit](#extra-credit)
@@ -253,7 +254,7 @@ To find out more information about this pod, use `describe`:
     oc describe pod hello-openshift
     Name:                           hello-openshift
     Image(s):                       openshift/hello-openshift
-    Host:                           ose3-master.example.com/192.168.133.2
+    Host:                           ose3-node2.example.com/192.168.133.4
     Labels:                         name=hello-openshift
     Status:                         Running
     IP:                             10.1.0.3
@@ -262,7 +263,7 @@ To find out more information about this pod, use `describe`:
       hello-openshift:
         Image:              openshift/hello-openshift
         State:              Running
-          Started:          Tue, 16 Jun 2015 17:13:17 -0400
+          Started:          Wed, 22 Jul 2015 16:42:32 -0400
         Ready:              True
         Restart Count:      0
     Conditions:
@@ -270,12 +271,12 @@ To find out more information about this pod, use `describe`:
       Ready         True 
     Events:
       FirstSeen                             LastSeen                        Count   From                                    SubobjectPath                           Reason          Message
-      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {scheduler }                                                                    scheduled       Successfully assigned hello-openshift to ose3-master.example.com
-      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       pulled          Successfully pulled image "openshift3/ose-pod:v0.6.1.0"
-      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       created         Created with docker id 273ed184353e1f861ee9aa71e364c0cdfd1caf5a62c0fbbf6117cd6d5e9bc105
-      Tue, 16 Jun 2015 17:13:16 -0400       Tue, 16 Jun 2015 17:13:16 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       started         Started with docker id 273ed184353e1f861ee9aa71e364c0cdfd1caf5a62c0fbbf6117cd6d5e9bc105
-      Tue, 16 Jun 2015 17:13:17 -0400       Tue, 16 Jun 2015 17:13:17 -0400 1       {kubelet ose3-master.example.com}       spec.containers{hello-openshift}        created         Created with docker id 4827cf917252bf0aefb6ad5e147f40b3f6ab525d0cbaa26cc5f6fd18654b5bff
-      Tue, 16 Jun 2015 17:13:17 -0400       Tue, 16 Jun 2015 17:13:17 -0400 1       {kubelet ose3-master.example.com}       spec.containers{hello-openshift}        started         Started with docker id 4827cf917252bf0aefb6ad5e147f40b3f6ab525d0cbaa26cc5f6fd18654b5bff
+      Wed, 22 Jul 2015 16:42:30 -0400       Wed, 22 Jul 2015 16:42:30 -0400 1       {scheduler }                                                                    scheduled       Successfully assigned hello-openshift to ose3-node2.example.com
+      Wed, 22 Jul 2015 16:42:31 -0400       Wed, 22 Jul 2015 16:42:31 -0400 1       {kubelet ose3-node2.example.com}        implicitly required container POD       pulled          Successfully pulled image "openshift3/ose-pod:v3.0.0.1"
+      Wed, 22 Jul 2015 16:42:31 -0400       Wed, 22 Jul 2015 16:42:31 -0400 1       {kubelet ose3-node2.example.com}        implicitly required container POD       created         Created with docker id bd0e34b2310567aa8e05f65cd9c8d3fca6b5b5fdb328b55dd3ff2463d9c2f64d
+      Wed, 22 Jul 2015 16:42:31 -0400       Wed, 22 Jul 2015 16:42:31 -0400 1       {kubelet ose3-node2.example.com}        implicitly required container POD       started         Started with docker id bd0e34b2310567aa8e05f65cd9c8d3fca6b5b5fdb328b55dd3ff2463d9c2f64d
+      Wed, 22 Jul 2015 16:42:32 -0400       Wed, 22 Jul 2015 16:42:32 -0400 1       {kubelet ose3-node2.example.com}        spec.containers{hello-openshift}        created         Created with docker id 2706a87bd2c04f3ed216b704ee391910556aeea89c00f02ea1e990cd37e266af
+      Wed, 22 Jul 2015 16:42:32 -0400       Wed, 22 Jul 2015 16:42:32 -0400 1       {kubelet ose3-node2.example.com}        spec.containers{hello-openshift}        started         Started with docker id 2706a87bd2c04f3ed216b704ee391910556aeea89c00f02ea1e990cd37e266af
 
 On the node where the pod is running (`Host`), look at the list of Docker
 containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
@@ -299,6 +300,96 @@ the node where the pod is running*
     Hello OpenShift!
 
 Hooray!
+
+You'll also notice that the pod landed on one of the primary nodes. Why is that?
+Becuase we had configured a default `nodeSelector` earlier during the set-up
+process.
+
+## Examining the Created Pod
+Execute the following:
+
+    oc get pod hello-openshift -o yaml
+
+You should see something like:
+
+    apiVersion: v1                                                                                                                                                                                             [18/554]
+    kind: Pod
+    metadata:
+      annotations:
+        openshift.io/scc: restricted
+      creationTimestamp: 2015-07-22T20:42:30Z
+      labels:
+        name: hello-openshift
+      name: hello-openshift
+      namespace: demo
+      resourceVersion: "1399"
+      selfLink: /api/v1/namespaces/demo/pods/hello-openshift
+      uid: 2c1c7156-30b2-11e5-b6a3-525400b33d1d
+    spec:
+      containers:
+      - image: openshift/hello-openshift
+        imagePullPolicy: IfNotPresent
+        name: hello-openshift
+        ports:
+        - containerPort: 8080
+          hostPort: 36061
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        securityContext:
+          capabilities: {}
+          privileged: false
+          runAsUser: 1000030000
+          seLinuxOptions:
+            level: s0:c6,c0
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: default-token-ahpda
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      host: ose3-node2.example.com
+      imagePullSecrets:
+      - name: default-dockercfg-5uc2b
+      nodeSelector:
+        region: primary
+      restartPolicy: Always
+      serviceAccount: default
+      volumes:
+      - name: default-token-ahpda
+        secret:
+          secretName: default-token-ahpda
+    status:
+      conditions:
+      - status: "True"
+        type: Ready
+      containerStatuses:
+      - containerID: docker://2706a87bd2c04f3ed216b704ee391910556aeea89c00f02ea1e990cd37e266af
+        image: openshift/hello-openshift
+        imageID: docker://4c6802d09a00319e08ed176d9fabe484df9a1bdc575ffe39ce190247f882b391
+        lastState: {}
+        name: hello-openshift
+        ready: true
+        restartCount: 0
+        state:
+          running:
+            startedAt: 2015-07-22T20:42:32Z
+      hostIP: 192.168.133.4
+      phase: Running
+      podIP: 10.1.0.3
+      startTime: 2015-07-22T20:42:32Z
+
+There are some interesting things in here now. 
+
+* We didn't specify a `nodeSelector` in our pod definition, but it's there now.
+  * This is because OpenShift is configured with a default.
+* We didn't specify any resource limits in our pod definition, but they're there
+    now.
+  * This is becuase our project has default limits set.
+
+Cool, right?
 
 ## Looking at the Pod in the Web Console
 Go to the web console and go to the *Overview* tab for the *OpenShift 3 Demo*
