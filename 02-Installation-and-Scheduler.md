@@ -19,6 +19,7 @@
   - [Node Labels](#node-labels)
   - [Edit Default NodeSelector](#edit-default-nodeselector)
   - [Make Master Schedulable](#make-master-schedulable)
+  - [Tweak Default Project](#tweak-default-project)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

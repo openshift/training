@@ -3,15 +3,20 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Services](#services)
+  - [Creating a Service](#creating-a-service)
+  - [Examine the Service](#examine-the-service)
+  - [Add Pods to the Service](#add-pods-to-the-service)
 - [Routing](#routing)
   - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
   - [Creating the Router](#creating-the-router)
   - [Viewing Router Stats](#viewing-router-stats)
+  - [Exposing a Route](#exposing-a-route)
 - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
   - [Creating the Definition](#creating-the-definition)
   - [Project Status](#project-status)
   - [Verifying the Service](#verifying-the-service)
   - [Verifying the Routing](#verifying-the-routing)
+  - [The Router Status Page](#the-router-status-page)
   - [The Web Console](#the-web-console)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -691,8 +696,10 @@ certificate in order to validate the SSL certificate presented to us by the
 router. With a CA or all certificates signed by a trusted authority, it would
 not be necessary to specify the CA everywhere.
 
+## The Router Status Page
+If you are interested, and you exposed the router admin port, you can visit the
+status page and see that you will have some session information for your route.
+
 ## The Web Console
 Take a moment to look in the web console to see if you can find everything that
 was just created.
-
-
