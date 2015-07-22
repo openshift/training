@@ -2,20 +2,23 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Ansible-based Installer](#ansible-based-installer)
-  - [Install Ansible](#install-ansible)
+- [Instlalation and Scheduler](#instlalation-and-scheduler)
   - [Generate SSH Keys](#generate-ssh-keys)
   - [Distribute SSH Keys](#distribute-ssh-keys)
-  - [Clone the Ansible Repository](#clone-the-ansible-repository)
-  - [Configure Ansible](#configure-ansible)
-  - [Modify Hosts](#modify-hosts)
-  - [Run the Ansible Installer](#run-the-ansible-installer)
+  - [Run the Installer](#run-the-installer)
+  - [Define installation user](#define-installation-user)
+  - [Master Configuration](#master-configuration)
+  - [Node Configuration](#node-configuration)
+  - [General Confirmation](#general-confirmation)
+  - [Finish the Installation](#finish-the-installation)
   - [Add Cloud Domain](#add-cloud-domain)
 - [Regions and Zones](#regions-and-zones)
   - [Scheduler and Defaults](#scheduler-and-defaults)
   - [The NodeSelector](#the-nodeselector)
   - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
   - [Node Labels](#node-labels)
+  - [Edit Default NodeSelector](#edit-default-nodeselector)
+  - [Make Master Schedulable](#make-master-schedulable)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -195,13 +198,6 @@ following:
       subdomain: cloudapps.example.com
 
 Or modify it appropriately for your domain.
-
-Once done, restart the master:
-
-    systemctl restart openshift-master
-
-There was also some information about "regions" and "zones" in the hosts file.
-Let's talk about those concepts now.
 
 # Regions and Zones
 If you think you're about to learn how to configure regions and zones in
@@ -387,9 +383,24 @@ and "primary". *BUT* the master is currently tagged as "SchedulingDisabled". The
 installer will, by default, not configure the master's node to receive workload
 (SchedulingDisabled).
 
+## Edit Default NodeSelector
+We want our apps to land in the primary region, and not in the infra region. We
+can do this by setting a default `nodeSelector` for our OpenShift environment.
+Edit the `/etc/openshift/master/master-config.yaml` again, and make the
+following change:
+
+    projectConfig:
+      defaultNodeSelector: "region=primary"
+
+Once complete, restart your master. This will make both our default
+`nodeSelector` and routing changes take effect:
+
+    systemctl restart openshift-master
+
 ## Make Master Schedulable
 We can use the `oc edit` command to make the master schedulable (allow it to
-receive workloads).
+receive workloads). Be sure to change the name of the node to match your
+environment:
 
     oc edit node ose3-master.example.com
 

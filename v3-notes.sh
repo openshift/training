@@ -34,34 +34,18 @@ docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
 docker pull openshift/hello-openshift
 
 for node in ose3-master ose3-node1 ose3-node2; do ssh root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"; done
+sh root@ose3-node2 "systemctl start dnsmasq"
+ssh root@ose3-node2 "sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"
 
-cd
-git clone https://github.com/thoraxe/training.git -b GA-work
-cd ~/training/content
-/bin/cp ~/training/content/dnsmasq.conf /etc/
-restorecon -rv /etc/dnsmasq.conf
-sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
-systemctl start dnsmasq
-sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'
-systemctl restart iptables
-
-sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf
 cd
 git clone https://github.com/thoraxe/training -b GA-work
 cd
-rm -rf openshift-ansible
-git clone https://github.com/openshift/openshift-ansible.git
-cd ~/openshift-ansible
-/bin/cp -r ~/training/content/ansible/* /etc/ansible/
-ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
-oc label node/ose3-master.example.com region=infra zone=default
-oc label node/ose3-node1.example.com region=primary zone=east
-oc label node/ose3-node2.example.com region=primary zone=west
 useradd joe
 useradd alice
 touch /etc/openshift/openshift-passwd
 htpasswd -b /etc/openshift/openshift-passwd joe redhat
 htpasswd -b /etc/openshift/openshift-passwd alice redhat
+
 cd
 CA=/etc/openshift/master
 oadm create-server-cert --signer-cert=$CA/ca.crt \
@@ -73,6 +57,7 @@ oadm router --default-cert=cloudapps.router.pem \
 --credentials=/etc/openshift/master/openshift-router.kubeconfig \
 --selector='region=infra' \
 --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
+
 mkdir -p /mnt/registry
 echo '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"registry"}}' \
 | oc create -f -

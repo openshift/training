@@ -21,10 +21,6 @@
           }
         ],
         "resources": {
-          "limits": {
-            "cpu": "10m",
-            "memory": "16Mi"
-          }
         },
         "terminationMessagePath": "/dev/termination-log",
         "imagePullPolicy": "IfNotPresent",
@@ -32,9 +28,6 @@
         "securityContext": {
           "capabilities": {},
           "privileged": false
-        },
-        "nodeSelector": {
-          "region": "primary"
         }
       }
     ],
