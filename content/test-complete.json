@@ -9,7 +9,10 @@
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
-        "name": "hello-openshift-service"
+        "name": "hello-openshift-service",
+        "labels": {
+          "name": "hello-openshift"
+        }
       },
       "spec": {
         "selector": {
@@ -28,7 +31,10 @@
       "kind": "Route",
       "apiVersion": "v1",
       "metadata": {
-        "name": "hello-openshift-route"
+        "name": "hello-openshift-route",
+        "labels": {
+          "name": "hello-openshift"
+        }
       },
       "spec": {
         "host": "hello-openshift.cloudapps.example.com",
@@ -44,7 +50,10 @@
       "kind": "DeploymentConfig",
       "apiVersion": "v1",
       "metadata": {
-        "name": "hello-openshift"
+        "name": "hello-openshift",
+        "labels": {
+          "name": "hello-openshift"
+        }
       },
       "spec": {
         "strategy": {
