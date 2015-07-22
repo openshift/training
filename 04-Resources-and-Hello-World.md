@@ -218,9 +218,6 @@ using `cat`:
             "securityContext": {
               "capabilities": {},
               "privileged": false
-            },
-            "nodeSelector": {
-              "region": "primary"
             }
           }
         ],
