@@ -109,3 +109,6 @@ Once the build is complete, you should be able to visit the routed URL and
 actually use the application!
 
     http://quickstart.cloudapps.example.com
+
+The dev guide linked previously has a lot of information on how to use
+templates.
