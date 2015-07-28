@@ -71,7 +71,7 @@ without any administrator. `alice` or `joe` can remove the `admin`
 role (or all roles) from each other or themselves at any time without
 affecting the existing project.
 
-    [joe]$ oadm policy remove-user joe
+    [alice]$ oadm policy remove-user joe
 
 Check `oadm policy help` for a list of available commands to modify
 project permissions. OpenShift RBAC is extremely flexible. The roles
@@ -79,8 +79,7 @@ mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
 
-* http://docs.openshift.org/latest/dev_guide/authorization.html
-* https://github.com/openshift/origin/blob/master/docs/proposals/policy.md
+* https://docs.openshift.com/enterprise/3.0/admin_guide/manage_authorization_policy.html
 
 Of course, there be dragons. The basic roles should suffice for most uses.
 
