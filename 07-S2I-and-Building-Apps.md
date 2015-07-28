@@ -4,21 +4,26 @@
 
 - [Preparing for S2I: the Registry](#preparing-for-s2i-the-registry)
   - [Storage for the registry](#storage-for-the-registry)
-  - [Service Account for the Registry](#service-account-for-the-registry)
+    - [Export an NFS Volume](#export-an-nfs-volume)
+    - [NFS Firewall](#nfs-firewall)
+    - [Allow NFS Access in SELinux Policy](#allow-nfs-access-in-selinux-policy)
   - [Creating the registry](#creating-the-registry)
+  - [Attaching Registry Storage](#attaching-registry-storage)
+    - [Create a PersistentVolume](#create-a-persistentvolume)
+    - [Claim the PersistentVolume](#claim-the-persistentvolume)
+    - [Attach the Volume to the Registry](#attach-the-volume-to-the-registry)
 - [S2I - What Is It?](#s2i---what-is-it)
   - [Create a New Project](#create-a-new-project)
   - [Switch Projects](#switch-projects)
   - [A Simple Code Example](#a-simple-code-example)
   - [CLI versus Console](#cli-versus-console)
-  - [Adding the Builder ImageStreams](#adding-the-builder-imagestreams)
-  - [Wait, What's an ImageStream?](#wait-whats-an-imagestream)
+  - [ImageStreams](#imagestreams)
   - [Adding Code Via the Web Console](#adding-code-via-the-web-console)
   - [The Web Console Revisited](#the-web-console-revisited)
   - [Examining the Build](#examining-the-build)
   - [Testing the Application](#testing-the-application)
-  - [Adding a Route to Our Application](#adding-a-route-to-our-application)
-  - [Implications of Quota Enforcement on Scaling](#implications-of-quota-enforcement-on-scaling)
+  - [The Application Route](#the-application-route)
+  - [Implications of Quota Enforcement](#implications-of-quota-enforcement)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -30,50 +35,103 @@ the OpenShift environment that will manage images "locally". Let's take a moment
 to set that up.
 
 ## Storage for the registry
-The registry stores docker images and metadata. If you simply deploy a pod
+The registry stores Docker images and metadata. If you simply deploy a pod
 with the registry, it will use an ephemeral volume that is destroyed once the
 pod exits. Any images anyone has built or pushed into the registry would
 disappear. That would be bad.
 
-What we will do for this demo is use a directory on the master host for
-persistent storage. In production, you would actually want to use OpenShift's
-system for creating and managing persistent volumes. We will use that system
-later in these examples.
+OpenShift provides a convenient system for mounting external storage to enable
+data persistence. It involves a system of `PersistentVolume` objects, and claims
+on those volumes, called `PersistentVolumeClaims`. First, we will prepare our
+master to provide NFS storage.
 
-The following instructions are not to be considered production-usable. They're
-barely supportable. Please don't do this "in the real world".
+### Export an NFS Volume
+For the purposes of this training, we will just demonstrate the master
+exporting an NFS volume for use as storage by the database. **You would
+almost certainly not want to do this in production.** If you happen
+to have another host with an NFS export handy, feel free to substitute
+that instead of setting the following up on the master.
 
-On the master, as `root`, create the storage directory with:
+Ensure that nfs-utils is installed (**on all systems**):
 
-    mkdir -p /mnt/registry
+        yum install nfs-utils
 
-## Service Account for the Registry
-The topic of service accounts will also be addressed later. For now, just copy
-and paste, please.
+Then, as `root` on the master:
 
-Again, as `root`:
+1. Create the directory we will export:
 
-    echo '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"registry"}}' \
-    | oc create -f -
+        mkdir -p /var/export/regvol
+        chown nfsnobody:nfsnobody /var/export/regvol
+        chmod 700 /var/export/regvol
 
-Now we need to give the service account for the registry special permission to
-host-mount the folder. Run the following:
+1. Edit `/etc/exports` and add the following line:
 
-    oc edit scc privileged
+        /var/export/regvol *(rw,sync,all_squash)
 
-This will bring up your default text editor (likely `vim`). Find the section
-that looks like:
+1. Enable and start NFS services:
 
-    users:
-    - system:serviceaccount:openshift-infra:build-controller
+        systemctl enable rpcbind nfs-server
+        systemctl start rpcbind nfs-server nfs-lock 
+        systemctl start nfs-idmap
 
-Make it look like:
+Note that the volume is owned by `nfsnobody` and access by all remote users
+is "squashed" to be access by this user. This essentially disables user
+permissions for clients mounting the volume. While another configuration
+might be preferable, one problem you may run into is that the container
+cannot modify the permissions of the actual volume directory when mounted.
 
-    users:
-    - system:serviceaccount:openshift-infra:build-controller
-    - system:serviceaccount:default:registry
+### NFS Firewall
+We will need to open ports on the firewall on the master to enable the nodes to
+communicate with us over NFS. First, let's add rules for NFS to the running
+state of the firewall.
 
-Save and exit.
+On the master as `root`:
+
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 20048 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 50825 -j ACCEPT
+    iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT
+
+Next, let's add the rules to `/etc/sysconfig/iptables`. Put them at the top of
+the `OS_FIREWALL_ALLOW` set:
+
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 50825 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 20048 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
+    -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
+
+Now, we have to edit NFS' configuration to use these ports. First, let's edit
+`/etc/sysconfig/nfs`. Change the RPC option to the following:
+
+    RPCMOUNTDOPTS="-p 20048"
+
+Change the STATD option to the following:
+
+    STATDARG="-p 50825"
+
+Then, edit `/etc/sysctl.conf`:
+
+    fs.nfs.nlm_tcpport=53248
+    fs.nfs.nlm_udpport=53248
+
+Then, persist the `sysctl` changes:
+
+    sysctl -p
+
+Lastly, restart NFS:
+
+    systemctl restart nfs
+
+### Allow NFS Access in SELinux Policy
+By default policy, containers are not allowed to write to NFS mounted
+directories.  We want to do just that with our database, so enable that on
+all nodes where the pod could land (i.e. all of them) with:
+
+    setsebool -P virt_use_nfs=true
+
+*Note:* This command may take a while to return. Be patient.
 
 ## Creating the registry
 
@@ -82,9 +140,7 @@ registry. As the `root` user, run the following:
 
     oadm registry --create \
     --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}' \
-    --selector="region=infra" --mount-host=/mnt/registry \
-    --service-account=registry
+    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
 
 You'll get output like:
 
@@ -110,19 +166,20 @@ as root:
       router deploys registry.access.redhat.com/openshift3/ose-haproxy-router:v0.6.1.0 
         #1 deployed about an hour ago - 1 pod
 
-To see more information about a Service or DeploymentConfig, use 'oc describe service <name>' or 'oc describe dc <name>'.
-You can use 'oc get all' to see lists of each of the types described above.
+To see more information about a `Service` or `DeploymentConfig`, use `oc
+describe service <name>` or `oc describe dc <name>`.  You can use `oc get all`
+to see lists of each of the types described above.
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
-OpenShift will re-create it) and that the administrative user uses by default.
-One interesting features of `oc status` is that it lists recent deployments.
+OpenShift will re-create it) and that the cluster admin user uses automatically.
+One interesting feature of `oc status` is that it lists recent deployments.
 When we created the router and registry, each created one deployment. We will
 talk more about deployments when we get into builds.
 
 Anyway, you will ultimately have a Docker registry that is being hosted by OpenShift
-and that is running on the master (because we specified "region=infra" as the
-registry's node selector).
+and that is running on the master (because we edited the default project to use
+this region).
 
 To quickly test your Docker registry, you can do the following:
 
@@ -170,10 +227,203 @@ And you will eventually see something like:
     Session Affinity:       None
     No events.
 
-Once there is an endpoint listed, the curl should work and the registry is available.
+Once there is an endpoint listed, the curl should work and the registry is
+available. **BUT** we still do not have any storage attached.
 
-Highly available, actually. You should be able to delete the registry pod at any
-point in this training and have it return shortly after with all data intact.
+## Attaching Registry Storage
+We've gone through the work of preparing to use external storage, and now we
+will actually attach some to our registry.
+
+### Create a PersistentVolume
+It is the PaaS administrator's responsibility to define the storage that is
+available to users. Storage is represented by a `PersistentVolume` that
+encapsulates the details of a particular volume which can be backed by any
+of the [volume types available via
+Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md).
+In this case it will be our NFS volume.
+
+Currently PersistentVolume objects must be created "by hand". Modify the
+`content/registry-volume.json` file as needed if you are using a different
+NFS mount:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolume",
+      "metadata": {
+        "name": "registry-volume"
+      },
+      "spec": {
+        "capacity": {
+            "storage": "3Gi"
+            },
+        "accessModes": [ "ReadWriteMany" ],
+        "nfs": {
+            "path": "/var/export/regvol",
+            "server": "ose3-master.example.com"
+        }
+      }
+    }
+
+Currently, we have no `PersistentVolume`s defined:
+
+    oc get pv
+    NAME      LABELS    CAPACITY   ACCESSMODES   STATUS    CLAIM     REASON
+
+Create the `PersistentVolume` as the `root` (administrative) user:
+
+    oc create -f registry-volume.json
+    persistentvolumes/registry-volume
+
+This defines a volume for OpenShift projects to use in deployments. The storage
+should correspond to how much is actually available (make each volume a separate
+filesystem or use native filesystem quotas if you want to enforce this limit).
+Take a look at it now:
+
+    Name:           registry-volume
+    Labels:         <none>
+    Status:         Available
+    Claim:
+    Reclaim Policy: %!d(api.PersistentVolumeReclaimPolicy=Retain)
+    Message:        %!d(string=)
+
+### Claim the PersistentVolume
+Now that the administrator has provided a `PersistentVolume`, any project can
+make a claim on that storage. We do this by creating a `PersistentVolumeClaim`
+that specifies what kind of and how much storage is desired:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "registry-claim"
+      },
+      "spec": {
+        "accessModes": [ "ReadWriteMany" ],
+        "resources": {
+          "requests": {
+            "storage": "3Gi"
+          }
+        }
+      }
+    }
+
+Since we want this volume for the registry, and the registry lives in the
+*default* project, we perform the following as the `root` system user:
+
+    oc project default
+    oc create -f registry-claim.json
+
+You should see something like:
+
+    persistentvolumeclaims/registry-claim
+
+This claim will be bound to a suitable `PersistentVolume` (one that is big
+enough and allows the requested `accessModes`). The user does not have any
+real visibility into `PersistentVolumes`, including whether the backing
+storage is NFS or something else. They simply know when their claim has
+been filled ("bound" to a PersistentVolume).
+
+    oc get pvc
+    NAME             LABELS    STATUS    VOLUME
+    registry-claim   map[]     Bound     registry-volume
+
+If we now go back and look at our PV, we will also see that it has
+been claimed:
+
+    oc describe pv/registry-volume
+    Name:           registry-volume
+    Labels:         <none>
+    Status:         Bound
+    Claim:          default/registry-claim
+    Reclaim Policy: %!d(api.PersistentVolumeReclaimPolicy=Retain)
+    Message:        %!d(string=)
+
+The `PersistentVolume` is now claimed and can't be claimed by any other project.
+
+Although this flow assumes the administrator pre-creates volumes in
+anticipation of their use later, it would be possible to create an external
+process that watches the API for a `PersistentVolumeClaim` to be created,
+dynamically provisions a corresponding volume, and creates the API object
+to fulfill the claim.
+
+### Attach the Volume to the Registry
+Now that the *default* project has a claim on a volume, we can attach it to the
+registry. Fortunately, we are provided with a handy tool, `oc volume`, to do
+much of the heavy lifting for us. 
+
+Take a quick look at the `DeploymentConfig` for the registry:
+
+    oc get dc docker-registry -o yaml
+    ...
+        volumeMounts:
+        - mountPath: /registry
+          name: registry-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+      - emptyDir: {}
+        name: registry-storage
+
+You can see that the registry is already more or less configured to be ready to
+use a volume. We're just going to go through and finish the job.
+
+Do the following as `root`:
+
+    oc volume dc/docker-registry --add --overwrite -t persistentVolumeClaim \
+    --claim-name=registry-claim --name=registry-storage
+
+Let's analyze what this command is about to do:
+
+* add a volume
+* overwrite any existing volume that matches
+* use a `persistentVolumeClaim` named *registry-claim*
+* give the volume the name *registry-storage*
+
+Since the registry's `DeploymentConfig` already had a volume with the name
+*registry-storage*, we're just going to overwrite that one, and we will end up
+switching from `emptyDir` to something else. The registry already had a volume
+mount set up to use the *registry-storage* volume and mount it to `/registry`.
+
+When you execute the above `oc volume` command, you'll see the following:
+
+    deploymentconfigs/docker-registry
+
+Now, go ahead and look at the `DeploymentConfig`s:
+
+    oc get dc
+    NAME              TRIGGERS       LATEST VERSION
+    docker-registry   ConfigChange   2
+    router            ConfigChange   1
+
+We see that we are on version 2 of the docker-registry `DeploymentConfig`. Take
+a look at the `ReplicationController`s:
+
+    oc get rc
+    CONTROLLER          CONTAINER(S)   IMAGE(S)                                                             SELECTOR                                                                                REPLICAS
+    docker-registry-1   registry       registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1   deployment=docker-registry-1,deploymentconfig=docker-registry,docker-registry=default   0
+    docker-registry-2   registry       registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1   deployment=docker-registry-2,deploymentconfig=docker-registry,docker-registry=default   1
+    router-1            router         registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1    deployment=router-1,deploymentconfig=router,router=router                               1
+
+We see that there is a *docker-registry-2* `ReplicationController` with 1
+replica. Now let's look at the pods:
+
+    oc get pod
+    NAME                      READY     REASON    RESTARTS   AGE
+    docker-registry-2-kqrnj   1/1       Running   0          11m
+    router-1-leu8v            1/1       Running   1          5d
+
+And we see that there is a pod that starts with *docker-registry-2*.
+
+When we changed the `DeploymentConfig` for the registry, this caused a new
+deployment, which we can see in the naming convention. We'll talk much more
+about this process later. Suffice it to say that, now, we have a registry
+running with a persistent storage mount. Highly available, actually. You should
+be able to delete the registry pod at any point in this training and have it
+return shortly after with all data intact.
+
+You can find out more about this storage system of OpenShift here:
+
+    https://docs.openshift.org/latest/architecture/additional_concepts/storage.html
 
 # S2I - What Is It?
 S2I stands for *source-to-image* and is the process where OpenShift will take
@@ -226,10 +476,10 @@ Essentially, the S2I process is as follows:
 1. OpenShift sets up various components such that it can build source code into
 a Docker image.
 
-1. OpenShift will then (on command) build the Docker image with the source code.
+1. OpenShift will then build the Docker image with the source code.
 
-1. OpenShift will then deploy the built Docker image as a Pod with an associated
-Service.
+1. OpenShift will then deploy the built Docker image as a `Pod` with an associated
+`Service`.
 
 ## CLI versus Console
 There are currently two ways to get from source code to components on OpenShift.
@@ -245,41 +495,7 @@ requires a little bit more input from a user to get things running. Let's go
 through an example of pointing to code via the web console. Later examples will
 use the CLI tools.
 
-## Adding the Builder ImageStreams
-While `new-app` has some built-in logic to help automatically determine the
-correct builder ImageStream, the web console currently does not have that
-capability. The user will have to first target the code repository, and then
-select the appropriate builder image.
-
-Perform the following command as `root` in the `beta4`folder in order to add all
-of the builder images:
-
-    oc create -f image-streams-rhel7.json -f jboss-image-streams.json \
-    -n openshift
-
-You will see the following:
-
-    imageStreams/ruby
-    imageStreams/nodejs
-    imageStreams/perl
-    imageStreams/php
-    imageStreams/python
-    imageStreams/mysql
-    imageStreams/postgresql
-    imageStreams/mongodb
-    imageStreams/jboss-webserver3-tomcat7-openshift
-    imageStreams/jboss-webserver3-tomcat8-openshift
-    imageStreams/jboss-eap6-openshift
-    imageStreams/jboss-amq-62
-    imageStreams/jboss-mysql-55
-    imageStreams/jboss-postgresql-92
-    imageStreams/jboss-mongodb-24
-
-What is the `openshift` project where we added these builders? This is a
-special project that can contain various elements that should be available to
-all users of the OpenShift environment.
-
-## Wait, What's an ImageStream?
+## ImageStreams
 If you think about one of the important things that OpenShift needs to do, it's
 to be able to deploy newer versions of user applications into Docker containers
 quickly. But an "application" is really two pieces -- the starting image (the
@@ -306,13 +522,27 @@ An organization will likely choose several supported builders and databases from
 Red Hat, but may also create their own builders, DBs, and other images. This
 system provides a great deal of flexibility.
 
-Feel free to look around `image-streams.json` for more details.  As you can see,
-we have provided definitions for EAP and Tomcat builders as well as other DBs
-and etc. Please feel free to experiment with these - we will attempt to provide
-sample apps as time progresses.
+The installer pre-populated several `ImageStream`s for you when it was run. As
+`root`:
 
-When finished, let's go move over to the web console to create our
-"application".
+    oc get is -n openshift
+    NAME                                 DOCKER REPO                                                      TAGS                   UPDATED
+    jboss-amq-6                          registry.access.redhat.com/jboss-amq-6/amq-openshift             6.2,6.2-84,latest      5 days ago
+    jboss-eap6-openshift                 registry.access.redhat.com/jboss-eap-6/eap-openshift             6.4,6.4-207,latest     5 days ago
+    jboss-webserver3-tomcat7-openshift   registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift   3.0,3.0-135,latest     5 days ago
+    jboss-webserver3-tomcat8-openshift   registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift   3.0,3.0-137,latest     5 days ago
+    mongodb                              registry.access.redhat.com/openshift3/mongodb-24-rhel7           2.4,latest,v3.0.0.0    5 days ago
+    mysql                                registry.access.redhat.com/openshift3/mysql-55-rhel7             5.5,latest,v3.0.0.0    5 days ago
+    nodejs                               registry.access.redhat.com/openshift3/nodejs-010-rhel7           0.10,latest,v3.0.0.0   5 days ago
+    perl                                 registry.access.redhat.com/openshift3/perl-516-rhel7             5.16,latest,v3.0.0.0   5 days ago
+    php                                  registry.access.redhat.com/openshift3/php-55-rhel7               5.5,latest,v3.0.0.0    5 days ago
+    postgresql                           registry.access.redhat.com/openshift3/postgresql-92-rhel7        9.2,latest,v3.0.0.0    5 days ago
+    python                               registry.access.redhat.com/openshift3/python-33-rhel7            3.3,latest,v3.0.0.0    5 days ago
+    ruby                                 registry.access.redhat.com/openshift3/ruby-20-rhel7              2.0,latest,v3.0.0.0    5 days ago
+
+The *openshift* project is another special one. Certain things placed here are
+accessible to all users, but may only be modified/manipulated by cluster
+administrators.
 
 ## Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
@@ -327,9 +557,9 @@ referenced earlier. Enter this repo in the box:
     https://github.com/openshift/simple-openshift-sinatra-sti
 
 When you hit "Next" you will then be asked which builder image you want to use.
-This application uses the Ruby language, so make sure to click
-`ruby:latest`. You'll see a pop-up with some more details asking for
-confirmation. Click "Select image..."
+This application uses the Ruby language, so make sure to click `ruby:2.0`.
+You'll see a pop-up with some more details asking for confirmation. Click
+"Select image..."
 
 The next screen you see lets you begin to customize the information a little
 bit. The only default setting we have to change is the name, because it is too
@@ -340,38 +570,27 @@ At this point, OpenShift has created several things for you. Use the "Browse"
 tab to poke around and find them. You can also use `oc status` as the `joe`
 user, too.
 
-If you run (as `joe`):
+If you quickly run (as `joe`):
 
     oc get pods
 
 You will see that there are currently no pods. That is because we have not
-actually gone through a build yet. While OpenShift has the capability of
-automatically triggering builds based on source control pushes (eg: Git(hub)
-webhooks, etc), we will have to trigger our build manually in this example.
+actually gone through a build yet. We told OpenShift about what we wanted to do,
+but it takes a little time to think about what should happen. In less than 90
+seconds, OpenShift will determine that we wanted an image to be deployed that
+was based on a build, but no build had yet happened, so a build should be
+started. Be patient. Eventually the web UI will indicate that a build is
+running:
 
-By the way, most of these things can (SHOULD!) also be verified in the web
-console. If anything, it looks prettier!
+     A build of ruby-example is running. A new deployment will be created
+     automatically once the build completes.
 
-To start our build, as `joe`, execute the following:
-
-    oc start-build ruby-example
-
-You'll see some output to indicate the build:
-
-    ruby-example-1
-
-We can check on the status of a build (it will switch to "Running" in a few
+We can also check on the status of a build (it will switch to "Running" in a few
 moments):
 
     oc get builds
     NAME             TYPE      STATUS     POD
     ruby-example-1   Source    Running   ruby-example-1
-
-The web console would've updated the *Overview* tab for the *Sinatra* project to
-say:
-
-    A build of ruby-example is running. A new deployment will be
-    created automatically once the build completes.
 
 Let's go ahead and start "tailing" the build log (substitute the proper UUID for
 your environment):
@@ -383,14 +602,16 @@ deployed yet, build-logs will give you an error. Just wait a few moments and
 retry it.**
 
 ## The Web Console Revisited
-If you peeked at the web console while the build was running, you probably
-noticed a lot of new information in the web console - the build status, the
-deployment status, new pods, and more.
+If you poked around in the web console while the build was running, you probably
+noticed a lot of new information - the build status, the deployment status, new
+pods, and more.
 
-If you didn't, go to the web console now. The overview page should show that the
-application is running and show the information about the service at the top:
+If you didn't, wait for the build to finish and then go to the web console. The
+overview page should show that the application is running and show the
+information about the service and route at the top:
 
-    SERVICE: RUBY-EXAMPLE routing traffic on 172.30.17.20 port 8080 - 8080 (tcp)
+    SERVICE: RUBY-EXAMPLE routing traffic on 172.30.78.56 – port 8080 → 8080 (TCP)
+    ruby-example.sinatra.cloudapps.example.com
 
 ## Examining the Build
 If you go back to your console session where you examined the `build-logs`,
@@ -406,111 +627,84 @@ is working (as the `joe` user):
     Hello, Sinatra!
 
 So, from a simple code repository with a few lines of Ruby, we have successfully
-built a Docker image and OpenShift has deployed it for us.
+built a Docker image and OpenShift has deployed it for us. It also did one other
+thing for us -- it made our application externally accessible.
 
-The last step will be to add a route to make it publicly accessible. You might
-have noticed that adding the application code via the web console resulted in a
-route being created. Currently that route doesn't have a corresponding DNS
-entry, so it is unusable. The default domain is also not currently configurable,
-so it's not very useful at the moment.
-
-## Adding a Route to Our Application
-Remember that routes are associated with services, so, determine the id of your
-services from the service output you looked at above.
-
-**Hint:** You will need to use `oc get services` to find it.
-
-**Hint:** Do this as `joe`.
-
-**Hint:** It is `ruby-example`.
-
-When you are done, create your route:
-
-    oc create -f sinatra-route.json
-
-Check to make sure it was created:
+## The Application Route
+Remember that routes are associated with services. Let's look at the list of
+routes as `joe`:
 
     oc get route
-    NAME                 HOST/PORT                                   PATH      SERVICE        LABELS
-    ruby-example         ruby-example.sinatra.router.default.local             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
-    ruby-example-route   hello-sinatra.cloudapps.example.com                   ruby-example
+    NAME           HOST/PORT                                    PATH      SERVICE        LABELS
+    ruby-example   ruby-example.sinatra.cloudapps.example.com             ruby-example   generatedby=OpenShiftWebConsole,name=ruby-example
 
-And now, you should be able to verify everything is working right:
+We can see that OpenShift created a route for us, named *ruby-example* (which
+matches the name we provided during the creation process), and it created a host
+mapping with a specific format:
 
-    curl http://hello-sinatra.cloudapps.example.com
+    ruby-example.sinatra.cloudapps.example.com
+
+That format is:
+
+    <service_name>.<project_name>.<routing_subdomain>
+
+That's the default behavior. You can always edit this later.
+
+At this point, you should be able to verify everything is working right:
+
+    curl http://ruby-example.sinatra.cloudapps.example.com
     Hello, Sinatra!
 
 If you want to be fancy, try it in your browser!
 
-You'll note above that there is a route involving "router.default.local". If you
-remember, when creating the application from the web console, there was a
-section for "route". In the future the router will provide more configuration
-options for default domains and etc. Currently, the "default" domain for
-applications is "router.default.local", which is most likely unusable in your
-environment.
-
 **Note:** HTTPS will *not* work for this route, because we have not specified
 any TLS termination.
 
-## Implications of Quota Enforcement on Scaling
-**THIS SECTION IS BROKEN**
-
-There is currently a bug with quota enforcement. Do **NOT** apply the quota to
-this project. Skip ahead to the scaling part.
-
-    https://github.com/openshift/origin/issues/2821
-
-** SKIP THIS**
-
-`*
+## Implications of Quota Enforcement
 Quotas have implications one may not immediately realize. As `root` assign a
-quota to the `sinatra` project.
+quota and resource limits to the `sinatra` project.
 
     oc create -f quota.json -n sinatra
+    oc create -f limits.json -n sinatra
 
-There is currently no default "size" for applications that are created with the
-web console. This means that, whether you think it's a good idea or not, the
-application is actually unbounded -- it can consume as much of a node's
-resources as it wants.
-
-Before we can try to scale our application, we'll need to update the deployment
-to put a memory and CPU limit on the pods. Go ahead and edit the
-`deploymentConfig`, as `joe`:
-
-    oc edit dc/ruby-example-1 -o json
-
-You'll need to find "spec", "containers" and then the "resources" block in
-there. It's after a bunch of `env`ironment variables. Update that "resources"
-block to look like this:
-
-        "resources": {
-          "limits": {
-            "cpu": "10m",
-            "memory": "16Mi"
-          }
-        },
-
-`*
-
-As `joe` scale your application up to three instances using the `oc resize`
+**Perform the following as `joe`**
+As `joe` scale your application up to three instances using the `oc scale`
 command:
 
-    oc resize --replicas=3 rc/ruby-example-1
+    oc scale --replicas=3 rc/ruby-example-1
+
+You'll just see:
+
+    scaled
 
 Wait a few seconds and you should see your application scaled up to 3 pods.
 
-    oc get pods | grep -v "example"
-    POD                    IP          CONTAINER(S) ... STATUS  CREATED
-    ruby-example-3-6n19x   10.1.0.27   ruby-example ... Running 2 minutes
-    ruby-example-3-pfga3   10.1.0.26   ruby-example ... Running 18 minutes
-    ruby-example-3-tzt0z   10.1.0.28   ruby-example ... Running About a minute
+    oc get pod
+    NAME                   READY     REASON       RESTARTS   AGE
+    ruby-example-1-build   0/1       ExitCode:0   0          19m
+    ruby-example-1-kqkxr   1/1       Running      0          15s
+    ruby-example-1-mqooa   1/1       Running      0          17m
+    ruby-example-1-yhjl3   1/1       Running      0          15s
 
-You will also notice that these pods were distributed across our two nodes
-"east" and "west". You can also see this in the web console. Cool!
+You will see that your build pod is still hanging around, but exited. We are
+currently doing this for logging purposes. While there is some log aggregation
+happening under the covers (with fluentd), it is not really accessible to a
+normal user. The `oc build-logs` command essentially is looking at the Docker
+container logs under the covers. If we delete this pod, the build logs are lost.
 
-**SKIP THIS**
+Also, do the following:
 
-*`
+    oc get pod -t '{{range .items}}{{.metadata.name}} {{.spec.host}}{{"\n"}}{{end}}' | grep -v build
+
+And you will see that our pods were equally distributed due to our scheduler
+configuration:
+
+    ruby-example-1-kqkxr ose3-node1.example.com
+    ruby-example-1-mqooa ose3-node2.example.com
+    ruby-example-1-yhjl3 ose3-node2.example.com
+
+*Note:* Your names are probably a little different.
+
 Now start another build, wait a moment or two for your build to start.
 
     oc start-build ruby-example
@@ -520,13 +714,16 @@ Now start another build, wait a moment or two for your build to start.
     ruby-example-1   Source    Complete   ruby-example-1
     ruby-example-2   Source    New        ruby-example-2
 
-The build never starts, what happened? The quota limits the number of pods in
-this project to three and this includes ephemeral pods like S2I builders.
+The build never starts. What happened? The quota limits the number of pods in
+this project to three and this includes ephemeral pods like S2I builders. To see
+what this looks like, check out the `oc describe` output:
+
+    oc describe build ruby-example-2
+    ...
+    Tue, 28 Jul 2015 11:04:27 -0400       Tue, 28 Jul 2015 11:04:27 -0400 1       {build-controller }                     failedCreate    Error creating: Pod "ruby-example-2-build" is forbidden: Limited to 3 pods
+
 Resize your application to just one replica and your new build will
 automatically start after a minute or two.
 
 **Note:** Once the build is complete a new replication controller is
 created and the old one is no longer used.
-`*
-
-
