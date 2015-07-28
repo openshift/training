@@ -15,6 +15,61 @@ osc get $resource; echo -e "\n\n"; done
 
 osc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
+#ga/rc
+systemctl start docker
+yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
+docker images  | grep -v jboss | awk {'print $3'} | xargs -r docker rmi -f
+docker pull registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-deployer:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-sti-image-builder:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-pod:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v3.0.0.1
+docker pull registry.access.redhat.com/openshift3/ruby-20-rhel7
+docker pull registry.access.redhat.com/openshift3/mysql-55-rhel7
+docker pull registry.access.redhat.com/openshift3/php-55-rhel7
+docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
+docker pull openshift/hello-openshift
+
+for node in ose3-master ose3-node1 ose3-node2; do ssh root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"; done
+sh root@ose3-node2 "systemctl start dnsmasq"
+ssh root@ose3-node2 "sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"
+
+cd
+git clone https://github.com/thoraxe/training -b GA-work
+cd
+useradd joe
+useradd alice
+touch /etc/openshift/openshift-passwd
+htpasswd -b /etc/openshift/openshift-passwd joe redhat
+htpasswd -b /etc/openshift/openshift-passwd alice redhat
+
+cd
+CA=/etc/openshift/master
+oadm create-server-cert --signer-cert=$CA/ca.crt \
+      --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
+      --hostnames='*.cloudapps.example.com' \
+      --cert=cloudapps.crt --key=cloudapps.key
+cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
+oadm router --default-cert=cloudapps.router.pem \
+--credentials=/etc/openshift/master/openshift-router.kubeconfig \
+--selector='region=infra' \
+--images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
+
+mkdir -p /mnt/registry
+echo '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"registry"}}' \
+| oc create -f -
+oc get scc privileged -o yaml | sed -e '$ a- system:serviceaccount:default:registry' | oc update -f -
+oadm registry --create \
+--credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+--images='registry.access.redhat.com/openshift3/ose-${component}:${version}' \
+--selector="region=infra" --mount-host=/mnt/registry \
+--service-account=registry
+
+cat image-streams-rhel7.json  | sed -e 's/registry.access.redhat.com/ci.dev.openshift.redhat.com:5000/' -e ':begin;$!N;s/"metadata": {\n/"metadata": { "annotations": { "openshift.io\/image.insecureRepository": "true" },/;tbegin' -e 's/openshift3/openshift/' | oc create -f - -n openshift
+
 #beta4
 systemctl start docker
 yum -y remove '*openshift*'; yum clean all; yum -y install '*openshift*' --exclude=openshift-clients 
