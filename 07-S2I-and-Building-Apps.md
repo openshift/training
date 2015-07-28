@@ -1,3 +1,27 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Preparing for S2I: the Registry](#preparing-for-s2i-the-registry)
+  - [Storage for the registry](#storage-for-the-registry)
+  - [Service Account for the Registry](#service-account-for-the-registry)
+  - [Creating the registry](#creating-the-registry)
+- [S2I - What Is It?](#s2i---what-is-it)
+  - [Create a New Project](#create-a-new-project)
+  - [Switch Projects](#switch-projects)
+  - [A Simple Code Example](#a-simple-code-example)
+  - [CLI versus Console](#cli-versus-console)
+  - [Adding the Builder ImageStreams](#adding-the-builder-imagestreams)
+  - [Wait, What's an ImageStream?](#wait-whats-an-imagestream)
+  - [Adding Code Via the Web Console](#adding-code-via-the-web-console)
+  - [The Web Console Revisited](#the-web-console-revisited)
+  - [Examining the Build](#examining-the-build)
+  - [Testing the Application](#testing-the-application)
+  - [Adding a Route to Our Application](#adding-a-route-to-our-application)
+  - [Implications of Quota Enforcement on Scaling](#implications-of-quota-enforcement-on-scaling)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Preparing for S2I: the Registry
 One of the really interesting things about OpenShift v3 is that it will build
 Docker images from your source code, deploy them, and manage their lifecycle.
