@@ -1,0 +1,165 @@
+{
+  "kind": "Config",
+  "apiVersion": "v1beta1",
+  "items": [
+    {
+        "kind": "Service",
+        "id": "basicauthurl",
+        "apiVersion": "v1beta1",
+        "namespace": "default",
+        "port": 443,
+        "protocol": "TCP",
+        "labels": {
+            "basicauthurl": "basicauthurl"
+        },
+        "selector": {
+            "basicauthurl": "basicauthurl"
+        },
+        "containerPort": 443,
+        "sessionAffinity": "None"
+    },
+    {
+        "apiVersion": "v1beta1",
+        "host": "%%ROUTE%%",
+        "kind": "Route",
+        "metadata": {
+            "creationTimestamp": null,
+            "name": "basicauthurl"
+        },
+        "serviceName": "basicauthurl",
+        "tls": {
+            "termination": "passthrough"
+        }
+    },
+    {
+      "apiVersion": "v1beta1",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "basicauthurl"
+      }
+    },
+    {
+      "apiVersion": "v1beta1",
+      "kind": "BuildConfig",
+      "labels": {
+        "name": "basicauthurl-build"
+      },
+      "metadata": {
+        "name": "basicauthurl-build"
+      },
+      "parameters": {
+        "output": {
+          "to": {
+            "name": "basicauthurl"
+          }
+        },
+        "source": {
+          "git": {
+            "uri": "%%GIT_REPO%%"
+          },
+          "type": "Git"
+        },
+        "strategy": {
+          "stiStrategy": {
+            "image": "docker-buildvm-rhose.usersys.redhat.com:5000/openshift3_beta/sti-basicauthurl"
+          },
+          "type": "STI"
+        }
+      },
+      "triggers": []
+    },
+    {
+        "kind": "DeploymentConfig",
+        "apiVersion": "v1beta1",
+        "metadata": {
+            "name": "basicauthurl",
+            "labels": {
+                "basicauthurl": "basicauthurl"
+            }
+        },
+        "triggers": [
+            {
+              "imageChangeParams": {
+                "automatic": true,
+                "containerNames": [
+                  "basicauthurl"
+                ],
+                "from": {
+                  "name": "basicauthurl"
+                },
+                "tag": "latest"
+              },
+              "type": "ImageChange"
+            }
+        ],
+        "template": {
+            "strategy": {
+                "type": "Recreate"
+            },
+            "controllerTemplate": {
+                "replicas": 1,
+                "replicaSelector": {
+                    "basicauthurl": "basicauthurl"
+                },
+                "podTemplate": {
+                    "desiredState": {
+                        "manifest": {
+                            "version": "v1beta2",
+                            "id": "",
+                            "volumes": null,
+                            "containers": [
+                                {
+                                    "name": "basicauthurl",
+                                    "image": "basicauthurl",
+                                    "ports": [
+                                        {
+                                            "containerPort": 443,
+                                            "protocol": "TCP"
+                                        }
+                                    ],
+                                    "env": [
+                                        {
+                                            "name": "OPENSHIFT_CA_DATA",
+                                            "key": "OPENSHIFT_CA_DATA",
+                                            "value": "%%OPENSHIFT_CA_DATA%%"
+                                        },
+                                        {
+                                            "name": "OPENSHIFT_CERT_DATA",
+                                            "key": "OPENSHIFT_CERT_DATA",
+                                            "value": "%%OPENSHIFT_CERT_DATA%%"
+                                        },
+                                        {
+                                            "name": "OPENSHIFT_KEY_DATA",
+                                            "key": "OPENSHIFT_KEY_DATA",
+                                            "value": "%%OPENSHIFT_KEY_DATA%%"
+                                        }
+                                    ],
+                                    "resources": {},
+                                    "livenessProbe": {
+                                        "tcpSocket": {
+                                            "port": 443
+                                        },
+                                        "timeoutSeconds": 100,
+                                        "initialDelaySeconds": 10000
+                                    },
+                                    "terminationMessagePath": "/dev/termination-log",
+                                    "imagePullPolicy": "PullIfNotPresent",
+                                    "capabilities": {}
+                                }
+                            ],
+                            "restartPolicy": {
+                                "always": {}
+                            },
+                            "dnsPolicy": "ClusterFirst"
+                        }
+                    },
+                    "labels": {
+                        "basicauthurl": "basicauthurl"
+                    }
+                }
+            }
+        },
+        "latestVersion": 1
+    }
+  ]
+}
