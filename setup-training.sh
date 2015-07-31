@@ -127,7 +127,7 @@ sleep 40
 
 echo
 echo "Testing routing..."
-curl -sSf --cacert /etc/openshift/master/ca.crt https://hello-openshift.cloudapps.example.com
+curl -sSf --cacert /etc/openshift/master/ca.crt https://hello-openshift-service.demo.cloudapps.example.com
 if [[ $? == 0 ]]; then
         echo 'Router is working!'
 else

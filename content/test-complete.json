@@ -37,7 +37,6 @@
         }
       },
       "spec": {
-        "host": "hello-openshift.cloudapps.example.com",
         "to": {
           "name": "hello-openshift-service"
         },
