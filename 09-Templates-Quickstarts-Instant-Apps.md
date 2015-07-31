@@ -93,9 +93,7 @@ insantiated.
 * It will let you add label:value pairs that can be used for other things
 * It will let you set specific values for any parameters, if you so choose
 
-The only parameter you may need to edit is the `APPLICATION_DOMAIN` if it does
-not match what you have used for your environment. Leave all of the other
-defaults and simply click "Create".
+Leave all of the defaults and simply click "Create".
 
 Once you hit the "Create" button, the services and pods and
 replicationcontrollers and etc. will be instantiated.
@@ -108,7 +106,7 @@ logs.
 Once the build is complete, you should be able to visit the routed URL and
 actually use the application!
 
-    http://quickstart.cloudapps.example.com
+    http://frontend.quickstart.cloudapps.example.com
 
 The dev guide linked previously has a lot of information on how to use
 templates.

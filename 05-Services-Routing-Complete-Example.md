@@ -454,6 +454,7 @@ and a corresponding route. It also includes a deployment configuration.
             "name": "hello-openshift-route"
           },
           "spec": {
+            "host": "hello-openshift.cloudapps.example.com",
             "to": {
               "name": "hello-openshift-service"
             },
@@ -543,12 +544,12 @@ In the JSON above:
   * with the id `hello-openshift-service`
   * with the selector `name=hello-openshift`
 * There is a route:
-  * that gets the generated FQDN `hello-openshift-service.demo.cloudapps.example.com`
+  * with the FQDN `hello-openshift.cloudapps.example.com`
   * with the `spec` `to` `name=hello-openshift-service`
 
 If we work from the route down to the pod:
 
-* The route for `hello-openshift-service.demo.cloudapps.example.com` has an HAProxy pool
+* The route for `hello-openshift.cloudapps.example.com` has an HAProxy pool
 * The pool is for any pods in the service whose ID is `hello-openshift-service`,
     via the `serviceName` directive of the route.
 * The service `hello-openshift-service` includes every pod who has a label
@@ -556,13 +557,8 @@ If we work from the route down to the pod:
 * There is a single pod with a single container that has the label
     `name=hello-openshift-label`
 
-Because we did not specify a `host` stanza in the JSON, OpenShift will
-automatically generate a route FQDN for us with the format:
-
-    <servicename>.<projectname>.<subdomain>
-
-Make sure that you have properly configured the routing subdomain for your
-environment.
+If your domain is different, you will need to edit the JSON before trying to
+create the objects. 
 
 **Logged in as `joe`,** go ahead and use `oc` to create everything:
 
@@ -647,19 +643,19 @@ If you see some content that looks like:
       "Name": "demo/hello-openshift-service",
       "EndpointTable": [
         {
-          "ID": "10.1.2.3:8080",
-          "IP": "10.1.2.3",
+          "ID": "10.1.2.6:8080",
+          "IP": "10.1.2.6",
           "Port": "8080",
-          "TargetName": "hello-openshift-1-xahi8"
+          "TargetName": "hello-openshift-1-ehacs"
         }
       ],
       "ServiceAliasConfigs": {
         "demo-hello-openshift-route": {
-          "Host": "hello-openshift-service.demo.cloudapps.example.com",
+          "Host": "hello-openshift.cloudapps.example.com",
           "Path": "",
           "TLSTermination": "edge",
           "Certificates": {
-            "hello-openshift-service.demo.cloudapps.example.com": {
+            "hello-openshift.cloudapps.example.com": {
               "ID": "demo-hello-openshift-route",
               "Contents": "",
               "PrivateKey": ""
@@ -681,7 +677,7 @@ As `joe`, you can reach the route securely and check that it is using the right
 certificate:
 
     curl --cacert /etc/openshift/master/ca.crt \
-             https://hello-openshift-service.demo.cloudapps.example.com
+             https://hello-openshift.cloudapps.example.com
     Hello OpenShift!
 
 And:
@@ -700,10 +696,6 @@ that CA is not "installed" in our system, we need to point our tools at that CA
 certificate in order to validate the SSL certificate presented to us by the
 router. With a CA or all certificates signed by a trusted authority, it would
 not be necessary to specify the CA everywhere.
-
-**Note: This currently doesn't work perfectly because of:**
-
-    https://bugzilla.redhat.com/show_bug.cgi?id=1249108
 
 ## The Router Status Page
 If you are interested, and you exposed the router admin port, you can visit the
