@@ -1,0 +1,35 @@
+# Create an OSEv3 group that contains the masters and nodes groups
+[OSEv3:children]
+masters
+nodes
+etcd
+
+# Set variables common for all OSEv3 hosts
+[OSEv3:vars]
+# SSH user, this user should allow ssh based auth without requiring a
+# password. If using ssh key based auth, then the key should be managed by an
+# ssh agent.
+ansible_ssh_user=root
+
+# If ansible_ssh_user is not root, ansible_sudo must be set to true and the
+# user must be configured for passwordless sudo
+#ansible_sudo=true
+
+# deployment type valid values are origin, online and enterprise
+deployment_type=enterprise
+
+# htpasswd auth
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/openshift-passwd'}]
+
+# host group for masters
+[masters]
+ose3-master.example.com
+
+[etcd]
+ose3-master.example.com
+
+# host group for nodes
+[nodes]
+ose3-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+ose3-node1.example.com openshift_node_labels="{'region': 'primary', 'zone': 'east'}"
+ose3-node2.example.com openshift_node_labels="{'region': 'primary', 'zone': 'west'}"
