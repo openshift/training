@@ -75,9 +75,14 @@ oadm registry --create \
 --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
 --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
 
+# reduce registry scale to zero
+oc scale rc/docker-registry-1 --replicas=1
+sleep 5
+
 # setup volumes and claims
 oc create -f ~/training/content/registry-volume.json
 oc create -f ~/training/content/registry-claim.json
+sleep 5
 oc volume dc/docker-registry --add --overwrite -t persistentVolumeClaim \
 --claim-name=registry-claim --name=registry-storage
 
