@@ -10,6 +10,9 @@
       "tags": "instant-app,ruby,mysql"
     }
   },
+  "labels": {
+    "template": "quickstart-keyvalue-application"
+  },
   "objects": [
     {
       "kind": "Service",
@@ -46,7 +49,6 @@
         "name": "keyvalue-route"
       },
       "spec": {
-        "host": "${APPLICATION_DOMAIN}",
         "to": {
           "kind": "Service",
           "name": "frontend"
@@ -341,14 +343,6 @@
       "name": "MYSQL_DATABASE",
       "description": "The name of the database",
       "value": "root"
-    },
-    {
-      "name": "APPLICATION_DOMAIN",
-      "description": "The exposed hostname that will route to the application",
-      "value": "quickstart.cloudapps.example.com"
     }
-  ],
-  "labels": {
-    "template": "quickstart-keyvalue-application"
-  }
+  ]
 }
