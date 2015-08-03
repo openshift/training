@@ -11,6 +11,7 @@
   - [Node Configuration](#node-configuration)
   - [General Confirmation](#general-confirmation)
   - [Finish the Installation](#finish-the-installation)
+  - [Copy the CA certificate](#copy-the-ca-certificate)
   - [Add Cloud Domain](#add-cloud-domain)
 - [Regions and Zones](#regions-and-zones)
   - [Scheduler and Defaults](#scheduler-and-defaults)
@@ -188,6 +189,16 @@ see something like the following:
 
 Press any key to continue and exit the installer. You now have a working
 OpenShift Enterprise environment!
+
+## Copy the CA certificate
+The `/etc/openshift/master` folder is not group or world readable. This is good
+because the keyfiles are in there, and "random" users should not have access to
+them.
+
+However, the self-signed CA certificate that the installer generated needs to be
+accessible to users on the system. So, copy it to somewhere accessible:
+
+    /bin/cp /etc/openshift/master/ca.crt /etc/openshift
 
 ## Add Cloud Domain
 If you want default routes (we'll talk about these later) to automatically get

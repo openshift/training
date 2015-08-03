@@ -51,7 +51,7 @@ The frontend application comes from the following code repository:
 We want to use the beta branch. We can use the `new-app` command to help get
 this started for us. As `alice` go ahead and do the following:
 
-    oc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world#beta4
+    oc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world
 
 You should see something like the following:
 
@@ -69,7 +69,6 @@ The syntax of the command tells us:
 * I want to create a new application
 * using the *ruby* builder image in the *openshift* project
 * based off of the code in a git repository
-* and using the *beta4* branch
 
 Since we know that we want to talk to a database eventually, let's take a moment
 to add the environment variables for it. Conveniently, there is an `env`

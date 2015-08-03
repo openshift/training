@@ -144,7 +144,7 @@ Open a terminal as `joe`:
 Then, execute:
 
     oc login -u joe \
-    --certificate-authority=/etc/openshift/master/ca.crt \
+    --certificate-authority=/etc/openshift/ca.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
