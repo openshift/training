@@ -15,6 +15,10 @@ cd openshift-ansible
 ansible-playbook playbooks/byo/config.yml
 
 echo
+echo "Copying CA certificate to a user accessible location..."
+/bin/cp /etc/openshift/master/ca.crt /etc/openshift
+
+echo
 echo "Labeling nodes..."
 oc label node/ose3-master.example.com region=infra zone=default
 oc label node/ose3-node1.example.com region=primary zone=east

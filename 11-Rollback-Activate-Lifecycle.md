@@ -1,3 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Rollback/Activate and Code Lifecycle](#rollbackactivate-and-code-lifecycle)
+  - [Fork the Repository](#fork-the-repository)
+  - [Update the BuildConfig](#update-the-buildconfig)
+  - [Change the Code](#change-the-code)
+- [ Welcome to an OpenShift v3 Demo App! ](#welcome-to-an-openshift-v3-demo-app)
+- [ This is my crustom demo! ](#this-is-my-crustom-demo)
+  - [Start a Build with a Webhook](#start-a-build-with-a-webhook)
+  - [Rollback](#rollback)
+  - [Activate](#activate)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Rollback/Activate and Code Lifecycle
 Not every coder is perfect, and sometimes you want to rollback to a previous
 incarnation of your application. Sometimes you then want to go forward to a
@@ -118,7 +134,7 @@ To find the webhook URL, you can visit the web console, click into the
 project, click on *Browse* and then on *Builds*. You'll see two webhook
 URLs. Copy the *Generic* one. It should look like:
 
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-example/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
 
 **Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
 webUI. Note the correct syntax above. This is fixed already, but did not make it
@@ -143,7 +159,7 @@ You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-example/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/quickstart/buildconfigs/ruby-sample-build/webhooks/secret101/generic
 
 And now `get build` again:
 
