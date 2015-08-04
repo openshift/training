@@ -1,3 +1,17 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Lifecycle Pre and Post Deployment Hooks](#lifecycle-pre-and-post-deployment-hooks)
+  - [Add a Database Migration File](#add-a-database-migration-file)
+  - [Examining Deployment Hooks](#examining-deployment-hooks)
+  - [Modifying the Hooks](#modifying-the-hooks)
+  - [Quickly Clean Up](#quickly-clean-up)
+  - [Build Again](#build-again)
+  - [Verify the Migration](#verify-the-migration)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Lifecycle Pre and Post Deployment Hooks
 Like in OpenShift 2, we have the capability of "hooks" - performing actions both
 before and after the **deployment**. In other words, once an S2I build is
