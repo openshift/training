@@ -9,7 +9,7 @@ function test_exit() {
 
 function prepare_dns(){
 echo
-echo "Preparing DNS..."
+echo "Verifying DNS..."
 for node in ose3-master ose3-node1 ose3-node2
 do 
   ssh -o StrictHostKeyChecking=no root@$node "grep 133.4 /etc/resolv.conf" > /dev/null
@@ -262,3 +262,4 @@ echo ""
 
 prepare_dns
 pull_content
+run_install
