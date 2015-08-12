@@ -3,41 +3,45 @@
 function test_exit() {
   if [ $1 -eq 1 ]
   then
-    return 1
+    printf '\033[31m✗ \033[0m'
+    printf '%s\n' "$2 failed"
+    exit 255
+  else
+    printf '\033[32m✓ \033[0m'
+     printf '%s\n' "$2 passed"
   fi
 }
 
 function prepare_dns(){
-echo
-echo "Verifying DNS..."
 for node in ose3-master ose3-node1 ose3-node2
 do 
   ssh -o StrictHostKeyChecking=no root@$node "grep 133.4 /etc/resolv.conf" > /dev/null
   if [ $? -eq 1 ] 
   then
-    echo "Setting nameserver for $node"
+    test="Setting nameserver for $node..."
+    echo -n $test
     ssh -o StrictHostKeyChecking=no root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"
-    test_exit $?
+    test_exit $? $test
   fi
 done
-echo "Starting dnsmasq..."
+test="Starting dnsmasq..."
 ssh root@ose3-node2 "systemctl start dnsmasq"
-test_exit $?
+test_exit $? $test
 
 ssh root@ose3-node2 "grep 'dport 53' /etc/sysconfig/iptables" > /dev/null
 if [ $? -eq 1 ]
 then
-  echo "Adding iptables rule to sysconfig file..."
+  test="Adding iptables rule to sysconfig file..."
   ssh root@ose3-node2 "sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"
-  test_exit $?
+  test_exit $? $test
 fi
 
 ssh root@ose3-node2 "iptables-save | grep 'dport 53'" > /dev/null
 if [ $? -eq 1 ]
 then
-  echo "Adding iptables rule to live rules..."
-  ssh root@ose3-node2 "iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT" > /dev/null
-  test_exit $?
+  test="Adding iptables rule to live rules..."
+  ssh root@ose3-node2 "iptables -I INPUT -p tcp -m udp --dport 53 -j ACCEPT" > /dev/null
+  test_exit $? $test
 fi
 }
 
@@ -47,7 +51,7 @@ cd
 if [ ! -d /root/training ]
 then
   echo "Pulling training content..."
-  git clone https://github.com/openshift/training 
+  git clone https://github.com/thoraxe/training -b training-setup
 fi
 if [ ! -d /root/openshift-ansible ]
 then
@@ -258,7 +262,6 @@ echo ""
 
 # should test if build tries to deploy
 # should fail if deploy fails
-
 
 prepare_dns
 pull_content
