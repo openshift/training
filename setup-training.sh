@@ -19,7 +19,6 @@ do
   if [ $? -eq 1 ] 
   then
     test="Setting nameserver for $node..."
-    echo -n $test
     ssh -o StrictHostKeyChecking=no root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"
     test_exit $? "$test"
   fi
@@ -28,16 +27,22 @@ test="Starting dnsmasq..."
 ssh root@ose3-node2 "systemctl start dnsmasq"
 test_exit $? "$test"
 
+test="Checking for firewall rule..."
 ssh root@ose3-node2 "grep 'dport 53' /etc/sysconfig/iptables" > /dev/null
-if [ $? -eq 1 ]
+code=$?
+test_exit $code "$test"
+if [ $code -eq 1 ]
 then
   test="Adding iptables rule to sysconfig file..."
   ssh root@ose3-node2 "sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"
   test_exit $? "$test"
 fi
 
+test="Checking live firewall..."
 ssh root@ose3-node2 "iptables-save | grep 'dport 53'" > /dev/null
-if [ $? -eq 1 ]
+code=$?
+test_exit $code "$test"
+if [ $code -eq 1 ]
 then
   test="Adding iptables rule to live rules..."
   ssh root@ose3-node2 "iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT" > /dev/null
@@ -46,7 +51,6 @@ fi
 }
 
 function pull_content(){
-echo
 cd
 if [ ! -d /root/training ]
 then
@@ -61,58 +65,66 @@ then
   test_exit $? "$test"
 fi
 test="Copying hosts file..."
-/bin/cp ~/training/content/sample-ansible-hosts /etc/ansible/hosts
+/bin/cp -f ~/training/content/sample-ansible-hosts /etc/ansible/hosts
 test_exit $? "$test"
 }
 
 function run_install(){
 test="Running installation..."
 cd openshift-ansible
-ansible-playbook playbooks/byo/config.yml
+ansible-playbook playbooks/byo/config.yml > /tmp/ansible-`date +%d%m%Y`.log
 test_exit $? "$test"
 }
 
 function copy_ca(){
-echo
-echo "Copying CA certificate to a user accessible location..."
+test="Copying CA certificate to a user accessible location..."
 /bin/cp /etc/openshift/master/ca.crt /etc/openshift
+test_exit $? "$test"
 }
 
 function label_nodes(){
-echo
-echo "Labeling nodes..."
-oc label node/ose3-master.example.com region=infra zone=default
-oc label node/ose3-node1.example.com region=primary zone=east
-oc label node/ose3-node2.example.com region=primary zone=west
+test="Labeling nodes..."
+oc label --overwrite node/ose3-master.example.com region=infra zone=default > /dev/null
+test_exit $? "$test"
+oc label --overwrite node/ose3-node1.example.com region=primary zone=east > /dev/null
+test_exit $? "$test"
+oc label --overwrite node/ose3-node2.example.com region=primary zone=west > /dev/null
+test_exit $? "$test"
 }
 
 function configure_routing_domain(){
-echo
-echo "Configure default routing domain..."
+test="Configure default routing domain..."
 sed -i 's/subdomain: router.default.local/subdomain: cloudapps.example.com/' /etc/openshift/master/master-config.yaml
+test_exit $? "$test"
 }
 
 function configure_default_nodeselector(){
-echo
-echo "Configure default nodeselector for system..."
+test="Configure default nodeselector for system..."
 sed -i /etc/openshift/master/master-config.yaml -e 's/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'
+test_exit $? "$test"
+test="Restart master..."
 systemctl restart openshift-master
+test_exit $? "$test"
 }
 
 function configure_default_project_selector(){
-echo
-echo "Configure default namespace selector..."
-oc get namespace default -o json | sed -e '/"openshift.io\/sa.scc.mcs"/i "openshift.io/node-selector": "region=infra",' | oc update -f -
+test="Configure default namespace selector..."
+oc get namespace default -o json | sed -e '/"openshift.io\/sa.scc.mcs"/i "openshift.io/node-selector": "region=infra",' | oc replace -f -
+test_exit $? "$test"
 }
 
 function setup_dev_users(){
-echo
-echo "Setting up development users..."
+test="Setting up development users..."
 useradd joe
+test_exit $? "$test"
 useradd alice
+test_exit $? "$test"
 touch /etc/openshift/openshift-passwd
+test_exit $? "$test"
 htpasswd -b /etc/openshift/openshift-passwd joe redhat
+test_exit $? "$test"
 htpasswd -b /etc/openshift/openshift-passwd alice redhat
+test_exit $? "$test"
 }
 
 function install_router(){
@@ -133,9 +145,7 @@ oadm router --default-cert=cloudapps.router.pem \
 function prepare_nfs(){
 echo
 echo "Preparing NFS on master for registry..."
-mkdir -p /var/export/regvol
-chown nfsnobody:nfsnobody /var/export/regvol
-chmod 700 /var/export/regvol
+install -d -m 0700 -o nobody -g nobody /var/export/regvol
 echo "/var/export/regvol *(rw,sync,all_squash)" > /etc/exports
 iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
 iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
@@ -270,3 +280,8 @@ echo ""
 prepare_dns
 pull_content
 run_install
+copy_ca
+label_nodes
+configure_routing_domain
+configure_default_nodeselector
+configure_default_project_selector
