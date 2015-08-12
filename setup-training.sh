@@ -43,10 +43,17 @@ fi
 
 function pull_content(){
 echo
-echo "Pulling content..."
 cd
-git clone https://github.com/openshift/training 
-git clone https://github.com/openshift/openshift-ansible
+if [ ! -d /root/training ]
+then
+  echo "Pulling training content..."
+  git clone https://github.com/openshift/training 
+fi
+if [ ! -d /root/openshift-ansible ]
+then
+  echo "Pulling ansible content..."
+  git clone https://github.com/openshift/openshift-ansible
+fi
 /bin/cp ~/training/content/sample-ansible-hosts /etc/ansible/hosts
 }
 
