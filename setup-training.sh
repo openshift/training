@@ -1,14 +1,14 @@
 #!/bin/bash
 
 function test_exit() {
-  if [ $1 -eq 1 ]
+  if [ $1 -eq 0 ]
   then
+    printf '\033[32m✓ \033[0m'
+    printf '%s\n' "$2 passed"
+  else
     printf '\033[31m✗ \033[0m'
     printf '%s\n' "$2 failed"
     exit 255
-  else
-    printf '\033[32m✓ \033[0m'
-     printf '%s\n' "$2 passed"
   fi
 }
 
@@ -21,27 +21,27 @@ do
     test="Setting nameserver for $node..."
     echo -n $test
     ssh -o StrictHostKeyChecking=no root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"
-    test_exit $? $test
+    test_exit $? "$test"
   fi
 done
 test="Starting dnsmasq..."
 ssh root@ose3-node2 "systemctl start dnsmasq"
-test_exit $? $test
+test_exit $? "$test"
 
 ssh root@ose3-node2 "grep 'dport 53' /etc/sysconfig/iptables" > /dev/null
 if [ $? -eq 1 ]
 then
   test="Adding iptables rule to sysconfig file..."
   ssh root@ose3-node2 "sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"
-  test_exit $? $test
+  test_exit $? "$test"
 fi
 
 ssh root@ose3-node2 "iptables-save | grep 'dport 53'" > /dev/null
 if [ $? -eq 1 ]
 then
   test="Adding iptables rule to live rules..."
-  ssh root@ose3-node2 "iptables -I INPUT -p tcp -m udp --dport 53 -j ACCEPT" > /dev/null
-  test_exit $? $test
+  ssh root@ose3-node2 "iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT" > /dev/null
+  test_exit $? "$test"
 fi
 }
 
@@ -50,22 +50,26 @@ echo
 cd
 if [ ! -d /root/training ]
 then
-  echo "Pulling training content..."
+  test="Pulling training content..."
   git clone https://github.com/thoraxe/training -b training-setup
+  test_exit $? "$test"
 fi
 if [ ! -d /root/openshift-ansible ]
 then
-  echo "Pulling ansible content..."
+  test="Pulling ansible content..."
   git clone https://github.com/openshift/openshift-ansible
+  test_exit $? "$test"
 fi
+test="Copying hosts file..."
 /bin/cp ~/training/content/sample-ansible-hosts /etc/ansible/hosts
+test_exit $? "$test"
 }
 
 function run_install(){
-echo
-echo "Running installation..."
+test="Running installation..."
 cd openshift-ansible
 ansible-playbook playbooks/byo/config.yml
+test_exit $? "$test"
 }
 
 function copy_ca(){
