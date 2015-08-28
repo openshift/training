@@ -83,7 +83,7 @@
                 "image": "openshift/hello-openshift:v0.4.3",
                 "ports": [
                   {
-                    "name": "hello-openshift-tcp-8080",
+                    "name": "http",
                     "containerPort": 8080,
                     "protocol": "TCP"
                   }
