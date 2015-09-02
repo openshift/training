@@ -206,7 +206,6 @@ using `cat`:
             "image": "openshift/hello-openshift",
             "ports": [
               {
-                "hostPort": 36061,
                 "containerPort": 8080,
                 "protocol": "TCP"
               }
@@ -296,7 +295,7 @@ networking in OpenShift is outside the scope of this material.
 To verify that the app is working, you can issue a curl to the app's port *on
 the node where the pod is running*
 
-    [root@ose3-node1 ~]# curl localhost:36061
+    [root@ose3-node1 ~]# curl 10.1.0.3:8080
     Hello OpenShift!
 
 Hooray!
