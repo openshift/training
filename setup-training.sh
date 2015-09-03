@@ -26,6 +26,22 @@ function test_exit() {
   fi
 }
 
+function wait_on_pod(){
+# arg1 = pod id, arg2 = pod namespace
+test="Waiting up to 30s for pod ($1) deployment..."
+for i in {1..30}
+do
+  sleep 1
+  exec_it oc get pod "$1" -n "$2" -t \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
+  if [ $? -eq 0 ]
+  then
+    test_exit 0 "$test"
+    return
+  fi
+done
+text_exit 1 "$test"
+}
+
 function prepare_dns(){
 for node in ose3-master ose3-node1 ose3-node2
 do 
@@ -242,26 +258,16 @@ fi
 test="Creating hello-openshift pod..."
 exec_it su - joe -c \""oc create -f ~/training/content/hello-pod.json"\"
 test_exit $? "$test"
-test="Waiting up to 30s for pod deployment..."
-for i in {1..30}
-do
-  sleep 1
-  exec_it oc get pod hello-openshift -n demo -t \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
-  if [ $? -eq 0 ]
-  then
-    test_exit 0 "$test"
-    test="Verifying hello-pod..."
-    exec_it curl $(oc get pod hello-openshift -n demo -t '{{.status.podIP}}'):8080 "|" grep Hello
-    test_exit $? "$test"
-    test="Deleting hello-pod..."
-    exec_it su - joe -c \""oc delete pod hello-openshift"\"
-    test_exit $? "$test"
-    # it takes 10 seconds for quota to update
-    sleep 10
-    return
-  fi
-done
-text_exit 1 "$test"
+wait_on_pod "hello-openshift" "demo"
+# if we came out of that successfully, proceed
+test="Verifying hello-pod..."
+exec_it curl $(oc get pod hello-openshift -n demo -t '{{.status.podIP}}'):8080 "|" grep Hello
+test_exit $? "$test"
+test="Deleting hello-pod..."
+exec_it su - joe -c \""oc delete pod hello-openshift"\"
+test_exit $? "$test"
+# it takes 10 seconds for quota to update
+sleep 10
 }
 
 function hello_quota() {
@@ -296,14 +302,29 @@ hello_quota
 }
 
 function create_populate_service(){
+# delete hello service
+oc delete service --all -n demo
+oc delete pod --all -n demo
+sleep 10
 test="Creating hello-service..."
 exec_it su - joe -c \""oc create -f ~/training/content/hello-service.json"\"
 test_exit $? "$test"
 echo="Creating pods..."
-exec_it su - joe -c \""oc create -f ~/training/content/hello-quota.json"\"
-test="Waiting for pods to be ready..."
-# we should create a pod wait function
+exec_it su - joe -c \""oc create -f ~/training/content/hello-service-pods.json"\"
+test_exit $? "$test"
+# there's probably an easier way to do this, but this is pretty easy
+wait_on_pod "hello-openshift-1" "demo"
+wait_on_pod "hello-openshift-2" "demo"
+wait_on_pod "hello-openshift-3" "demo"
+# just in case
+sleep 5
 test="Checking service endpoints..."
+# there should be three
+exec_it oc get endpoints hello-service -n demo -t \''{{index .subsets 0 "addresses" | len}}'\' "|" grep 3
+test_exit $? "$test"
+test="Validating service..."
+exec_it curl $(oc get service hello-service -n demo -t \''{{.spec.clusterIP}}:8888'\')
+test_exit $? "$test"
 }
 
 function install_router(){
@@ -591,8 +612,8 @@ setup_dev_users
 echo "First joe project..."
 joe_project
 # Chapter 5
-#echo "Services..."
-#create_populate_service
+echo "Services..."
+create_populate_service
 #echo "Configuring router..."
 #install_router
 #echo "Configuring registry..."
