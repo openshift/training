@@ -81,7 +81,7 @@ We can create a service from the command line with JSON or YAML just like we
 created the pod. The `hello-service.json` file has the service definition we saw
 above. Go ahead and create the service:
 
-    oc create -f hello-service.json
+    oc create -f ~/training/content/hello-service.json
 
 ## Examine the Service
 `oc describe` will usually tell us some interesting things about a resource.
@@ -113,7 +113,7 @@ life, we should see them come up in the service's endpoint list.
 
 Go ahead and create them again:
 
-    oc create -f hello-quota.json
+    oc create -f ~training/content/hello-service-pods.json
 
 You'll still get the error about quota -- we're still trying to create 4 pods
 when we're only allowed 3. 
