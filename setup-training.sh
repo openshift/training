@@ -1,13 +1,12 @@
 #!/bin/bash
 
 function exec_it() {
-  if [ $verbose == 1 ] 
+  if $verbose 
   then
     echo "$@"
-    "$@"
-    echo
+    eval "$@"
   else
-    "$@" &> /dev/null
+    eval "$@" &> /dev/null
   fi
 }
 
@@ -16,6 +15,10 @@ function test_exit() {
   then
     printf '\033[32m✓ \033[0m'
     printf '%s\n' "$2 passed"
+    if $verbose
+    then
+      echo
+    fi
   else
     printf '\033[31m✗ \033[0m'
     printf '%s\n' "$2 failed"
@@ -32,7 +35,7 @@ do
   if [ $? -eq 1 ] 
   then
     test="Setting nameserver for $node..."
-    exec_it ssh -o StrictHostKeyChecking=no root@$node "sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"
+    exec_it ssh -o StrictHostKeyChecking=no root@$node \""sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"\"
     test_exit $? "$test"
   fi
 done
@@ -41,22 +44,22 @@ exec_it ssh root@ose3-node2 "systemctl start dnsmasq"
 test_exit $? "$test"
 
 test="Checking for firewall rule..."
-exec_it ssh root@ose3-node2 "grep 'dport 53' /etc/sysconfig/iptables"
+exec_it ssh root@ose3-node2 \""grep 'dport 53' /etc/sysconfig/iptables"\"
 # need to test whether ssh failed or grep failed
 if [ $? -eq 1 ]
 then
   test="Adding iptables rule to sysconfig file..."
-  exec_it ssh root@ose3-node2 "sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"
+  exec_it ssh root@ose3-node2 \""sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"\"
   test_exit $? "$test"
 fi
 
 test="Checking live firewall..."
-exec_it ssh root@ose3-node2 "iptables-save | grep 'dport 53'"
+exec_it ssh root@ose3-node2 \""iptables-save | grep 'dport 53'"\"
 # need to test whether ssh failed or grep failed
 if [ $? -eq 1 ]
 then
   test="Adding iptables rule to live rules..."
-  exec_it ssh root@ose3-node2 "iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT" 
+  exec_it ssh root@ose3-node2 \""iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT"\"
   test_exit $? "$test"
 fi
 }
@@ -95,11 +98,16 @@ test_exit $? "$test"
 function run_install(){
 date=$(date +%d%m%Y)
 test="Running installation..."
-if [ $installoutput == 1 ]
+if $installoutput
 then
   echo "Installation..."
   cd ~/openshift-ansible
-  ansible-playbook playbooks/byo/config.yml
+  if $trace
+  then
+    ansible-playbook playbooks/byo/config.yml -vvvv
+  else
+    ansible-playbook playbooks/byo/config.yml
+  fi
 else
   echo "Installation (takes a while - output logged to /tmp/ansible-$date.log)..."
   cd ~/openshift-ansible
@@ -126,13 +134,13 @@ test_exit $? "$test"
 
 function configure_routing_domain(){
 test="Configure default routing domain..."
-exec_it sed -i 's/subdomain: router.default.local/subdomain: cloudapps.example.com/' /etc/openshift/master/master-config.yaml
+exec_it sed -i \''s/subdomain: router.default.local/subdomain: cloudapps.example.com/'\' /etc/openshift/master/master-config.yaml
 test_exit $? "$test"
 }
 
 function configure_default_nodeselector(){
 test="Configure default nodeselector for system..."
-exec_it sed -i /etc/openshift/master/master-config.yaml -e 's/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'
+exec_it sed -i /etc/openshift/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
 test_exit $? "$test"
 test="Restart master..."
 exec_it systemctl restart openshift-master
@@ -141,21 +149,21 @@ test_exit $? "$test"
 
 function configure_default_project_selector(){
 test="Configure default namespace selector..."
-exec_it oc get namespace default -o json | sed -e '/"openshift.io\/sa.scc.mcs"/i "openshift.io/node-selector": "region=infra",' | oc replace -f -
+exec_it oc get namespace default -o json "|" sed -e \''/"openshift.io\/sa.scc.mcs"/i "openshift.io/node-selector": "region=infra",'\' "|" oc replace -f -
 test_exit $? "$test"
 }
 
 function setup_dev_users(){
 test="Setting up joe..."
 exec_it getent passwd joe
-if [ $? -eq 0 ]
+if [ ! $? -eq 0 ]
 then
   exec_it useradd joe
   test_exit $? "$test"
 fi
 test="Setting up alice..."
 exec_it getent passwd alice
-if [ $? -eq 0 ]
+if [ ! $? -eq 0 ]
 then
   useradd alice
   test_exit $? "$test"
@@ -169,6 +177,133 @@ test_exit $? "$test"
 test="Setting alice password..."
 exec_it htpasswd -b /etc/openshift/openshift-passwd alice redhat
 test_exit $? "$test"
+}
+
+function create_joe_project(){
+# check for joe's project first
+oc get project | grep demo
+if [ $? -eq 1 ]
+then
+  test="Creating project for joe..."
+  exec_it oadm new-project demo --display-name=\""OpenShift 3 Demo"\" \
+  --description=\""This is the first demo project with OpenShift v3"\" \
+  --admin=joe
+  test_exit $? "$test"
+fi
+}
+
+function set_project_quota_limits(){
+# is there already a quota?
+oc get quota -n demo | grep quota
+if [ $? -eq 1 ]
+then
+  test="Create quota on joe's project..."
+  exec_it oc create -f ~/training/content/quota.json -n demo
+  test_exit $? "$test"
+fi
+# is there already a limit?
+oc get limitrange -n demo | grep limits
+if [ $? -eq 1 ]
+then
+  test="Create limits on joe's project..."
+  exec_it oc create -f ~/training/content/limits.json -n demo
+  test_exit $? "$test"
+fi
+}
+
+function joe_login_pull(){
+test="Login as joe..."
+exec_it su - joe -c \""oc login -u joe -p redhat \
+--certificate-authority=/etc/openshift/ca.crt \
+--server=https://ose3-master.example.com:8443"\"
+test_exit $? "$test"
+
+if [ ! -d /home/joe/training ]
+then
+  test="Pulling training content..."
+  exec_it su - joe -c \""git clone https://github.com/thoraxe/training -b training-setup"\"
+  test_exit $? "$test"
+else
+  test="Updating training content..."
+  exec_it su - joe -c \""cd ~/training && git pull origin training-setup"\"
+  test_exit $? "$test"
+fi
+}
+
+function hello_pod(){
+# if there are any pods, nuke 'em and start over
+ans=$(oc get pods -n demo | wc -l)
+if [ $ans != 1 ]
+then
+exec_it oc delete pods --all -n demo
+# it takes 10 seconds for quota to update
+sleep 10
+fi
+test="Creating hello-openshift pod..."
+exec_it su - joe -c \""oc create -f ~/training/content/hello-pod.json"\"
+test_exit $? "$test"
+test="Waiting up to 30s for pod deployment..."
+for i in {1..30}
+do
+  sleep 1
+  exec_it oc get pod hello-openshift -n demo -t \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
+  if [ $? -eq 0 ]
+  then
+    test_exit 0 "$test"
+    test="Verifying hello-pod..."
+    exec_it curl $(oc get pod hello-openshift -n demo -t '{{.status.podIP}}'):8080 "|" grep Hello
+    test_exit $? "$test"
+    test="Deleting hello-pod..."
+    exec_it su - joe -c \""oc delete pod hello-openshift"\"
+    test_exit $? "$test"
+    # it takes 10 seconds for quota to update
+    sleep 10
+    return
+  fi
+done
+text_exit 1 "$test"
+}
+
+function hello_quota() {
+# if there are any pods, nuke 'em and start over
+ans=$(oc get pods -n demo | wc -l)
+if [ $ans != 1 ]
+then
+exec_it oc delete pods --all -n demo
+# it takes 10 seconds for quota to update
+sleep 10
+fi
+test="Checking if quota is enforced..."
+exec_it su - joe -c \""oc create -f ~/training/content/hello-quota.json"\"
+if [ $? -eq 1 ] 
+then
+  # we failed, which we wanted to, so exit successfully
+  test_exit 0 "$test"
+else
+  test_exit 1 "$test"
+fi
+oc delete pods --all -n demo
+# it takes 10 seconds for quota to update
+sleep 10
+}
+
+function joe_project(){
+create_joe_project
+set_project_quota_limits
+joe_login_pull
+hello_pod
+hello_quota
+}
+
+function create_populate_service(){
+test="Creating hello-service..."
+exec_it su - joe -c \""oc create -f ~/training/content/hello-service.json"\"
+test_exit $? "$test"
+echo="Creating pods..."
+exec_it su - joe -c \""oc create -f ~/training/content/hello-quota.json"\"
+test="Waiting for pods to be ready..."
+# we should create a pod wait function
+test="Checking service endpoints..."
 }
 
 function install_router(){
@@ -189,7 +324,7 @@ exec_it oc get sa router
 if [ $? -eq 1 ]
 then
   test="Creating router service account..."
-  exec_it echo '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"router"}}' | oc create -f -
+  exec_it echo \''{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"router"}}'\' "|" oc create -f -
   test_exit $? "$test"
 fi
 
@@ -198,7 +333,7 @@ exec_it oc get scc privileged -o yaml | grep router
 if [ $? -eq 1 ]
 then
   test="Adding router service account to privileged scc..."
-  exec_it oc get scc privileged -o yaml | sed -e '/openshift-infra:build-controller/a - system:serviceaccount:default:router' | oc replace -f -
+  exec_it oc get scc privileged -o yaml "|" sed -e \''/openshift-infra:build-controller/a - system:serviceaccount:default:router'\' "|" oc replace -f -
   test_exit $? "$test"
 fi
 
@@ -217,7 +352,7 @@ fi
 function check_add_iptables_port(){
 # $1 = port
 # $2 = protocol
-exec_it iptables-save | grep "port $1"
+exec_it iptables-save "|" grep "port $1"
 if [ $? -eq 1 ]
 then
   test="Adding live iptables rule for $2 port $1..."
@@ -231,7 +366,7 @@ test="Create NFS export folder..."
 exec_it install -d -m 0777 -o nobody -g nobody /var/export/regvol
 test_exit $? "$test"
 test="Create exports file..."
-exec_it echo "/var/export/regvol *(rw,sync,all_squash)" > /etc/exports
+exec_it echo \""/var/export/regvol *(rw,sync,all_squash)"\" ">" /etc/exports
 test_exit $? "$test"
 
 # add iptables rules to running iptables
@@ -246,24 +381,24 @@ grep "dport 53248" /etc/sysconfig/iptables
 if [ $? -eq 1 ]
 then
   test="Adding iptables rules to sysconfig file..."
-  exec_it sed -i -e '/^COMMIT$/i -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT\
+  exec_it sed -i -e \''/^COMMIT$/i -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT\
 -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 50825 -j ACCEPT\
 -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 20048 -j ACCEPT\
 -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT\
--A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT' \
+-A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT'\' \
   /etc/sysconfig/iptables
   test_exit $? "$test"
 fi
 
 test="Setting NFS args in sysconfig file..."
-exec_it sed -i -e 's/^RPCMOUNTDOPTS.*/RPCMOUNTDOPTS="-p 20048"/' -e 's/^STATDARG.*/STATDARG="-p 50825"/' /etc/sysconfig/nfs
+exec_it sed -i -e \''s/^RPCMOUNTDOPTS.*/RPCMOUNTDOPTS="-p 20048"/'\' -e \''s/^STATDARG.*/STATDARG="-p 50825"/'\' /etc/sysconfig/nfs
 test_exit $? "$test"
 
 grep "nlm_tcpport" /etc/sysctl.conf
 if [ $? -eq 1 ]
 then
   test="Adding sysctl NFS parameters..."
-exec_it cat << EOF >> /etc/sysctl.conf
+cat << EOF >> /etc/sysctl.conf
 fs.nfs.nlm_tcpport=53248
 fs.nfs.nlm_udpport=53248
 EOF
@@ -335,7 +470,7 @@ sleep 5
 function wait_for_registry(){
 # if registry is already scaled to zero we can skip
 # check if rc 1 was ever successful
-exec_it oc describe rc docker-registry-1 | grep successfulCreate
+exec_it oc describe rc docker-registry-1 "|" grep successfulCreate
 if [ $? -eq 0 ]
 then
   # check if status = spec = 0
@@ -351,7 +486,7 @@ test="Waiting up to 30s for registry deployment..."
 for i in {1..30}
 do
   sleep 1
-  exec_it oc get rc docker-registry-1 -t '{{.status.replicas}}' | grep 1
+  exec_it oc get rc docker-registry-1 -t '{{.status.replicas}}' "|" grep 1
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -363,7 +498,7 @@ test_exit 1 "$test"
 
 function add_claimed_volume(){
 # check for claim
-exec_it oc get dc docker-registry -o yaml | grep registry-claim
+exec_it oc get dc docker-registry -o yaml "|" grep registry-claim
 if [ $? -eq 1 ]
 then
   test="Adding the claimed volume to the Docker registry..."
@@ -371,36 +506,6 @@ then
   --claim-name=registry-claim --name=registry-storage
   test_exit $? "$test"
 fi
-}
-
-function create_joe_project(){
-# check for joe's project first
-oc get project | grep demo
-if [ $? -eq 1 ]
-then
-  test="Creating project for joe..."
-  exec_it oadm new-project demo --display-name="OpenShift 3 Demo" \
-  --description="This is the first demo project with OpenShift v3" \
-  --admin=joe
-  test_exit $? "$test"
-fi
-}
-
-function add_project_resources(){
-test="Create quota on joe's project..."
-exec_it oc create -f ~/training/content/quota.json
-test_exit $? "$test"
-test="Create limits on joe's project..."
-exec_it oc create -f ~/training/content/limits.json
-test_exit $? "$test"
-}
-
-function wait_for_pod(){
-# should wait for pod in a loop
-echo
-echo "Waiting 40 seconds for pod to come up..."
-sleep 40
-# should fail if we wait too long
 }
 
 function test_routing(){
@@ -451,8 +556,9 @@ installoutput='false'
 
 while getopts 'iv' flag; do
   case "${flag}" in
-    i) installoutput=1 ;;
-    v) verbose=1 ;;
+    i) installoutput=true; trace=false ;;
+    v) verbose=true ;;
+    t) installoutput=true; trace=true ;; 
     *) error "Unexpected option ${flag}" ;;
   esac
 done
@@ -464,26 +570,34 @@ done
 echo "Preparations..."
 prepare_dns
 pull_content
+# just in case
+if [ -d /root/.config ]
+then
+  exec_it oc login -u system:admin
+  exec_it oc project default
+fi
 # Chapter 2
 run_install
 echo "Post installation configuration..."
-oc login -u system:admin
-oc project default
 copy_ca
 label_nodes
 configure_routing_domain
 configure_default_nodeselector
 configure_default_project_selector
 # Chapter 3
+echo "Dev users..."
 setup_dev_users
-create_joe_project
-add_project_resources
-echo "Configuring router..."
-install_router
-echo "Configuring registry..."
-prepare_nfs
-setup_storage_volumes_claims
-install_registry
-wait_for_registry
-add_claimed_volume
-
+# Chapter 4
+echo "First joe project..."
+joe_project
+# Chapter 5
+#echo "Services..."
+#create_populate_service
+#echo "Configuring router..."
+#install_router
+#echo "Configuring registry..."
+#prepare_nfs
+#setup_storage_volumes_claims
+#install_registry
+#wait_for_registry
+#add_claimed_volume

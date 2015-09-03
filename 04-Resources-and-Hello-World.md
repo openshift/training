@@ -409,10 +409,6 @@ You can also use `osc` to determine the current quota usage of your project. As
 
     oc describe quota test-quota
 
-## Extra Credit
-If you try to curl the pod IP and port, you get "connection refused". See if you
-can figure out why.
-
 ## Delete the Pod
 As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
 
@@ -433,7 +429,7 @@ fourth, because the quota on this project limits us to three total pods.
 
 As `joe`, go ahead and use `oc create` and you will see the following:
 
-    oc create -f hello-quota.json 
+    oc create -f ~/training/content/hello-quota.json 
     pods/hello-openshift-1
     pods/hello-openshift-2
     pods/hello-openshift-3
