@@ -52,6 +52,8 @@ do
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
+    # need to sleep for a bit because the pod probably isn't really there yet
+    sleep 5
     return
   fi
 done
@@ -415,7 +417,7 @@ fi
 # first wait for rc to indicate status
 wait_on_rc "router-1" "default" 30
 # now find the router pod and wait for that to be ready
-ans=$(oc get pod | awk '{print $1}'| grep -E "router-1-\w{5}")
+ans=$(oc get pod | awk '{print $1}'| grep -E "^router-1-\w{5}$")
 wait_on_pod $ans "default" 30
 
 # add router admin iptables port
@@ -485,6 +487,9 @@ fi
 test="Add alice to edit role..."
 exec_it su - joe -c \""oadm policy add-role-to-user edit alice"\"
 test_exit $? "$test"
+test="Set alice project to demo..."
+exec_it su - alice -c \""oc project demo"\"
+test_exit $? "$test"
 test="Alice can delete pods..."
 ans=$(oc get pod -n demo | awk '{print $1}'| grep -E "^hello-openshift-1-\w{5}$")
 exec_it su - alice -c \""oc delete pod $ans"\"
@@ -528,7 +533,7 @@ check_add_iptables_port 50825 tcp
 check_add_iptables_port 53248 tcp
 
 # add iptables rules to sysconfig file
-grep "dport 53248" /etc/sysconfig/iptables
+exec_it grep \""dport 53248"\" /etc/sysconfig/iptables
 if [ $? -eq 1 ]
 then
   test="Adding NFS iptables rules to sysconfig file..."
@@ -545,15 +550,12 @@ test="Setting NFS args in sysconfig file..."
 exec_it sed -i -e \''s/^RPCMOUNTDOPTS.*/RPCMOUNTDOPTS="-p 20048"/'\' -e \''s/^STATDARG.*/STATDARG="-p 50825"/'\' /etc/sysconfig/nfs
 test_exit $? "$test"
 
-grep "nlm_tcpport" /etc/sysctl.conf
+exec_it grep \""nlm_tcpport"\" /etc/sysctl.conf
 if [ $? -eq 1 ]
 then
   test="Adding sysctl NFS parameters..."
-cat << EOF >> /etc/sysctl.conf
-fs.nfs.nlm_tcpport=53248
-fs.nfs.nlm_udpport=53248
-EOF
-test_exit $? "$test"
+  exec_it sed -i -e \""\\\$afs.nfs.nlm_tcpport=53248"\" -e \""\\\$afs.nfs.nlm_udpport=53248"\" /etc/sysctl.conf
+  test_exit $? "$test"
 fi
 
 test="Enable rpcbind and nfs-server..."
@@ -614,8 +616,6 @@ then
   --credentials=/etc/openshift/master/openshift-registry.kubeconfig
 fi
 test_exit $? "$test"
-# wait 5 seconds for things to settle
-sleep 5
 }
 
 function wait_for_registry(){
@@ -633,18 +633,7 @@ then
 fi
 
 # we need to wait for the registry to get deployed before we can scale it down
-test="Waiting up to 30s for registry deployment..."
-for i in {1..30}
-do
-  sleep 1
-  exec_it oc get rc docker-registry-1 -t '{{.status.replicas}}' "|" grep 1
-  if [ $? -eq 0 ]
-  then
-    test_exit 0 "$test"
-    return
-  fi
-done
-test_exit 1 "$test"
+wait_on_rc "docker-registry-1" "default" 30
 }
 
 function add_claimed_volume(){
@@ -750,11 +739,13 @@ install_router
 echo "Services and complete definition..."
 expose_test_service
 complete_pod_service_route
+# Chapter 6
 echo "Project administration..."
 project_administration
-#echo "Configuring registry..."
-#prepare_nfs
-#setup_storage_volumes_claims
-#install_registry
-#wait_for_registry
-#add_claimed_volume
+# Chapter 7
+echo "Configuring registry..."
+prepare_nfs
+setup_storage_volumes_claims
+install_registry
+wait_for_registry
+add_claimed_volume
