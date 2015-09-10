@@ -292,7 +292,6 @@ pod will land there.
     oadm router router --replicas=1 \
     --default-cert=cloudapps.router.pem \
     --credentials='/etc/openshift/master/openshift-router.kubeconfig' \
-    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}' \
     --service-account=router
 
 If this works, you'll see some output:
@@ -598,7 +597,7 @@ create the objects.
 
 **Logged in as `joe`,** go ahead and use `oc` to create everything:
 
-    oc create -f test-complete.json
+    oc create -f ~/training/content/test-complete.json
 
 You should see something like the following:
 
