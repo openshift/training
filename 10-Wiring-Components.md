@@ -144,7 +144,7 @@ database, but is not all that exciting. We'll fix that in a moment.
 During the installation, several templates were added for us, including some
 database templates. Go to the web console and make sure you are logged in as
 `alice` and using the `Exploring Parameters` project. You should see your
-front-end already there. Click the "Create..." button and then the "Browse all
+front-end already there. Click the "Add to Project" button and then the "Browse all
 templates..." button. You should see the `mysql-ephemeral` template. Click it
 and then click "Select template".
 

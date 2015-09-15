@@ -36,7 +36,7 @@ Remember that a `BuildConfig`(uration) tells OpenShift how to do a build.
 Still as the `alice` user, take a look at the current `BuildConfig` for our
 frontend:
 
-    osc get buildconfig ruby-example -o yaml
+    oc get buildconfig ruby-example -o yaml
     apiVersion: v1beta1
     kind: BuildConfig
     metadata:
@@ -81,17 +81,17 @@ frontend:
 
 As you can see, the current configuration points at the
 `openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
-ahead and re-point our configuration. Our friend `osc edit` comes to the rescue
+ahead and re-point our configuration. Our friend `oc edit` comes to the rescue
 again:
 
-    osc edit bc ruby-example
+    oc edit bc ruby-example
 
 Change the "uri" reference to match the name of your Github
 repository. Assuming your github user is `alice`, you would point it
 to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
-If you again run `osc get buildconfig ruby-example -o yaml` you should see
+If you again run `oc get buildconfig ruby-example -o yaml` you should see
 that the `uri` has been updated.
 
 ## Change the Code
@@ -134,13 +134,7 @@ To find the webhook URL, you can visit the web console, click into the
 project, click on *Browse* and then on *Builds*. You'll see two webhook
 URLs. Copy the *Generic* one. It should look like:
 
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-sample-build/webhooks/secret101/generic
-
-**Note**: As of the cut of beta 4, the generic webhook URL was incorrect in the
-webUI. Note the correct syntax above. This is fixed already, but did not make it
-in:
-
-    https://github.com/openshift/origin/issues/2981
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-hello-world/webhooks/ZmUo4U1BaE0PnJz9QNnY/generic
 
 If you look at the `frontend-config.json` file that you created earlier,
 you'll notice the same "secret101" entries in triggers. These are
@@ -153,17 +147,17 @@ webhook URL.
 
 First, look at the list of builds:
 
-    osc get build
+    oc get build
 
 You should see that the first build had completed. Then, `curl`:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/quickstart/buildconfigs/ruby-sample-build/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-hello-world/webhooks/ZmUo4U1BaE0PnJz9QNnY/generic
 
 And now `get build` again:
 
-    osc get build
+    oc get build
     NAME                  TYPE      STATUS     POD
     ruby-example-1   Source    Complete   ruby-example-1
     ruby-example-2   Source    Pending    ruby-example-2
@@ -193,7 +187,7 @@ and 2.
 
 You can also see this information from the cli by doing:
 
-    osc get replicationcontroller
+    oc get replicationcontroller
 
 The semantics of this are that a `DeploymentConfig` ensures a
 `ReplicationController` is created to manage the deployment of the built `Image`
@@ -205,11 +199,11 @@ Simple, right?
 You can rollback a deployment using the CLI. Let's go and checkout what a rollback to
 `frontend-1` would look like:
 
-    osc rollback frontend-1 --dry-run
+    oc rollback ruby-hello-world-1 --dry-run
 
 Since it looks OK, let's go ahead and do it:
 
-    osc rollback frontend-1
+    oc rollback ruby-hello-world-1
 
 If you look at the `Browse` tab of your project, you'll see that in the `Pods`
 section there is a `frontend-3...` pod now. After a few moments, revisit the
@@ -219,5 +213,5 @@ application in your web browser, and you should see the old "Welcome..." text.
 Corporate marketing called again. They think the typo makes us look hip and
 cool. Let's now roll forward (activate) the typo-enabled application:
 
-    osc rollback frontend-2
+    oc rollback ruby-hello-world-2
 
