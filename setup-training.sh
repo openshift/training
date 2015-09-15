@@ -533,7 +533,7 @@ fi
 sleep 5
 test="Verifying the route..."
 printf "  $test\r"
-exec_it curl hello-service.demo.cloudapps.example.com "|" grep Hello
+exec_it curl hello-service-demo.cloudapps.example.com "|" grep Hello
 test_exit $? "$test"
 }
 
@@ -793,7 +793,7 @@ test_exit $? "$test"
 # may take up to 120 seconds for build to start
 wait_on_build "ruby-example-1" "sinatra" 120 "Running"
 # now wait up to 2 mins for build to complete
-wait_on_build "ruby-example-1" "sinatra" 120 "Complete"
+wait_on_build "ruby-example-1" "sinatra" 180 "Complete"
 wait_on_rc "ruby-example-1" "sinatra" 30 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 30
@@ -801,11 +801,11 @@ wait_on_pod "$ans" "sinatra" 30
 sleep 5
 test="Testing the service..."
 printf "  $test\r"
-exec_it curl `oc get service -n sinatra | grep example | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
 test_exit $? "$test"
 test="Testing the route..."
 printf "  $test\r"
-exec_it curl ruby-example.sinatra.cloudapps.example.com
+exec_it curl ruby-example-sinatra.cloudapps.example.com
 test_exit $? "$test"
 test="Adding quota to sinatra project..."
 printf "  $test\r"
@@ -870,7 +870,7 @@ test_exit $? "$test"
 # wait for the build to start
 wait_on_build "ruby-sample-build-1" "quickstart" 120 "Running"
 # wait for build to finish
-wait_on_build "ruby-sample-build-1" "quickstart" 120 "Complete"
+wait_on_build "ruby-sample-build-1" "quickstart" 180 "Complete"
 # wait for rc to deploy
 wait_on_rc "frontend-1" "quickstart" 30 2
 # find the deployed pods
@@ -882,7 +882,7 @@ done
 # test the application
 test="Testing the application..."
 printf "  $test\r"
-exec_it curl keyvalue-route.quickstart.cloudapps.example.com
+exec_it curl keyvalue-route-quickstart.cloudapps.example.com
 test_exit $? "$test"
 }
 
@@ -928,7 +928,7 @@ printf "  $test\r"
 exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-1" "wiring" 120 "Running"
-wait_on_build "ruby-hello-world-1" "wiring" 120 "Complete"
+wait_on_build "ruby-hello-world-1" "wiring" 180 "Complete"
 wait_on_rc "ruby-hello-world-1" "wiring" 30 1
 sleep 3
 # find the pod
@@ -938,7 +938,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Check if frontend service is working..."
 printf "  $test\r"
-exec_it curl `oc get service -n wiring | grep world | awk '{print $4":"$5}' | sed -e 's/\/.*//'` "|" grep database
+exec_it curl `oc get service -n wiring ruby-hello-world -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
 test_exit $? "$test"
 test="Expose the service..."
 printf "  $test\r"
@@ -974,7 +974,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world.wiring.cloudapps.example.com "|" grep -i database
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep -i database
 if [ $? -eq 1 ]
 then
   test_exit 0 "$test"
@@ -995,7 +995,7 @@ exec_it curl -i -H \""Accept: application/json"\" \
     "$url"
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-2" "wiring" 30 "Running"
-wait_on_build "ruby-hello-world-2" "wiring" 120 "Complete"
+wait_on_build "ruby-hello-world-2" "wiring" 180 "Complete"
 wait_on_rc "ruby-hello-world-2" "wiring" 30 1
 # get pod name
 pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | awk '{print $1}' | grep -E "ruby-hello-world-2-\w{5}")
@@ -1005,7 +1005,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world.wiring.cloudapps.example.com 
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com 
 test_exit $? "$test"
 # rollback to first deployment
 test="Rolling back to first deployment..."
@@ -1020,7 +1020,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world.wiring.cloudapps.example.com 
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com 
 test_exit $? "$test"
 # roll forward
 test="Rolling forward to second deployment..."
@@ -1035,7 +1035,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world.wiring.cloudapps.example.com 
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com 
 test_exit $? "$test"
 }
 
