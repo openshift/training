@@ -163,13 +163,13 @@ if [ ! -d /root/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/thoraxe/training -b training-setup
+  exec_it git clone https://github.com/thoraxe/training -b php-example
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
   cd ~/training
-  exec_it git pull origin training-setup
+  exec_it git pull origin php-example
   test_exit $? "$test"
 fi
 if [ ! -d /root/openshift-ansible ]
@@ -350,12 +350,12 @@ if [ ! -d /home/joe/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""git clone https://github.com/thoraxe/training -b training-setup"\"
+  exec_it su - joe -c \""git clone https://github.com/thoraxe/training -b php-example"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""cd ~/training && git pull origin training-setup"\"
+  exec_it su - joe -c \""cd ~/training && git pull origin php-example"\"
   test_exit $? "$test"
 fi
 }
@@ -907,12 +907,12 @@ if [ ! -d /home/alice/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""git clone https://github.com/thoraxe/training -b training-setup"\"
+  exec_it su - alice -c \""git clone https://github.com/thoraxe/training -b php-example"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""cd ~/training && git pull origin training-setup"\"
+  exec_it su - alice -c \""cd ~/training && git pull origin php-example"\"
   test_exit $? "$test"
 fi
 test="Change alice's project..."
@@ -1039,6 +1039,24 @@ exec_it curl ruby-hello-world-wiring.cloudapps.example.com
 test_exit $? "$test"
 }
 
+function activate_rollback() {
+# check for project
+exec_it oc get project php-upload
+if [ $? -eq 0 ]
+then
+  exec_it oc delete project php-upload
+  wait_on_project php-upload 30
+fi
+# a little extra time
+sleep 3
+# create the project
+test="Creating php-upload project..."
+printf "  $test\r"
+exec_it su - alice -c \""oc new-project php-upload --display-name='PHP Uploader' \
+    --description='A PHP app for uploading files'"\"
+test_exit $? "$test"
+}
+
 verbose='false'
 installoutput='false'
 
@@ -1054,56 +1072,56 @@ done
 # should test if build tries to deploy
 # should fail if deploy fails
 
-# Chapter 1
-echo "Preparations..."
-prepare_dns
-pull_content
-# just in case
-if [ -d /root/.config ]
-then
-  exec_it oc login -u system:admin
-  exec_it oc project default
-fi
-# Chapter 2
-run_install
-echo "Post installation configuration..."
-copy_ca
-label_nodes
-configure_routing_domain
-configure_default_nodeselector
-configure_default_project_selector
-# Chapter 3
-echo "Dev users..."
-setup_dev_users
-# Chapter 4
-echo "First joe project..."
-joe_project
-# Chapter 5
-echo "Services..."
-create_populate_service
-echo "Configuring router..."
-install_router
-echo "Services and complete definition..."
-expose_test_service
-complete_pod_service_route
-# Chapter 6
-echo "Project administration..."
-project_administration
-# Chapter 7
-echo "Configuring registry..."
-prepare_nfs
-setup_storage_volumes_claims
-install_registry
-add_claimed_volume
-# Chapter 08
-echo "S2I Project..."
-s2i_project
-# Chapter 09
-echo "Templates and Quickstarts..."
-templates_project
-# Chapter 10
-echo "Wiring components..."
-wiring_project
-# Chapter 11
+## Chapter 1
+#echo "Preparations..."
+#prepare_dns
+#pull_content
+## just in case
+#if [ -d /root/.config ]
+#then
+#  exec_it oc login -u system:admin
+#  exec_it oc project default
+#fi
+## Chapter 2
+#run_install
+#echo "Post installation configuration..."
+#copy_ca
+#label_nodes
+#configure_routing_domain
+#configure_default_nodeselector
+#configure_default_project_selector
+## Chapter 3
+#echo "Dev users..."
+#setup_dev_users
+## Chapter 4
+#echo "First joe project..."
+#joe_project
+## Chapter 5
+#echo "Services..."
+#create_populate_service
+#echo "Configuring router..."
+#install_router
+#echo "Services and complete definition..."
+#expose_test_service
+#complete_pod_service_route
+## Chapter 6
+#echo "Project administration..."
+#project_administration
+## Chapter 7
+#echo "Configuring registry..."
+#prepare_nfs
+#setup_storage_volumes_claims
+#install_registry
+#add_claimed_volume
+## Chapter 08
+#echo "S2I Project..."
+#s2i_project
+## Chapter 09
+#echo "Templates and Quickstarts..."
+#templates_project
+## Chapter 10
+#echo "Wiring components..."
+#wiring_project
+## Chapter 11
 echo "Rollback and Activate..."
 activate_rollback
