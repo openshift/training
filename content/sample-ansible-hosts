@@ -26,7 +26,6 @@ openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 
 ose3-master.example.com
 
 [etcd]
-ose3-master.example.com
 
 # host group for nodes
 [nodes]

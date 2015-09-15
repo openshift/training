@@ -50,7 +50,7 @@ Then, as `root` on the master:
 
         mkdir -p /var/export/regvol
         chown nfsnobody:nfsnobody /var/export/regvol
-        chmod 700 /var/export/regvol
+        chmod 777 /var/export/regvol
 
 1. Edit `/etc/exports` and add the following line:
 

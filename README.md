@@ -1,9 +1,15 @@
 # OpenShift "Training"
-This repository contains various examples of using OpenShift 3.X. The table of
-contents below provides links to various chapters.
+This repository provides instructions for how to set up a basic OpenShift 3.X
+environment. It contains various examples of using OpenShift 3.X. The table of
+contents below provides links to the various chapters.
+
+The material operates under an expectation of a fairly specific setup. If your
+setup diverges significantly from this expected setup, you may need to make
+significant modifications to the material.
 
 **NOTE:** Currently OpenShift is at 3.0.1 and this material has not yet been
-updated for it. Your mileage may vary.
+completely updated for it. Your mileage may vary. There are various dead links
+and other paths-to-nowhere that are in the process of being updated/validated.
 
 # Table of Contents
 - 01: [Requirements and Preparation](01-Requirements-and-Preparation.md)

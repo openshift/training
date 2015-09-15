@@ -63,7 +63,7 @@ template is processed/instantiated.
 ## Adding the Template
 Go ahead and do the following as `root` in the `~/training/content` folder:
 
-    oc create -f quickstart-template.json -n openshift
+    oc create -f ~/training/content/quickstart-template.json -n openshift
 
 What did you just do? The `quickstart-template.json` file defined a template. By
 "creating" it, you have added it to the *openshift* project. Remember that the
@@ -72,7 +72,7 @@ content in it.
 
 ## Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and then
-hit the "Create +" button. We've seen this page before, but now it contains
+hit the "Add to Project" button. We've seen this page before, but now it contains
 something new -- an additional "instant app(lication)". An instant app is a
 "special" kind of template (relaly, it just has the "instant-app" tag). The idea
 behind an "instant app" is that, when creating an instance of the template, you
@@ -80,10 +80,7 @@ will have a fully functional application. In this example, our "instant" app is
 just a simple key-value storage and retrieval webapp. You may have noticed that
 there were already several instant apps loaded. The installer set these up.
 
-Click "quickstart-keyvalue-application", and you'll see a modal pop-up that
-provides more information about the template.
-
-Click "Select template..."
+Click "quickstart-keyvalue-application"
 
 The next page that you will see is the template "configuration" page. This is
 where you can specify certain options for how the application components will be
@@ -106,7 +103,7 @@ logs.
 Once the build is complete, you should be able to visit the routed URL and
 actually use the application!
 
-    http://frontend.quickstart.cloudapps.example.com
+    http://keyvalue-route.quickstart.cloudapps.example.com
 
 The dev guide linked previously has a lot of information on how to use
 templates.

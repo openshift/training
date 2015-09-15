@@ -140,7 +140,7 @@ administrators.
 
 ## Adding Code Via the Web Console
 If you go to the web console and then select the "Sinatra Example" project,
-you'll see a "Create +" button in the upper right hand corner. Click that
+you'll see a "Add to Project" button in the upper right hand corner. Click that
 button, and you will see two options. The second option is to create an
 application from a template. We will explore that later.
 

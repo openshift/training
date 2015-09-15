@@ -81,7 +81,7 @@ We can create a service from the command line with JSON or YAML just like we
 created the pod. The `hello-service.json` file has the service definition we saw
 above. Go ahead and create the service:
 
-    oc create -f hello-service.json
+    oc create -f ~/training/content/hello-service.json
 
 ## Examine the Service
 `oc describe` will usually tell us some interesting things about a resource.
@@ -113,7 +113,7 @@ life, we should see them come up in the service's endpoint list.
 
 Go ahead and create them again:
 
-    oc create -f hello-quota.json
+    oc create -f ~training/content/hello-service-pods.json
 
 You'll still get the error about quota -- we're still trying to create 4 pods
 when we're only allowed 3. 
@@ -219,6 +219,40 @@ a single PEM format file that the router needs in the next step.
 
 Make sure you remember where you put this PEM file.
 
+## The Router Service Account
+Service Accounts are a unique concept in OpenShift 3. From the
+[documentation](https://docs.openshift.com/enterprise/3.0/dev_guide/service_accounts.html):
+
+    Service accounts provide a flexible way to control API access without
+    sharing a regular user’s credentials.
+
+Since the router needs a way to interact with the OpenShift API (to learn about
+changes on Route objects), it needs an account. We create this Service Account
+for the router and then make sure that account has permissions to allow the
+router to do what it needs.
+
+You can create the router service account with the following command as `root`:
+
+    echo \
+    '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"router"}}' \
+    | oc create -f -
+
+Once the Service Account is created, we need to add this account to the
+"privileged" security context. The router's actions require it to be there. You
+can edit the security context by doing the following as `root`:
+
+    oc edit scc privileged
+
+This will bring up a text editor. And, from there, you want to add a line at the
+end of the file for the router, so that it looks like:
+
+    ...
+    users:
+    - system:serviceaccount:openshift-infra:build-controller
+    - system:serviceaccount:default:router
+
+Save and quit the text editor.
+
 ## Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
 v3 services. It currently supports only HTTP(S) traffic (and "any"
@@ -255,9 +289,10 @@ to supply the wildcard cert/key that we created for the cloud domain. Since the
 the *default* project has the `nodeSelector` for the *infra* region, the router
 pod will land there.
 
-    oadm router --default-cert=cloudapps.router.pem \
-    --credentials=/etc/openshift/master/openshift-router.kubeconfig \
-    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
+    oadm router router --replicas=1 \
+    --default-cert=cloudapps.router.pem \
+    --credentials='/etc/openshift/master/openshift-router.kubeconfig' \
+    --service-account=router
 
 If this works, you'll see some output:
 
@@ -562,7 +597,7 @@ create the objects.
 
 **Logged in as `joe`,** go ahead and use `oc` to create everything:
 
-    oc create -f test-complete.json
+    oc create -f ~/training/content/test-complete.json
 
 You should see something like the following:
 
