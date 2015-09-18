@@ -117,40 +117,40 @@ function prepare_dns(){
 for node in ose3-master ose3-node1 ose3-node2
 do 
   test="Checking $node resolver..."
-  exec_it ssh -o StrictHostKeyChecking=no root@$node \""grep 133.4 /etc/resolv.conf"\"
+  exec_it ssh -o StrictHostKeyChecking=no root@$node.example.com \""grep 133.4 /etc/resolv.conf"\"
   # need to test whether ssh failed versus whether grep failed
   if [ $? -eq 1 ] 
   then
     test="Setting nameserver for $node..."
     printf "  $test\r"
-    exec_it ssh -o StrictHostKeyChecking=no root@$node \""sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"\"
+    exec_it ssh -o StrictHostKeyChecking=no root@$node.example.com \""sed -e '/^nameserver .*/i nameserver 192.168.133.4' -i /etc/resolv.conf"\"
     test_exit $? "$test"
   fi
 done
 test="Starting dnsmasq..."
 printf "  $test\r"
-exec_it ssh root@ose3-node2 "systemctl start dnsmasq"
+exec_it ssh root@ose3-node2.example.com "systemctl start dnsmasq"
 test_exit $? "$test"
 
 test="Checking for firewall rule..."
-exec_it ssh root@ose3-node2 \""grep 'dport 53' /etc/sysconfig/iptables"\"
+exec_it ssh root@ose3-node2.example.com \""grep 'dport 53' /etc/sysconfig/iptables"\"
 # need to test whether ssh failed or grep failed
 if [ $? -eq 1 ]
 then
   test="Adding iptables rule to sysconfig file..."
   printf "  $test\r"
-  exec_it ssh root@ose3-node2 \""sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"\"
+  exec_it ssh root@ose3-node2.example.com \""sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"\"
   test_exit $? "$test"
 fi
 
 test="Checking live firewall..."
-exec_it ssh root@ose3-node2 \""iptables-save | grep 'dport 53'"\"
+exec_it ssh root@ose3-node2.example.com \""iptables-save | grep 'dport 53'"\"
 # need to test whether ssh failed or grep failed
 if [ $? -eq 1 ]
 then
   test="Adding iptables rule to live rules..."
   printf "  $test\r"
-  exec_it ssh root@ose3-node2 \""iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT"\"
+  exec_it ssh root@ose3-node2.example.com \""iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT"\"
   test_exit $? "$test"
 fi
 }
@@ -163,13 +163,13 @@ if [ ! -d /root/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/thoraxe/training -b training-setup
+  exec_it git clone https://github.com/thoraxe/training -b php-example
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
   cd ~/training
-  exec_it git pull origin training-setup
+  exec_it git pull origin php-example
   test_exit $? "$test"
 fi
 if [ ! -d /root/openshift-ansible ]
@@ -350,18 +350,17 @@ if [ ! -d /home/joe/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""git clone https://github.com/thoraxe/training -b training-setup"\"
+  exec_it su - joe -c \""git clone https://github.com/thoraxe/training -b php-example"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""cd ~/training && git pull origin training-setup"\"
+  exec_it su - joe -c \""cd ~/training && git pull origin php-example"\"
   test_exit $? "$test"
 fi
 }
 
 function hello_pod(){
-exec_it oc delete all -l hello-openshift -n demo
 test="Creating hello-openshift pod..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-pod.json"\"
@@ -385,9 +384,9 @@ function hello_quota() {
 ans=$(oc get pods -n demo | wc -l)
 if [ $ans != 1 ]
 then
-exec_it oc delete pods --all -n demo
-# it takes 10 seconds for quota to update
-sleep 10
+  exec_it oc delete pods --all -n demo
+  # it takes 10 seconds for quota to update
+  sleep 10
 fi
 test="Checking if quota is enforced..."
 printf "  $test\r"
@@ -405,9 +404,6 @@ sleep 10
 }
 
 function joe_project(){
-# cleanup
-#exec_it oc delete all -l name=hello-openshift -n demo
-#exec_it oc delete pods --all -n demo
 create_joe_project
 set_project_quota_limits
 joe_login_pull
@@ -623,7 +619,7 @@ fi
 function prepare_nfs(){
 test="Create NFS export folder..."
 printf "  $test\r"
-exec_it install -d -m 0777 -o nobody -g nobody /var/export/regvol
+exec_it install -d -m 0777 -o nfsnobody -g nfsnobody /var/export/regvol
 test_exit $? "$test"
 test="Create exports file..."
 printf "  $test\r"
@@ -801,11 +797,11 @@ wait_on_pod "$ans" "sinatra" 30
 sleep 5
 test="Testing the service..."
 printf "  $test\r"
-exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
+exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
 test_exit $? "$test"
 test="Testing the route..."
 printf "  $test\r"
-exec_it curl ruby-example-sinatra.cloudapps.example.com
+exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
 test_exit $? "$test"
 test="Adding quota to sinatra project..."
 printf "  $test\r"
@@ -860,7 +856,7 @@ then
   test="Adding the quickstart template..."
   printf "  $test\r"
   exec_it oc create -f ~/training/content/quickstart-template.json -n openshift
-  test_exit $?
+  test_exit $? "$test"
 fi
 # create via joe
 test="Instantiating the quickstart application..."
@@ -882,7 +878,7 @@ done
 # test the application
 test="Testing the application..."
 printf "  $test\r"
-exec_it curl keyvalue-route-quickstart.cloudapps.example.com
+exec_it curl keyvalue-route-quickstart.cloudapps.example.com "|" grep OpenShift
 test_exit $? "$test"
 }
 
@@ -907,12 +903,12 @@ if [ ! -d /home/alice/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""git clone https://github.com/thoraxe/training -b training-setup"\"
+  exec_it su - alice -c \""git clone https://github.com/thoraxe/training -b php-example"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""cd ~/training && git pull origin training-setup"\"
+  exec_it su - alice -c \""cd ~/training && git pull origin php-example"\"
   test_exit $? "$test"
 fi
 test="Change alice's project..."
@@ -992,7 +988,7 @@ test="Initiating the webhook build..."
 printf "  $test\r"
 exec_it curl -i -H \""Accept: application/json"\" \
     -H \""X-HTTP-Method-Override: PUT"\" -X POST -k \
-    "$url"
+    "$url" "|" grep 200
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-2" "wiring" 30 "Running"
 wait_on_build "ruby-hello-world-2" "wiring" 180 "Complete"
@@ -1005,7 +1001,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world-wiring.cloudapps.example.com 
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
 test_exit $? "$test"
 # rollback to first deployment
 test="Rolling back to first deployment..."
@@ -1020,7 +1016,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world-wiring.cloudapps.example.com 
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
 test_exit $? "$test"
 # roll forward
 test="Rolling forward to second deployment..."
@@ -1035,7 +1031,119 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world-wiring.cloudapps.example.com 
+exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
+test_exit $? "$test"
+}
+
+function php-upload() {
+# check for project
+exec_it oc get project php-upload
+if [ $? -eq 0 ]
+then
+  exec_it oc delete project php-upload
+  wait_on_project php-upload 30
+fi
+# a little extra time
+sleep 3
+# create the project
+test="Login as alice..."
+printf "  $test\r"
+exec_it su - alice -c \""oc login -u alice -p redhat \
+--certificate-authority=/etc/openshift/ca.crt \
+--server=https://ose3-master.example.com:8443 --loglevel=8"\"
+test_exit $? "$test"
+test="Creating php-upload project..."
+printf "  $test\r"
+exec_it su - alice -c \""oc new-project php-upload --display-name='PHP Uploader' \
+    --description='A PHP app for uploading files'"\"
+test_exit $? "$test"
+exec_it su - alice -c \""oc project php-upload"\"
+# do the NFS setup stuff here
+test="Creating the php volume folder..."
+printf "  $test\r"
+exec_it install -d -m 0777 -o nfsnobody -g nfsnobody /var/export/vol1
+test_exit $? "$test"
+# check for exported volume
+exec_it grep vol1 /etc/exports
+if [ $? -eq 1 ]
+then
+  # there was no export
+  test="Adding the export stanza for vol1..."
+  printf "  $test\r"
+  exec_it echo \""/var/export/vol1 *(rw,sync,all_squash)"\" ">>" /etc/exports
+  test_exit $? "$test"
+fi
+test="Re-exporting NFS volumes..."
+printf "  $test\r"
+exec_it exportfs -r
+test_exit $? "$test"
+test="Creating the application..."
+printf "  $test\r"
+exec_it su - alice -c \""oc new-app php~https://github.com/thoraxe/openshift-php-upload-demo --name=demo --strategy=source"\"
+test_exit $? "$test"
+test="Exposing the service..."
+printf "  $test\r"
+exec_it su - alice -c \""oc expose service demo"\"
+test_exit $? "$test"
+wait_on_build "demo-1" "php-upload" 120 "Running"
+wait_on_build "demo-1" "php-upload" 180 "Complete"
+wait_on_rc "demo-1" "php-upload" 30 1
+# get pod name
+pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-1-\w{5}")
+wait_on_pod "$pod" "php-upload" 30
+wait_on_endpoints "demo" "php-upload" 30
+# test the app
+sleep 3
+test="Validating the app..."
+printf "  $test\r"
+exec_it curl demo-php-upload.cloudapps.example.com "|" grep Upload
+test_exit $? "$test"
+# create test file
+exec_it su - alice -c \""echo 'test' > file"\"
+# test upload should error
+test="Trying to upload a file (should fail)..."
+printf "  $test\r"
+exec_it su - alice -c \""curl -i -F \"fto=@file\" http://demo-php-upload.cloudapps.example.com/upload.php"\" "|" grep fail
+test_exit $? "$test"
+exec_it oc get pvc registry-claim
+if [ $? -eq 0 ]
+then
+  exec_it oc delete pvc php-claim
+fi
+exec_it oc get pv php-volume
+if [ $? -eq 0 ]
+then
+  exec_it oc delete pv php-volume
+fi
+sleep 5
+test="Setting up php storage volume..."
+printf "  $test\r"
+exec_it oc create -f ~/training/content/php-volume.json
+test_exit $? "$test"
+test="Setting up php volume claim..."
+printf "  $test\r"
+exec_it oc create -f ~/training/content/php-claim.json -n php-upload
+test_exit $? "$test"
+sleep 5
+# add volume to dc
+test="Adding volume to DC..."
+printf "  $test\r"
+exec_it su - alice -c \""oc volume dc/demo --add -t pvc --claim-name php-claim -m /opt/app-root/src/uploaded --name=php-volume"\"
+test_exit $? "$test"
+wait_on_rc "demo-2" "php-upload" 30 1
+# get pod name
+pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
+wait_on_pod "$pod" "php-upload" 30
+wait_on_endpoints "demo" "php-upload" 30
+# try upload again
+test="Trying to upload a file (should succeed)..."
+printf "  $test\r"
+exec_it su - alice -c \""curl -i -F \"fto=@file\" http://demo-php-upload.cloudapps.example.com/upload.php"\" "|" grep 200
+test_exit $? "$test"
+# examine file
+test="Validating upload..."
+printf "  $test\r"
+exec_it su - alice -c \""curl http://demo-php-upload.cloudapps.example.com/uploaded/file"\" "|" grep test
 test_exit $? "$test"
 }
 
@@ -1050,9 +1158,6 @@ while getopts 'iv' flag; do
     *) error "Unexpected option ${flag}" ;;
   esac
 done
-
-# should test if build tries to deploy
-# should fail if deploy fails
 
 # Chapter 1
 echo "Preparations..."
@@ -1107,3 +1212,6 @@ wiring_project
 # Chapter 11
 echo "Rollback and Activate..."
 activate_rollback
+# Chapter 12
+echo "PHP Upload..."
+php-upload

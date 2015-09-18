@@ -13,7 +13,6 @@
   - [Examining the Created Pod](#examining-the-created-pod)
   - [Looking at the Pod in the Web Console](#looking-at-the-pod-in-the-web-console)
   - [Quota Usage](#quota-usage)
-  - [Extra Credit](#extra-credit)
   - [Delete the Pod](#delete-the-pod)
   - [Quota Enforcement](#quota-enforcement)
 

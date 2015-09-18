@@ -1,0 +1,16 @@
+{
+  "apiVersion": "v1",
+  "kind": "PersistentVolumeClaim",
+  "metadata": {
+    "name": "php-claim"
+  },
+  "spec": {
+    "accessModes": [ "ReadWriteMany" ],
+    "resources": {
+      "requests": {
+        "storage": "3Gi"
+      }
+    }
+  }
+}
+

@@ -8,6 +8,7 @@
   - [Add Pods to the Service](#add-pods-to-the-service)
 - [Routing](#routing)
   - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
+  - [The Router Service Account](#the-router-service-account)
   - [Creating the Router](#creating-the-router)
   - [Viewing Router Stats](#viewing-router-stats)
   - [Exposing a Route](#exposing-a-route)
