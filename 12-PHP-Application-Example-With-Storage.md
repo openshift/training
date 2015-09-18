@@ -3,6 +3,15 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [A Simple PHP Example](#a-simple-php-example)
+  - [Create a PHP Project](#create-a-php-project)
+  - [Build the App](#build-the-app)
+  - [Create a Route](#create-a-route)
+  - [Visit the Application](#visit-the-application)
+  - [Error!](#error)
+  - [Export Another NFS Volume](#export-another-nfs-volume)
+  - [Create a PersistentVolume](#create-a-persistentvolume)
+  - [Create a PersistentVolumeClaim](#create-a-persistentvolumeclaim)
+  - [Add the Volume to Your DeploymentConfig](#add-the-volume-to-your-deploymentconfig)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -60,7 +69,7 @@ permissions.
 But, that's OK, because we're going to add storage to our application
 containers.
 
-## Export Another NFS Export
+## Export Another NFS Volume
 Earlier in the labs you created an NFS export to store your Docker registry
 data. We're going to add another one for use with this PHP application. On your
 *master* and as *root*:
@@ -110,3 +119,69 @@ PersistentVolume. The following JSON definition can be found in
 As the *root* user, go ahead and create this volume:
 
     oc create ~/training/content/php-volume.json
+
+## Create a PersistentVolumeClaim
+Once the volume is created, a project needs to claim it, much like with the
+registry. There is a claim in `content/php-claim.json` that looks like:
+
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "php-claim"
+      },
+      "spec": {
+        "accessModes": [ "ReadWriteMany" ],
+        "resources": {
+          "requests": {
+            "storage": "3Gi"
+          }
+        }
+      }
+    }
+
+As *alice* and in the *php-upload* project, go ahead and create this claim:
+
+    oc create ~/training/php-claim.json
+
+If you accidentally do this as *root* or in the wrong project, you might see a
+strange error in the pod when it comes up about the volume. Make sure you create
+this claim in the *php-upload* project.
+
+## Add the Volume to Your DeploymentConfig
+Much like we did with the registry, it's pretty easy for a user to tell
+OpenShift how to use a storage volume with an application. Our friend the `oc
+volume` command comes back to our rescue. As *alice* you can do the following:
+
+    oc volume dc/demo --add -t pvc --claim-name php-claim \
+    -m /opt/app-root/src/uploaded --name=php-volume
+
+This command tells OpenShift:
+
+* modify the DeploymentConfig to add a volume
+* use the persistent volume claim called `php-claim`
+* give the volume the name `php-volume`
+* and mount it at `/opt/app-root/src/uploaded`
+
+When you make this change, you will see that OpenShift will increment the
+version of the deployment configuration:
+
+    oc get dc
+    NAME      TRIGGERS                    LATEST VERSION
+    demo      ConfigChange, ImageChange   2
+
+And we will get a new replication controller that has a pod template with the
+new volume information. Ultimately, we'll get a new pod:
+
+    oc get pod
+    NAME           READY     STATUS       RESTARTS   AGE
+    demo-1-build   0/1       ExitCode:0   0          3h
+    demo-2-9ti4f   1/1       Running      0          3h
+
+Once your new pod is running, try to upload a file again. Does it work? Do you
+see your file on your master system at `/var/export/vol1`? You can access your
+file via this application by going to:
+
+    http://demo-php-upload.cloudapps.example.com/uploaded
+
+You should see a directory index of all of the uploaded files.
