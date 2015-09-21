@@ -25,8 +25,7 @@ and other paths-to-nowhere that are in the process of being updated/validated.
 - 11: [Rollback/Activate and Code Lifecycle](11-Rollback-Activate-Lifecycle.md)
 - 12: [PHP Application Example With
     Storage](12-PHP-Application-Example-With-Storage.md)
-- 13: [More `exec` Examples](13-More-Exec-Examples.md)
-- 14: [Customized Build and Run
+- 13: [Customized Build and Run
     Processes](14-Customized-Build-and-Run-Processes.md)
 - 15: [Lifecycle Pre and Post Deployment
     Hooks](15-Lifecycle-Pre-and-Post-Deployment-Hooks.md)

@@ -917,7 +917,7 @@ exec_it su - alice -c \""oc project wiring"\"
 test_exit $? "$test"
 test="Creating the frontend application..."
 printf "  $test\r"
-exec_it su - alice -c \""oc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world"\"
+exec_it su - alice -c \""oc new-app -i openshift/ruby https://github.com/thoraxe/ruby-hello-world"\"
 test_exit $? "$test"
 test="Setting environment variables..."
 printf "  $test\r"
@@ -1035,7 +1035,7 @@ exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
 test_exit $? "$test"
 }
 
-function php-upload() {
+function php_upload() {
 # check for project
 exec_it oc get project php-upload
 if [ $? -eq 0 ]
@@ -1147,6 +1147,46 @@ exec_it su - alice -c \""curl http://demo-php-upload.cloudapps.example.com/uploa
 test_exit $? "$test"
 }
 
+function customized_build() {
+# switch alice back to wiring project
+exec_it su - alice -c \""oc project wiring"\"
+# check if the build is already modified
+exec_it oc get bc ruby-hello-world -o json -n wiring "|" grep custom-assemble
+if [ $? -eq 1 ]
+then
+  test="Modifying build configuration to use custom-assemble..."
+  printf "  $test\r"
+  # we have a staged repo with the assemble script so we need to
+  # edit the existing build config
+  exec_it su - alice -c \""oc get bc ruby-hello-world -o yaml | sed -e '/thoraxe\/ruby-hello-world/a \      ref: custom-assemble' | oc replace -f -"\"
+  test_exit $? "$test"
+fi
+# check if we already have a third build
+exec_it oc get build ruby-hello-world-3 -n wiring
+if [ $? -eq 1 ]
+then
+  # get webhook url
+  url=$(oc get bc ruby-hello-world -n wiring -t 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
+  # curl the webhook url
+  test="Initiating the webhook build..."
+  printf "  $test\r"
+  exec_it curl -i -H \""Accept: application/json"\" \
+      -H \""X-HTTP-Method-Override: PUT"\" -X POST -k \
+      "$url" "|" grep 200
+  test_exit $? "$test"
+  # this will be the third build of the project
+  # wait for build to start
+  wait_on_build "ruby-hello-world-3" "wiring" 30 "Running"
+  # wait for build to finish
+  wait_on_build "ruby-hello-world-3" "wiring" 180 "Complete"
+fi
+# check log for custom message
+test="Looking for CUSTOM S2I message in build logs..."
+printf "  $test\r"
+exec_it oc build-logs ruby-hello-world-3 -n wiring "|" grep \""CUSTOM S2I"\"
+test_exit $? "$test"
+} 
+
 verbose='false'
 installoutput='false'
 
@@ -1214,4 +1254,7 @@ echo "Rollback and Activate..."
 activate_rollback
 # Chapter 12
 echo "PHP Upload..."
-php-upload
+php_upload
+# Chapter 13
+echo "Customized build..."
+customized_build
