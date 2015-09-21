@@ -1187,6 +1187,10 @@ exec_it oc build-logs ruby-hello-world-3 -n wiring "|" grep \""CUSTOM S2I"\"
 test_exit $? "$test"
 } 
 
+function deployment_hooks() {
+echo
+}
+
 verbose='false'
 installoutput='false'
 
@@ -1258,3 +1262,6 @@ php_upload
 # Chapter 13
 echo "Customized build..."
 customized_build
+# Chapter 14
+echo "Deployment hooks..."
+# deployment_hooks

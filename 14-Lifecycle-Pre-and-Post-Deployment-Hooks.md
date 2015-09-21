@@ -116,7 +116,14 @@ following before continuing:
 
     "spec": {
         "strategy": {
-            "type": "Recreate",
+            "type": "Rolling",
+            "rollingParams": {
+                "updatePeriodSeconds": 1,
+                "intervalSeconds": 1,
+                "timeoutSeconds": 600,
+                "maxUnavailable": "25%",
+                "maxSurge": "25%"
+            },
             "resources": {}
         },
 
@@ -169,9 +176,8 @@ Looking at the original hook example in the previous section, and our command
 reference above, in the end, you will have something that looks like:
 
     "strategy": {
-        "type": "Recreate",
-        "resources": {},
-        "recreateParams": {
+        "type": "Rolling",
+        "rollingParams": {
             "pre": {
                 "failurePolicy": "Abort",
                 "execNewPod": {
@@ -185,7 +191,13 @@ reference above, in the end, you will have something that looks like:
                     "containerName": "ruby-hello-world"
                 }
             },
-        }
+            "updatePeriodSeconds": 1,
+            "intervalSeconds": 1,
+            "timeoutSeconds": 600,
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+        },
+        "resources": {}
     },
 
 Remember, indentation isn't critical in JSON, but closing brackets and braces
