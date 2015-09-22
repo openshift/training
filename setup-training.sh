@@ -559,7 +559,7 @@ test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
 --certificate-authority=/etc/openshift/ca.crt \
---server=https://ose3-master.example.com:8443 --loglevel=8"\"
+--server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 exec_it su - alice -c \""oc project demo"\"
 test="Alice should be able to see a pod..."
@@ -1050,7 +1050,7 @@ test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
 --certificate-authority=/etc/openshift/ca.crt \
---server=https://ose3-master.example.com:8443 --loglevel=8"\"
+--server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 test="Creating php-upload project..."
 printf "  $test\r"
@@ -1135,6 +1135,7 @@ wait_on_rc "demo-2" "php-upload" 30 1
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
 wait_on_pod "$pod" "php-upload" 30
 wait_on_endpoints "demo" "php-upload" 30
+sleep 10
 # try upload again
 test="Trying to upload a file (should succeed)..."
 printf "  $test\r"
@@ -1191,17 +1192,69 @@ function deployment_hooks() {
 echo
 }
 
+function eap_example() {
+# check for project
+exec_it oc get project eap-example
+if [ $? -eq 0 ]
+then
+  exec_it oc delete project eap-example
+  wait_on_project eap-example 30
+fi
+# a little extra time
+sleep 3
+# create the project
+test="Login as alice..."
+printf "  $test\r"
+exec_it su - alice -c \""oc login -u alice -p redhat \
+--certificate-authority=/etc/openshift/ca.crt \
+--server=https://ose3-master.example.com:8443"\"
+test_exit $? "$test"
+test="Creating eap-example project..."
+printf "  $test\r"
+exec_it su - alice -c \""oc new-project eap-example --display-name='JBoss EAP Example' \
+    --description='Demonstrating the EAP template'"\"
+test_exit $? "$test"
+exec_it su - alice -c \""oc project eap-example"\"
+# instantiate template
+test="Creating the eap6-basic-sti template..."
+printf "  $test\r"
+exec_it su - alice -c \""oc new-app eap6-basic-sti -p GIT_CONTEXT_DIR=helloworld"\"
+test_exit $? "$test"
+# wait for build
+wait_on_build "eap-app-1" "eap-example" 120 "Running"
+wait_on_build "eap-app-1" "eap-example" 480 "Complete"
+# wait for deployment
+wait_on_rc "eap-app-1" "eap-example" 30 1
+# get pod name
+pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
+wait_on_pod "$pod" "php-upload" 30
+wait_on_endpoints "demo" "php-upload" 30
+sleep 10
+test="Looking for Hello World..."
+printf "  $test\r"
+exec_it curl http://eap-app-http-route-eap-example.cloudapps.example.com/jboss-helloworld/HelloWorld "|" grep \""Hello World"\"
+test_exit $? "$test"
+}
+
 verbose='false'
 installoutput='false'
+func="false"
 
-while getopts 'iv' flag; do
+while getopts 'ivtf:' flag; do
   case "${flag}" in
     i) installoutput=true; trace=false ;;
     v) verbose=true ;;
     t) installoutput=true; trace=true ;; 
-    *) error "Unexpected option ${flag}" ;;
+    f) func=$OPTARG ;;
+    *) exit 1 ;;
   esac
 done
+
+if [ ! $func == "false" ]
+then
+  eval "$func"
+  exit
+fi
 
 # Chapter 1
 echo "Preparations..."
@@ -1265,3 +1318,6 @@ customized_build
 # Chapter 14
 echo "Deployment hooks..."
 # deployment_hooks
+# Chapter 15
+echo "EAP example..."
+eap_example
