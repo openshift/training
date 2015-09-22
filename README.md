@@ -26,6 +26,7 @@ and other paths-to-nowhere that are in the process of being updated/validated.
 - 12: [PHP Application Example With
     Storage](12-PHP-Application-Example-With-Storage.md)
 - 13: [Customized Build and Run
-    Processes](14-Customized-Build-and-Run-Processes.md)
-- 15: [Lifecycle Pre and Post Deployment
-    Hooks](15-Lifecycle-Pre-and-Post-Deployment-Hooks.md)
+    Processes](13-Customized-Build-and-Run-Processes.md)
+- 14: [Lifecycle Pre and Post Deployment
+    Hooks](14-Lifecycle-Pre-and-Post-Deployment-Hooks.md)
+- 15: [JBoss EAP Example](15-JBoss-EAP-Example.md)
