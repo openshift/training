@@ -818,6 +818,7 @@ test="Testing the service..."
 printf "  $test\r"
 exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
 test_exit $? "$test"
+sleep 5
 test="Testing the route..."
 printf "  $test\r"
 exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
