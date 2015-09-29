@@ -808,7 +808,7 @@ test_exit $? "$test"
 # may take up to 120 seconds for build to start
 wait_on_build "ruby-example-1" "sinatra" 120 "Running"
 # now wait up to 2 mins for build to complete
-wait_on_build "ruby-example-1" "sinatra" 180 "Complete"
+wait_on_build "ruby-example-1" "sinatra" 280 "Complete"
 wait_on_rc "ruby-example-1" "sinatra" 30 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 30
@@ -885,7 +885,7 @@ test_exit $? "$test"
 # wait for the build to start
 wait_on_build "ruby-sample-build-1" "quickstart" 120 "Running"
 # wait for build to finish
-wait_on_build "ruby-sample-build-1" "quickstart" 180 "Complete"
+wait_on_build "ruby-sample-build-1" "quickstart" 280 "Complete"
 # wait for rc to deploy
 wait_on_rc "frontend-1" "quickstart" 30 2
 # find the deployed pods
@@ -943,7 +943,7 @@ printf "  $test\r"
 exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-1" "wiring" 120 "Running"
-wait_on_build "ruby-hello-world-1" "wiring" 180 "Complete"
+wait_on_build "ruby-hello-world-1" "wiring" 280 "Complete"
 wait_on_rc "ruby-hello-world-1" "wiring" 30 1
 sleep 3
 # find the pod
@@ -1009,8 +1009,8 @@ exec_it curl -i -H \""Accept: application/json"\" \
     -H \""X-HTTP-Method-Override: PUT"\" -X POST -k \
     "$url" "|" grep 200
 test_exit $? "$test"
-wait_on_build "ruby-hello-world-2" "wiring" 30 "Running"
-wait_on_build "ruby-hello-world-2" "wiring" 180 "Complete"
+wait_on_build "ruby-hello-world-2" "wiring" 120 "Running"
+wait_on_build "ruby-hello-world-2" "wiring" 280 "Complete"
 wait_on_rc "ruby-hello-world-2" "wiring" 30 1
 # get pod name
 pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | awk '{print $1}' | grep -E "ruby-hello-world-2-\w{5}")
@@ -1105,7 +1105,7 @@ printf "  $test\r"
 exec_it su - alice -c \""oc expose service demo"\"
 test_exit $? "$test"
 wait_on_build "demo-1" "php-upload" 120 "Running"
-wait_on_build "demo-1" "php-upload" 180 "Complete"
+wait_on_build "demo-1" "php-upload" 280 "Complete"
 wait_on_rc "demo-1" "php-upload" 30 1
 # get pod name
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-1-\w{5}")
@@ -1196,9 +1196,9 @@ then
   test_exit $? "$test"
   # this will be the third build of the project
   # wait for build to start
-  wait_on_build "ruby-hello-world-3" "wiring" 30 "Running"
+  wait_on_build "ruby-hello-world-3" "wiring" 120 "Running"
   # wait for build to finish
-  wait_on_build "ruby-hello-world-3" "wiring" 180 "Complete"
+  wait_on_build "ruby-hello-world-3" "wiring" 280 "Complete"
 fi
 # check log for custom message
 test="Looking for CUSTOM S2I message in build logs..."
@@ -1241,7 +1241,7 @@ exec_it su - alice -c \""oc new-app eap6-basic-sti -p GIT_CONTEXT_DIR=helloworld
 test_exit $? "$test"
 # wait for build
 wait_on_build "eap-app-1" "eap-example" 120 "Running"
-wait_on_build "eap-app-1" "eap-example" 480 "Complete"
+wait_on_build "eap-app-1" "eap-example" 600 "Complete"
 # wait for deployment
 wait_on_rc "eap-app-1" "eap-example" 30 1
 # get pod name
