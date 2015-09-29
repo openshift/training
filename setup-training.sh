@@ -163,13 +163,13 @@ if [ ! -d /root/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/thoraxe/training -b php-example
+  exec_it git clone https://github.com/openshift/training 
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
   cd ~/training
-  exec_it git pull origin php-example
+  exec_it git pull origin master
   test_exit $? "$test"
 fi
 if [ ! -d /root/openshift-ansible ]
@@ -369,12 +369,12 @@ if [ ! -d /home/joe/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""git clone https://github.com/thoraxe/training -b php-example"\"
+  exec_it su - joe -c \""git clone https://github.com/openshift/training"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""cd ~/training && git pull origin php-example"\"
+  exec_it su - joe -c \""cd ~/training && git pull origin master"\"
   test_exit $? "$test"
 fi
 }
@@ -922,12 +922,12 @@ if [ ! -d /home/alice/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""git clone https://github.com/thoraxe/training -b php-example"\"
+  exec_it su - alice -c \""git clone https://github.com/openshift/training"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""cd ~/training && git pull origin php-example"\"
+  exec_it su - alice -c \""cd ~/training && git pull origin master"\"
   test_exit $? "$test"
 fi
 test="Change alice's project..."
