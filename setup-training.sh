@@ -191,6 +191,25 @@ exec_it /bin/cp -f ~/training/content/sample-ansible-hosts /etc/ansible/hosts
 test_exit $? "$test"
 }
 
+function prepare_things(){
+prepare_dns
+pull_content
+# just in case
+if [ -d /root/.config ]
+then
+  exec_it oc login -u system:admin
+  exec_it oc project default
+fi
+}
+
+function post_install(){
+copy_ca
+label_nodes
+configure_routing_domain
+configure_default_nodeselector
+configure_default_project_selector
+}
+
 function run_install(){
 date=$(date +%d%m%Y)
 test="Running installation..."
@@ -1258,22 +1277,11 @@ fi
 
 # Chapter 1
 echo "Preparations..."
-prepare_dns
-pull_content
-# just in case
-if [ -d /root/.config ]
-then
-  exec_it oc login -u system:admin
-  exec_it oc project default
-fi
+prepare_things
 # Chapter 2
 run_install
 echo "Post installation configuration..."
-copy_ca
-label_nodes
-configure_routing_domain
-configure_default_nodeselector
-configure_default_project_selector
+post_install
 # Chapter 3
 echo "Dev users..."
 setup_dev_users
