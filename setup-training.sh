@@ -163,7 +163,7 @@ if [ ! -d /root/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/openshift/training 
+  exec_it git clone https://github.com/openshift/training ~/training
   test_exit $? "$test"
 else
   test="Updating training content..."
@@ -176,7 +176,7 @@ if [ ! -d /root/openshift-ansible ]
 then
   test="Pulling ansible content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/openshift/openshift-ansible
+  exec_it git clone https://github.com/openshift/openshift-ansible ~/openshift-ansible
   test_exit $? "$test"
 else
   test="Updating ansible content..."
