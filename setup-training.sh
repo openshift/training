@@ -813,12 +813,12 @@ wait_on_rc "ruby-example-1" "sinatra" 30 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 30
 # some extra sleep
-sleep 5
+sleep 10
 test="Testing the service..."
 printf "  $test\r"
 exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
 test_exit $? "$test"
-sleep 5
+sleep 10
 test="Testing the route..."
 printf "  $test\r"
 exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
@@ -849,7 +849,7 @@ sleep 10
 # forbidden will immediately be show
 test="Build should be forbidden..."
 printf "  $test\r"
-exec_it su - joe -c \""oc describe build ruby-example-2 | grep forbidden"\"
+exec_it su - joe -c \""oc get event | grep forbidden"\"
 # build should be forbidden
 test_exit $? "$test"
 }
@@ -896,6 +896,7 @@ for pod in $pods
 do
   wait_on_pod "$pod" "quickstart" 30
 done
+sleep 10
 # test the application
 test="Testing the application..."
 printf "  $test\r"
