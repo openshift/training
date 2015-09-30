@@ -849,7 +849,7 @@ sleep 10
 # forbidden will immediately be show
 test="Build should be forbidden..."
 printf "  $test\r"
-exec_it su - joe -c \""oc describe build ruby-example-2 | grep forbidden"\"
+exec_it su - joe -c \""oc get event | grep forbidden"\"
 # build should be forbidden
 test_exit $? "$test"
 }
