@@ -818,6 +818,7 @@ test="Testing the service..."
 printf "  $test\r"
 exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
 test_exit $? "$test"
+sleep 5
 test="Testing the route..."
 printf "  $test\r"
 exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
@@ -843,6 +844,7 @@ do
 done
 # start new build
 exec_it su - joe -c \""oc start-build ruby-example"\"
+sleep 10
 # build will never schedule so we need to look at the events with describe
 # forbidden will immediately be show
 test="Build should be forbidden..."
@@ -1253,6 +1255,17 @@ test="Looking for Hello World..."
 printf "  $test\r"
 exec_it curl http://eap-app-http-route-eap-example.cloudapps.example.com/jboss-helloworld/HelloWorld "|" grep \""Hello World"\"
 test_exit $? "$test"
+}
+
+function just_setup() {
+prepare_things
+run_install
+setup_dev_users
+install_router
+prepare_nfs
+setup_storage_volumes_claims
+install_registry
+add_claimed_volume
 }
 
 verbose='false'
