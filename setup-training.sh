@@ -1261,6 +1261,7 @@ test_exit $? "$test"
 function just_setup() {
 prepare_things
 run_install
+post_install
 setup_dev_users
 install_router
 prepare_nfs
