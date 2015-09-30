@@ -514,10 +514,10 @@ fi
 
 # verify that router came up
 # first wait for rc to indicate status
-wait_on_rc "router-1" "default" 30 1
+wait_on_rc "router-1" "default" 60 1
 # now find the router pod and wait for that to be ready
 ans=$(oc get pod | awk '{print $1}'| grep -E "^router-1-\w{5}$")
-wait_on_pod $ans "default" 30
+wait_on_pod $ans "default" 60
 
 # add router admin iptables port
 check_add_iptables_port 1936 tcp
@@ -562,7 +562,7 @@ test="Creating the complete definition..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/test-complete.json"\"
 test_exit $? "$test"
-wait_on_rc "hello-openshift-1" "demo" 30 1
+wait_on_rc "hello-openshift-1" "demo" 60 1
 ans=$(oc get pod -n demo | awk '{print $1}'| grep -E "^hello-openshift-1-\w{5}$")
 wait_on_pod "$ans" "demo" 60
 }
@@ -760,7 +760,7 @@ then
     fi
   fi
   # we need to wait for the registry to get deployed before we can scale it down
-  wait_on_rc "docker-registry-1" "default" 30 1
+  wait_on_rc "docker-registry-1" "default" 60 1
 fi
 }
 
@@ -774,7 +774,7 @@ then
   exec_it oc volume dc/docker-registry --add --overwrite -t persistentVolumeClaim \
   --claim-name=registry-claim --name=registry-storage
   test_exit $? "$test"
-  wait_on_rc "docker-registry-2" "default" 30 1
+  wait_on_rc "docker-registry-2" "default" 60 1
   sleep 5
   pod=$(oc get pod | awk '{print $1}' | grep -v deploy | grep -E "^docker-registry-2-\w{5}")
   wait_on_pod "$pod" "default" 60
@@ -809,9 +809,9 @@ test_exit $? "$test"
 wait_on_build "ruby-example-1" "sinatra" 120 "Running"
 # now wait up to 2 mins for build to complete
 wait_on_build "ruby-example-1" "sinatra" 280 "Complete"
-wait_on_rc "ruby-example-1" "sinatra" 30 1
+wait_on_rc "ruby-example-1" "sinatra" 60 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
-wait_on_pod "$ans" "sinatra" 30
+wait_on_pod "$ans" "sinatra" 60
 # some extra sleep
 sleep 10
 test="Testing the service..."
@@ -835,7 +835,7 @@ test="Scaling joe's app..."
 printf "  $test\r"
 exec_it su - joe -c \""oc scale --replicas=3 rc/ruby-example-1"\"
 test_exit $? "$test"
-wait_on_rc "ruby-example-1" "sinatra" 30 3
+wait_on_rc "ruby-example-1" "sinatra" 60 3
 # find the pods
 # 3 pods should run
 for pod in $(oc get pod -n sinatra | grep example | grep -v build | awk {'print $1'})
@@ -889,12 +889,12 @@ wait_on_build "ruby-sample-build-1" "quickstart" 120 "Running"
 # wait for build to finish
 wait_on_build "ruby-sample-build-1" "quickstart" 280 "Complete"
 # wait for rc to deploy
-wait_on_rc "frontend-1" "quickstart" 30 2
+wait_on_rc "frontend-1" "quickstart" 60 2
 # find the deployed pods
 pods=$(oc get pod -n quickstart | grep frontend | grep -v deploy | awk {'print $1'})
 for pod in $pods
 do
-  wait_on_pod "$pod" "quickstart" 30
+  wait_on_pod "$pod" "quickstart" 60
 done
 sleep 10
 # test the application
@@ -947,11 +947,11 @@ exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWO
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-1" "wiring" 120 "Running"
 wait_on_build "ruby-hello-world-1" "wiring" 280 "Complete"
-wait_on_rc "ruby-hello-world-1" "wiring" 30 1
+wait_on_rc "ruby-hello-world-1" "wiring" 60 1
 sleep 3
 # find the pod
 pod=$(oc get pod -n wiring | grep hello-world | grep -v -E "deploy|build" | awk {'print $1'})
-wait_on_pod "$pod" "wiring" 30
+wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Check if frontend service is working..."
@@ -968,10 +968,10 @@ test="Creating the database backend..."
 printf "  $test\r"
 exec_it su - alice -c \""oc new-app mysql-ephemeral -p DATABASE_SERVICE_NAME=database,MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
-wait_on_rc "database-1" "wiring" 30 1
+wait_on_rc "database-1" "wiring" 60 1
 sleep 3
 pod=$(oc get pod -n wiring | grep database | grep -v deploy | awk {'print $1'})
-wait_on_pod "$pod" "wiring" 30
+wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "database" "wiring" 30
 sleep 5
 test="Checking the MySQL service..."
@@ -1014,10 +1014,10 @@ exec_it curl -i -H \""Accept: application/json"\" \
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-2" "wiring" 120 "Running"
 wait_on_build "ruby-hello-world-2" "wiring" 280 "Complete"
-wait_on_rc "ruby-hello-world-2" "wiring" 30 1
+wait_on_rc "ruby-hello-world-2" "wiring" 60 1
 # get pod name
 pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | awk '{print $1}' | grep -E "ruby-hello-world-2-\w{5}")
-wait_on_pod "$pod" "wiring" 30
+wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
 sleep 3
@@ -1030,9 +1030,9 @@ test="Rolling back to first deployment..."
 printf "  $test\r"
 exec_it oc rollback ruby-hello-world-1 -n wiring
 test_exit $? "$test"
-wait_on_rc "ruby-hello-world-3" "wiring" 30 1
+wait_on_rc "ruby-hello-world-3" "wiring" 60 1
 pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | awk '{print $1}' | grep -E "ruby-hello-world-3-\w{5}")
-wait_on_pod "$pod" "wiring" 30
+wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
 sleep 3
@@ -1045,9 +1045,9 @@ test="Rolling forward to second deployment..."
 printf "  $test\r"
 exec_it oc rollback ruby-hello-world-2 -n wiring
 test_exit $? "$test"
-wait_on_rc "ruby-hello-world-4" "wiring" 30 1
+wait_on_rc "ruby-hello-world-4" "wiring" 60 1
 pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | awk '{print $1}' | grep -E "ruby-hello-world-4-\w{5}")
-wait_on_pod "$pod" "wiring" 30
+wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
 sleep 3
@@ -1109,10 +1109,10 @@ exec_it su - alice -c \""oc expose service demo"\"
 test_exit $? "$test"
 wait_on_build "demo-1" "php-upload" 120 "Running"
 wait_on_build "demo-1" "php-upload" 280 "Complete"
-wait_on_rc "demo-1" "php-upload" 30 1
+wait_on_rc "demo-1" "php-upload" 60 1
 # get pod name
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-1-\w{5}")
-wait_on_pod "$pod" "php-upload" 30
+wait_on_pod "$pod" "php-upload" 60
 wait_on_endpoints "demo" "php-upload" 30
 # test the app
 sleep 3
@@ -1152,10 +1152,10 @@ test="Adding volume to DC..."
 printf "  $test\r"
 exec_it su - alice -c \""oc volume dc/demo --add -t pvc --claim-name php-claim -m /opt/app-root/src/uploaded --name=php-volume"\"
 test_exit $? "$test"
-wait_on_rc "demo-2" "php-upload" 30 1
+wait_on_rc "demo-2" "php-upload" 60 1
 # get pod name
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
-wait_on_pod "$pod" "php-upload" 30
+wait_on_pod "$pod" "php-upload" 60
 wait_on_endpoints "demo" "php-upload" 30
 sleep 10
 # try upload again
@@ -1246,10 +1246,10 @@ test_exit $? "$test"
 wait_on_build "eap-app-1" "eap-example" 120 "Running"
 wait_on_build "eap-app-1" "eap-example" 600 "Complete"
 # wait for deployment
-wait_on_rc "eap-app-1" "eap-example" 30 1
+wait_on_rc "eap-app-1" "eap-example" 60 1
 # get pod name
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
-wait_on_pod "$pod" "php-upload" 30
+wait_on_pod "$pod" "php-upload" 60
 wait_on_endpoints "demo" "php-upload" 30
 sleep 10
 test="Looking for Hello World..."
