@@ -240,7 +240,7 @@ test_exit $? "$test"
 
 function label_nodes(){
 # let things settle a bit
-sleep 10
+sleep 15
 test="Labeling master..."
 printf "  $test\r"
 exec_it oc label --overwrite node/ose3-master.example.com region=infra zone=default
@@ -276,7 +276,7 @@ printf "  $test\r"
 exec_it systemctl restart openshift-master
 test_exit $? "$test"
 # wait for things to settle
-sleep 10
+sleep 15
 }
 
 function configure_default_project_selector(){
@@ -395,7 +395,7 @@ printf "  $test\r"
 exec_it su - joe -c \""oc delete pod hello-openshift"\"
 test_exit $? "$test"
 # it takes 10 seconds for quota to update
-sleep 10
+sleep 15
 }
 
 function hello_quota() {
@@ -405,7 +405,7 @@ if [ $ans != 1 ]
 then
   exec_it oc delete pods --all -n demo
   # it takes 10 seconds for quota to update
-  sleep 10
+  sleep 15
 fi
 test="Checking if quota is enforced..."
 printf "  $test\r"
@@ -419,7 +419,7 @@ else
 fi
 exec_it oc delete pods --all -n demo
 # it takes 10 seconds for quota to update
-sleep 10
+sleep 15
 }
 
 function joe_project(){
@@ -434,7 +434,7 @@ function create_populate_service(){
 # delete hello service
 exec_it oc delete service --all -n demo
 exec_it oc delete pod --all -n demo
-sleep 10
+sleep 15
 test="Creating hello-service..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-service.json"\"
@@ -556,7 +556,7 @@ function complete_pod_service_route(){
 # delete everything in the project
 exec_it su - joe -c \""oc delete all -l name=hello-openshift"\"
 # wait for quota
-sleep 10
+sleep 15
 # create complete def
 test="Creating the complete definition..."
 printf "  $test\r"
@@ -813,12 +813,12 @@ wait_on_rc "ruby-example-1" "sinatra" 60 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 60
 # some extra sleep
-sleep 10
+sleep 15
 test="Testing the service..."
 printf "  $test\r"
 exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
 test_exit $? "$test"
-sleep 10
+sleep 15
 test="Testing the route..."
 printf "  $test\r"
 exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
@@ -844,7 +844,7 @@ do
 done
 # start new build
 exec_it su - joe -c \""oc start-build ruby-example"\"
-sleep 10
+sleep 15
 # build will never schedule so we need to look at the events with describe
 # forbidden will immediately be show
 test="Build should be forbidden..."
@@ -896,7 +896,7 @@ for pod in $pods
 do
   wait_on_pod "$pod" "quickstart" 60
 done
-sleep 10
+sleep 15
 # test the application
 test="Testing the application..."
 printf "  $test\r"
@@ -1157,7 +1157,7 @@ wait_on_rc "demo-2" "php-upload" 60 1
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
 wait_on_pod "$pod" "php-upload" 60
 wait_on_endpoints "demo" "php-upload" 30
-sleep 10
+sleep 15
 # try upload again
 test="Trying to upload a file (should succeed)..."
 printf "  $test\r"
@@ -1251,7 +1251,7 @@ wait_on_rc "eap-app-1" "eap-example" 60 1
 pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{print $1}' | grep -E "demo-2-\w{5}")
 wait_on_pod "$pod" "php-upload" 60
 wait_on_endpoints "demo" "php-upload" 30
-sleep 10
+sleep 15
 test="Looking for Hello World..."
 printf "  $test\r"
 exec_it curl http://eap-app-http-route-eap-example.cloudapps.example.com/jboss-helloworld/HelloWorld "|" grep \""Hello World"\"
