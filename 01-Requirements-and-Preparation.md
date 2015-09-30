@@ -71,7 +71,7 @@ hostnames do not match.
 If you cannot create real forward resolving DNS entries in your DNS system, you
 will need to set up your own DNS server in the beta testing environment.
 Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
-setup](#appendix---dnsmasq-setup)
+setup](APPENDIX.md#appendix---dnsmasq-setup)
 
 Remember that NetworkManager may make changes to your DNS
 configuration/resolver/etc. You will need to properly configure your interfaces'
@@ -98,7 +98,7 @@ For example:
     *.cloudapps.example.com. 300 IN  A 192.168.133.2
 
 It is possible to use dnsmasq inside of your beta environment to handle these
-duties. See the [appendix on dnsmasq](#appendix---dnsmasq-setup) if you can't
+duties. See the [appendix on dnsmasq](APPENDIX.md#appendix---dnsmasq-setup) if you can't
 easily manipulate your existing DNS environment.
 
 ## Assumptions
@@ -285,5 +285,4 @@ window:
 "-master" service. You may also wish to watch the Docker logs, too.
 
 **Note:** There is an appendix on configuring [Log
-Aggregation](#appendix---infrastructure-log-aggregation)
-
+Aggregation](APPENDIX.md#appendix---infrastructure-log-aggregation)
