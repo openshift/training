@@ -984,6 +984,7 @@ printf "  $test\r"
 exec_it oc delete pod -n wiring $(oc get pod -n wiring | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}')
 test_exit $? "$test"
 # find the new frontend pod
+sleep 10
 pod=$(oc get pod -n wiring | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}')
 # wait for it
 wait_on_pod "$pod" "wiring" 30
