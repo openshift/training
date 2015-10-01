@@ -161,12 +161,12 @@ pre-fetch it). It's a good idea to verify that the database is running before
 continuing.  If you don't happen to have a MySQL client installed you can still
 verify MySQL is running with curl:
 
-    curl `oc get services | grep database | awk '{print $4}'`:3306
+    curl $(oc get service database -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}')
 
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
 
-    5.6.2K\l-7mA<��F/T:emsy'TR~mysql_native_password!��#08S01Got packets out of order
+    A�jHost '10.1.0.1' is not allowed to connect to this MySQL server
 
 ## Visit Your Application Again
 Visit your application again with your web browser. Why does it still say that

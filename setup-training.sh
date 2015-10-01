@@ -976,7 +976,7 @@ wait_on_endpoints "database" "wiring" 30
 sleep 5
 test="Checking the MySQL service..."
 printf "  $test\r"
-exec_it curl $(oc get service database -n wiring -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}') "|" grep mysql
+exec_it curl $(oc get service database -n wiring -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}') "|" grep -i mysql
 test_exit $? "$test"
 # delete the existing frontend pod
 test="Deleting the existing frontend pod..."
