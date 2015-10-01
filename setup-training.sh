@@ -990,7 +990,7 @@ pod=$(oc get pod -n wiring | grep -e "hello-world-[0-9]" | grep -v build | awk '
 wait_on_pod "$pod" "wiring" 30
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 3
+sleep 10
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep -i database
@@ -1021,7 +1021,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 3
+sleep 10
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1036,7 +1036,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 3
+sleep 10
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1051,7 +1051,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 3
+sleep 10
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1116,7 +1116,7 @@ pod=$(oc get pod -n php-upload | grep -v -E "deploy|build" | grep demo | awk '{p
 wait_on_pod "$pod" "php-upload" 60
 wait_on_endpoints "demo" "php-upload" 30
 # test the app
-sleep 3
+sleep 10
 test="Validating the app..."
 printf "  $test\r"
 exec_it curl demo-php-upload.cloudapps.example.com "|" grep Upload
@@ -1138,7 +1138,7 @@ if [ $? -eq 0 ]
 then
   exec_it oc delete pv php-volume
 fi
-sleep 5
+sleep 10
 test="Setting up php storage volume..."
 printf "  $test\r"
 exec_it oc create -f ~/training/content/php-volume.json
@@ -1147,7 +1147,7 @@ test="Setting up php volume claim..."
 printf "  $test\r"
 exec_it oc create -f ~/training/content/php-claim.json -n php-upload
 test_exit $? "$test"
-sleep 5
+sleep 10
 # add volume to dc
 test="Adding volume to DC..."
 printf "  $test\r"
