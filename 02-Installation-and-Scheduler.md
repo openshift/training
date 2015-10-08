@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Instlalation and Scheduler](#instlalation-and-scheduler)
+- [Installation and Scheduler](#installation-and-scheduler)
   - [Generate SSH Keys](#generate-ssh-keys)
   - [Distribute SSH Keys](#distribute-ssh-keys)
   - [Run the Installer](#run-the-installer)
@@ -24,7 +24,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Instlalation and Scheduler
+# Installation and Scheduler
 Much like with OpenShift Enterprise 2.x and prior, we provide a convenient
 web-sourced installer at `http://install.openshift.com`. First, we must prepare
 for using the installer.
