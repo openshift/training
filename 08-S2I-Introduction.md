@@ -60,7 +60,7 @@ For this example, we will be using the following application's source code:
 
 Let's see some JSON:
 
-    oc new-app -o json https://github.com/openshift/simple-openshift-sinatra-sti.git
+    oc new-app -o json --strategy=source https://github.com/openshift/simple-openshift-sinatra-sti.git
 
 Take a look at the JSON that was generated. You will see some familiar items at
 this point, and some new ones, like `BuildConfig`, `ImageStream` and others.
