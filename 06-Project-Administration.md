@@ -79,7 +79,7 @@ mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
 
-* https://docs.openshift.com/enterprise/3.0/admin_guide/manage_authorization_policy.html
+    https://docs.openshift.com/enterprise/3.0/admin_guide/manage_authorization_policy.html
 
 Of course, there be dragons. The basic roles should suffice for most uses.
 
