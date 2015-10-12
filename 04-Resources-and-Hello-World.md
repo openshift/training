@@ -385,7 +385,7 @@ There are some interesting things in here now.
   * This is because OpenShift is configured with a default.
 * We didn't specify any resource limits in our pod definition, but they're there
     now.
-  * This is becuase our project has default limits set.
+  * This is because our project has default limits set.
 
 Cool, right?
 
