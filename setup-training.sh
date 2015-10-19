@@ -169,7 +169,7 @@ else
   test="Updating training content..."
   printf "  $test\r"
   cd ~/training
-  exec_it git pull origin $branch
+  exec_it git pull $gituser $branch
   test_exit $? "$test"
 fi
 if [ ! -d /root/openshift-ansible ]
