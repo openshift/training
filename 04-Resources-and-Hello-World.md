@@ -340,7 +340,7 @@ Hooray!
 shown in the `describe` output.
 
 You'll also notice that the pod landed on one of the *primary* nodes. Why is that?
-Becuase we had configured a default `nodeSelector` earlier during the set-up
+Because we had configured a default `nodeSelector` earlier during the set-up
 process.
 
 ## Examining the Created Pod
@@ -457,7 +457,7 @@ project. You'll see some interesting things:
 ## Quota Usage
 If you click on the *Settings* tab, you'll see our pod usage has increased to 1.
 
-You can also use `osc` to determine the current quota usage of your project. As
+You can also use `oc` to determine the current quota usage of your project. As
 `joe`:
 
     oc describe quota test-quota

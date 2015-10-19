@@ -83,7 +83,7 @@ frontend:
       lastVersion: 2
 
 As you can see, the current configuration points at the
-`openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
+`git://github.com/openshift/ruby-hello-world` repository. Since you've forked this repo, let's go
 ahead and re-point our configuration. Our friend `oc edit` comes to the rescue
 again:
 
