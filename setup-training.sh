@@ -1277,7 +1277,7 @@ func="false"
 branch="master"
 gituser="origin"
 
-while getopts 'ivtf:' flag; do
+while getopts 'ivtf:b:g:' flag; do
   case "${flag}" in
     i) installoutput=true; trace=false ;;
     v) verbose=true ;;
