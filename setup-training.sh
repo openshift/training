@@ -33,7 +33,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  exec_it oc get build "$1" -n "$2" -t \''{{.status.phase}}'\' "|" grep -E \""$4"\"
+  exec_it oc get build "$1" -n "$2" --template \''{{.status.phase}}'\' "|" grep -E \""$4"\"
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -50,7 +50,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  exec_it oc get pod "$1" -n "$2" -t \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
+  exec_it oc get pod "$1" -n "$2" --template \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -67,7 +67,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  val=$(oc get endpoints -n "$2" "$1" -t '{{len .subsets}}')
+  val=$(oc get endpoints -n "$2" "$1" --template '{{len .subsets}}')
   if [ $val -gt 0 ]
   then
     test_exit 0 "$test"
@@ -84,7 +84,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  exec_it oc get rc $1 -n $2 -t \''{{.status.replicas}}'\' "|" grep $4
+  exec_it oc get rc $1 -n $2 --template \''{{.status.replicas}}'\' "|" grep $4
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -207,6 +207,7 @@ function post_install(){
 #label_nodes
 #configure_routing_domain
 #configure_default_nodeselector
+# need port 4789 hack
 configure_default_project_selector
 }
 
@@ -388,7 +389,7 @@ wait_on_pod "hello-openshift" "demo" 30
 # if we came out of that successfully, proceed
 test="Verifying hello-pod..."
 printf "  $test\r"
-exec_it curl $(oc get pod hello-openshift -n demo -t '{{.status.podIP}}'):8080 "|" grep Hello
+exec_it curl $(oc get pod hello-openshift -n demo --template '{{.status.podIP}}'):8080 "|" grep Hello
 test_exit $? "$test"
 test="Deleting hello-pod..."
 printf "  $test\r"
@@ -452,11 +453,11 @@ sleep 5
 test="Checking service endpoints..."
 # there should be three
 printf "  $test\r"
-exec_it oc get endpoints hello-service -n demo -t \''{{index .subsets 0 "addresses" | len}}'\' "|" grep 3
+exec_it oc get endpoints hello-service -n demo --template \''{{index .subsets 0 "addresses" | len}}'\' "|" grep 3
 test_exit $? "$test"
 test="Validating service..."
 printf "  $test\r"
-exec_it curl $(oc get service hello-service -n demo -t \''{{.spec.clusterIP}}:8888'\')
+exec_it curl $(oc get service hello-service -n demo --template \''{{.spec.clusterIP}}:8888'\')
 test_exit $? "$test"
 }
 
@@ -753,7 +754,7 @@ then
   if [ $? -eq 0 ]
   then
     # check if status = spec = 0
-    ans=$(oc get rc docker-registry-1 -t '{{.spec.replicas}}{{.status.replicas}}')
+    ans=$(oc get rc docker-registry-1 --template '{{.spec.replicas}}{{.status.replicas}}')
     if [ $ans -eq 00 ]
     then
       return
@@ -816,7 +817,7 @@ wait_on_pod "$ans" "sinatra" 60
 sleep 15
 test="Testing the service..."
 printf "  $test\r"
-exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
+exec_it curl `oc get service -n sinatra ruby-example --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
 test_exit $? "$test"
 sleep 15
 test="Testing the route..."
@@ -956,7 +957,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Check if frontend service is working..."
 printf "  $test\r"
-exec_it curl `oc get service -n wiring ruby-hello-world -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
+exec_it curl `oc get service -n wiring ruby-hello-world --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
 test_exit $? "$test"
 test="Expose the service..."
 printf "  $test\r"
@@ -976,7 +977,7 @@ wait_on_endpoints "database" "wiring" 30
 sleep 5
 test="Checking the MySQL service..."
 printf "  $test\r"
-exec_it curl $(oc get service database -n wiring -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}') "|" grep -i mysql
+exec_it curl $(oc get service database -n wiring --template '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}') "|" grep -i mysql
 test_exit $? "$test"
 # delete the existing frontend pod
 test="Deleting the existing frontend pod..."
@@ -1005,7 +1006,7 @@ fi
 function activate_rollback() {
 # requires wiring project
 # get webhook url
-url=$(oc get bc ruby-hello-world -n wiring -t 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
+url=$(oc get bc ruby-hello-world -n wiring --template 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
 # curl the webhook url
 test="Initiating the webhook build..."
 printf "  $test\r"
@@ -1190,7 +1191,7 @@ exec_it oc get build ruby-hello-world-3 -n wiring
 if [ $? -eq 1 ]
 then
   # get webhook url
-  url=$(oc get bc ruby-hello-world -n wiring -t 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
+  url=$(oc get bc ruby-hello-world -n wiring --template 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
   # curl the webhook url
   test="Initiating the webhook build..."
   printf "  $test\r"
@@ -1275,7 +1276,7 @@ verbose='false'
 installoutput='false'
 func="false"
 branch="master"
-gituser="origin"
+gituser="openshift"
 
 while getopts 'ivtf:b:g:' flag; do
   case "${flag}" in
