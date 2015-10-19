@@ -318,6 +318,31 @@ exec_it htpasswd -b /etc/openshift/openshift-passwd alice redhat
 test_exit $? "$test"
 }
 
+function setup_default_project_template(){
+# check if the template is already there
+exec_it oc get template/default-project-request -n default
+if [ ! $? -eq 0 ]
+then
+  test="Creating default project template..."
+  printf "  $test\r"
+  exec_it oc create -f ~/training/content/content/default-project-template.yaml
+  test_exit $? "$test"
+fi
+# check if the setting for default template is set
+exec_it grep default-project-request /etc/origin/master/master-config.yaml
+if [ ! $? -eq 0 ]
+then
+  test="Configuring OpenShift to use the default project template..."
+  printf "  $test\r"
+  exec_it sed -i -e 's/^  projectRequestTemplate:.*/\  projectRequestTemplate: "default\/default-project-request"/' /etc/origin/master/master-config.yaml
+  test_exit $? "$test"
+  test="Restarting master..."
+  printf "  $test\r"
+  exec_it systemctl restart atomic-openshift-master
+  test_exit $? "$test"
+fi
+}
+
 function create_joe_project(){
 # check for project
 exec_it oc get project demo
@@ -429,6 +454,7 @@ set_project_quota_limits
 joe_login_pull
 hello_pod
 hello_quota
+#TODO: update project default template and remove quota steps
 }
 
 function create_populate_service(){

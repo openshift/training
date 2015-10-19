@@ -411,7 +411,7 @@ following change:
 Once complete, restart your master. This will make both our default
 `nodeSelector` and routing changes take effect:
 
-    systemctl restart openshift-master
+    systemctl restart atomic-openshift-master
 
 ## Make Master Schedulable
 A single command can be used to make the master node schedulable:

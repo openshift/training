@@ -11,6 +11,7 @@
 
 # Auth, Projects, and the Web Console
 ## Configuring htpasswd Authentication
+** TODO: Does the quick installer do this? **
 OpenShift v3 supports a number of mechanisms for authentication. The simplest
 use case for our testing purposes is `htpasswd`-based authentication.
 
