@@ -2,7 +2,6 @@
 [OSEv3:children]
 masters
 nodes
-etcd
 
 # Set variables common for all OSEv3 hosts
 [OSEv3:vars]
@@ -16,11 +15,11 @@ ansible_ssh_user=root
 #ansible_sudo=true
 
 # deployment type valid values are origin, online and enterprise
-deployment_type=enterprise
+deployment_type=openshift-enterprise
 
 # htpasswd auth
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/openshift-passwd'}]
-
+osm_default_subdomain=cloudapps.example.com
 # host group for masters
 [masters]
 ose3-master.example.com

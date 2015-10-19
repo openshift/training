@@ -26,6 +26,7 @@ docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-keepal
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ruby-20-rhel7
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/mysql-55-rhel7
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/php-55-rhel7
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/nodejs-010-rhel7
 
 docker tag rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-haproxy-router:latest registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.2.0
 docker tag rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-deployer:latest registry.access.redhat.com/openshift3/ose-deployer:v3.0.2.0

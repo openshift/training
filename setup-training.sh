@@ -203,9 +203,9 @@ fi
 }
 
 function post_install(){
-copy_ca
-label_nodes
-configure_routing_domain
+#copy_ca
+#label_nodes
+#configure_routing_domain
 configure_default_nodeselector
 configure_default_project_selector
 }
