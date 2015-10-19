@@ -355,9 +355,7 @@ fi
 sleep 3
 test="Creating project for joe..."
 printf "  $test\r"
-exec_it oadm new-project demo --display-name=\""OpenShift 3 Demo"\" \
---description=\""This is the first demo project with OpenShift v3"\" \
---admin=joe
+exec_it su - joe -c \""oadm new-project demo --display-name='OpenShift 3 Demo' --description='This is the first demo project with OpenShift v3'"\"
 test_exit $? "$test"
 }
 
