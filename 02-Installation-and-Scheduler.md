@@ -372,6 +372,8 @@ The documentation link has some more complicated examples. The topoligical
 possibilities are endless!
 
 ## Node Labels
+** TODO: Is this in the quick installer? **
+
 **Note:** There is a bug in the installer right now and labeling the nodes
 does not work. You'll have to fix this manually:
 
@@ -396,6 +398,8 @@ installer will, by default, not configure the master's node to receive workload
 (SchedulingDisabled).
 
 ## Edit Default NodeSelector
+** TODO: Is this in the quick installer? **
+
 We want our apps to land in the primary region, and not in the infra region. We
 can do this by setting a default `nodeSelector` for our OpenShift environment.
 Edit the `/etc/openshift/master/master-config.yaml` again, and make the
@@ -410,19 +414,11 @@ Once complete, restart your master. This will make both our default
     systemctl restart openshift-master
 
 ## Make Master Schedulable
-We can use the `oc edit` command to make the master schedulable (allow it to
-receive workloads). Be sure to change the name of the node to match your
-environment:
+A single command can be used to make the master node schedulable:
 
-    oc edit node ose3-master.example.com
+    oadm manage-node ose3-master.example.com --schedulable=true
 
-You will see a bunch of YAML come up in your default editor. Make sure that you
-**delete** the following line:
-
-      unschedulable: true
-
-Make sure that you do not change any indentation/spacing on any of the other
-lines. Save and exit your editor, and then run the following:
+Then, run the following:
 
     oc get node
 

@@ -67,7 +67,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  val=$(oc get endpoints -n "$2" "$1" --template '{{len .subsets}}')
+  val=$(oc get endpoints -n "$3" "$1" --template '{{len .subsets}}')
   if [ $val -gt 0 ]
   then
     test_exit 0 "$test"
@@ -208,6 +208,10 @@ function post_install(){
 #configure_routing_domain
 #configure_default_nodeselector
 # need port 4789 hack
+test="Making master schedulable..."
+printf "  $test\r"
+exec_it oadm manage-node ose3-master.example.com --schedulable=true
+test_exit $? "$test"
 configure_default_project_selector
 }
 
@@ -253,10 +257,6 @@ test_exit $? "$test"
 test="Labeling node2..."
 printf "  $test\r"
 exec_it oc label --overwrite node/ose3-node2.example.com region=primary zone=west
-test_exit $? "$test"
-test="Making master schedulable..."
-printf "  $test\r"
-exec_it oadm manage-node ose3-master.example.com --schedulable=true
 test_exit $? "$test"
 }
 
