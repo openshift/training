@@ -334,7 +334,7 @@ if [ ! $? -eq 0 ]
 then
   test="Configuring OpenShift to use the default project template..."
   printf "  $test\r"
-  exec_it sed -i -e 's/^  projectRequestTemplate:.*/\  projectRequestTemplate: "default\/default-project-request"/' /etc/origin/master/master-config.yaml
+  exec_it sed -i -e \''s/^  projectRequestTemplate:.*/\  projectRequestTemplate: "default\/default-project-request"/\'' /etc/origin/master/master-config.yaml
   test_exit $? "$test"
   test="Restarting master..."
   printf "  $test\r"
