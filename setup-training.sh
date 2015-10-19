@@ -163,7 +163,7 @@ if [ ! -d /root/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/openshift/training -b $branch ~/training
+  exec_it git clone https://github.com/$gituser/training -b $branch ~/training
   test_exit $? "$test"
 else
   test="Updating training content..."
@@ -369,7 +369,7 @@ if [ ! -d /home/joe/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""git clone https://github.com/openshift/training -b $branch"\"
+  exec_it su - joe -c \""git clone https://github.com/$gituser/training -b $branch"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
@@ -925,7 +925,7 @@ if [ ! -d /home/alice/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""git clone https://github.com/openshift/training $branch"\"
+  exec_it su - alice -c \""git clone https://github.com/$gituser/training $branch"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
@@ -1275,6 +1275,7 @@ verbose='false'
 installoutput='false'
 func="false"
 branch="master"
+gituser="origin"
 
 while getopts 'ivtf:' flag; do
   case "${flag}" in
@@ -1283,6 +1284,7 @@ while getopts 'ivtf:' flag; do
     t) installoutput=true; trace=true ;; 
     f) func=$OPTARG ;;
     b) branch=$OPTARG ;;
+    g) gituser=$OPTARG ;;
     *) exit 1 ;;
   esac
 done
