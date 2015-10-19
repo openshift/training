@@ -449,12 +449,11 @@ sleep 15
 }
 
 function joe_project(){
+setup_default_project_template
 create_joe_project
-set_project_quota_limits
 joe_login_pull
 hello_pod
 hello_quota
-#TODO: update project default template and remove quota steps
 }
 
 function create_populate_service(){
