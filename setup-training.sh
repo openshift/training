@@ -360,7 +360,7 @@ function joe_login_pull(){
 test="Login as joe..."
 printf "  $test\r"
 exec_it su - joe -c \""oc login -u joe -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 # make sure to set the right project in case this is a re-run
@@ -577,7 +577,7 @@ sleep 5
 test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 exec_it su - alice -c \""oc project demo"\"
@@ -1072,7 +1072,7 @@ sleep 3
 test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 test="Creating php-upload project..."
@@ -1229,7 +1229,7 @@ sleep 3
 test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 test="Creating eap-example project..."
