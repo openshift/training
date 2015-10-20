@@ -203,11 +203,6 @@ fi
 }
 
 function post_install(){
-#copy_ca
-#label_nodes
-#configure_routing_domain
-#configure_default_nodeselector
-# need port 4789 hack
 test="Making master schedulable..."
 printf "  $test\r"
 exec_it oadm manage-node ose3-master.example.com --schedulable=true
@@ -589,6 +584,10 @@ test_exit $? "$test"
 wait_on_rc "hello-openshift-1" "demo" 60 1
 ans=$(oc get pod -n demo | awk '{print $1}'| grep -E "^hello-openshift-1-\w{5}$")
 wait_on_pod "$ans" "demo" 60
+test="Testing the new HTTPS route..."
+printf "  $test\r"
+exec_it curl -k https://hello-openshift.cloudapps.example.com "|" grep Hello
+test_exit $? "$test"
 }
 
 function project_administration(){
