@@ -584,6 +584,8 @@ test_exit $? "$test"
 wait_on_rc "hello-openshift-1" "demo" 60 1
 ans=$(oc get pod -n demo | awk '{print $1}'| grep -E "^hello-openshift-1-\w{5}$")
 wait_on_pod "$ans" "demo" 60
+wait_on_endpoints "hello-openshift-service" "demo" 60
+sleep 15
 test="Testing the new HTTPS route..."
 printf "  $test\r"
 exec_it curl -k https://hello-openshift.cloudapps.example.com "|" grep Hello
