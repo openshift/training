@@ -67,7 +67,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  val=$(oc get endpoints -n "$3" "$1" --template '{{len .subsets}}')
+  val=$(oc get endpoints -n "$2" "$1" --template '{{len .subsets}}')
   if [ $val -gt 0 ]
   then
     test_exit 0 "$test"
