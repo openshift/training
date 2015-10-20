@@ -239,7 +239,7 @@ test_exit $? "$test"
 #function copy_ca(){
 #test="Copying CA certificate to a user accessible location..."
 #printf "  $test\r"
-#exec_it /bin/cp /etc/openshift/master/ca.crt /etc/openshift
+#exec_it /bin/cp /etc/origin/master/ca.crt /etc/origin
 #test_exit $? "$test"
 #}
 
@@ -263,14 +263,14 @@ test_exit $? "$test"
 #function configure_routing_domain(){
 #test="Configure default routing domain..."
 #printf "  $test\r"
-#exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/openshift/master/master-config.yaml
+#exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/origin/master/master-config.yaml
 #test_exit $? "$test"
 #}
 
 #function configure_default_nodeselector(){
 #test="Configure default nodeselector for system..."
 #printf "  $test\r"
-#exec_it sed -i /etc/openshift/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
+#exec_it sed -i /etc/origin/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
 #test_exit $? "$test"
 #test="Restart master..."
 #printf "  $test\r"
@@ -306,15 +306,15 @@ then
 fi
 test="Creating passwd file..."
 printf "  $test\r"
-exec_it touch /etc/openshift/openshift-passwd
+exec_it touch /etc/origin/openshift-passwd
 test_exit $? "$test"
 test="Setting joe password..."
 printf "  $test\r"
-exec_it htpasswd -b /etc/openshift/openshift-passwd joe redhat
+exec_it htpasswd -b /etc/origin/openshift-passwd joe redhat
 test_exit $? "$test"
 test="Setting alice password..."
 printf "  $test\r"
-exec_it htpasswd -b /etc/openshift/openshift-passwd alice redhat
+exec_it htpasswd -b /etc/origin/openshift-passwd alice redhat
 test_exit $? "$test"
 }
 
@@ -488,7 +488,7 @@ function install_router(){
 # just in case
 exec_it oc project default
 cd
-CA=/etc/openshift/master
+CA=/etc/origin/master
 if [ ! -e /root/cloudapps.router.pem ]
 then
   test="Creating server certificates..."
@@ -525,14 +525,14 @@ then
 fi
 
 # check for router
-exec_it oadm router --dry-run --credentials='/etc/openshift/master/openshift-router.kubeconfig' --service-account=router
+exec_it oadm router --dry-run --credentials='/etc/origin/master/openshift-router.kubeconfig' --service-account=router
 
 # if no router
 if [ $? -eq 1 ]
 then
   test="Installing router..."
   printf "  $test\r"
-  exec_it oadm router router --replicas=1 --default-cert=cloudapps.router.pem --credentials='/etc/openshift/master/openshift-router.kubeconfig' --service-account=router
+  exec_it oadm router router --replicas=1 --default-cert=cloudapps.router.pem --credentials='/etc/origin/master/openshift-router.kubeconfig' --service-account=router
   test_exit $? "$test"
 fi
 
@@ -760,16 +760,16 @@ sleep 5
 function install_registry(){
 # check for registry
 exec_it oadm registry --dry-run \
---config=/etc/openshift/master/admin.kubeconfig \
---credentials=/etc/openshift/master/openshift-registry.kubeconfig
+--config=/etc/origin/master/admin.kubeconfig \
+--credentials=/etc/origin/master/openshift-registry.kubeconfig
 # if no registry
 if [ $? -eq 1 ]
 then
   test="Installing Docker registry..."
   printf "  $test\r"
   exec_it oadm registry \
-  --config=/etc/openshift/master/admin.kubeconfig \
-  --credentials=/etc/openshift/master/openshift-registry.kubeconfig
+  --config=/etc/origin/master/admin.kubeconfig \
+  --credentials=/etc/origin/master/openshift-registry.kubeconfig
   test_exit $? "$test"
   # if registry is already scaled to zero we can skip
   # check if rc 1 was ever successful
