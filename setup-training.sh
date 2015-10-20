@@ -448,8 +448,8 @@ sleep 15
 
 function joe_project(){
 setup_default_project_template
-create_joe_project
 joe_login_pull
+create_joe_project
 hello_pod
 hello_quota
 }
