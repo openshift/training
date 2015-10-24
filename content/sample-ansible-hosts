@@ -20,7 +20,7 @@ cli_docker_additional_registries=rcm-img-docker01.build.eng.bos.redhat.com:5001
 cli_docker_insecure_registries=rcm-img-docker01.build.eng.bos.redhat.com:5001
 
 # htpasswd auth
-openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/openshift-passwd'}]
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/openshift-passwd'}]
 osm_default_subdomain="cloudapps.example.com"
 osm_default_node_selector="region=primary"
 # host group for masters

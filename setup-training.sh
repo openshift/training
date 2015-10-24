@@ -202,6 +202,18 @@ then
 fi
 }
 
+function just_setup() {
+prepare_things
+run_install
+post_install
+setup_dev_users
+install_router
+prepare_nfs
+setup_storage_volumes_claims
+install_registry
+add_claimed_volume
+}
+
 function post_install(){
 #test="Making master schedulable..."
 #printf "  $test\r"
@@ -1282,18 +1294,6 @@ test="Looking for Hello World..."
 printf "  $test\r"
 exec_it curl http://eap-app-http-route-eap-example.cloudapps.example.com/jboss-helloworld/HelloWorld "|" grep \""Hello World"\"
 test_exit $? "$test"
-}
-
-function just_setup() {
-prepare_things
-run_install
-post_install
-setup_dev_users
-install_router
-prepare_nfs
-setup_storage_volumes_claims
-install_registry
-add_claimed_volume
 }
 
 verbose='false'
