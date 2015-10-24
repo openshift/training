@@ -203,10 +203,10 @@ fi
 }
 
 function post_install(){
-test="Making master schedulable..."
-printf "  $test\r"
-exec_it oadm manage-node ose3-master.example.com --schedulable=true
-test_exit $? "$test"
+#test="Making master schedulable..."
+#printf "  $test\r"
+#exec_it oadm manage-node ose3-master.example.com --schedulable=true
+#test_exit $? "$test"
 configure_default_project_selector
 }
 
