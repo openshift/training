@@ -16,13 +16,13 @@ docker pull registry.access.redhat.com/openshift3/php-55-rhel7
 docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
 docker pull openshift/hello-openshift
 
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-haproxy-router:latest
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-deployer:latest
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-sti-builder:latest
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-docker-builder:latest
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-pod:latest
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-docker-registry:latest
-docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-keepalived-ipfailover:latest
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-haproxy-router
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-deployer
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-sti-builder
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-docker-builder
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-pod
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-docker-registry
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-keepalived-ipfailover
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ruby-20-rhel7
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/mysql-55-rhel7
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/php-55-rhel7
