@@ -465,6 +465,7 @@ function create_populate_service(){
 # delete hello service
 exec_it oc delete service --all -n demo
 exec_it oc delete pod --all -n demo
+exec_it oc delete route --all -n demo
 sleep 15
 test="Creating hello-service..."
 printf "  $test\r"
