@@ -487,7 +487,7 @@ exec_it oc get endpoints hello-service -n demo --template \''{{index .subsets 0 
 test_exit $? "$test"
 test="Validating service..."
 printf "  $test\r"
-exec_it curl $(oc get service hello-service -n demo --template \''{{.spec.clusterIP}}:8888'\')
+exec_it curl $(oc get service hello-service -n demo --template \''{{.spec.clusterIP}}:{{index .spec.ports 0 "port"}}'\')
 test_exit $? "$test"
 }
 
