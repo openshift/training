@@ -229,17 +229,12 @@ test="Running installation..."
 if $installoutput
 then
   echo "Installation..."
-  cd ~/openshift-ansible
-  if $trace
-  then
-    ansible-playbook playbooks/byo/config.yml -vvvv
-  else
-    ansible-playbook playbooks/byo/config.yml
-  fi
+  cd
+  atomic-openshift-installer -a openshift-ansible -c training/installer.cfg.yaml -u
 else
   echo "Installation (takes a while - output logged to /tmp/ansible-$date.log)..."
-  cd ~/openshift-ansible
-  ansible-playbook playbooks/byo/config.yml > /tmp/ansible-`date +%d%m%Y`.log
+  cd
+  atomic-openshift-installer -a openshift-ansible -c training/installer.cfg.yaml -u > /tmp/ansible-`date +%d%m%Y`.log
 fi
 test_exit $? "$test"
 }
@@ -1306,11 +1301,10 @@ func="false"
 branch="master"
 gituser="openshift"
 
-while getopts 'ivtf:b:g:' flag; do
+while getopts 'ivf:b:g:' flag; do
   case "${flag}" in
     i) installoutput=true; trace=false ;;
     v) verbose=true ;;
-    t) installoutput=true; trace=true ;; 
     f) func=$OPTARG ;;
     b) branch=$OPTARG ;;
     g) gituser=$OPTARG ;;
