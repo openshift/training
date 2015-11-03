@@ -22,9 +22,9 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift/openshift-passwd
-    htpasswd -b /etc/openshift/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift/openshift-passwd alice redhat
+    touch /etc/origin/openshift-passwd
+    htpasswd -b /etc/origin/openshift-passwd joe redhat
+    htpasswd -b /etc/origin/openshift-passwd alice redhat
 
 Remember, you created these users previously.
 

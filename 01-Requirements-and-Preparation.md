@@ -134,12 +134,15 @@ On **each** VM:
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
 
-1. Install prerequisites for the installer:
+1. Install the installer:
 
-        yum -y install python-virtualenv gcc
+        yum -y install atomic-openshift-utils
 
-    The installer complies python dependencies on the fly, which is why we
-    require `gcc`.
+1. Clone the installer playbooks:
+
+        git clone https://github.com/openshift/openshift-ansible
+
+   **NOTE**: There will be a package to provide these in the near future
 
 1. Update:
 
@@ -278,8 +281,8 @@ are familiar with the Ruby Gem, `tmuxinator`, there is a config file in the
 training repository. Otherwise, you should run each of the following in its own
 window:
 
-    journalctl -f -u openshift-master
-    journalctl -f -u openshift-node
+    journalctl -f -u atomic-openshift-master
+    journalctl -f -u atomic-openshift-node
 
 **Note:** You will want to do this on the other nodes, but you won't need the
 "-master" service. You may also wish to watch the Docker logs, too.
