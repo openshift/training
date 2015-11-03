@@ -192,6 +192,7 @@ test_exit $? "$test"
 }
 
 function prepare_things(){
+exec_it yum -y install atomic-openshift-utils
 prepare_dns
 pull_content
 # just in case
