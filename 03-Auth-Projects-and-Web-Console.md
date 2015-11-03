@@ -43,7 +43,7 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
 
 More information on these configuration settings (and other identity providers) can be found here:
 
-    https://docs.openshift.com/enterprise/3.0/admin_guide/configuring_authentication.html
+    https://docs.openshift.com/enterprise/3.1/admin_guide/configuring_authentication.html
 
 Restart your master once you have edited the config:
 
