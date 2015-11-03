@@ -7,7 +7,7 @@
   "spec": {
     "hard": {
       "memory": "512Mi",
-      "cpu": "200m",
+      "cpu": "500m",
       "pods": "3",
       "services": "3",
       "replicationcontrollers": "3",

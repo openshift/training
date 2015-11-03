@@ -411,6 +411,7 @@ fi
 }
 
 function hello_pod(){
+exec_it su - joe -c \""oc project demo"\"
 test="Creating hello-openshift pod..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-pod.json"\"
@@ -430,6 +431,7 @@ sleep 15
 }
 
 function hello_quota() {
+exec_it su - joe -c \""oc project demo"\"
 # if there are any pods, nuke 'em and start over
 ans=$(oc get pods -n demo | wc -l)
 if [ $ans != 1 ]

@@ -42,7 +42,7 @@ to look at some example JSON for project resource quota might look like:
       "spec": {
         "hard": {
           "memory": "512Mi",
-          "cpu": "200m",
+          "cpu": "500m",
           "pods": "3",
           "services": "3",
           "replicationcontrollers": "3",
@@ -94,7 +94,7 @@ And if you want to verify limits or examine usage:
     Name:                   test-quota
     Resource                Used    Hard
     --------                ----    ----
-    cpu                     0m      200m
+    cpu                     0m      500m
     memory                  0       512Mi
     pods                    0       3
     replicationcontrollers  0       3
@@ -128,7 +128,7 @@ Review your limit ranges
     ----            --------        ---     ---     ---
     Pod             memory          5Mi     750Mi   -
     Pod             cpu             10m     500m    -
-    Container       cpu             10m     500m    100m
+    Container       cpu             10m     500m    10m
     Container       memory          5Mi     750Mi   100Mi
 
 ## Login

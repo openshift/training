@@ -21,7 +21,7 @@ objects:
   spec: 
     hard: 
       memory: 512Mi
-      cpu: 200m
+      cpu: 500m
       pods: 3
       services: 3
       replicationcontrollers: 3
@@ -50,7 +50,7 @@ objects:
           cpu: 10m
           memory: 5Mi
         default: 
-          cpu: 100m
+          cpu: 10m
           memory: 100Mi
 - apiVersion: v1
   groupNames: []
