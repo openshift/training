@@ -182,7 +182,9 @@ fi
 function prepare_things(){
 test="Installing atomic-openshift-utils (installer)..."
 printf "  $test\r"
-exec_it yum -y install atomic-openshift-utils
+#exec_it yum -y install atomic-openshift-utils
+# temporary workaround
+exec_it yum -y install atomic-openshift-utils openshift-ansible*plugins
 test_exit $? "$test"
 prepare_dns
 pull_content
@@ -221,11 +223,11 @@ if $installoutput
 then
   echo "Installation..."
   cd
-  atomic-openshift-installer -a ~/openshift-ansible -c ~/training/installer.cfg.yaml -u
+  atomic-openshift-installer -c ~/training/installer.cfg.yaml -u install
 else
   echo "Installation (takes a while - output logged to /tmp/ansible-$date.log)..."
   cd
-  atomic-openshift-installer -a ~/openshift-ansible -c ~/training/installer.cfg.yaml -u > /tmp/ansible-`date +%d%m%Y`.log
+  atomic-openshift-installer -c ~/training/installer.cfg.yaml -u install > /tmp/ansible-`date +%d%m%Y`.log
 fi
 test_exit $? "$test"
 }
