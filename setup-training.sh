@@ -214,6 +214,8 @@ printf "  $test\r"
 exec_it oadm manage-node ose3-master.example.com --schedulable=true
 test_exit $? "$test"
 configure_default_project_selector
+label_nodes
+configure_routing_domain
 }
 
 function run_install(){
@@ -239,42 +241,42 @@ test_exit $? "$test"
 #test_exit $? "$test"
 #}
 
-#function label_nodes(){
-## let things settle a bit
-#sleep 15
-#test="Labeling master..."
-#printf "  $test\r"
-#exec_it oc label --overwrite node/ose3-master.example.com region=infra zone=default
-#test_exit $? "$test"
-#test="Labeling node1..."
-#printf "  $test\r"
-#exec_it oc label --overwrite node/ose3-node1.example.com region=primary zone=east
-#test_exit $? "$test"
-#test="Labeling node2..."
-#printf "  $test\r"
-#exec_it oc label --overwrite node/ose3-node2.example.com region=primary zone=west
-#test_exit $? "$test"
-#}
+function label_nodes(){
+# let things settle a bit
+sleep 15
+test="Labeling master..."
+printf "  $test\r"
+exec_it oc label --overwrite node/ose3-master.example.com region=infra zone=default
+test_exit $? "$test"
+test="Labeling node1..."
+printf "  $test\r"
+exec_it oc label --overwrite node/ose3-node1.example.com region=primary zone=east
+test_exit $? "$test"
+test="Labeling node2..."
+printf "  $test\r"
+exec_it oc label --overwrite node/ose3-node2.example.com region=primary zone=west
+test_exit $? "$test"
+}
 
-#function configure_routing_domain(){
-#test="Configure default routing domain..."
-#printf "  $test\r"
-#exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/origin/master/master-config.yaml
-#test_exit $? "$test"
-#}
+function configure_routing_domain(){
+test="Configure default routing domain..."
+printf "  $test\r"
+exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/origin/master/master-config.yaml
+test_exit $? "$test"
+}
 
-#function configure_default_nodeselector(){
-#test="Configure default nodeselector for system..."
-#printf "  $test\r"
-#exec_it sed -i /etc/origin/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
-#test_exit $? "$test"
-#test="Restart master..."
-#printf "  $test\r"
-#exec_it systemctl restart openshift-master
-#test_exit $? "$test"
-## wait for things to settle
-#sleep 15
-#}
+function configure_default_nodeselector(){
+test="Configure default nodeselector for system..."
+printf "  $test\r"
+exec_it sed -i /etc/origin/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
+test_exit $? "$test"
+test="Restart master..."
+printf "  $test\r"
+exec_it systemctl restart openshift-master
+test_exit $? "$test"
+# wait for things to settle
+sleep 15
+}
 
 function configure_default_project_selector(){
 test="Configure default namespace selector..."
