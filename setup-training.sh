@@ -132,15 +132,37 @@ printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com "systemctl start dnsmasq"
 test_exit $? "$test"
 
-test="Enabling DNS in firewalld..."
-printf "  $test\r"
-exec_it ssh root@ose3-node2.example.com \""firewall-cmd --zone=public --add-service=dns --permanent"\"
-test_exit $? "$test"
+test="Checking for firewall rule..."
+exec_it ssh root@ose3-node2.example.com \""grep 'dport 53' /etc/sysconfig/iptables"\"
+# need to test whether ssh failed or grep failed
+if [ $? -eq 1 ]
+then
+  test="Adding iptables rule to sysconfig file..."
+  printf "  $test\r"
+  exec_it ssh root@ose3-node2.example.com \""sed -i /etc/sysconfig/iptables -e '/^-A INPUT -p tcp -m state/i -A INPUT -p udp -m udp --dport 53 -j ACCEPT'"\"
+  test_exit $? "$test"
+fi
 
-test="Reloading firewalld..."
-printf "  $test\r"
-exec_it ssh root@ose3-node2.example.com \""firewall-cmd --reload"\"
-test_exit $? "$test"
+test="Checking live firewall..."
+exec_it ssh root@ose3-node2.example.com \""iptables-save | grep 'dport 53'"\"
+# need to test whether ssh failed or grep failed
+if [ $? -eq 1 ]
+then
+  test="Adding iptables rule to live rules..."
+  printf "  $test\r"
+  exec_it ssh root@ose3-node2.example.com \""iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT"\"
+  test_exit $? "$test"
+fi
+
+#test="Enabling DNS in firewalld..."
+#printf "  $test\r"
+#exec_it ssh root@ose3-node2.example.com \""firewall-cmd --zone=public --add-service=dns --permanent"\"
+#test_exit $? "$test"
+#
+#test="Reloading firewalld..."
+#printf "  $test\r"
+#exec_it ssh root@ose3-node2.example.com \""firewall-cmd --reload"\"
+#test_exit $? "$test"
 }
 
 function pull_content(){
@@ -851,8 +873,7 @@ wait_on_build "ruby-example-1" "sinatra" 280 "Complete"
 wait_on_rc "ruby-example-1" "sinatra" 60 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 60
-# some extra sleep
-sleep 15
+wait_on_endpoints "ruby-example" "sinatra" 60
 test="Testing the service..."
 printf "  $test\r"
 exec_it curl `oc get service -n sinatra ruby-example --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
