@@ -456,6 +456,7 @@ sleep 15
 function joe_project(){
 joe_login_pull
 create_joe_project
+set_project_quota_limits
 hello_pod
 hello_quota
 setup_default_project_template
