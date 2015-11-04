@@ -133,10 +133,12 @@ exec_it ssh root@ose3-node2.example.com "systemctl start dnsmasq"
 test_exit $? "$test"
 
 test="Enabling DNS in firewalld..."
+printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com \""firewall-cmd --zone=public --add-service=dns --permanent"\"
 test_exit $? "$test"
 
 test="Reloading firewalld..."
+printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com \""firewall-cmd --reload"\"
 test_exit $? "$test"
 }
@@ -178,7 +180,10 @@ test_exit $? "$test"
 }
 
 function prepare_things(){
+test="Installing atomic-openshift-utils (installer)..."
+printf "  $test\r"
 exec_it yum -y install atomic-openshift-utils
+test_exit $? "$test"
 prepare_dns
 pull_content
 # just in case
