@@ -160,23 +160,23 @@ else
   exec_it git pull $gituser $branch
   test_exit $? "$test"
 fi
-if [ ! -d /root/openshift-ansible ]
-then
-  test="Pulling ansible content..."
-  printf "  $test\r"
-  exec_it git clone https://github.com/openshift/openshift-ansible ~/openshift-ansible
-  test_exit $? "$test"
-else
-  test="Updating ansible content..."
-  printf "  $test\r"
-  cd ~/openshift-ansible
-  exec_it git pull origin master
-  test_exit $? "$test"
-fi
-test="Copying hosts file..."
-printf "  $test\r"
-exec_it /bin/cp -f ~/training/content/sample-ansible-hosts /etc/ansible/hosts
-test_exit $? "$test"
+#if [ ! -d /root/openshift-ansible ]
+#then
+#  test="Pulling ansible content..."
+#  printf "  $test\r"
+#  exec_it git clone https://github.com/openshift/openshift-ansible ~/openshift-ansible
+#  test_exit $? "$test"
+#else
+#  test="Updating ansible content..."
+#  printf "  $test\r"
+#  cd ~/openshift-ansible
+#  exec_it git pull origin master
+#  test_exit $? "$test"
+#fi
+#test="Copying hosts file..."
+#printf "  $test\r"
+#exec_it /bin/cp -f ~/training/content/sample-ansible-hosts /etc/ansible/hosts
+#test_exit $? "$test"
 }
 
 function prepare_things(){
