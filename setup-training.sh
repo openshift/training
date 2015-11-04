@@ -216,6 +216,7 @@ test_exit $? "$test"
 configure_default_project_selector
 label_nodes
 configure_routing_domain
+configure_default_nodeselector
 }
 
 function run_install(){
@@ -263,6 +264,12 @@ test="Configure default routing domain..."
 printf "  $test\r"
 exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/origin/master/master-config.yaml
 test_exit $? "$test"
+test="Restart master..."
+printf "  $test\r"
+exec_it systemctl restart openshift-master
+test_exit $? "$test"
+# wait for things to settle
+sleep 15
 }
 
 function configure_default_nodeselector(){
@@ -448,11 +455,11 @@ sleep 15
 }
 
 function joe_project(){
-setup_default_project_template
 joe_login_pull
 create_joe_project
 hello_pod
 hello_quota
+setup_default_project_template
 }
 
 function create_populate_service(){
