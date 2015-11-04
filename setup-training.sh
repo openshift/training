@@ -324,7 +324,6 @@ test_exit $? "$test"
 }
 
 function setup_default_project_template(){
-# this should probably be moved post joe project to "align" with the training repo docs
 # check if the template is already there
 exec_it oc get template/default-project-request -n default
 if [ ! $? -eq 0 ]
