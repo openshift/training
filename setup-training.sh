@@ -230,11 +230,11 @@ if $installoutput
 then
   echo "Installation..."
   cd
-  atomic-openshift-installer -a openshift-ansible -c training/installer.cfg.yaml -u
+  atomic-openshift-installer -a ~/openshift-ansible -c ~/training/installer.cfg.yaml -u
 else
   echo "Installation (takes a while - output logged to /tmp/ansible-$date.log)..."
   cd
-  atomic-openshift-installer -a openshift-ansible -c training/installer.cfg.yaml -u > /tmp/ansible-`date +%d%m%Y`.log
+  atomic-openshift-installer -a ~/openshift-ansible -c ~/training/installer.cfg.yaml -u > /tmp/ansible-`date +%d%m%Y`.log
 fi
 test_exit $? "$test"
 }
