@@ -874,6 +874,7 @@ wait_on_rc "ruby-example-1" "sinatra" 60 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 60
 wait_on_endpoints "ruby-example" "sinatra" 60
+exec_it sleep 60
 test="Testing the service..."
 printf "  $test\r"
 exec_it curl `oc get service -n sinatra ruby-example --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
@@ -882,14 +883,6 @@ sleep 15
 test="Testing the route..."
 printf "  $test\r"
 exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
-test_exit $? "$test"
-test="Adding quota to sinatra project..."
-printf "  $test\r"
-exec_it oc create -f ~/training/content/quota.json -n sinatra
-test_exit $? "$test"
-test="Adding limits to sinatra project..."
-printf "  $test\r"
-exec_it oc create -f ~/training/content/limits.json -n sinatra
 test_exit $? "$test"
 test="Scaling joe's app..."
 printf "  $test\r"

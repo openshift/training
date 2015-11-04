@@ -345,11 +345,19 @@ If you want to be fancy, try it in your browser!
 any TLS termination.
 
 ## Implications of Quota Enforcement
-Quotas have implications one may not immediately realize. As `root` assign a
-quota and resource limits to the `sinatra` project.
+Quotas have implications one may not immediately realize. Since we changed the
+default project template earlier to include quota and limits, they already exist
+for this Sinatra project. For example, as `root`, you can do:
 
-    oc create -f quota.json -n sinatra
-    oc create -f limits.json -n sinatra
+    oc get quota/sinatra-quota limitrange/sinatra-limits -n sinatra
+
+    NAME             AGE
+    sinatra-quota    5m
+    NAME             AGE
+    sinatra-limits   5m
+
+If you look at the UI in the Sinatra project under the `Settings` tab, you'll
+also see the quota and limit information there.
 
 **Perform the following as `joe`**
 As `joe` scale your application up to three instances using the `oc scale`
