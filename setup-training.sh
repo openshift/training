@@ -1053,7 +1053,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 10
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep -i database
+exec_it curl -s ruby-hello-world-wiring.cloudapps.example.com "|" grep Example
 test_exit $? "$test"
 }
 
