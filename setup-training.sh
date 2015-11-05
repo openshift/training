@@ -1050,7 +1050,7 @@ pod=$(oc get pod -n wiring | grep -e "hello-world-[0-9]" | grep -v build | awk '
 wait_on_pod "$pod" "wiring" 30
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl -s ruby-hello-world-wiring.cloudapps.example.com "|" grep Example
