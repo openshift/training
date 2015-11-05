@@ -491,6 +491,10 @@ exec_it oc delete service --all -n demo
 exec_it oc delete pod --all -n demo
 exec_it oc delete route --all -n demo
 sleep 15
+test="Changing project..."
+printf "  $test\r"
+exec_it su - joe -c \""oc project demo"\"
+test_exit $? "$test"
 test="Creating hello-service..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-service.json"\"
