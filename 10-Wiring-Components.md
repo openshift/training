@@ -81,13 +81,13 @@ Since we know that we want to talk to a database eventually, let's take a moment
 to add the environment variables for it. Conveniently, there is an `env`
 subcommand to `oc`. As `alice`, we can use it like so:
 
-    oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb
+    oc env dc/ruby-hello-world MYSQL_USER=redhat MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb
 
 If you want to double-check, you can verify using the following:
 
     oc env dc/ruby-hello-world --list
     # deploymentconfigs ruby-hello-world, container ruby-hello-world
-    MYSQL_USER=root
+    MYSQL_USER=redhat
     MYSQL_PASSWORD=redhat
     MYSQL_DATABASE=mydb
 
@@ -241,7 +241,7 @@ right node:
 
 The output will look something like:
 
-    "MYSQL_USER=root",
+    "MYSQL_USER=redhat",
     "MYSQL_PASSWORD=redhat",
     "MYSQL_DATABASE=mydb",
     "DATABASE_PORT_3306_TCP_ADDR=172.30.212.48",
