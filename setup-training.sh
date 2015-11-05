@@ -908,6 +908,10 @@ test_exit $? "$test"
 }
 
 function templates_project() {
+test="Updating project request quota to 5 pods..."
+printf "  $test\r"
+exec_it oc get template/default-project-request -o yaml "|" sed -e \''s/pods: 3/pods: 5/'\' "|" oc replace -f -
+test_exit $? "$test"
 # check for project
 exec_it oc get project quickstart
 if [ $? -eq 0 ]

@@ -24,6 +24,23 @@ This example is effectively a "quickstart", or, in OpenShift 3 terms, an
 "instant app" -- a pre-defined application that comes in a template that you can
 just fire up and start using or hacking on.
 
+## Increase Pod Quota
+For the next few labs we will end up needing a higher pod quota. This requires
+editing the project request template that we created earlier. Here we can use
+`oc edit`.
+
+    oc edit template/default-project-request
+
+In the `ResourceQuota` section under `spec` change:
+
+    pods: 3
+
+to:
+
+    pods: 5
+
+Save and quit the editor.
+
 ## A Project for the Quickstart
 As `joe`, create a new project:
 
@@ -61,7 +78,7 @@ using a regex-like string that will be available as `MYSQL_USER` when the
 template is processed/instantiated.
 
 ## Adding the Template
-Go ahead and do the following as `root` in the `~/training/content` folder:
+Go ahead and do the following as `root`:
 
     oc create -f ~/training/content/quickstart-template.json -n openshift
 
@@ -72,15 +89,18 @@ content in it.
 
 ## Create an Instance of the Template
 In the web console, logged in as `joe`, find the "Quickstart" project, and then
-hit the "Add to Project" button. We've seen this page before, but now it contains
-something new -- an additional "instant app(lication)". An instant app is a
-"special" kind of template (relaly, it just has the "instant-app" tag). The idea
-behind an "instant app" is that, when creating an instance of the template, you
-will have a fully functional application. In this example, our "instant" app is
-just a simple key-value storage and retrieval webapp. You may have noticed that
-there were already several instant apps loaded. The installer set these up.
+hit the "Add to Project" button. We've seen this page before. This time, we're
+going to use the  "Instant Apps" section.
 
-Click "quickstart-keyvalue-application"
+An instant app is a "special" kind of template (really, it just has the
+"instant-app" tag). The idea behind an "Instant App" is that, when creating an
+instance of the template, you will have a fully functional application. In this
+example, our "instant" app is just a simple key-value storage and retrieval
+webapp. You may have noticed that there were already several instant apps
+loaded. The installer set these up.
+
+Next to "Instant Apps" click "See all" and then click
+"quickstart-keyvalue-application".
 
 The next page that you will see is the template "configuration" page. This is
 where you can specify certain options for how the application components will be
@@ -90,14 +110,19 @@ insantiated.
 * It will let you add label:value pairs that can be used for other things
 * It will let you set specific values for any parameters, if you so choose
 
-Leave all of the defaults and simply click "Create".
+Leave all of the defaults and simply click "Create". Then click "Continue to
+overview".
 
-Once you hit the "Create" button, the services and pods and
+When you hit the "Create" button, the services and pods and
 replicationcontrollers and etc. will be instantiated.
 
 Much like before, the build will start automatically after creating an instance
 of the template, so you can wait for it to finish. Feel free to check the build
 logs.
+
+Once the build finishes and the pods come up, it can take a few minutes for the
+application to be ready. This is due to the database setup that this application
+is performing on first start.
 
 ## Using Your App
 Once the build is complete, you should be able to visit the routed URL and
@@ -106,4 +131,6 @@ actually use the application!
     http://keyvalue-route.quickstart.cloudapps.example.com
 
 The dev guide linked previously has a lot of information on how to use
-templates.
+templates. If you get 503 errors, wait a minute and then try again -- this is a
+sign that the application is not "ready" yet. We will talk about checking
+"liveness" and "readiness" in later labs.
