@@ -29,7 +29,7 @@
                     "memory": "5Mi"
                 },
                 "default": {
-                    "cpu": "10m",
+                    "cpu": "100m",
                     "memory": "100Mi"
                 }
             }

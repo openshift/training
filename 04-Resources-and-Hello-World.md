@@ -128,7 +128,7 @@ Review your limit ranges
     ----            --------        ---     ---     ---
     Pod             memory          5Mi     750Mi   -
     Pod             cpu             10m     500m    -
-    Container       cpu             10m     500m    10m
+    Container       cpu             10m     500m    100m
     Container       memory          5Mi     750Mi   100Mi
 
 ## Login

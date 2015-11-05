@@ -20,7 +20,7 @@ objects:
     name: ${PROJECT_NAME}-quota
   spec: 
     hard: 
-      memory: 512Mi
+      memory: 1024Mi
       cpu: 500m
       pods: 3
       services: 3
@@ -50,7 +50,7 @@ objects:
           cpu: 10m
           memory: 5Mi
         default: 
-          cpu: 10m
+          cpu: 100m
           memory: 100Mi
 - apiVersion: v1
   groupNames: []
