@@ -1054,12 +1054,7 @@ sleep 10
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep -i database
-if [ $? -eq 1 ]
-then
-  test_exit 0 "$test"
-else
-  test_exit 1 "$test"
-fi
+test_exit $? "$test"
 }
 
 function activate_rollback() {
