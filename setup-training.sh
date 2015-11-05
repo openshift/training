@@ -1003,7 +1003,7 @@ exec_it su - alice -c \""oc new-app -i openshift/ruby https://github.com/thoraxe
 test_exit $? "$test"
 test="Setting environment variables..."
 printf "  $test\r"
-exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb"\"
+exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=redhat MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-1" "wiring" 120 "Running"
 wait_on_build "ruby-hello-world-1" "wiring" 280 "Complete"
@@ -1026,7 +1026,7 @@ test_exit $? "$test"
 sleep 3
 test="Creating the database backend..."
 printf "  $test\r"
-exec_it su - alice -c \""oc new-app mysql-ephemeral -p DATABASE_SERVICE_NAME=database,MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb"\"
+exec_it su - alice -c \""oc new-app mysql-ephemeral -p DATABASE_SERVICE_NAME=database,MYSQL_USER=redhat,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
 wait_on_rc "database-1" "wiring" 60 1
 sleep 3
