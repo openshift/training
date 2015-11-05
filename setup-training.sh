@@ -859,36 +859,36 @@ exec_it su - joe -c \""oc new-project sinatra --display-name=\""Sinatra Example"
 test_exit $? "$test"
 test="Using new-app to create content..."
 printf "  $test\r"
-exec_it su - joe -c \""oc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git \
-  --name=ruby-example"\"
+exec_it su - joe -c \""oc new-app https://github.com/openshift/sinatra-example \
+  --name=example"\"
 test_exit $? "$test"
 test="Exposing the service..."
 printf "  $test\r"
-exec_it su - joe -c \""oc expose service ruby-example"\"
+exec_it su - joe -c \""oc expose service example"\"
 test_exit $? "$test"
 # may take up to 120 seconds for build to start
-wait_on_build "ruby-example-1" "sinatra" 120 "Running"
+wait_on_build "example-1" "sinatra" 120 "Running"
 # now wait up to 2 mins for build to complete
-wait_on_build "ruby-example-1" "sinatra" 280 "Complete"
-wait_on_rc "ruby-example-1" "sinatra" 60 1
+wait_on_build "example-1" "sinatra" 280 "Complete"
+wait_on_rc "example-1" "sinatra" 60 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 60
-wait_on_endpoints "ruby-example" "sinatra" 60
+wait_on_endpoints "example" "sinatra" 60
 exec_it sleep 60
 test="Testing the service..."
 printf "  $test\r"
-exec_it curl `oc get service -n sinatra ruby-example --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
+exec_it curl `oc get service -n sinatra example --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep \""the time"\"
 test_exit $? "$test"
 sleep 15
 test="Testing the route..."
 printf "  $test\r"
-exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
+exec_it curl example-sinatra.cloudapps.example.com "|" grep \""the time"\"
 test_exit $? "$test"
 test="Scaling joe's app..."
 printf "  $test\r"
-exec_it su - joe -c \""oc scale --replicas=3 rc/ruby-example-1"\"
+exec_it su - joe -c \""oc scale --replicas=3 rc/example-1"\"
 test_exit $? "$test"
-wait_on_rc "ruby-example-1" "sinatra" 60 3
+wait_on_rc "example-1" "sinatra" 60 3
 # find the pods
 # 3 pods should run
 for pod in $(oc get pod -n sinatra | grep example | grep -v build | awk {'print $1'})
@@ -896,7 +896,7 @@ do
   wait_on_pod "$pod" "sinatra" 30
 done
 # start new build
-exec_it su - joe -c \""oc start-build ruby-example"\"
+exec_it su - joe -c \""oc start-build example"\"
 sleep 15
 # build will never schedule so we need to look at the events with describe
 # forbidden will immediately be show
