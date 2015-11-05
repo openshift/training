@@ -375,17 +375,12 @@ for this Sinatra project. For example, as `root`, you can do:
 If you look at the UI in the Sinatra project under the `Settings` tab, you'll
 also see the quota and limit information there.
 
-**Perform the following as `joe`**
-As `joe` scale your application up to three instances using the `oc scale`
-command:
+If you go back to the overview tab, you will notice there are up and down arrows
+next to the circle around the pod indicator. These can be used to scale your
+application quickly. Go ahead and click the "up" arrow twice to scale this
+application to 3 pods. The circle will change to reflect the status.
 
-    oc scale --replicas=3 rc/example-1
-
-You'll see:
-
-    replicationcontroller "example-1" scaled
-
-Wait a few seconds and you should see your application scaled up to 3 pods.
+Once finished, on the command line as `joe`:
 
     oc get pod
     NAME              READY     STATUS      RESTARTS   AGE
@@ -414,7 +409,7 @@ configuration:
 
 *Note:* Your names are probably a little different.
 
-Now start another build, wait a moment or two for your build to start.
+Now, start another build, wait a moment or two for your build to start.
 
     oc start-build example
 
@@ -432,8 +427,14 @@ output:
     ...
     44s           44s             1       {build-controller }                     HandleBuildError        Build has error: failed to create build pod: Pod "example-2-build" is forbidden: limited to 3 pods
 
-Resize your application to just one replica and your new build will
-automatically start after a minute or two.
+When it comes to scaling, there is also a command called `oc scale`. Since we
+need to reduce the number of deployed pods in order to allow the build to
+continue, do the following:
+
+    oc scale rc/example-1 --replicas=1
+
+You'll see confirmation of your request, and the web console will also show the
+pod count decrease. Eventually, your build will restart.
 
 **Note:** Once the build is complete a new replication controller is
 created and the old one is no longer used.
