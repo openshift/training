@@ -228,6 +228,7 @@ prepare_nfs
 setup_storage_volumes_claims
 install_registry
 add_claimed_volume
+setup_default_project_template
 }
 
 function post_install(){
