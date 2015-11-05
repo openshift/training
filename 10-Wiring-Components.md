@@ -48,26 +48,33 @@ The frontend application comes from the following code repository:
 
     https://github.com/openshift/ruby-hello-world
 
-We want to use the beta branch. We can use the `new-app` command to help get
-this started for us. As `alice` go ahead and do the following:
+We can use the `new-app` command to help get this started for us. As `alice` go
+ahead and do the following:
 
     oc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world
 
 You should see something like the following:
 
-    I0728 14:27:23.047056    8906 newapp.go:301] Image "openshift/ruby" is a builder, so a repository will be expected unless you also specify --strategy=docker
-    I0728 14:27:23.047163    8906 newapp.go:337] Using "https://github.com/openshift/ruby-hello-world#beta4" as the source for build
-    imagestreams/ruby-hello-world
-    buildconfigs/ruby-hello-world
-    deploymentconfigs/ruby-hello-world
-    services/ruby-hello-world
-    A build was created - you can run `oc start-build ruby-hello-world` to start it.
-    Service "ruby-hello-world" created at 172.30.103.182 with port mappings 8080.
+    I1105 14:11:59.060593   83892 newapp.go:522] Using "https://github.com/openshift/ruby-hello-world" as the source for build
+    --> Found image ea16bfe (8 weeks old) in image stream "ruby in project openshift" under tag :latest for "openshift/ruby"
+        * The source repository appears to match: ruby
+        * A source build using source code from https://github.com/openshift/ruby-hello-world will be created
+          * The resulting image will be pushed to image stream "ruby-hello-world:latest"
+        * This image will be deployed in deployment config "ruby-hello-world"
+        * Port 8080/tcp will be load balanced by service "ruby-hello-world"
+    --> Creating resources with label app=ruby-hello-world ...
+        ImageStream "ruby-hello-world" created
+        BuildConfig "ruby-hello-world" created
+        DeploymentConfig "ruby-hello-world" created
+        Service "ruby-hello-world" created
+    --> Success
+        Build scheduled for "ruby-hello-world" - use the logs command to track its progress.
+        Run 'oc status' to view your app.
 
 The syntax of the command tells us:
 
 * I want to create a new application
-* using the *ruby* builder image in the *openshift* project
+* using the *ruby* builder imagestream defined in the *openshift* project
 * based off of the code in a git repository
 
 Since we know that we want to talk to a database eventually, let's take a moment
@@ -84,9 +91,10 @@ If you want to double-check, you can verify using the following:
     MYSQL_PASSWORD=redhat
     MYSQL_DATABASE=mydb
 
-At this point, you probably have a build running and a second deployment. That
-second deployment is because we've changed the configuration of the deployment,
-which results in a new deployment.
+At this point, you probably have a build running and a second deployment. The
+`deploymentConfig` has a trigger defined on it called *ConfigChange*. Becuase we
+*changed* the environment variables, that constituted a *ConfigChange*, which
+*triggers* a new deployment. In this case, the 2nd deployment.
 
 For example, `oc get pod` might look like:
 
@@ -112,7 +120,8 @@ with it. The previous steps should have resulted in a service being created:
 
 We can hit that with `curl`:
 
-    curl -s `oc get service | grep world | awk '{print $4":"$5}' | sed -e 's/\/.*//'` | grep database
+    curl -s `oc get service -n wiring ruby-hello-world --template \
+    '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` | grep database
         <h3>(It looks like the database isn't running.  This isn't going to be much fun.)</h3>
 
 This is good so far!
@@ -129,8 +138,8 @@ use `expose` against it:
 After a few moments:
 
     oc get route
-    NAME               HOST/PORT                                       PATH      SERVICE            LABELS
-    ruby-hello-world   ruby-hello-world.wiring.cloudapps.example.com             ruby-hello-world 
+    NAME               HOST/PORT                                       PATH      SERVICE            LABELS                 INSECURE POLICY   TLS TERMINATION
+    ruby-hello-world   ruby-hello-world-wiring.cloudapps.example.com             ruby-hello-world   app=ruby-hello-world  
 
 Remember, the `host` was automatically generated from the service name and the
 project name. `oc expose` also takes a `--hostname` argument if you need to use
@@ -144,9 +153,9 @@ database, but is not all that exciting. We'll fix that in a moment.
 During the installation, several templates were added for us, including some
 database templates. Go to the web console and make sure you are logged in as
 `alice` and using the `Exploring Parameters` project. You should see your
-front-end already there. Click the "Add to Project" button and then the "Browse all
-templates..." button. You should see the `mysql-ephemeral` template. Click it
-and then click "Select template".
+front-end already there. Click the "Add to Project" button. In the bottom
+right-hand corner is a *Databases* section. Click "See all", and you should see
+the `mysql-ephemeral` template. Click it.
 
 You will need to edit the parameters of this template, because the defaults will
 not work for us. Change the `DATABASE_SERVICE_NAME` to be "database", because
@@ -154,14 +163,14 @@ that is what service the frontend expects to connect to. Make sure that the
 MySQL user, password and database match whatever values you specified in the
 previous labs.
 
-Click the "Create" button when you are ready.
+Click the "Create" button when you are ready. Then click "Continue to overview".
 
 It may take a little while for the MySQL container to download (if you didn't
 pre-fetch it). It's a good idea to verify that the database is running before
 continuing.  If you don't happen to have a MySQL client installed you can still
 verify MySQL is running with curl:
 
-    curl $(oc get service database -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}')
+    curl $(oc get service database --template '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}')
 
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
@@ -211,7 +220,7 @@ up the first time.
 
 After a few moments, we can look at the list of pods again:
 
-    oc get pod | grep world
+    oc get pod | grep -v build | grep -v database
 
 And we should see a different name for the pod this time:
 
@@ -225,24 +234,24 @@ As `root` on the master, the following hideous command will bash-fu its way to
 show you specific output from inspecting the Docker container running on the
 right node:
 
-    ssh $(oc get pod -n wiring $(oc get pod -n wiring | grep -v build \
-    | grep world | awk {'print $1'}) -o yaml | grep host: | awk '{print $2}') \
-    'docker inspect $(docker ps | grep hello-world | grep run | \
+    ssh $(oc get pod $(oc get pod -n wiring | grep -v build | grep world \
+    | awk {'print $1'}) -n wiring --template '{{.spec.host}}') \
+    'docker inspect $(docker ps | grep wiring/ruby-hello-world | \
     awk '"'"'{print $1}'"'"')' | grep -E "DATABASE|MYSQL"
 
 The output will look something like:
 
-      "MYSQL_USER=root",
-      "MYSQL_PASSWORD=redhat",
-      "MYSQL_DATABASE=mydb",
-      "DATABASE_PORT_3306_TCP_PROTO=tcp",
-      "DATABASE_SERVICE_HOST=172.30.145.105",
-      "DATABASE_PORT_3306_TCP_PORT=3306",
-      "DATABASE_PORT_3306_TCP_ADDR=172.30.145.105",
-      "DATABASE_SERVICE_PORT=3306",
-      "DATABASE_PORT=tcp://172.30.145.105:3306",
-      "DATABASE_SERVICE_PORT_MYSQL=3306",
-      "DATABASE_PORT_3306_TCP=tcp://172.30.145.105:3306",
+    "MYSQL_USER=root",
+    "MYSQL_PASSWORD=redhat",
+    "MYSQL_DATABASE=mydb",
+    "DATABASE_PORT_3306_TCP_ADDR=172.30.212.48",
+    "DATABASE_PORT=tcp://172.30.212.48:3306",
+    "DATABASE_PORT_3306_TCP_PROTO=tcp",
+    "DATABASE_SERVICE_PORT=3306",
+    "DATABASE_SERVICE_PORT_MYSQL=3306",
+    "DATABASE_PORT_3306_TCP=tcp://172.30.212.48:3306",
+    "DATABASE_SERVICE_HOST=172.30.212.48",
+    "DATABASE_PORT_3306_TCP_PORT=3306",
 
 ## Revisit the Webpage
 Go ahead and revisit

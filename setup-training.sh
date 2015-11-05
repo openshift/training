@@ -985,12 +985,12 @@ if [ ! -d /home/alice/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""git clone https://github.com/$gituser/training $branch"\"
+  exec_it su - alice -c \""git clone https://github.com/$gituser/training -b $branch"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""cd ~/training && git pull origin $branch"\"
+  exec_it su - alice -c \""cd ~/training && git pull $gituser $branch"\"
   test_exit $? "$test"
 fi
 test="Change alice's project..."
