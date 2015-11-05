@@ -491,10 +491,7 @@ exec_it oc delete service --all -n demo
 exec_it oc delete pod --all -n demo
 exec_it oc delete route --all -n demo
 sleep 15
-test="Changing project..."
-printf "  $test\r"
 exec_it su - joe -c \""oc project demo"\"
-test_exit $? "$test"
 test="Creating hello-service..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-service.json"\"
@@ -614,7 +611,8 @@ test_exit $? "$test"
 
 function complete_pod_service_route(){
 # delete everything in the project
-exec_it su - joe -c \""oc delete all -l name=hello-openshift"\"
+exec_it su - joe -c \""oc project demo"\"
+exec_it su - joe -c \""oc delete all -l name=hello-openshift -n demo"\"
 # wait for quota
 sleep 15
 # create complete def
