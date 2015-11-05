@@ -206,7 +206,7 @@ test="Installing atomic-openshift-utils (installer)..."
 printf "  $test\r"
 #exec_it yum -y install atomic-openshift-utils
 # temporary workaround
-exec_it yum -y install atomic-openshift-utils openshift-ansible*plugins
+exec_it yum -y install atomic-openshift-utils 
 test_exit $? "$test"
 prepare_dns
 pull_content
@@ -288,7 +288,7 @@ exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /et
 test_exit $? "$test"
 test="Restart master..."
 printf "  $test\r"
-exec_it systemctl restart openshift-master
+exec_it systemctl restart atomic-openshift-master
 test_exit $? "$test"
 # wait for things to settle
 sleep 15
@@ -301,7 +301,7 @@ exec_it sed -i /etc/origin/master/master-config.yaml -e \''s/defaultNodeSelector
 test_exit $? "$test"
 test="Restart master..."
 printf "  $test\r"
-exec_it systemctl restart openshift-master
+exec_it systemctl restart atomic-openshift-master
 test_exit $? "$test"
 # wait for things to settle
 sleep 15
@@ -946,7 +946,7 @@ wait_on_build "ruby-sample-build-1" "quickstart" 120 "Running"
 # wait for build to finish
 wait_on_build "ruby-sample-build-1" "quickstart" 280 "Complete"
 # wait for rc to deploy
-wait_on_rc "frontend-1" "quickstart" 60 2
+wait_on_rc "frontend-1" "quickstart" 240 2
 # find the deployed pods
 pods=$(oc get pod -n quickstart | grep frontend | grep -v deploy | awk {'print $1'})
 for pod in $pods
