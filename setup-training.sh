@@ -254,7 +254,7 @@ exec_it systemctl restart atomic-openshift-master
 test_exit $? "$test"
 }
 
-function update_project_template_quota{
+function update_project_template_quota(){
 test="Updating project request quota to 5 pods..."
 printf "  $test\r"
 exec_it oc get template/default-project-request -o yaml "|" sed -e \''s/pods: 3/pods: 5/'\' "|" oc replace -f -
