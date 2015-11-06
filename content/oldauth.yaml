@@ -1,0 +1,7 @@
+  identityProviders:
+  - name: deny_all
+    challenge: True
+    login: True
+    provider:
+      apiVersion: v1
+      kind: DenyAllPasswordIdentityProvider

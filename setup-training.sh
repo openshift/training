@@ -223,6 +223,7 @@ prepare_things
 run_install
 post_install
 setup_dev_users
+configure_htpasswd_auth
 install_router
 prepare_nfs
 setup_storage_volumes_claims
@@ -240,6 +241,17 @@ configure_default_project_selector
 label_nodes
 configure_routing_domain
 configure_default_nodeselector
+}
+
+function configure_htpasswd_auth(){
+test="Configuring htpasswd authentication..."
+printf "  $test\r"
+exec_it perl -0777 -pi -e \''BEGIN { $match = `cat ~/training/content/oldauth.yaml`; $replace = `cat ~/training/content/auth.yaml` } s/$match/$replace/'\' /etc/origin/master/master-config.yaml
+test_exit $? "$test"
+test="Restarting master..."
+printf "  $test\r"
+exec_it systemctl atomic-openshift-master restart
+test_exit $? "$test"
 }
 
 function run_install(){
@@ -1347,6 +1359,7 @@ post_install
 # Chapter 3
 echo "Dev users..."
 setup_dev_users
+configure_htpasswd_auth
 # Chapter 4
 echo "First joe project..."
 joe_project

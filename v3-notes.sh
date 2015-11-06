@@ -27,6 +27,15 @@ docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ruby-20-rh
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/mysql-55-rhel7
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/php-55-rhel7
 docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/nodejs-010-rhel7
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/metrics-deployer
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/metrics-hawkular-metrics
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/metrics-cassandra
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/metrics-heapster
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/logging-fluentd
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/logging-elasticsearch
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/logging-kibana
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/logging-auth-proxy
+docker pull rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/logging-deployment
 
 docker tag rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-haproxy-router:latest registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.2.0
 docker tag rcm-img-docker01.build.eng.bos.redhat.com:5001/openshift3/ose-deployer:latest registry.access.redhat.com/openshift3/ose-deployer:v3.0.2.0
