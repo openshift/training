@@ -250,7 +250,7 @@ exec_it perl -0777 -pi -e \''BEGIN { $match = `cat ~/training/content/oldauth.ya
 test_exit $? "$test"
 test="Restarting master..."
 printf "  $test\r"
-exec_it systemctl atomic-openshift-master restart
+exec_it systemctl restart atomic-openshift-master
 test_exit $? "$test"
 }
 
