@@ -1016,7 +1016,7 @@ exec_it su - alice -c \""oc project wiring"\"
 test_exit $? "$test"
 test="Creating the frontend application..."
 printf "  $test\r"
-exec_it su - alice -c \""oc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world"\"
+exec_it su - alice -c \""oc new-app -i openshift/ruby https://github.com/thoraxe/ruby-hello-world"\"
 test_exit $? "$test"
 test="Setting environment variables..."
 printf "  $test\r"
@@ -1308,6 +1308,9 @@ exec_it su - alice -c \""oc login -u alice -p redhat \
 --certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
+test="Deleting project quota and limits..."
+printf "  $test\r"
+exec_it oc delete quota/eap-example-quota limits/eap-example-limits -n eap-example
 test="Creating eap-example project..."
 printf "  $test\r"
 exec_it su - alice -c \""oc new-project eap-example --display-name='JBoss EAP Example' \

@@ -175,7 +175,7 @@ verify MySQL is running with curl:
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
 
-    A�jHost '10.1.0.1' is not allowed to connect to this MySQL server
+    5.5.45}(Iw>n2J��\rJZeloiBM:{mysql_native_password!��#08S01Got packets out of order
 
 ## Visit Your Application Again
 Visit your application again with your web browser. Why does it still say that

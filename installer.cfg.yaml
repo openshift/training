@@ -1,21 +1,25 @@
 ansible_log_path: /tmp/ansible.log
 ansible_ssh_user: root
 hosts:
-- hostname: ose3-master.example.com
+- connect_to: ose3-master.example.com
+  hostname: ose3-master.example.com
   ip: 192.168.133.2
   master: true
   node: true
   public_hostname: ose3-master.example.com
   public_ip: 192.168.133.2
-- hostname: ose3-node1.example.com
+- connect_to: ose3-node1.example.com
+  hostname: ose3-node1.example.com
   ip: 192.168.133.3
   node: true
   public_hostname: ose3-node1.example.com
   public_ip: 192.168.133.3
-- hostname: ose3-node2.example.com
+- connect_to: ose3-node2.example.com
+  hostname: ose3-node2.example.com
   ip: 192.168.133.4
   node: true
   public_hostname: ose3-node2.example.com
   public_ip: 192.168.133.4
 variant: openshift-enterprise
 variant_version: '3.1'
+version: v1

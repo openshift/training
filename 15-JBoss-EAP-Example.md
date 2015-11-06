@@ -11,6 +11,21 @@ Using the skills you have learned earlier in the training, create a new project
 for the EAP example. Call it "eap-example" and make sure to remember which user
 you are doing it as.
 
+## Delete the Quotas and Limits
+The EAP image is designed to run with more memory and use more CPU than our puny
+quotas have so far allowed. If you recall, we configured OpenShift to use a
+default project template. While the user/project administrator cannot delete
+these quotas or limits that OpenShift creates automatically, a cluster
+administrator can.
+
+As `root` on your master:
+
+    oc delete quota/eap-example-quota limits/eap-example-limits -n eap-example
+
+This will allow the EAP instance(s) to run without limit on CPU or memory
+consumption. Not ideal for a real world scenario, but fine for our little
+experiment.
+
 ## Instantiate the Template
 Red Hat provides a number of templates that can be used with the JBoss portfolio
 builders. Find your EAP project in the web UI and then click "Add to Project".

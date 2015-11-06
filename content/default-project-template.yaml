@@ -23,8 +23,6 @@ objects:
       memory: 1024Mi
       cpu: 500m
       pods: 3
-      services: 3
-      replicationcontrollers: 3
       resourcequotas: 1
 - apiVersion: v1
   kind: LimitRange

@@ -44,8 +44,6 @@ to look at some example JSON for project resource quota might look like:
           "memory": "512Mi",
           "cpu": "500m",
           "pods": "3",
-          "services": "3",
-          "replicationcontrollers": "3",
           "resourcequotas": "1"
         }
       }
@@ -97,9 +95,7 @@ And if you want to verify limits or examine usage:
     cpu                     0m      500m
     memory                  0       512Mi
     pods                    0       3
-    replicationcontrollers  0       3
     resourcequotas          1       1
-    services                0       3
 
 If you go back into the web console and click into the "OpenShift 3 Demo"
 project, and click on the *Settings* tab, you'll see that the quota information

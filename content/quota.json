@@ -9,8 +9,6 @@
       "memory": "512Mi",
       "cpu": "500m",
       "pods": "3",
-      "services": "3",
-      "replicationcontrollers": "3",
       "resourcequotas": "1"
     }
   }
