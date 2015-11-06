@@ -1202,7 +1202,7 @@ test="Trying to upload a file (should fail)..."
 printf "  $test\r"
 exec_it su - alice -c \""curl -i -F \"fto=@file\" http://demo-php-upload.cloudapps.example.com/upload.php"\" "|" grep fail
 test_exit $? "$test"
-exec_it oc get pvc registry-claim
+exec_it oc get pvc php-claim
 if [ $? -eq 0 ]
 then
   exec_it oc delete pvc php-claim
