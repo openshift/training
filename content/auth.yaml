@@ -4,5 +4,5 @@
     name: apache_auth
     provider:
       apiVersion: v1
-      file: /etc/openshift-passwd
+      file: /etc/origin/openshift-passwd
       kind: HTPasswdPasswordIdentityProvider
