@@ -254,6 +254,12 @@ exec_it systemctl restart atomic-openshift-master
 test_exit $? "$test"
 }
 
+function update_project_template_quota{
+test="Updating project request quota to 5 pods..."
+printf "  $test\r"
+exec_it oc get template/default-project-request -o yaml "|" sed -e \''s/pods: 3/pods: 5/'\' "|" oc replace -f -
+}
+
 function run_install(){
 date=$(date +%d%m%Y)
 test="Running installation..."
@@ -923,9 +929,7 @@ test_exit $? "$test"
 }
 
 function templates_project() {
-test="Updating project request quota to 5 pods..."
-printf "  $test\r"
-exec_it oc get template/default-project-request -o yaml "|" sed -e \''s/pods: 3/pods: 5/'\' "|" oc replace -f -
+update_project_template_quota
 test_exit $? "$test"
 # check for project
 exec_it oc get project quickstart
@@ -977,6 +981,7 @@ test_exit $? "$test"
 }
 
 function wiring_project() {
+update_project_template_quota
 # check for project
 exec_it oc get project wiring
 if [ $? -eq 0 ]
@@ -1070,6 +1075,7 @@ test_exit $? "$test"
 }
 
 function activate_rollback() {
+update_project_template_quota
 # requires wiring project
 # get webhook url
 url=$(oc get bc ruby-hello-world -n wiring --template 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
@@ -1126,6 +1132,7 @@ test_exit $? "$test"
 }
 
 function php_upload() {
+update_project_template_quota
 # check for project
 exec_it oc get project php-upload
 if [ $? -eq 0 ]
@@ -1239,6 +1246,7 @@ test_exit $? "$test"
 }
 
 function customized_build() {
+update_project_template_quota
 # switch alice back to wiring project
 exec_it su - alice -c \""oc project wiring"\"
 # check if the build is already modified
@@ -1283,6 +1291,7 @@ echo
 }
 
 function eap_example() {
+update_project_template_quota
 # check for project
 exec_it oc get project eap-example
 if [ $? -eq 0 ]
