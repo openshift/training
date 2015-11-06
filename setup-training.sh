@@ -1094,7 +1094,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1109,7 +1109,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1124,7 +1124,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
