@@ -468,7 +468,10 @@ and a corresponding route. It also includes a deployment configuration.
           "kind": "Service",
           "apiVersion": "v1",
           "metadata": {
-            "name": "hello-openshift-service"
+            "name": "hello-openshift-service",
+            "labels": {
+              "name": "hello-openshift"
+            }
           },
           "spec": {
             "selector": {
@@ -487,7 +490,10 @@ and a corresponding route. It also includes a deployment configuration.
           "kind": "Route",
           "apiVersion": "v1",
           "metadata": {
-            "name": "hello-openshift-route"
+            "name": "hello-openshift-route",
+            "labels": {
+              "name": "hello-openshift"
+            }
           },
           "spec": {
             "host": "hello-openshift.cloudapps.example.com",
@@ -503,7 +509,10 @@ and a corresponding route. It also includes a deployment configuration.
           "kind": "DeploymentConfig",
           "apiVersion": "v1",
           "metadata": {
-            "name": "hello-openshift"
+            "name": "hello-openshift",
+            "labels": {
+              "name": "hello-openshift"
+            }
           },
           "spec": {
             "strategy": {
@@ -530,10 +539,10 @@ and a corresponding route. It also includes a deployment configuration.
                 "containers": [
                   {
                     "name": "hello-openshift",
-                    "image": "openshift/hello-openshift:v0.4.3",
+                    "image": "openshift/hello-openshift:v1.0.6",
                     "ports": [
                       {
-                        "name": "hello-openshift-tcp-8080",
+                        "name": "http",
                         "containerPort": 8080,
                         "protocol": "TCP"
                       }
