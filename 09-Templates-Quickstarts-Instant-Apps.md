@@ -134,3 +134,14 @@ The dev guide linked previously has a lot of information on how to use
 templates. If you get 503 errors, wait a minute and then try again -- this is a
 sign that the application is not "ready" yet. We will talk about checking
 "liveness" and "readiness" in later labs.
+
+## Topology View
+If you look at the *Overview* tab in the project page in the web console, you
+will notice a little icon that looks like a "<", or kind of like the Steam logo.
+To its left is what looks like a grid button. If you click the "<" button, this
+will switch the overview to what is called the *Topology View*. You will see
+various bubbles that represent the various resources in the project -
+DeploymentConfigs, Pods, BuildConfigs, and more.
+
+Play around with scaling the frontend application up and down and see how the
+topology view is affected.

@@ -324,7 +324,7 @@ my workload will never get scheduled. Bummer.
 
 How can we make this more intelligent? We'll finally use "regions" and "zones".
 
-## Customizing the Scheduler Configuration
+## Examining the Scheduler Configuration
 The installer is configured to understand "regions" and "zones" as a matter of
 convenience. However, for the master (scheduler) to actually do something with
 them requires changing from the default configuration Take a look at
