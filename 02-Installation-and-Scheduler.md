@@ -142,7 +142,6 @@ We will be installing OpenShift Enterprise 3.1, so be sure to select *2*:
 At this point the installer will log-in to each of the hosts to get information:
 
     Gathering information from hosts...
-    [ose3-master.example.com, ose3-node1.example.com, ose3-node2.example.com]
 
 ## General Confirmation
 The installer will now show you an overview of the installation details. You
@@ -304,7 +303,7 @@ Again, the defaults are:
 And, for an extremely detailed explanation about what these various
 configuration flags are doing, check out:
 
-    https://docs.openshift.com/enterprise/3.1/admin_guide/scheduler.html
+    https://docs.openshift.com/enterprise/latest/admin_guide/scheduler.html
 
 In a small environment, these defaults are pretty sane. Let's look at one of the
 important predicates (filters) before we move on to "regions" and "zones".
