@@ -444,7 +444,7 @@ then
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""cd ~/training && git pull origin $branch"\"
+  exec_it su - joe -c \""cd ~/training && git pull $gituser $branch"\"
   test_exit $? "$test"
 fi
 }
@@ -1007,7 +1007,7 @@ then
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""cd ~/training && git pull origin $branch"\"
+  exec_it su - alice -c \""cd ~/training && git pull $gituser $branch"\"
   test_exit $? "$test"
 fi
 test="Change alice's project..."
