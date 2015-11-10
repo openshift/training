@@ -847,6 +847,7 @@ fi
 }
 
 function add_claimed_volume(){
+exec_it oc project default
 # check for claim
 exec_it oc get dc docker-registry -o yaml "|" grep registry-claim
 if [ $? -eq 1 ]
