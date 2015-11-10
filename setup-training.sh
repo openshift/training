@@ -795,6 +795,7 @@ test_exit $? "$test"
 }
 
 function setup_storage_volumes_claims(){
+exec_it oc project default
 # check for volume
 exec_it oc get pv registry-volume
 if [ $? -eq 1 ]
