@@ -75,7 +75,7 @@ The syntax of the command tells us:
 
 * I want to create a new application
 * using the *ruby* builder imagestream defined in the *openshift* project
-* based off of the code in a git repository
+* based off of the code in a Git repository
 
 Since we know that we want to talk to a database eventually, let's take a moment
 to add the environment variables for it. Conveniently, there is an `env`
@@ -100,15 +100,17 @@ For example, `oc get pod` might look like:
 
     NAME                       READY     REASON                                                   RESTARTS   AGE
     ruby-hello-world-1-build   1/1       Running                                                  0          1m
-    ruby-hello-world-2-3jby9   0/1       Error: image library/ruby-hello-world:latest not found   0          32s
 
 Wait for the build to complete, and you should end up with a running front-end
-in a few moments. You'll probably end up with something like this:
+in a few moments. You might end up with something like this:
 
     oc get pod
     NAME                       READY     REASON       RESTARTS   AGE
     ruby-hello-world-1-build   0/1       ExitCode:0   0          7m
-    ruby-hello-world-3-eq9w3   1/1       Running      0          5m
+    ruby-hello-world-1-eq9w3   1/1       Running      0          5m
+
+If you ran the `oc env` command soon enough after `new-app`, you may only have 1
+deployment. It all depends.
 
 ## Test the Frontend
 While it won't look great using `curl`, we can validate the frontend is running
@@ -164,6 +166,8 @@ MySQL user, password and database match whatever values you specified in the
 previous labs.
 
 Click the "Create" button when you are ready. Then click "Continue to overview".
+You can watch the database come to life in the Topology View if you're
+interested, or just watch it come up on the Overview page.
 
 It may take a little while for the MySQL container to download (if you didn't
 pre-fetch it). It's a good idea to verify that the database is running before
@@ -187,8 +191,14 @@ populated with any values. Our database does exist now, and there is a service
 for it, but OpenShift could not "inject" those values into the running frontend
 container.
 
+As a side note, this is a potential reason to use DNS names and not service
+environment variables when writing applications. If you're interested, feel free
+to check out the documentation on OpenShift's internal DNS:
+
+    https://docs.openshift.com/enterprise/latest/architecture/additional_concepts/networking.html#openshift-dns
+
 ## Replication Controllers
-The easiest way to get this going? Just nuke the existing pod. There is a
+The easiest way to get the updated frontend going? Just nuke the existing pod. There is a
 replication controller running for both the frontend and backend:
 
     oc get replicationcontroller
@@ -197,23 +207,23 @@ The replication controller is configured to ensure that we always have the
 desired number of replicas (instances) running. We can look at how many that
 should be:
 
-    oc describe rc ruby-hello-world-3
+    oc describe rc ruby-hello-world-2
 
-*Note:* Depending on how fast you went through previous examples, you may have
-only 2 replication controllers listed.
+*Note:* Depending on how fast you went through previous examples, you may need
+to change the -2 to -1, etc.
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
 which means it will be able to connect to the DB, which means that we should no
 longer see the database error!
 
-As `alice`, go ahead and find your frontend pod, and then kill it:
+As `alice`, the following command will find your frontend pod and then kill it:
 
     oc delete pod `oc get pod | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}'`
 
 You'll see something like:
 
-    pods/ruby-hello-world-3-wcxiw
+    pod "ruby-hello-world-1-y44vm" deleted
 
 That was the generated name of the pod when the replication controller stood it
 up the first time.
@@ -224,7 +234,7 @@ After a few moments, we can look at the list of pods again:
 
 And we should see a different name for the pod this time:
 
-    ruby-hello-world-3-xbs3o
+    ruby-hello-world-1-xbs3o
 
 This shows that, underneath the covers, the RC started a new pod. Since it is a
 new pod, it should have a value for the `DATABASE_SERVICE_HOST` environment
