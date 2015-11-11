@@ -27,7 +27,7 @@ just fire up and start using or hacking on.
 ## Increase Pod Quota
 For the next few labs we will end up needing a higher pod quota. This requires
 editing the project request template that we created earlier. Here we can use
-`oc edit`.
+`oc edit` as `root`:
 
     oc edit template/default-project-request
 
@@ -53,7 +53,7 @@ This also changes you to use that project:
 
 ## A Quick Aside on Templates
 From the [OpenShift
-documentation](https://docs.openshift.com/enterprise/3.0/dev_guide/templates.html):
+documentation](https://docs.openshift.com/enterprise/latest/dev_guide/templates.html):
 
     A template describes a set of objects that can be parameterized and
     processed to produce a list of objects for creation by OpenShift. A template
@@ -120,20 +120,22 @@ Much like before, the build will start automatically after creating an instance
 of the template, so you can wait for it to finish. Feel free to check the build
 logs.
 
-Once the build finishes and the pods come up, it can take a few minutes for the
+Once the build finishes and the pods come up, it can take a little while for the
 application to be ready. This is due to the database setup that this application
 is performing on first start.
 
 ## Using Your App
-Once the build is complete, you should be able to visit the routed URL and
-actually use the application!
+Once the build is complete and the application instance is ready, you should be
+able to visit the routed URL and actually use the application!
 
     http://keyvalue-route.quickstart.cloudapps.example.com
 
-The dev guide linked previously has a lot of information on how to use
-templates. If you get 503 errors, wait a minute and then try again -- this is a
+If you get 503 errors, wait a minute and then try again -- this is a
 sign that the application is not "ready" yet. We will talk about checking
 "liveness" and "readiness" in later labs.
+
+The dev guide linked previously has a lot of information on how to use
+templates. 
 
 ## Topology View
 If you look at the *Overview* tab in the project page in the web console, you
