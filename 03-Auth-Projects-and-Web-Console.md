@@ -57,7 +57,7 @@ throughout the rest of the labs. Let's create a project for our first
 application.
 
 We also need to understand a little bit about users and administration. The
-default configuration for CLI operations currently is to be the `master-admin`
+default configuration for CLI operations currently is to be the `system:admin`
 user, which is allowed to create projects. We can use the "admin"
 OpenShift command to create a project, and assign an administrative user to it.
 As the `root` system user on your master:

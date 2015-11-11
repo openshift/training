@@ -555,16 +555,6 @@ then
   test_exit $? "$test"
 fi
 
-# check for SA
-exec_it oc get sa router
-if [ $? -eq 1 ]
-then
-  test="Creating router service account..."
-  printf "  $test\r"
-  exec_it echo \''{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"router"}}'\' "|" oc create -f -
-  test_exit $? "$test"
-fi
-
 # check scc
 exec_it oc get scc privileged -o yaml | grep router
 if [ $? -eq 1 ]

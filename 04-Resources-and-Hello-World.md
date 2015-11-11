@@ -129,6 +129,19 @@ Review your limit ranges
     Container       cpu             10m     500m    100m    100m    -
     Container       memory          5Mi     750Mi   100Mi   100Mi   -
 
+The output at the moment is a little confusing, but the key points:
+
+* If you don't specify a CPU or Memory limit, it will inherit the "Request", in
+    this case 100m(illicores) or 100Mi(ebibytes), respectively.
+
+* The "limit" is, in the absence of a specific request, the maximum value that
+    is allowed to be consumed.
+
+For more information on these details, you can look at the following section of
+the documentation:
+
+    https://docs.openshift.com/enterprise/latest/dev_guide/quota.html
+
 ## Login
 Since we have taken the time to create the *joe* user as well as a project for
 him, we can log into a terminal as *joe* and then set up the command line

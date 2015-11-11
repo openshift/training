@@ -34,6 +34,15 @@ documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/doc
     the appropriate backends. The set of pods targetted is determined by a label
     selector.
 
+From the [OpenShift
+documentation](https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/pods_and_services.html#services):
+
+    A Kubernetes service serves as an internal load balancer. It identifies a set of
+    replicated pods in order to proxy the connections it receives to them. Backing
+    pods can be added to or removed from a service arbitrarily while the service
+    remains consistently available, enabling anything that depends on the service to
+    refer to it at a consistent internal address.
+
 If you think back to the simple pod we created earlier, there was a "label":
 
       "labels": {
@@ -80,7 +89,9 @@ and that is where the routing tier comes in.
 ## Creating a Service
 We can create a service from the command line with JSON or YAML just like we
 created the pod. The `hello-service.json` file has the service definition we saw
-above. Go ahead and create the service:
+above. 
+
+As `joe`, go ahead and create the service:
 
     oc create -f ~/training/content/hello-service.json
 
@@ -94,7 +105,7 @@ Let's look at the service we just created:
     Selector:               name=hello-openshift
     Type:                   ClusterIP
     IP:                     172.30.42.80
-    Port:                   <unnamed>       8888/TCP
+    Port:                   <unnamed>       8080/TCP
     Endpoints:              <none>
     Session Affinity:       None
     No events.
@@ -105,19 +116,16 @@ to actually use our service/application within an OpenShift environment. They
 don't have to keep track of our pods manually.
 
 Right now there are no endpoints in the service -- there are no matching pods.
-Let's fix that.
+The view in the web console will be pretty boring. Let's fix that.
 
 ## Add Pods to the Service
-We can use our quota test file to launch some pods again. These pods all have
+We can use another test file to launch some pods again. These pods all have
 the label "name:hello-openshift". When we create them, and they finally come to
 life, we should see them come up in the service's endpoint list.
 
-Go ahead and create them again:
+As `joe`:
 
-    oc create -f ~training/content/hello-service-pods.json
-
-You'll still get the error about quota -- we're still trying to create 4 pods
-when we're only allowed 3. 
+    oc create -f ~/training/content/hello-service-pods.json
 
 Wait a few moments and then describe your service:
 
@@ -127,7 +135,7 @@ Wait a few moments and then describe your service:
     Selector:               name=hello-openshift
     Type:                   ClusterIP
     IP:                     172.30.42.80
-    Port:                   <unnamed>       8888/TCP
+    Port:                   <unnamed>       8080/TCP
     Endpoints:              10.1.0.6:8080,10.1.1.3:8080,10.1.1.4:8080
     Session Affinity:       None
     No events.
@@ -138,7 +146,7 @@ console, you'll see these 3 pods all associated with our *hello-service*.
 If you do a curl of the service, you should see your application (remember to
 substitute whatever service IP matches your environment):
 
-    curl 172.30.42.80:8888
+    curl 172.30.42.80:8080
     Hello OpenShift!
 
 This is well and good, but what if I want to access this application from
@@ -147,9 +155,9 @@ outside the OpenShift environment?
 # Routing
 The OpenShift routing tier is how FQDN-destined traffic enters the OpenShift
 environment so that it can ultimately reach pods. In a simplification of the
-process, the `openshift3/ose-haproxy-router` container we will create below
-is a pre-configured instance of HAProxy as well as some of the OpenShift
-framework. The OpenShift instance running in this container watches for route
+process, the `openshift3/ose-haproxy-router` container we will create below is a
+pre-configured instance of HAProxy as well as some of the OpenShift framework.
+The OpenShift instance running in this container watches for changes to route
 resources on the OpenShift master.
 
 Here is an example route resource JSON definition:
@@ -184,6 +192,11 @@ This HAProxy pool ultimately contains all pods that are in a service. Which
 service? The service that corresponds to the `to` directive that you
 see above.
 
+Note that while the route definition includes a refernce to a service, HAProxy
+is not sending traffic to the service. HAProxy only uses the service reference
+to be able to find all the pod IPs associated with the service. It proxies
+traffic directly to the endpoint on the SDN.
+
 You'll notice that the definition above specifies TLS edge termination. This
 means that the router should provide this route via HTTPS. Because we provided
 no certificate info, the router will provide its default SSL certificate when
@@ -194,7 +207,7 @@ is unencrypted.
 It is possible to utilize various TLS termination mechanisms, and more details
 is provided in the router documentation:
 
-    https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/routes.html#secured-routes
+    https://docs.openshift.com/enterprise/latest/architecture/core_concepts/routes.html#secured-routes
 
 We'll see this edge termination in action shortly.
 
@@ -207,8 +220,8 @@ CA which we will use.
 
 On the master, as `root`:
 
-    CA=/etc/openshift/master
-    oadm create-server-cert --signer-cert=$CA/ca.crt \
+    CA=/etc/origin/master
+    oadm ca create-server-cert --signer-cert=$CA/ca.crt \
           --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
           --hostnames='*.cloudapps.example.com' \
           --cert=cloudapps.crt --key=cloudapps.key
@@ -222,37 +235,86 @@ Make sure you remember where you put this PEM file.
 
 ## The Router Service Account
 Service Accounts are a unique concept in OpenShift 3. From the
-[documentation](https://docs.openshift.com/enterprise/3.0/dev_guide/service_accounts.html):
+[documentation](https://docs.openshift.com/enterprise/latest/dev_guide/service_accounts.html):
 
     Service accounts provide a flexible way to control API access without
     sharing a regular user’s credentials.
 
 Since the router needs a way to interact with the OpenShift API (to learn about
-changes on Route objects), it needs an account. We create this Service Account
-for the router and then make sure that account has permissions to allow the
-router to do what it needs.
+changes on Route objects), it needs an account, as all API requests must be
+authenticated. The installer has already created a service account for us. You
+can inspect it with the following, as `root`:
 
-You can create the router service account with the following command as `root`:
+    oc get sa/router -n default -o yaml
 
-    echo \
-    '{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"router"}}' \
-    | oc create -f -
+You'll see something like the following:
 
-Once the Service Account is created, we need to add this account to the
-"privileged" security context. The router's actions require it to be there. You
-can edit the security context by doing the following as `root`:
+    apiVersion: v1
+    imagePullSecrets:
+    - name: router-dockercfg-1p0pt
+    kind: ServiceAccount
+    metadata:
+      creationTimestamp: 2015-11-10T22:45:29Z
+      name: router
+      namespace: default
+      resourceVersion: "356"
+      selfLink: /api/v1/namespaces/default/serviceaccounts/router
+      uid: be381d4b-87fc-11e5-b2a3-525400b33d1d
+    secrets:
+    - name: router-token-kf6of
+    - name: router-dockercfg-1p0pt
 
-    oc edit scc privileged
+Having the account is one thing, but the account still needs permissions to do
+things. This is where `SecurityContextConstraints` come in. As `root`:
 
-This will bring up a text editor. And, from there, you want to add a line at the
-end of the file for the router, so that it looks like:
+    oc get scc privileged -o yaml
 
-    ...
+You should see:
+
+    allowHostDirVolumePlugin: true
+    allowHostIPC: true
+    allowHostNetwork: true
+    allowHostPID: true
+    allowHostPorts: true
+    allowPrivilegedContainer: true
+    allowedCapabilities: null
+    apiVersion: v1
+    fsGroup:
+      type: RunAsAny
+    groups:
+    - system:cluster-admins
+    - system:nodes
+    kind: SecurityContextConstraints
+    metadata:
+      annotations:
+        kubernetes.io/description: 'privileged allows access to all privileged and host
+          features and the ability to run as any user, any group, any fsGroup, and with
+          any SELinux context.  WARNING: this is the most relaxed SCC and should be used
+          only for cluster administration. Grant with caution.'
+      creationTimestamp: 2015-11-10T22:44:29Z
+      name: privileged
+      resourceVersion: "367"
+      selfLink: /api/v1/securitycontextconstraints/privileged
+      uid: 9a8aa263-87fc-11e5-b404-525400b33d1d
+    priority: null
+    runAsUser:
+      type: RunAsAny
+    seLinuxContext:
+      type: RunAsAny
+    supplementalGroups:
+      type: RunAsAny
     users:
-    - system:serviceaccount:openshift-infra:build-controller
+    - system:serviceaccount:default:registry
     - system:serviceaccount:default:router
+    - system:serviceaccount:openshift-infra:build-controller
 
-Save and quit the text editor.
+The "privileged" security context constraint is a special one, as you can see in
+the annotation. The reason we need this for the router is that the router must
+bind to ports 80 and 443 on the host interface. Binding to low ports like these
+requires special privileges, and OpenShift only allows those privileges to
+accounts in the "privileged" context. This will make more sense in a moment.
+
+You'll see that the "users" section contains our router service account.
 
 ## Creating the Router
 The router is the ingress point for all traffic destined for OpenShift
@@ -271,35 +333,48 @@ Perform the following comands as `root`.
 Let's try to create a router:
 
     oadm router
-    error: router could not be created; you must specify a .kubeconfig file path containing credentials for connecting the router to the master with --credentials
+
+    error: router could not be created; you must specify a service account with
+    --service-account
+
+Well, we just created that, and it's called `router`, so let's try again:
+
+    oadm router --service-account=router
+
+    error: router could not be created; you must specify a .kubeconfig file path
+    containing credentials for connecting the router to the master with
+    --credentials
 
 Just about every form of communication with OpenShift components is secured by
-SSL and uses various certificates and authentication methods. Even though we set
-up our `.kubeconfig` for the root user, `oadm router` is asking us what
-credentials the *router* should use to communicate with the master. We also need
-to specify the router image, since the tooling defaults to upstream/origin:
+SSL and uses various certificates and authentication methods. The installer
+created a `~/.kube/config` file which contains the credentials for the user
+account `system:admin` (the cluster administrator) to use to access the API. 
+But `oadm router` is asking us what credentials the *router* should use to
+communicate with the master.
 
     oadm router --dry-run \
-    --credentials=/etc/openshift/master/openshift-router.kubeconfig
+    --credentials=/etc/origin/master/openshift-router.kubeconfig \
+    --service-account=router
 
-Adding that would be enough to allow the command to proceed, but if we want
-this router to work for our environment, we also need to specify the 
-router image (the tooling defaults to upstream/origin otherwise) and we need
-to supply the wildcard cert/key that we created for the cloud domain. Since the
-`router` command will create all of the resources in the *default* project, and
-the *default* project has the `nodeSelector` for the *infra* region, the router
-pod will land there.
+    error: router "router" does not exist (no service)
+
+Adding that would be enough to allow the command to proceed, but, if we want
+this router to work for our environment, we need to supply the wildcard cert/key
+that we created for the cloud domain. Since the `router` command will create all
+of the resources in the *default* project, and the *default* project has the
+`nodeSelector` for the *infra* region, the router pod will land there (in the
+*infra* region).
 
     oadm router router --replicas=1 \
     --default-cert=cloudapps.router.pem \
-    --credentials='/etc/openshift/master/openshift-router.kubeconfig' \
+    --credentials='/etc/origin/master/openshift-router.kubeconfig' \
     --service-account=router
 
 If this works, you'll see some output:
 
-    password for stats user admin has been set to Cwwk96Huso
-    deploymentconfigs/router
-    services/router
+    password for stats user admin has been set to xMH727koMO
+    DeploymentConfig "router" created
+    Service "router" created
  
 **Note:** You will have to reference the absolute path of the PEM file if you
 did not run this command in the folder where you created it.
@@ -338,13 +413,16 @@ If you `describe` the router pod, you will see that it is running on the master:
       Type          Status
       Ready         True 
     Events:
-      FirstSeen                             LastSeen                        Count   From                                    SubobjectPath                           Reason          Message
-      Wed, 17 Jun 2015 14:49:40 -0400       Wed, 17 Jun 2015 14:49:40 -0400 1       {scheduler }                                                                    scheduled       Successfully assigned router-1-rt6qk to ose3-master.example.com
-      Wed, 17 Jun 2015 14:49:40 -0400       Wed, 17 Jun 2015 14:49:40 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       pulled          Successfully pulled image "openshift3/ose-pod:v0.6.1.0"
-      Wed, 17 Jun 2015 14:49:41 -0400       Wed, 17 Jun 2015 14:49:41 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       created         Created with docker id 9e3c20ad9e356e9495004004b81b19d3eaaa721f42ee07073380efaa9047b45a
-      Wed, 17 Jun 2015 14:49:41 -0400       Wed, 17 Jun 2015 14:49:41 -0400 1       {kubelet ose3-master.example.com}       implicitly required container POD       started         Started with docker id 9e3c20ad9e356e9495004004b81b19d3eaaa721f42ee07073380efaa9047b45a
-      Wed, 17 Jun 2015 14:49:42 -0400       Wed, 17 Jun 2015 14:49:42 -0400 1       {kubelet ose3-master.example.com}       spec.containers{router}                 created         Created with docker id f891a779c18ed960ae27d630e7df2061531533ead6df4b262d642c2d0a3902ef
-      Wed, 17 Jun 2015 14:49:42 -0400       Wed, 17 Jun 2015 14:49:42 -0400 1       {kubelet ose3-master.example.com}       spec.containers{router}                 started         Started with docker id f891a779c18ed960ae27d630e7df2061531533ead6df4b262d642c2d0a3902ef
+      FirstSeen     LastSeen        Count   From                                    SubobjectPath           Reason           Message
+      ─────────     ────────        ─────   ────                                    ─────────────           ──────           ───────
+      1m            1m              1       {kubelet ose3-master.example.com}       implicitly required container POD        Pulled          Container image "openshift3/ose-pod:v3.1.0.2" already present on machine
+      1m            1m              1       {scheduler }                                                    Scheduled        Successfully assigned router-1-ed1ly to ose3-master.example.com
+      1m            1m              1       {kubelet ose3-master.example.com}       implicitly required container POD        Started         Started with docker id ca280668b041
+      1m            1m              1       {kubelet ose3-master.example.com}       spec.containers{router} Pulling          pulling image "openshift3/ose-haproxy-router:v3.1.0.2"
+      1m            1m              1       {kubelet ose3-master.example.com}       implicitly required container POD        Created         Created with docker id ca280668b041
+      22s           22s             1       {kubelet ose3-master.example.com}       spec.containers{router} Pulled           Successfully pulled image "openshift3/ose-haproxy-router:v3.1.0.2"
+      21s           21s             1       {kubelet ose3-master.example.com}       spec.containers{router} Created          Created with docker id 78bf7b43e0e5
+      21s           21s             1       {kubelet ose3-master.example.com}       spec.containers{router} Started          Started with docker id 78bf7b43e0e5
 
 In the very beginning of the documentation, we indicated that a wildcard DNS
 entry is required and should point at the master. When the router receives a
@@ -361,7 +439,7 @@ For a true HA implementation, one would want multiple "infra" nodes and
 multiple, clustered router instances. Please see the "high availability"
 documentation for more information on how tihs can be achieved:
 
-    https://docs.openshift.com/enterprise/3.0/admin_guide/high_availability.html
+    https://docs.openshift.com/enterprise/latest/admin_guide/high_availability.html
 
 ## Viewing Router Stats
 Haproxy provides a stats page that's visible on port 1936 of your router host.
@@ -416,7 +494,7 @@ The `expose` command created a route for us. The `-l name=hello-openshift` added
 a label to this route resource, too. Since we didn't specify an FQDN with the
 command, OpenShift programmatically generates our route with the format of:
 
-    <service_name>.<project_name>.<cloud_domain>
+    <service_name>-<project_name>.<cloud_domain>
 
 In our master's config we had configured the routing subdomain as
 `cloudapps.example.com`. The project we're working in is `demo` and the service
@@ -429,6 +507,9 @@ and see your application:
     Hello OpenShift!
 
 Hooray!
+
+*Note:* If you get a 503 error, wait a moment and try again. The router may not
+have picked up the info quite yet.
 
 # The Complete Pod-Service-Route
 The previous steps essentially build an "application" from scratch with lots of
@@ -605,6 +686,9 @@ If we work from the route down to the pod:
 If your domain is different, you will need to edit the JSON before trying to
 create the objects. 
 
+You might be wondering what the `DeploymentConfig` object is. We'll get to it
+soon.
+
 **Logged in as `joe`,** go ahead and use `oc` to create everything:
 
     oc create -f ~/training/content/test-complete.json
@@ -632,14 +716,16 @@ OpenShift provides a handy tool, `oc status`, to give you a summary of
 common resources existing in the current project:
 
     oc status
-    In project OpenShift 3 Demo (demo)
+
+    In project OpenShift 3 Demo (demo) on server https://ose3-master.example.com:8443
     
-    service hello-openshift-service (172.30.252.29:27017 -> 8080)
-      hello-openshift deploys docker.io/openshift/hello-openshift:v0.4.3 
+    svc/hello-openshift-service - 172.30.40.240:27017 -> 8080
+      dc/hello-openshift deploys docker.io/openshift/hello-openshift:v1.0.6 
         #1 deployed about a minute ago - 1 pod
+      exposed by route/hello-openshift-route
     
-    To see more information about a Service or DeploymentConfig, use 'oc describe service <name>' or 'oc describe dc <name>'.
-    You can use 'oc get all' to see lists of each of the types described above.
+    To see more, use 'oc describe <resource>/<name>'.
+    You can use 'oc get all' to see a list of other objects.
 
 `oc status` does not yet show bare pods or routes. The output will be
 more interesting when we get to builds and deployments.
@@ -657,11 +743,22 @@ We can see that the service has been defined based on the JSON we used earlier.
 If the output of `oc get pods` shows that our pod is running, we can try to
 access the service:
 
-    curl `oc get services | grep hello-openshift | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl $(oc get service hello-openshift-service --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}')
     Hello OpenShift!
 
 This is a good sign! It means that, if the router is working, we should be able
 to access the service via the route.
+
+You might be wondering about the `--template` syntax. The `oc` command can use
+Go language templates to parse/process the output of commands. If you were to
+execute the `oc get service hello-openshift-service` command with `-o yaml`, you
+would see the YAML representation of the service.
+
+The `--template` we are using refers to various objects/items in that YAML.
+Namely the `portalIP` and the `port`. The Go language template documentation is
+a little clunky, but you can learn more about it here:
+
+    https://golang.org/pkg/text/template/
 
 ## Verifying the Routing
 Verifying the routing is a little complicated, but not terribly so. Since we
@@ -669,13 +766,13 @@ specified that the router should land in the "infra" region, we know that its
 Docker container is on the master. Log in there as `root`.
 
 We can use `oc exec` to get a bash interactive shell inside the running
-router container. The following command will do that for us:
+router container. The following command will do that for us, as `root`:
 
-    oc exec -it -p $(oc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
+    oc exec -it $(oc get pods | grep router | awk '{print $1}' | head -n 1) -- /bin/bash
 
 You are now in a bash session *inside* the container running the router. We'll
 talk more about `oc exec` later. For now, just realize that OpenShift is letting
-you operate an interactive process inside a running Docker container in the
+you operate an interactive process inside a running Docker container inside the
 OpenShift environment.
 
 Since we are using HAProxy as the router, we can cat the `routes.json` file:
@@ -716,25 +813,27 @@ route in OpenShift and added the corresponding configuration to HAProxy.
 
 Go ahead and `exit` from the container.
 
-    bash-4.2$ exit
+    [root@ose3-master conf]# exit
 
 As `joe`, you can reach the route securely and check that it is using the right
 certificate:
 
-    curl --cacert /etc/openshift/master/ca.crt \
+    curl --cacert /etc/origin/master/ca.crt \
              https://hello-openshift.cloudapps.example.com
     Hello OpenShift!
 
 And:
 
     openssl s_client -connect hello.cloudapps.example.com:443 \
-                       -CAfile /etc/openshift/master/ca.crt
+                       -CAfile /etc/origin/master/ca.crt
     CONNECTED(00000003)
     depth=1 CN = openshift-signer@1430768237
     verify return:1
     depth=0 CN = *.cloudapps.example.com
     verify return:1
     [...]
+
+*Note:* Ctrl+C will break out of this command.
 
 Since we used OpenShift's CA to create the wildcard SSL certificate, and since
 that CA is not "installed" in our system, we need to point our tools at that CA
