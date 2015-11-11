@@ -19,9 +19,10 @@ Not every coder is perfect, and sometimes you want to rollback to a previous
 incarnation of your application. Sometimes you then want to go forward to a
 newer version, too.
 
-The next few labs require that you have a GitHub account. We will take Alice's
-"wiring" application and modify its front-end and then rebuild. We'll roll-back
-to the original version, and then go forward to our re-built version.
+The next few labs require that you have a GitHub account, or that you are using
+code that is in a repository that you can change. We will take Alice's "wiring"
+application and modify its front-end and then rebuild. We'll roll-back to the
+original version, and then go forward to our re-built version.
 
 ## Fork the Repository
 Our wiring example's frontend service uses the following GitHub repository:
@@ -86,7 +87,7 @@ As you can see, the current configuration points at the
 ahead and re-point our configuration. Our friend `oc edit` comes to the rescue
 again:
 
-    oc edit bc ruby-example
+    oc edit bc ruby-hello-world
 
 Change the "uri" reference to match the name of your GitHub
 repository. Assuming your github user is `alice`, you would point it
@@ -212,6 +213,13 @@ Since it looks OK, let's go ahead and do it:
 If you look at the `Browse` tab of your project, you'll see that in the `Pods`
 section there is a `frontend-3...` pod now. After a few moments, revisit the
 application in your web browser, and you should see the old "Welcome..." text.
+
+You may be wondering "Why did I get a -3 instead of going 'back' to -1?". The
+answer is that, while it is called "rollback", OpenShift only ever goes forward.
+The 3rd deployment that results from this "rollback" is technically a new
+deployment with its own, new `ReplicationController`. The YAML that describes
+this new `ReplicationController` (-3) looks identical to the older one (-1).
+That's just the way it works.
 
 ## Activate
 Corporate marketing called again. They think the typo makes us look hip and
