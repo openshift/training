@@ -38,7 +38,8 @@ For the purposes of this training, we will just demonstrate the master
 exporting an NFS volume for use as storage by the database. **You would
 almost certainly not want to do this in production.** If you happen
 to have another host with an NFS export handy, feel free to substitute
-that instead of setting the following up on the master.
+that instead of setting the following up on the master, and skip the remainder
+of the setup steps.
 
 Ensure that nfs-utils is installed (**on all systems**):
 
@@ -127,32 +128,32 @@ all nodes where the pod could land (i.e. all of them) with:
 registry. As the `root` user, run the following:
 
     oadm registry --create \
-    --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'
+    --credentials=/etc/origin/master/openshift-registry.kubeconfig 
 
 You'll get output like:
 
-    deploymentconfigs/docker-registry
-    services/docker-registry
+    DeploymentConfig "docker-registry" created
+    Service "docker-registry" created
 
 You can use `oc get pods`, `oc get services`, and `oc get deploymentconfig`
 to see what happened. This would also be a good time to try out `oc status`
 as root:
 
     oc status
-    In project default
+    In project default on server https://ose3-master.example.com:8443
     
-    service docker-registry (172.30.82.255:5000)
-      docker-registry deploys registry.access.redhat.com/openshift3/ose-docker-registry:v0.6.1.0 
-        #1 deployed 36 seconds ago - 1 pod
+    svc/docker-registry - 172.30.20.139:5000
+      dc/docker-registry deploys registry.access.redhat.com/openshift3/ose-docker-registry:v3.1.0.2 
+        #1 deployed 53 seconds ago - 1 pod
     
-    service kubernetes (172.30.0.2:443)
+    svc/kubernetes - 172.30.0.1 ports 443, 53, 53
     
-    service kubernetes-ro (172.30.0.1:80)
+    svc/router - 172.30.175.206:80
+      dc/router deploys registry.access.redhat.com/openshift3/ose-haproxy-router:v3.1.0.2 
+        #1 deployed 25 minutes ago - 1 pod
     
-    service router (172.30.136.52:80)
-      router deploys registry.access.redhat.com/openshift3/ose-haproxy-router:v0.6.1.0 
-        #1 deployed about an hour ago - 1 pod
+    To see more, use 'oc describe <resource>/<name>'.
+    You can use 'oc get all' to see a list of other objects.
 
 To see more information about a `Service` or `DeploymentConfig`, use `oc
 describe service <name>` or `oc describe dc <name>`.  You can use `oc get all`
@@ -171,30 +172,26 @@ this region).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl -v `oc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
+    curl -v $(oc get service docker-registry --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}/healthz')
 
-And you should see an "UNAUTHORIZED" response. Your IP addresses will almost
-certainly be different. The Docker registry expects us to authenticate, but we
-don't do that with our request, hence the error. This at least means our
-registry is up and running.
+You'll see something like the following:
 
-    * About to connect() to 172.30.82.255 port 5000 (#0)
-    *   Trying 172.30.82.255...
-    * Connected to 172.30.82.255 (172.30.82.255) port 5000 (#0)
-    > GET /v2/ HTTP/1.1
+    * About to connect() to 172.30.20.139 port 5000 (#0)
+    *   Trying 172.30.20.139...
+    * Connected to 172.30.20.139 (172.30.20.139) port 5000 (#0)
+    > GET /healthz HTTP/1.1
     > User-Agent: curl/7.29.0
-    > Host: 172.30.82.255:5000
+    > Host: 172.30.20.139:5000
     > Accept: */*
     > 
-    < HTTP/1.1 401 Unauthorized
+    < HTTP/1.1 200 OK
     < Content-Type: application/json; charset=utf-8
     < Docker-Distribution-Api-Version: registry/2.0
-    < Www-Authenticate: Basic realm=openshift,error="authorization header with basic token required"
-    < Date: Wed, 17 Jun 2015 20:04:23 GMT
-    < Content-Length: 114
+    < Date: Wed, 11 Nov 2015 00:50:30 GMT
+    < Content-Length: 3
     < 
-    {"errors":[{"code":"UNAUTHORIZED","message":"access to the requested resource is not authorized","detail":null}]}
-    * Connection #0 to host 172.30.82.255 left intact
+    {}
+    * Connection #0 to host 172.30.20.139 left intact
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
@@ -225,14 +222,15 @@ will actually attach some to our registry.
 ### Create a PersistentVolume
 It is the PaaS administrator's responsibility to define the storage that is
 available to users. Storage is represented by a `PersistentVolume` that
-encapsulates the details of a particular volume which can be backed by any
-of the [volume types available via
-Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/volumes.md).
-In this case it will be our NFS volume.
+encapsulates the details of a particular volume which can be backed by any of
+the [supported volume
+types](https://docs.openshift.com/enterprise/latest/architecture/additional_concepts/storage.html#types-of-persistent-volumes).
 
-Currently PersistentVolume objects must be created "by hand". Modify the
-`content/registry-volume.json` file as needed if you are using a different
-NFS mount:
+In our case it will be our NFS volume.
+
+Currently PersistentVolume objects must be created "by hand". As `root`, modify
+the `~/training/content/registry-volume.json` file as needed if you are using a
+different NFS mount:
 
     {
       "apiVersion": "v1",
@@ -259,25 +257,37 @@ Currently, we have no `PersistentVolume`s defined:
 
 Create the `PersistentVolume` as the `root` (administrative) user:
 
-    oc create -f registry-volume.json
-    persistentvolumes/registry-volume
+    oc create -f ~/training/content/registry-volume.json
+    persistentvolume "registry-volume" created
 
 This defines a volume for OpenShift projects to use in deployments. The storage
 should correspond to how much is actually available (make each volume a separate
-filesystem or use native filesystem quotas if you want to enforce this limit).
+filesystem).
+
 Take a look at it now:
 
+    oc describe pv/registry-volume                                          
+    
     Name:           registry-volume
     Labels:         <none>
-    Status:         Available
-    Claim:
-    Reclaim Policy: %!d(api.PersistentVolumeReclaimPolicy=Retain)
-    Message:        %!d(string=)
+    Status:         Bound
+    Claim:          default/registry-claim
+    Reclaim Policy: Retain
+    Access Modes:   RWX
+    Capacity:       3Gi
+    Message:
+    Source:
+        Type:       NFS (an NFS mount that lasts the lifetime of a pod)
+        Server:     ose3-master.example.com
+        Path:       /var/export/regvol
+        ReadOnly:   false
 
 ### Claim the PersistentVolume
-Now that the administrator has provided a `PersistentVolume`, any project can
-make a claim on that storage. We do this by creating a `PersistentVolumeClaim`
-that specifies what kind of and how much storage is desired:
+Users "receive" volumes by making claims. Claims are handed out on a
+first-come-first-served basis. Now that the administrator has provided a
+`PersistentVolume`, any project can make a claim on that storage. We do this by
+creating a `PersistentVolumeClaim` that specifies what kind of and how much
+storage is desired:
 
     {
       "apiVersion": "v1",
@@ -296,14 +306,15 @@ that specifies what kind of and how much storage is desired:
     }
 
 Since we want this volume for the registry, and the registry lives in the
-*default* project, we perform the following as the `root` system user:
+*default* project, we perform the following as the `root` system user in the
+*default* project:
 
-    oc project default
-    oc create -f registry-claim.json
+    oc project default # switch to the default project
+    oc create -f ~/training/content/registry-claim.json
 
 You should see something like:
 
-    persistentvolumeclaims/registry-claim
+    persistentvolumeclaim "registry-claim" created
 
 This claim will be bound to a suitable `PersistentVolume` (one that is big
 enough and allows the requested `accessModes`). The user does not have any
@@ -312,19 +323,15 @@ storage is NFS or something else. They simply know when their claim has
 been filled ("bound" to a PersistentVolume).
 
     oc get pvc
-    NAME             LABELS    STATUS    VOLUME
-    registry-claim   map[]     Bound     registry-volume
+    NAME             LABELS    STATUS    VOLUME            CAPACITY   ACCESSMODES   AGE
+    registry-claim   <none>    Bound     registry-volume   3Gi        RWX           11s
 
 If we now go back and look at our PV, we will also see that it has
 been claimed:
 
-    oc describe pv/registry-volume
-    Name:           registry-volume
-    Labels:         <none>
-    Status:         Bound
+    ...
     Claim:          default/registry-claim
-    Reclaim Policy: %!d(api.PersistentVolumeReclaimPolicy=Retain)
-    Message:        %!d(string=)
+    ...
 
 The `PersistentVolume` is now claimed and can't be claimed by any other project.
 
@@ -333,6 +340,10 @@ anticipation of their use later, it would be possible to create an external
 process that watches the API for a `PersistentVolumeClaim` to be created,
 dynamically provisions a corresponding volume, and creates the API object
 to fulfill the claim.
+
+Some of the storage plugins in OpenShift 3.1 also support dynamic provisioning.
+In addition, other storage vendors are working with Red Hat to enable dynamic
+provisioning. Stay tuned!
 
 ### Attach the Volume to the Registry
 Now that the *default* project has a claim on a volume, we can attach it to the
@@ -379,7 +390,7 @@ When you execute the above `oc volume` command, you'll see the following:
 Now, go ahead and look at the `DeploymentConfig`s:
 
     oc get dc
-    NAME              TRIGGERS       LATEST VERSION
+    NAME              TRIGGERS       LATEST
     docker-registry   ConfigChange   2
     router            ConfigChange   1
 
@@ -387,10 +398,10 @@ We see that we are on version 2 of the docker-registry `DeploymentConfig`. Take
 a look at the `ReplicationController`s:
 
     oc get rc
-    CONTROLLER          CONTAINER(S)   IMAGE(S)                                                             SELECTOR                                                                                REPLICAS
-    docker-registry-1   registry       registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1   deployment=docker-registry-1,deploymentconfig=docker-registry,docker-registry=default   0
-    docker-registry-2   registry       registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1   deployment=docker-registry-2,deploymentconfig=docker-registry,docker-registry=default   1
-    router-1            router         registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1    deployment=router-1,deploymentconfig=router,router=router                               1
+    CONTROLLER          CONTAINER(S)   IMAGE(S)                                  SELECTOR                                                                                REPLICAS   AGE
+    docker-registry-1   registry       openshift3/ose-docker-registry:v3.1.0.2   deployment=docker-registry-1,deploymentconfig=docker-registry,docker-registry=default   0          14m
+    docker-registry-2   registry       openshift3/ose-docker-registry:v3.1.0.2   deployment=docker-registry-2,deploymentconfig=docker-registry,docker-registry=default   1          40s
+    router-1            router         openshift3/ose-haproxy-router:v3.1.0.2    deployment=router-1,deploymentconfig=router,router=router    
 
 We see that there is a *docker-registry-2* `ReplicationController` with 1
 replica. Now let's look at the pods:
