@@ -50,7 +50,9 @@ You are not allowed to upload a file. This is because the area of the Docker
 image where the applicaion content lives (`/opt/app-root/src/`) is not writeable
 by the user that is running the PHP process.
 
-You can see this by doing something like the following:
+As `alice` in a terminal, make sure you are using the `php-upload` project
+(that's what you called it, right?) and then find the name of your demo pod.
+Then, do the following:
 
     oc exec demo-1-kly7h -- sh -c 'whoami; ls -al'
     whoami: cannot find name for user ID 1000100000
@@ -72,7 +74,7 @@ containers.
 ## Export Another NFS Volume
 Earlier in the labs you created an NFS export to store your Docker registry
 data. We're going to add another one for use with this PHP application. On your
-*master* and as *root*:
+*master* and as `root`:
 
 1. Create the directory we will export:
 
@@ -116,9 +118,9 @@ PersistentVolume. The following JSON definition can be found in
       }
     }
 
-As the *root* user, go ahead and create this volume:
+As the `root` user, go ahead and create this volume:
 
-    oc create ~/training/content/php-volume.json
+    oc create -f ~/training/content/php-volume.json
 
 ## Create a PersistentVolumeClaim
 Once the volume is created, a project needs to claim it, much like with the
@@ -140,18 +142,20 @@ registry. There is a claim in `content/php-claim.json` that looks like:
       }
     }
 
-As *alice* and in the *php-upload* project, go ahead and create this claim:
+As `alice` and in the *php-upload* project, go ahead and create this claim:
 
-    oc create ~/training/php-claim.json
+    oc create -f ~/training/content/php-claim.json
 
 If you accidentally do this as *root* or in the wrong project, you might see a
 strange error in the pod when it comes up about the volume. Make sure you create
-this claim in the *php-upload* project.
+this claim in the *php-upload* project. Claims and volumes can be deleted and
+recreated just like other objects. So, if you create the claim in the wrong
+place, just delete it and recreate it.
 
 ## Add the Volume to Your DeploymentConfig
 Much like we did with the registry, it's pretty easy for a user to tell
 OpenShift how to use a storage volume with an application. Our friend the `oc
-volume` command comes back to our rescue. As *alice* you can do the following:
+volume` command comes back to our rescue. As `alice` you can do the following:
 
     oc volume dc/demo --add -t pvc --claim-name php-claim \
     -m /opt/app-root/src/uploaded --name=php-volume
@@ -184,4 +188,5 @@ file via this application by going to:
 
     http://demo-php-upload.cloudapps.example.com/uploaded
 
-You should see a directory index of all of the uploaded files.
+You should see a directory index of all of the uploaded files and be able to
+access your file. Neat!
