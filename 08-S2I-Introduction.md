@@ -49,7 +49,7 @@ For this example, we will be using the following application's source code:
 
     https://github.com/openshift/sinatra-example
 
-Let's see some JSON:
+Let's see some YAML:
 
     oc new-app -o yaml https://github.com/openshift/sinatra-example
 
@@ -72,8 +72,8 @@ The CLI has a tool (`new-app`) that can take a source code repository as an
 input and will make its best guesses to configure OpenShift to do what we need
 to build and run the code. You looked at that already.
 
-You can also just run `oc new-app --help` to see other things that `new-app`
-can help you achieve.
+You can run `oc new-app --help` to see other things that `new-app` can help you
+achieve.
 
 The web console also lets you point directly at a source code repository, but
 requires a little bit more input from a user to get things running. Let's go
@@ -91,7 +91,7 @@ have been so obvious that we also need to update the deployed container if the
 
 For example, what if a security vulnerability in the Ruby runtime is discovered?
 It would be nice if we could automatically know this and take action. If you dig
-around in the JSON output above from `new-app` you will see some reference to
+around in the YAML output above from `new-app` you will see some reference to
 "triggers". This is where `ImageStream`s come together.
 
 The `ImageStream` resource is, somewhat unsurprisingly, a definition for a
@@ -184,12 +184,7 @@ And you will see:
 Each time OpenShift performs a build, it increments the build number. This lets
 you observe the status of past builds relatively easily, as we'll see later.
 
-## The Web Console Revisited
-If you poked around in the web console while the build was running, you probably
-noticed a lot of new information - the build status, the deployment status, new
-pods, and more.
-
-If you didn't, wait for the build to finish and then go to the web console. The
+In the web console, once the build completes and the instance is deployed, the
 overview page should show that the application is running and show the
 information about the service and route at the top:
 
@@ -322,6 +317,7 @@ is working (as the `joe` user):
 
     curl `oc get service -n sinatra example --template \
     '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
+
     the time where this server lives is 2015-11-04 20:51:10 -0500
         <br /><br />check out your <a href="/agent">user_agent</a>
 
@@ -339,7 +335,7 @@ routes as `joe`:
 
 We can see that OpenShift created a route for us, named *example* (which matches
 the name we provided during the creation process), and it created a host mapping
-with a specific format:
+with a specific format that we've seen before:
 
     example-sinatra.cloudapps.example.com
 
@@ -390,9 +386,11 @@ Once finished, on the command line as `joe`:
     example-1-watc1   1/1       Running     0          56s
 
 You will see that your build pod is still hanging around, but exited. We are
-currently doing this for logging purposes. While there is some log aggregation
-happening under the covers (with fluentd), it is not really accessible to a
-normal user. The `oc build-logs` command essentially is looking at the Docker
+currently doing this for logging purposes. Configuring log aggregation is
+outside the scope of this material, but there are a number of different ways to
+do it. Please be sure to check the docs for examples.
+
+The `oc build-logs` command essentially is looking at the Docker
 container logs under the covers. If we delete this pod, the build logs are lost.
 The same holds true for the logs in the UI.
 
