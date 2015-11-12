@@ -1,0 +1,29 @@
+#!/bin/bash
+
+function is_puma_installed() {
+  [ ! -f Gemfile.lock ] && return 1
+  grep ' puma ' Gemfile.lock >/dev/null
+}
+
+set -e
+
+export RACK_ENV=${RACK_ENV:-"production"}
+
+echo "---> CUSTOM S2I RUN COMPLETE"
+
+if is_puma_installed; then
+  exec bundle exec "puma --config ../etc/puma.cfg"
+else
+  echo "You might consider adding 'puma' into your Gemfile."
+
+  if bundle exec rackup -h &>/dev/null; then
+    if [ -f Gemfile ]; then
+      exec bundle exec "rackup -E ${RAILS_ENV:-$RACK_ENV} -P /tmp/rack.pid --host 0.0.0.0 --port 8080"
+    else
+      exec rackup -E "${RAILS_ENV:-$RACK_ENV}" -P /tmp/rack.pid --host 0.0.0.0 --port 8080
+    fi
+  else
+    echo "ERROR: Rubygem Rack is not installed in the present image."
+    echo "       Add rack to your Gemfile in order to start the web server."
+  fi
+fi

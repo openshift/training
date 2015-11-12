@@ -1,26 +1,25 @@
 #!/bin/bash
 
 function rake_assets_precompile() {
-  [ -n $DISABLE_ASSET_COMPILATION ] && return
+  [[ "$DISABLE_ASSET_COMPILATION" == "true" ]] && return
   [ ! -f Gemfile ] && return
   [ ! -f Rakefile ] && return
   ! grep " rails " Gemfile.lock >/dev/null && return
   ! grep " execjs " Gemfile.lock >/dev/null && return
   ! bundle exec 'rake -T' | grep "assets:precompile" >/dev/null && return
 
-  echo "---> Starting asset compilation."
+  echo "---> Starting asset compilation ..."
   bundle exec rake assets:precompile
 }
 
-# For SCL enablement
-source .bashrc
-
 set -e
 
-echo "---> Installing application source"
-cp -Rf /tmp/src/* ./
+export RACK_ENV=${RACK_ENV:-"production"}
 
-echo "---> Building your Ruby application from source"
+echo "---> Installing application source ..."
+cp -Rf /tmp/src/. ./
+
+echo "---> Building your Ruby application from source ..."
 if [ -f Gemfile ]; then
   ADDTL_BUNDLE_ARGS=""
   if [ -f Gemfile.lock ]; then
@@ -35,17 +34,33 @@ if [ -f Gemfile ]; then
     BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}
   fi
 
-  echo "---> Running 'bundle install ${ADDTL_BUNDLE_ARGS}'"
+  echo "---> Running 'bundle install ${ADDTL_BUNDLE_ARGS}' ..."
   bundle install --path ./bundle ${ADDTL_BUNDLE_ARGS}
 
-  echo "---> Cleaning up unused ruby gems"
+  echo "---> Cleaning up unused ruby gems ..."
   bundle clean -V
+fi
+
+if ! bundle exec rackup -h &>/dev/null; then
+  echo "WARNING: Rubygem Rack is not installed in the present image."
+  echo "         Add rack to your Gemfile in order to start the web server."
 fi
 
 if [[ "$RAILS_ENV" == "production" || "$RACK_ENV" == "production" ]]; then
   rake_assets_precompile
 fi
 
+# Fix source directory permissions
+fix-permissions ./
+
+# Make the ./tmp folder world writeable as Rails or other frameworks might use
+# it to store temporary data (uploads/cache/sessions/etcd).
+# The ./db folder has to be writeable as well because when Rails complete the
+# migration it writes the schema version into ./db/schema.db
+set +e
+[[ -d ./tmp ]] && chgrp -R 0 ./tmp && chmod -R g+rw ./tmp
+[[ -d ./db ]] && chgrp -R 0 ./db && chmod -R g+rw ./db
+set -e
+
 echo "---> CUSTOM S2I ASSEMBLE COMPLETE"
 
-# TODO: Add `rake db:migrate` if linked with DB container
