@@ -256,13 +256,15 @@ end, if you do `oc get pod` as `alice` again,y ou'll probably see:
     ruby-hello-world-4-8v0ui    1/1       Running     0          24s
 
 ** NOTE **
-Lifecycle pods are currently deleted. Without centralized logging (outside of
-the scope of this material), it's not really easy to see the log of what
-happened. You can see the upstream work here:
+Lifecycle pods are currently deleted. Without centralized logging, it's not
+really easy to see the log of what happened. 
+
+While the Advanced section of this material does talk about how you can
+implement centralized logging, you can see the upstream work on deployer/hook
+pods here:
 
     https://trello.com/c/5Pt8kGwT/506-support-cleanup-policy-for-deployer-pods
 
-** NOTE ** This doesn't seem to work anymore. Why?
 Since we know that we are on the "4th" deployment, we can look for the pod.
 You'll have to do the following as `root` on the master:
 
@@ -294,8 +296,6 @@ The output should show something like:
 If you have no output, you may have forgotten to actually put the migration file
 in your repo. Without that file, the migration does nothing, which produces no
 output.
-
-****
 
 Another way to validate the migration is to talk directly to the database on its
 service IP/port using the `mysql` client and the environment variables (you

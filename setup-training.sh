@@ -132,6 +132,11 @@ printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com "systemctl start dnsmasq"
 test_exit $? "$test"
 
+test="Starting dnsmasq..."
+printf "  $test\r"
+exec_it ssh root@ose3-node2.example.com "systemctl enable dnsmasq"
+test_exit $? "$test"
+
 test="Checking for firewall rule..."
 exec_it ssh root@ose3-node2.example.com \""grep 'dport 53' /etc/sysconfig/iptables"\"
 # need to test whether ssh failed or grep failed
@@ -258,6 +263,7 @@ function update_project_template_quota(){
 test="Updating project request quota to 5 pods..."
 printf "  $test\r"
 exec_it oc get template/default-project-request -o yaml "|" sed -e \''s/pods: 3/pods: 5/'\' "|" oc replace -f -
+test_exit $? "$test"
 }
 
 function run_install(){
