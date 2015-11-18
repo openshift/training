@@ -132,7 +132,7 @@ printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com "systemctl start dnsmasq"
 test_exit $? "$test"
 
-test="Starting dnsmasq..."
+test="Enabling dnsmasq..."
 printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com "systemctl enable dnsmasq"
 test_exit $? "$test"
