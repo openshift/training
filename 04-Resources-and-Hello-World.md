@@ -42,10 +42,8 @@ to look at some example JSON for project resource quota might look like:
       "spec": {
         "hard": {
           "memory": "512Mi",
-          "cpu": "200m",
+          "cpu": "500m",
           "pods": "3",
-          "services": "3",
-          "replicationcontrollers": "3",
           "resourcequotas": "1"
         }
       }
@@ -78,9 +76,9 @@ two quotas to the same namespace.
 
 ## Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal in the `training/beta4` folder:
+to it. Still in a `root` terminal on your master:
 
-    oc create -f quota.json -n demo
+    oc create -f ~/training/content/quota.json -n demo
 
 If you want to see that it was created:
 
@@ -91,15 +89,14 @@ If you want to see that it was created:
 And if you want to verify limits or examine usage:
 
     oc describe quota test-quota -n demo
-    Name:                   test-quota
-    Resource                Used    Hard
-    --------                ----    ----
-    cpu                     0m      200m
-    memory                  0       512Mi
-    pods                    0       3
-    replicationcontrollers  0       3
-    resourcequotas          1       1
-    services                0       3
+    Name:           test-quota
+    Namespace:      demo
+    Resource        Used    Hard
+    --------        ----    ----
+    cpu             0       500m
+    memory          0       512Mi
+    pods            0       3
+    resourcequotas  1       1
 
 If you go back into the web console and click into the "OpenShift 3 Demo"
 project, and click on the *Settings* tab, you'll see that the quota information
@@ -116,20 +113,34 @@ both a pod and container level. Without default values for containers projects
 with quotas will fail because the deployer and other infrastructure pods are
 unbounded and therefore forbidden.
 
-As `root` in the `training/content` folder:
+As `root`:
 
-    oc create -f limits.json -n demo
+    oc create -f ~/training/content/limits.json -n demo
 
 Review your limit ranges
 
     oc describe limitranges limits -n demo
     Name:           limits
-    Type            Resource        Min     Max     Default
-    ----            --------        ---     ---     ---
-    Pod             memory          5Mi     750Mi   -
-    Pod             cpu             10m     500m    -
-    Container       cpu             10m     500m    100m
-    Container       memory          5Mi     750Mi   100Mi
+    Namespace:      demo
+    Type            Resource        Min     Max     Request Limit   Limit/Request
+    ----            --------        ---     ---     ------- -----   -------------
+    Pod             cpu             10m     500m    -       -       -
+    Pod             memory          5Mi     750Mi   -       -       -
+    Container       cpu             10m     500m    100m    100m    -
+    Container       memory          5Mi     750Mi   100Mi   100Mi   -
+
+The output at the moment is a little confusing, but the key points:
+
+* If you don't specify a CPU or Memory limit, it will inherit the "Request", in
+    this case 100m(illicores) or 100Mi(ebibytes), respectively.
+
+* The "limit" is, in the absence of a specific request, the maximum value that
+    is allowed to be consumed.
+
+For more information on these details, you can look at the following section of
+the documentation:
+
+    https://docs.openshift.com/enterprise/latest/dev_guide/quota.html
 
 ## Login
 Since we have taken the time to create the *joe* user as well as a project for
@@ -143,7 +154,7 @@ Open a terminal as `joe`:
 Then, execute:
 
     oc login -u joe \
-    --certificate-authority=/etc/openshift/ca.crt \
+    --certificate-authority=/etc/origin/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
@@ -155,7 +166,7 @@ folder. Take a look at it, and you'll see something like the following:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: ../../../etc/openshift/master/ca.crt
+        certificate-authority: /etc/origin/master/ca.crt
         server: https://ose3-master.example.com:8443
       name: ose3-master-example-com:8443
     contexts:
@@ -170,7 +181,7 @@ folder. Take a look at it, and you'll see something like the following:
     users:
     - name: joe/ose3-master-example-com:8443
       user:
-        token: zXv6pSi0Hw3tT6T7hqlnnyDjypel1BcUBUO2vavHDcE
+        token: iJv2XgeteuPe-WzuQ77j3LJzuuIeHo5aLR_bmTbollM
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, etc.
@@ -184,8 +195,7 @@ go ahead and grab it inside Joe's home folder:
     cd ~/training/content
 
 ## The Hello World Definition JSON
-In the beta4 training folder, you can see the contents of our pod definition by
-using `cat`:
+In the `training/content` folder, you can see a pod definition by using `cat`:
 
     cat hello-pod.json
     {
@@ -202,7 +212,7 @@ using `cat`:
         "containers": [
           {
             "name": "hello-openshift",
-            "image": "openshift/hello-openshift",
+            "image": "openshift/hello-openshift:v1.0.6",
             "ports": [
               {
                 "containerPort": 8080,
@@ -234,72 +244,100 @@ complex, and we will learn more about the terms as we explore OpenShift further.
 ## Create the Pod
 As `joe`, to create the pod from our JSON file, execute the following:
 
-    oc create -f hello-pod.json
+    oc create -f ~/training/content/hello-pod.json
 
 Remember, we've "logged in" to OpenShift and our project, so this will create
 the pod inside of it. The command should display the ID of the pod:
 
-    pods/hello-openshift
+    pod "hello-openshift" created
 
 Issue a `get pods` to see the details of how it was defined:
 
     oc get pods
     NAME              READY     REASON    RESTARTS   AGE
-    hello-openshift   1/1       Running   0          3m
+    hello-openshift   1/1       Running   0          35s
 
 To find out more information about this pod, use `describe`:
 
-    oc describe pod hello-openshift
+    oc describe pod hello-openshift                                                                                                                                                        [1/115]
     Name:                           hello-openshift
-    Image(s):                       openshift/hello-openshift
-    Host:                           ose3-node2.example.com/192.168.133.4
+    Namespace:                      demo
+    Image(s):                       openshift/hello-openshift:v1.0.6
+    Node:                           ose3-node1.example.com/192.168.133.3
+    Start Time:                     Fri, 06 Nov 2015 14:14:01 -0500
     Labels:                         name=hello-openshift
     Status:                         Running
-    IP:                             10.1.0.3
+    Reason:
+    Message:
+    IP:                             10.1.1.2
     Replication Controllers:        <none>
     Containers:
       hello-openshift:
-        Image:              openshift/hello-openshift
+        Container ID:       docker://1281646d6849844c8c91aeeffce544600f65b8418b01741e3b0264134e759c60
+        Image:              openshift/hello-openshift:v1.0.6
+        Image ID:           docker://bba2117915baabfd05932dc916306bae2c51d15848592c3018e7af0308dee519
+        QoS Tier:
+          memory:   Guaranteed
+          cpu:      Guaranteed
+        Limits:
+          cpu:      100m
+          memory:   100Mi
+        Requests:
+          cpu:              100m
+          memory:           100Mi
         State:              Running
-          Started:          Wed, 22 Jul 2015 16:42:32 -0400
+          Started:          Fri, 06 Nov 2015 14:14:05 -0500
         Ready:              True
         Restart Count:      0
+        Environment Variables:
     Conditions:
       Type          Status
       Ready         True 
+    Volumes:
+      default-token-x51tv:
+        Type:       Secret (a secret that should populate this volume)
+        SecretName: default-token-x51tv
     Events:
-      FirstSeen                             LastSeen                        Count   From                                    SubobjectPath                           Reason          Message
-      Wed, 22 Jul 2015 16:42:30 -0400       Wed, 22 Jul 2015 16:42:30 -0400 1       {scheduler }                                                                    scheduled       Successfully assigned hello-openshift to ose3-node2.example.com
-      Wed, 22 Jul 2015 16:42:31 -0400       Wed, 22 Jul 2015 16:42:31 -0400 1       {kubelet ose3-node2.example.com}        implicitly required container POD       pulled          Successfully pulled image "openshift3/ose-pod:v3.0.0.1"
-      Wed, 22 Jul 2015 16:42:31 -0400       Wed, 22 Jul 2015 16:42:31 -0400 1       {kubelet ose3-node2.example.com}        implicitly required container POD       created         Created with docker id bd0e34b2310567aa8e05f65cd9c8d3fca6b5b5fdb328b55dd3ff2463d9c2f64d
-      Wed, 22 Jul 2015 16:42:31 -0400       Wed, 22 Jul 2015 16:42:31 -0400 1       {kubelet ose3-node2.example.com}        implicitly required container POD       started         Started with docker id bd0e34b2310567aa8e05f65cd9c8d3fca6b5b5fdb328b55dd3ff2463d9c2f64d
-      Wed, 22 Jul 2015 16:42:32 -0400       Wed, 22 Jul 2015 16:42:32 -0400 1       {kubelet ose3-node2.example.com}        spec.containers{hello-openshift}        created         Created with docker id 2706a87bd2c04f3ed216b704ee391910556aeea89c00f02ea1e990cd37e266af
-      Wed, 22 Jul 2015 16:42:32 -0400       Wed, 22 Jul 2015 16:42:32 -0400 1       {kubelet ose3-node2.example.com}        spec.containers{hello-openshift}        started         Started with docker id 2706a87bd2c04f3ed216b704ee391910556aeea89c00f02ea1e990cd37e266af
+      FirstSeen     LastSeen        Count   From                                    SubobjectPath           Reason           Message
+      ─────────     ────────        ─────   ────                                    ─────────────           ──────           ───────
+      27s           27s             1       {kubelet ose3-node1.example.com}        implicitly required container POD        Pulling         pulling image "openshift3/ose-pod:v3.1.0.0"
+      26s           26s             1       {scheduler }                                                    Scheduled        Successfully assigned hello-openshift to ose3-node1.example.com
+      25s           25s             1       {kubelet ose3-node1.example.com}        implicitly required container POD        Pulled          Successfully pulled image "openshift3/ose-pod:v3.1.0.0"
+      24s           24s             1       {kubelet ose3-node1.example.com}        implicitly required container POD        Started         Started with docker id e75191aa1685
+      24s           24s             1       {kubelet ose3-node1.example.com}        implicitly required container POD        Created         Created with docker id e75191aa1685
+      24s           24s             1       {kubelet ose3-node1.example.com}        spec.containers{hello-openshift} Pulled          Container image "openshift/hello-openshift:v1.0.6" already present on machine
+      23s           23s             1       {kubelet ose3-node1.example.com}        spec.containers{hello-openshift} Created         Created with docker id 1281646d6849
+      23s           23s             1       {kubelet ose3-node1.example.com}        spec.containers{hello-openshift} Started         Started with docker id 1281646d6849
 
 On the node where the pod is running (`Host`), look at the list of Docker
 containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
 should see an `openshift3/ose-pod` container bound to 36061 on the host and
 bound to 8080 on the container, along with several other `ose-pod` containers.
 
-    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                     NAMES
-    4827cf917252        openshift/hello-openshift:latest   "/hello-openshift"   2 minutes ago       Up 2 minutes                                  k8s_hello-openshift.d44dd8de_hello-openshift_demo_8125e12c-146c-11e5-8947-525400b33d1d_911c4fba   
-    273ed184353e        openshift3/ose-pod:v0.6.1.0        "/pod"               2 minutes ago       Up 2 minutes        0.0.0.0:36061->8080/tcp   k8s_POD.b5bfe575_hello-openshift_demo_8125e12c-146c-11e5-8947-525400b33d1d_612b6999
+    CONTAINER ID        IMAGE                              COMMAND              CREATED              STATUS              PORTS               NAMES
+    1281646d6849        openshift/hello-openshift:v1.0.6   "/hello-openshift"   About a minute ago   Up About a minute                       k8s_hello-openshift.86e856fe_hello-openshift_demo_8a1ccb02-84ba-11e5-94c1-525400b33d1d_cc0f7c45
+    e75191aa1685        openshift3/ose-pod:v3.1.0.0        "/pod"               About a minute ago   Up About a minute                       k8s_POD.4832fd13_hello-openshift_demo_8a1ccb02-84ba-11e5-94c1-525400b33d1d_2d9ca60f
 
 The `openshift3/ose-pod` container exists because of the way network namespacing
-works in Kubernetes. For the sake of simplicity, think of the container as
-nothing more than a way for the host OS to get an interface created for the
+works in Kubernetes. For the sake of simplicity, think of `ose-pod` as nothing
+more than a way for the host OS to get an interface created for the
 corresponding pod to be able to receive traffic. Deeper understanding of
 networking in OpenShift is outside the scope of this material.
 
-To verify that the app is working, you can issue a curl to the app's port *on
-the node where the pod is running*
+To verify that the app is working, you can issue a curl to the pod's port. This
+should work from any node, because of the SDN (software defined network) that
+OpenShift manages for you. Deeper details on the SDN is outside the scope of
+this course.
 
-    [root@ose3-node1 ~]# curl 10.1.0.3:8080
+    curl 10.1.1.2:8080
     Hello OpenShift!
 
 Hooray!
 
-You'll also notice that the pod landed on one of the primary nodes. Why is that?
+*Note:* You'll need to use the correct IP address for your environment (as
+shown in the `describe` output.
+
+You'll also notice that the pod landed on one of the *primary* nodes. Why is that?
 Becuase we had configured a default `nodeSelector` earlier during the set-up
 process.
 
@@ -310,30 +348,34 @@ Execute the following:
 
 You should see something like:
 
-    apiVersion: v1                                                                                                                                                                                             [18/554]
+    apiVersion: v1                                                                                                                                                                                             [33/253]
     kind: Pod
     metadata:
       annotations:
+        kubernetes.io/limit-ranger: 'LimitRanger plugin set: cpu, memory request for container
+          hello-openshift; cpu, memory limit for container hello-openshift'
         openshift.io/scc: restricted
-      creationTimestamp: 2015-07-22T20:42:30Z
+      creationTimestamp: 2015-11-06T19:14:02Z
       labels:
         name: hello-openshift
       name: hello-openshift
       namespace: demo
-      resourceVersion: "1399"
+      resourceVersion: "995"
       selfLink: /api/v1/namespaces/demo/pods/hello-openshift
-      uid: 2c1c7156-30b2-11e5-b6a3-525400b33d1d
+      uid: 8a1ccb02-84ba-11e5-94c1-525400b33d1d
     spec:
       containers:
-      - image: openshift/hello-openshift
+      - image: openshift/hello-openshift:v1.0.6
         imagePullPolicy: IfNotPresent
         name: hello-openshift
         ports:
         - containerPort: 8080
-          hostPort: 36061
           protocol: TCP
         resources:
           limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
             cpu: 100m
             memory: 100Mi
         securityContext:
@@ -345,39 +387,50 @@ You should see something like:
         terminationMessagePath: /dev/termination-log
         volumeMounts:
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-          name: default-token-ahpda
+          name: default-token-x51tv
           readOnly: true
       dnsPolicy: ClusterFirst
-      host: ose3-node2.example.com
+      host: ose3-node1.example.com
       imagePullSecrets:
-      - name: default-dockercfg-5uc2b
+      - name: default-dockercfg-y6fuh
+      nodeName: ose3-node1.example.com
       nodeSelector:
         region: primary
       restartPolicy: Always
+      securityContext:
+        fsGroup: 1000030000
+        seLinuxOptions:
+          level: s0:c6,c0
+        supplementalGroups:
+        - 1000030000
       serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
       volumes:
-      - name: default-token-ahpda
+      - name: default-token-x51tv
         secret:
-          secretName: default-token-ahpda
+          secretName: default-token-x51tv
     status:
       conditions:
-      - status: "True"
+      - lastProbeTime: null
+        lastTransitionTime: 2015-11-06T19:14:05Z
+        status: "True"
         type: Ready
       containerStatuses:
-      - containerID: docker://2706a87bd2c04f3ed216b704ee391910556aeea89c00f02ea1e990cd37e266af
-        image: openshift/hello-openshift
-        imageID: docker://4c6802d09a00319e08ed176d9fabe484df9a1bdc575ffe39ce190247f882b391
+      - containerID: docker://1281646d6849844c8c91aeeffce544600f65b8418b01741e3b0264134e759c60
+        image: openshift/hello-openshift:v1.0.6
+        imageID: docker://bba2117915baabfd05932dc916306bae2c51d15848592c3018e7af0308dee519
         lastState: {}
         name: hello-openshift
         ready: true
         restartCount: 0
         state:
           running:
-            startedAt: 2015-07-22T20:42:32Z
-      hostIP: 192.168.133.4
+            startedAt: 2015-11-06T19:14:05Z
+      hostIP: 192.168.133.3
       phase: Running
-      podIP: 10.1.0.3
-      startTime: 2015-07-22T20:42:32Z
+      podIP: 10.1.1.2
+      startTime: 2015-11-06T19:14:01Z
 
 There are some interesting things in here now. 
 
@@ -394,10 +447,9 @@ Go to the web console and go to the *Overview* tab for the *OpenShift 3 Demo*
 project. You'll see some interesting things:
 
 * You'll see the pod is running (eventually)
-* You'll see the SDN IP address that the pod is associated with (10....)
+* You'll see the image and container information for the pod
 * You'll see the internal port that the pod's container's "application"/process
     is using
-* You'll see the host port that the pod is bound to
 * You'll see that there's no service yet - we'll get to services soon.
 
 ## Quota Usage
@@ -408,17 +460,64 @@ You can also use `osc` to determine the current quota usage of your project. As
 
     oc describe quota test-quota
 
-## Delete the Pod
-As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
-
-    oc delete pod hello-openshift
-
+## Review
 Take a moment to think about what this pod exercise really did -- it referenced
 an arbitrary Docker image, made sure to fetch it (if it wasn't present), and
 then ran it. This could have just as easily been an application from an ISV
 available in a registry or something already written and built in-house.
 
 This is really powerful. We will explore using "arbitrary" docker images later.
+
+## Default Project Templates
+While it's nice that an administrator can apply a quota and limits to a project,
+it would be far nicer if OpenShift could automatically set a default quota and
+limits for any project that is created. It can! Here's a link to the
+relevant documentation:
+
+    https://docs.openshift.com/enterprise/latest/admin_guide/selfprovisioned_projects.html#template-for-new-projects
+
+For your benefit, there is a pre-configured template in the `content` folder
+called `default-project-template.yaml`. We'll talk more about templates in a
+later lab, so, for now, just do some copy/paste work.
+
+As `root`, first, create/add the template to the default project:
+
+    oc create -f ~/training/content/default-project-template.yaml -n default
+
+Next, edit `/etc/origin/master/master-config.yaml` and find the
+`projectConfig` section. You will need to change to match the following line:
+
+    projectRequestTemplate: "default/default-project-request"
+
+Be mindful of spacing with YAML. The `projectRequestMessage` and
+`projectRequestTemplate` should be at the same indentation level. Save and exit
+your editor, and then restart the master:
+
+    systemctl restart atomic-openshift-master
+
+## Create a Project Via the Template
+As `joe`, go ahead and delete your `demo` project. We're going to recreate it in
+a moment:
+
+    oc delete project demo
+
+Now, wait a few moments (until the project no longer shows up in the output of
+`oc get projects`) and then re-create the `demo` project. This time we will
+create the project as the `joe` user (last time the admin did it). 
+
+As `joe`:
+
+    oc new-project demo --display-name="OpenShift 3 Demo" \
+    --description="This is the first demo project with OpenShift v3" 
+
+Since it is not disabled, any user can create a project, and that project will
+inherit the default project template. This template now has a quota, so if `joe`
+does:
+
+    oc get quota
+    oc get limitrange
+
+He should see that the project has both a quota and a limit range defined.
 
 ## Quota Enforcement
 Since we know we can run a pod directly, we'll go through a simple quota
@@ -440,5 +539,3 @@ Let's delete these pods quickly. As `joe` again:
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
 check*. Be careful.
-
-

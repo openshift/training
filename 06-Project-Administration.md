@@ -26,7 +26,7 @@ Open a new terminal window as the `alice` user:
 and login to OpenShift:
 
     oc login -u alice \
-    --certificate-authority=/etc/openshift/master/ca.crt \
+    --certificate-authority=/etc/origin/master/ca.crt \
     --server=https://ose3-master.example.com:8443
 
 You'll interact with the tool as follows:
@@ -79,7 +79,7 @@ mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
 
-* https://docs.openshift.com/enterprise/3.0/admin_guide/manage_authorization_policy.html
+    https://docs.openshift.com/enterprise/latest/admin_guide/manage_authorization_policy.html
 
 Of course, there be dragons. The basic roles should suffice for most uses.
 
@@ -96,7 +96,7 @@ If you *very* quickly go to the web console and return to the top page, you'll
 see a warning icon that will pop-up a hover tip saying the project is marked for
 deletion.
 
-If you switch to the `root` user and issue `oc get project` you will see that
+If you switch to the `root` user and issue `oc get project` you may see that
 the demo project's status is "Terminating". If you do an `oc get pod -n demo`
 you may see the pods, still. It may take up to 60 seconds for the project
 deletion cleanup routine to finish.

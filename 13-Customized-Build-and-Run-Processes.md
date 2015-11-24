@@ -19,7 +19,7 @@ builder image's scripts. If so, it will execute the repository script instead.
 More information on the scripts, their execution during the process, and
 customization can be found here:
 
-    https://docs.openshift.com/enterprise/3.0/creating_images/s2i.html#s2i-scripts
+    https://docs.openshift.com/enterprise/latest/creating_images/s2i.html#s2i-scripts
 
 ## Add a Script
 We will be performing these actions as `alice` in the *wiring* project that we
@@ -37,7 +37,10 @@ the `.sti/bin` folder.
 * Provide a nifty commit message.
 * Click the "commit" button.
 
-**Note:** If you know how to Git(hub), you can do this via your shell.
+**Note:** If you know how to Git(Hub), you can do this via your shell.
+
+There is also a `run` script in the `content` folder. Upload that to the
+`.sti/bin` folder as well.
 
 Once the file is added, we can now do another build. The "custom" assemble
 script will log some extra data.
@@ -47,29 +50,20 @@ Our old friend `curl` is back:
 
     curl -i -H "Accept: application/json" \
     -H "X-HTTP-Method-Override: PUT" -X POST -k \
-    https://ose3-master.example.com:8443/osapi/v1beta3/namespaces/wiring/buildconfigs/ruby-example/webhooks/secret101/generic
+    https://ose3-master.example.com:8443/oapi/v1/namespaces/wiring/buildconfigs/ruby-hello-world/webhooks/1B-cP1NWmH2U0U247ob2/generic
+
+You could also use `oc start-build` or use the web console. Whatever suits your
+fancy.
 
 ## Watch the Build Logs
-Using the skills you have learned, watch the build logs for this build. If you
-miss them, remember that you can find the Docker container that ran the build
-and look at its Docker logs.
+Using the skills you have learned, watch the build logs for this build. Did You See It?
 
-Did You See It?
-
-    2015-03-11T14:57:00.022957957Z I0311 10:57:00.022913       1 sti.go:357]
     ---> CUSTOM S2I ASSEMBLE COMPLETE
 
-But where's the output from the custom `run` script? The `assemble` script is
-run inside of your builder pod. That's what you see by using `build-logs` - the
-output of the assemble script. The
-`run` script actually is what is executed to "start" your application's pod. In
-other words, the `run` script is what starts the Ruby process for an image that
-was built based on the `ruby-20-rhel7` S2I builder. 
+But where is the output from our custom run? The `run` script actually is what
+is executed to "start" your application's pod.  In other words, the `run` script
+is what starts the Ruby process for an image that was built based on the
+`ruby-20-rhel7` S2I builder. So where would you find this output? In the pod's
+log. Use the web console or "oc logs" to check out the pod that was deployed as
+a result of this build.
 
-To look inside the builder pod, as `alice`:
-
-    oc logs `oc get pod | grep -e "[0-9]-build" | tail -1 | awk {'print $1'}` | grep CUSTOM
-
-You should see something similar to:
-
-    2015-04-27T22:23:24.110630393Z ---> CUSTOM S2I ASSEMBLE COMPLETE

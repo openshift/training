@@ -2,7 +2,6 @@
 [OSEv3:children]
 masters
 nodes
-etcd
 
 # Set variables common for all OSEv3 hosts
 [OSEv3:vars]
@@ -16,11 +15,14 @@ ansible_ssh_user=root
 #ansible_sudo=true
 
 # deployment type valid values are origin, online and enterprise
-deployment_type=enterprise
+deployment_type=openshift-enterprise
+cli_docker_additional_registries=rcm-img-docker01.build.eng.bos.redhat.com:5001
+cli_docker_insecure_registries=rcm-img-docker01.build.eng.bos.redhat.com:5001
 
 # htpasswd auth
-openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/openshift-passwd'}]
-
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/openshift-passwd'}]
+osm_default_subdomain="cloudapps.example.com"
+osm_default_node_selector="region=primary"
 # host group for masters
 [masters]
 ose3-master.example.com
@@ -29,6 +31,6 @@ ose3-master.example.com
 
 # host group for nodes
 [nodes]
-ose3-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+ose3-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" openshift_scheduleable=True
 ose3-node1.example.com openshift_node_labels="{'region': 'primary', 'zone': 'east'}"
 ose3-node2.example.com openshift_node_labels="{'region': 'primary', 'zone': 'west'}"

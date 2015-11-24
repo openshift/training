@@ -50,13 +50,11 @@ Remember, if your FQDNs are different, you would have to modify the command
 accordingly.
 
 ## Run the Installer
-Go ahead and run the installer:
+As `root` in `/root`, go ahead and run the installer:
 
-    sh <(curl -s https://install.openshift.com/ose/)
+    atomic-openshift-installer -a openshift-ansible/
 
-It will take a few moments to download and compile its dependencies, and then it
-will run. You will be prompted to answer various questions about your
-environment. The first screen, once ready, will look like:
+You will see:
 
     Welcome to the OpenShift Enterprise 3 installation.
     
@@ -77,9 +75,9 @@ environment. The first screen, once ready, will look like:
     For more information on installation prerequisites please see:
     https://docs.openshift.com/enterprise/latest/admin_guide/install/prerequisites.html
     
-    Are you ready to continue?  y/Y to confirm, or n/N to abort [n]: 
+    Are you ready to continue? [y/N]: 
 
-Type `y` and hit enter to continue.
+Press `y` to continue and hit enter.
 
 ## Define installation user
 The installer supports operation as non-root, but, for this training, we will
@@ -94,54 +92,79 @@ prompt like:
 
 Hit enter to conintue.
 
-## Master Configuration
-The next step is to configure master(s). After pressing a key to continue, the
-default system editor will open. Be sure to specify our lone master:
+## Host Configuration
+The next step will be to select which hosts to have the installer configure. You
+should enter the information as follows below:
 
-    ose3-master.example.com
+    ***Host Configuration***
+    
+    The OpenShift Master serves the API and web console.  It also coordinates the
+    jobs that have to run across the environment.  It can even run the datastore.
+    For wizard based installations the database will be embedded.  It's possible to
+    change this later using etcd from Red Hat Enterprise Linux 7.
+    
+    Any Masters configured as part of this installation process will also be
+    configured as Nodes.  This is so that the Master will be able to proxy to Pods
+    from the API.  By default this Node will be unscheduleable but this can be changed
+    after installation with 'oadm manage-node'.
+    
+    The OpenShift Node provides the runtime environments for containers.  It will
+    host the required services to be managed by the Master.
+    
+    http://docs.openshift.com/enterprise/latest/architecture/infrastructure_components/kubernetes_infrastructure.html#master
+    http://docs.openshift.com/enterprise/3.0/architecture/infrastructure_components/kubernetes_infrastructure.html#node
+        
+    Enter hostname or IP address: []: ose3-master.example.com
+    Will this host be an OpenShift Master? [y/N]: y
+    Will this host be RPM or Container based (rpm/container)? [rpm]: 
+    Do you want to add additional hosts? [y/N]: y
+    Enter hostname or IP address: []: ose3-node1.example.com
+    Will this host be an OpenShift Master? [y/N]: n
+    Will this host be RPM or Container based (rpm/container)? [rpm]: 
+    Do you want to add additional hosts? [y/N]: y
+    Enter hostname or IP address: []: ose3-node2.example.com
+    Will this host be an OpenShift Master? [y/N]: n
+    Will this host be RPM or Container based (rpm/container)? [rpm]: 
+    Do you want to add additional hosts? [y/N]: n
 
-Save and exit the editor. You will be asked to confirm:
+## Variant Selection
+We will be installing OpenShift Enterprise 3.1, so be sure to select *2*:
 
-    1) ose3-master.example.com
-    Please confirm the following masters.  y/Y to confirm, or n/N to edit [n]: 
+    Which variant would you like to install?
 
-Type `y` and hit enter to coninue.
 
-## Node Configuration
-The next step is to configure node(s). After pressing a key to continue, the
-default system editor will open. You will notice that your master is already
-present. **Do not delete it**. The master **must** be configured as a node
-presently, because this is how it is able to participate on / access the SDN.
-The master needs to be able to access some of the deployed application instances
-(pods).
+    (1) OpenShift Enterprise 3.0
+    (2) OpenShift Enterprise 3.1
+    (3) Atomic OpenShift Enterprise 3.1
+    Choose a variant from above:  [1]: 2
 
-Be sure to enter all nodes:
+## Gathering host information:
+At this point the installer will log-in to each of the hosts to get information:
 
-    ose3-node1.example.com
-    ose3-node2.example.com
-
-Save and exit the editor. You will be asked to confirm:
-
-    1) ose3-master.example.com
-    2) ose3-node1.example.com
-    3) ose3-node2.example.com
-    Please confirm the following nodes.  y/Y to confirm, or n/N to edit [n]:
-
-Type `y` and hit enter to continue.
+    Gathering information from hosts...
 
 ## General Confirmation
 The installer will now show you an overview of the installation details. You
 should see something like the following:
 
-    ose3-node2.example.com,192.168.133.4,192.168.133.4,ose3-node2.example.com,ose3-node2.example.com
-    ose3-node1.example.com,192.168.133.3,192.168.133.3,ose3-node1.example.com,ose3-node1.example.com
-    ose3-master.example.com,192.168.133.2,192.168.133.2,ose3-master.example.com,ose3-master.example.com
+    A list of the facts gathered from the provided hosts follows. Because it is
+    often the case that the hostname for a system inside the cluster is different
+    from the hostname that is resolveable from command line or web clients
+    these settings cannot be validated automatically.
     
-    # Everything after this line is ignored.
+    For some cloud providers the installer is able to gather metadata exposed in
+    the instance so reasonable defaults will be provided.
+    
+    Plese confirm that they are correct before moving forward.
+    
+    
+    192.168.133.2,192.168.133.2,ose3-master.example.com,ose3-master.example.com
+    192.168.133.3,192.168.133.3,ose3-node1.example.com,ose3-node1.example.com
+    192.168.133.4,192.168.133.4,ose3-node2.example.com,ose3-node2.example.com
     
     Format:
     
-    installation host,IP,public IP,hostname,public hostname
+    IP,public IP,hostname,public hostname
     
     Notes:
      * The installation host is the hostname from the installer's perspective.
@@ -151,13 +174,15 @@ should see something like the following:
        themselves.
      * The public hostname should resolve to the external ip from hosts outside of
        the cloud.
+    
+    Do the above facts look correct? [y/N]: 
 
 If you are installing in a cloud-like environment (AWS, OpenStack, etc), please
 take special note of the *Notes* section, as it contains very important details
 about how to change the final configuration to handle public vs private
 resources and etc.
 
-When you are satisfied, save and exit the editor.
+Select `y` and press enter to continue.
 
 ## Finish the Installation
 You will now see something like the following:
@@ -166,17 +191,17 @@ You will now see something like the following:
     
     If changes are needed to the values recorded by the installer please update /root/.config/openshift/installer.cfg.yml.
     
-    Proceed? y/Y to confirm, or n/N to exit [y]: 
+    Are you ready to continue? [y/N]: 
 
-Type `y` and hit enter to finish the installation. You will then begin to see
-the installer do its work. At the end of the installation process, you should
-see something like the following:
+Type `y` and hit enter to begin the installation. You will then see the
+installer do its work. At the end of the installation process, you should see
+something like the following:
 
     PLAY RECAP ******************************************************************** 
-    localhost                  : ok=9    changed=0    unreachable=0    failed=0   
-    ose3-master.example.com    : ok=144  changed=36   unreachable=0    failed=0   
-    ose3-node1.example.com     : ok=43   changed=13   unreachable=0    failed=0   
-    ose3-node2.example.com     : ok=43   changed=13   unreachable=0    failed=0   
+    localhost                  : ok=10   changed=0    unreachable=0    failed=0   
+    ose3-master.example.com    : ok=185  changed=54   unreachable=0    failed=0   
+    ose3-node1.example.com     : ok=52   changed=20   unreachable=0    failed=0   
+    ose3-node2.example.com     : ok=52   changed=20   unreachable=0    failed=0   
 
     
     The installation was successful!
@@ -186,24 +211,16 @@ see something like the following:
     more:
     
     http://docs.openshift.com/enterprise/latest/admin_guide/overview.html
+    
+    Press any key to continue ...
 
 Press any key to continue and exit the installer. You now have a working
 OpenShift Enterprise environment!
 
-## Copy the CA certificate
-The `/etc/openshift/master` folder is not group or world readable. This is good
-because the keyfiles are in there, and "random" users should not have access to
-them.
-
-However, the self-signed CA certificate that the installer generated needs to be
-accessible to users on the system. So, copy it to somewhere accessible:
-
-    /bin/cp /etc/openshift/master/ca.crt /etc/openshift
-
 ## Add Cloud Domain
 If you want default routes (we'll talk about these later) to automatically get
 the right domain (the one you configured earlier with your wildcard DNS), then
-you should edit `/etc/openshift/master/master-config.yaml` and edit the
+you should edit `/etc/origin/master/master-config.yaml` and edit the
 following:
 
     routingConfig:
@@ -286,7 +303,7 @@ Again, the defaults are:
 And, for an extremely detailed explanation about what these various
 configuration flags are doing, check out:
 
-    https://docs.openshift.com/enterprise/3.0/admin_guide/scheduler.html
+    https://docs.openshift.com/enterprise/latest/admin_guide/scheduler.html
 
 In a small environment, these defaults are pretty sane. Let's look at one of the
 important predicates (filters) before we move on to "regions" and "zones".
@@ -307,17 +324,18 @@ my workload will never get scheduled. Bummer.
 
 How can we make this more intelligent? We'll finally use "regions" and "zones".
 
-## Customizing the Scheduler Configuration
-The Ansible installer is configured to understand "regions" and "zones" as a
-matter of convenience. However, for the master (scheduler) to actually do
-something with them requires changing from the default configuration Take a look
-at `/etc/openshift/master/master-config.yaml` and find the line with `schedulerConfigFile`.
+## Examining the Scheduler Configuration
+The installer is configured to understand "regions" and "zones" as a matter of
+convenience. However, for the master (scheduler) to actually do something with
+them requires changing from the default configuration Take a look at
+`/etc/origin/master/master-config.yaml` and find the line with
+`schedulerConfigFile`.
 
 You should see:
 
-    schedulerConfigFile: "/etc/openshift/master/scheduler.json"
+    schedulerConfigFile: "/etc/origin/master/scheduler.json"
 
-Then, take a look at `/etc/openshift/master/scheduler.json`. It will have the
+Then, take a look at `/etc/origin/master/scheduler.json`. It will have the
 following content:
 
     {
@@ -372,33 +390,33 @@ The documentation link has some more complicated examples. The topoligical
 possibilities are endless!
 
 ## Node Labels
-**Note:** There is a bug in the installer right now and labeling the nodes
-does not work. You'll have to fix this manually:
+The assignments of "regions" and "zones" at the node-level are handled by labels
+on the nodes. Since the installation process configured the regions and zones, but did not ask
+us how to put the nodes into that topology, you need to label the nodes now:
 
     oc label node/ose3-master.example.com region=infra zone=default
     oc label node/ose3-node1.example.com region=primary zone=east
     oc label node/ose3-node2.example.com region=primary zone=west
 
-The assignments of "regions" and "zones" at the node-level are handled by labels
-on the nodes. You can look at how the labels were implemented by doing:
+You can look at how the labels were implemented by doing:
 
     oc get nodes
 
-    NAME                      LABELS                                                                     STATUS
-    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready,SchedulingDisabled
-    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
-    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
+    NAME                      LABELS                                                                     STATUS                     AGE
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready,SchedulingDisabled   48m
+    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready                      48m
+    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready                      48m
 
 At this point we have a running OpenShift environment across three hosts, with
 one master and three nodes, divided up into two regions -- "*infra*structure"
 and "primary". *BUT* the master is currently tagged as "SchedulingDisabled". The
 installer will, by default, not configure the master's node to receive workload
-(SchedulingDisabled).
+(SchedulingDisabled). You will fix this in a moment.
 
 ## Edit Default NodeSelector
 We want our apps to land in the primary region, and not in the infra region. We
 can do this by setting a default `nodeSelector` for our OpenShift environment.
-Edit the `/etc/openshift/master/master-config.yaml` again, and make the
+Edit the `/etc/origin/master/master-config.yaml` again, and make the
 following change:
 
     projectConfig:
@@ -407,38 +425,34 @@ following change:
 Once complete, restart your master. This will make both our default
 `nodeSelector` and routing changes take effect:
 
-    systemctl restart openshift-master
+    systemctl restart atomic-openshift-master
 
 ## Make Master Schedulable
-We can use the `oc edit` command to make the master schedulable (allow it to
-receive workloads). Be sure to change the name of the node to match your
-environment:
+A single command can be used to make the master node schedulable:
 
-    oc edit node ose3-master.example.com
+    oadm manage-node ose3-master.example.com --schedulable=true
 
-You will see a bunch of YAML come up in your default editor. Make sure that you
-**delete** the following line:
-
-      unschedulable: true
-
-Make sure that you do not change any indentation/spacing on any of the other
-lines. Save and exit your editor, and then run the following:
+Then, run the following:
 
     oc get node
 
 You should see that now your master is set to receive workloads:
 
-    NAME                      LABELS                                                                     STATUS
-    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready
-    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready
-    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready
+    NAME                      LABELS                                                                     STATUS    AGE
+    ose3-master.example.com   kubernetes.io/hostname=ose3-master.example.com,region=infra,zone=default   Ready     51m
+    ose3-node1.example.com    kubernetes.io/hostname=ose3-node1.example.com,region=primary,zone=east     Ready     51m
+    ose3-node2.example.com    kubernetes.io/hostname=ose3-node2.example.com,region=primary,zone=west     Ready     51m
 
 ## Tweak Default Project
 The *default* project/namespace is a special one where we will put some of our
-infrastructure-related resources. This project does not have a `nodeSelector` by
-default. Since we have configured a default `nodeSelector`, and it is not the
-*infra* region, we need to make a tweak so that things that go in the *infra*
-region.
+infrastructure-related resources. This project was created when OpenShift was
+first started (OpenShift always ensures it exists).  We want resources deployed
+into the *default* project to run on the *infra*structure nodes.
+
+Since the *default* project was created when OpenShift was first started, it
+didn't inherit any default `nodeSelector`. Further, we have configured a default
+`nodeSelector` for *primary*, not the  *infra* region. So let's make a tweak so
+that things that go in the *infra* region.
 
 Execute the following:
 

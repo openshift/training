@@ -11,6 +11,7 @@
 
 # Auth, Projects, and the Web Console
 ## Configuring htpasswd Authentication
+** TODO: Does the quick installer do this? **
 OpenShift v3 supports a number of mechanisms for authentication. The simplest
 use case for our testing purposes is `htpasswd`-based authentication.
 
@@ -21,14 +22,14 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift/openshift-passwd
-    htpasswd -b /etc/openshift/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift/openshift-passwd alice redhat
+    touch /etc/origin/openshift-passwd
+    htpasswd -b /etc/origin/openshift-passwd joe redhat
+    htpasswd -b /etc/origin/openshift-passwd alice redhat
 
 Remember, you created these users previously.
 
 The OpenShift configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master/master-config.yaml`. Ansible was configured to edit
+`/etc/origin/master/master-config.yaml`. Ansible was configured to edit
 the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
@@ -37,16 +38,16 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
       name: htpasswd_auth
       provider:
         apiVersion: v1
-        file: /etc/openshift/openshift-passwd
+        file: /etc/origin/openshift-passwd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings (and other identity providers) can be found here:
 
-    https://docs.openshift.com/enterprise/3.0/admin_guide/configuring_authentication.html
+    https://docs.openshift.com/enterprise/latest/admin_guide/configuring_authentication.html
 
 Restart your master once you have edited the config:
 
-    systemctl restart openshift-master
+    systemctl restart atomic-openshift-master
 
 ## A Project for Everything
 V3 has a concept of "projects" to contain a number of different resources:
@@ -56,9 +57,10 @@ throughout the rest of the labs. Let's create a project for our first
 application.
 
 We also need to understand a little bit about users and administration. The
-default configuration for CLI operations currently is to be the `master-admin`
+default configuration for CLI operations currently is to be the `system:admin`
 user, which is allowed to create projects. We can use the "admin"
-OpenShift command to create a project, and assign an administrative user to it:
+OpenShift command to create a project, and assign an administrative user to it.
+As the `root` system user on your master:
 
     oadm new-project demo --display-name="OpenShift 3 Demo" \
     --description="This is the first demo project with OpenShift v3" \

@@ -11,11 +11,26 @@ Using the skills you have learned earlier in the training, create a new project
 for the EAP example. Call it "eap-example" and make sure to remember which user
 you are doing it as.
 
+## Delete the Quotas and Limits
+The EAP image is designed to run with more memory and use more CPU than our puny
+quotas have so far allowed. If you recall, we configured OpenShift to use a
+default project template. While the user/project administrator cannot delete
+these quotas or limits that OpenShift creates automatically, a cluster
+administrator can.
+
+As `root` on your master:
+
+    oc delete quota/eap-example-quota limits/eap-example-limits -n eap-example
+
+This will allow the EAP instance(s) to run without limit on CPU or memory
+consumption. Not ideal for a real world scenario, but fine for our little
+experiment.
+
 ## Instantiate the Template
 Red Hat provides a number of templates that can be used with the JBoss portfolio
 builders. Find your EAP project in the web UI and then click "Add to Project".
-Click the "Show All Templates" button at the bottom of the screen. Find the
-*eap6-basic-sti* template and then click it.
+In the "Other" section, click "See all" and then find the template called
+`eap6-basic-sti` and click it.
 
 You will come to the template options page and see a large number of parameters
 that can be set. The only one we need to worry about is *GIT_CONTEXT_DIR* for
@@ -31,7 +46,8 @@ Changing the *GIT_CONTEXT_DIR* value to `helloworld` will tell the S2I builder
 which folder in the repo in the branch to use. If you visit the git repository
 and look for the `helloworld` folder you will find our application.
 
-Once you have changed the context dir, hit "Create" at the bottom of the screen.
+Once you have changed the context dir, hit "Create" at the bottom of the screen
+and then click "Continue to overview".
 
 You will see that two services are created -- one called `eap-app` and one
 called `eap-app-ping`. The EAP template sets up a "ping" service that JBoss has
@@ -41,10 +57,9 @@ The other service, `eap-app`, has a route created on it and is the one we will
 use to visit our application.
 
 ## Watch the Build
-In a few moments a build will start. You can watch the build if you choose, or
-just look at the web console and wait for it to finish. If you do watch the
-build, you might notice some Maven errors.  These are non-critical and will not
-affect the success or failure of the build.
+In a few moments a build will start. Feel free to watch the logs in the web
+console. If you do watch the build, you might notice some Maven errors.  These
+are non-critical and will not affect the success or failure of the build.
 
 ## Visit Your Application
 Once built, you can visit your application using the following URL:

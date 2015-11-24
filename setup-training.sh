@@ -33,7 +33,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  exec_it oc get build "$1" -n "$2" -t \''{{.status.phase}}'\' "|" grep -E \""$4"\"
+  exec_it oc get build "$1" -n "$2" --template \''{{.status.phase}}'\' "|" grep -E \""$4"\"
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -50,7 +50,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  exec_it oc get pod "$1" -n "$2" -t \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
+  exec_it oc get pod "$1" -n "$2" --template \''{{index .status.conditions 0 "type"}}|{{.status.phase}}'\' "|" grep \""Ready|Running"\"
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -67,7 +67,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  val=$(oc get endpoints -n "$2" "$1" -t '{{len .subsets}}')
+  val=$(oc get endpoints -n "$2" "$1" --template '{{len .subsets}}')
   if [ $val -gt 0 ]
   then
     test_exit 0 "$test"
@@ -84,7 +84,7 @@ printf "  $test\r"
 for i in $(seq 1 $3)
 do
   sleep 1
-  exec_it oc get rc $1 -n $2 -t \''{{.status.replicas}}'\' "|" grep $4
+  exec_it oc get rc $1 -n $2 --template \''{{.status.replicas}}'\' "|" grep $4
   if [ $? -eq 0 ]
   then
     test_exit 0 "$test"
@@ -132,6 +132,11 @@ printf "  $test\r"
 exec_it ssh root@ose3-node2.example.com "systemctl start dnsmasq"
 test_exit $? "$test"
 
+test="Enabling dnsmasq..."
+printf "  $test\r"
+exec_it ssh root@ose3-node2.example.com "systemctl enable dnsmasq"
+test_exit $? "$test"
+
 test="Checking for firewall rule..."
 exec_it ssh root@ose3-node2.example.com \""grep 'dport 53' /etc/sysconfig/iptables"\"
 # need to test whether ssh failed or grep failed
@@ -153,6 +158,16 @@ then
   exec_it ssh root@ose3-node2.example.com \""iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT"\"
   test_exit $? "$test"
 fi
+
+#test="Enabling DNS in firewalld..."
+#printf "  $test\r"
+#exec_it ssh root@ose3-node2.example.com \""firewall-cmd --zone=public --add-service=dns --permanent"\"
+#test_exit $? "$test"
+#
+#test="Reloading firewalld..."
+#printf "  $test\r"
+#exec_it ssh root@ose3-node2.example.com \""firewall-cmd --reload"\"
+#test_exit $? "$test"
 }
 
 function pull_content(){
@@ -163,35 +178,41 @@ if [ ! -d /root/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it git clone https://github.com/openshift/training ~/training
+  exec_it git clone https://github.com/$gituser/training -b $branch ~/training
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
   cd ~/training
-  exec_it git pull origin master
+  exec_it git pull $gituser $branch
   test_exit $? "$test"
 fi
-if [ ! -d /root/openshift-ansible ]
-then
-  test="Pulling ansible content..."
-  printf "  $test\r"
-  exec_it git clone https://github.com/openshift/openshift-ansible ~/openshift-ansible
-  test_exit $? "$test"
-else
-  test="Updating ansible content..."
-  printf "  $test\r"
-  cd ~/openshift-ansible
-  exec_it git pull origin master
-  test_exit $? "$test"
-fi
-test="Copying hosts file..."
-printf "  $test\r"
-exec_it /bin/cp -f ~/training/content/sample-ansible-hosts /etc/ansible/hosts
-test_exit $? "$test"
+#if [ ! -d /root/openshift-ansible ]
+#then
+#  test="Pulling ansible content..."
+#  printf "  $test\r"
+#  exec_it git clone https://github.com/openshift/openshift-ansible ~/openshift-ansible
+#  test_exit $? "$test"
+#else
+#  test="Updating ansible content..."
+#  printf "  $test\r"
+#  cd ~/openshift-ansible
+#  exec_it git pull origin master
+#  test_exit $? "$test"
+#fi
+#test="Copying hosts file..."
+#printf "  $test\r"
+#exec_it /bin/cp -f ~/training/content/sample-ansible-hosts /etc/ansible/hosts
+#test_exit $? "$test"
 }
 
 function prepare_things(){
+test="Installing atomic-openshift-utils (installer)..."
+printf "  $test\r"
+#exec_it yum -y install atomic-openshift-utils
+# temporary workaround
+exec_it yum -y install atomic-openshift-utils 
+test_exit $? "$test"
 prepare_dns
 pull_content
 # just in case
@@ -202,12 +223,47 @@ then
 fi
 }
 
+function just_setup() {
+prepare_things
+run_install
+post_install
+setup_dev_users
+configure_htpasswd_auth
+install_router
+prepare_nfs
+setup_storage_volumes_claims
+install_registry
+add_claimed_volume
+setup_default_project_template
+}
+
 function post_install(){
-copy_ca
+test="Making master schedulable..."
+printf "  $test\r"
+exec_it oadm manage-node ose3-master.example.com --schedulable=true
+test_exit $? "$test"
+configure_default_project_selector
 label_nodes
 configure_routing_domain
 configure_default_nodeselector
-configure_default_project_selector
+}
+
+function configure_htpasswd_auth(){
+test="Configuring htpasswd authentication..."
+printf "  $test\r"
+exec_it perl -0777 -pi -e \''BEGIN { $match = `cat ~/training/content/oldauth.yaml`; $replace = `cat ~/training/content/auth.yaml` } s/$match/$replace/'\' /etc/origin/master/master-config.yaml
+test_exit $? "$test"
+test="Restarting master..."
+printf "  $test\r"
+exec_it systemctl restart atomic-openshift-master
+test_exit $? "$test"
+}
+
+function update_project_template_quota(){
+test="Updating project request quota to 5 pods..."
+printf "  $test\r"
+exec_it oc get template/default-project-request -o yaml "|" sed -e \''s/pods: 3/pods: 5/'\' "|" oc replace -f -
+test_exit $? "$test"
 }
 
 function run_install(){
@@ -216,27 +272,22 @@ test="Running installation..."
 if $installoutput
 then
   echo "Installation..."
-  cd ~/openshift-ansible
-  if $trace
-  then
-    ansible-playbook playbooks/byo/config.yml -vvvv
-  else
-    ansible-playbook playbooks/byo/config.yml
-  fi
+  cd
+  atomic-openshift-installer -c ~/training/installer.cfg.yaml -u install -f
 else
   echo "Installation (takes a while - output logged to /tmp/ansible-$date.log)..."
-  cd ~/openshift-ansible
-  ansible-playbook playbooks/byo/config.yml > /tmp/ansible-`date +%d%m%Y`.log
+  cd
+  atomic-openshift-installer -c ~/training/installer.cfg.yaml -u install -f > /tmp/ansible-`date +%d%m%Y`.log
 fi
 test_exit $? "$test"
 }
 
-function copy_ca(){
-test="Copying CA certificate to a user accessible location..."
-printf "  $test\r"
-exec_it /bin/cp /etc/openshift/master/ca.crt /etc/openshift
-test_exit $? "$test"
-}
+#function copy_ca(){
+#test="Copying CA certificate to a user accessible location..."
+#printf "  $test\r"
+#exec_it /bin/cp /etc/origin/master/ca.crt /etc/origin
+#test_exit $? "$test"
+#}
 
 function label_nodes(){
 # let things settle a bit
@@ -253,27 +304,29 @@ test="Labeling node2..."
 printf "  $test\r"
 exec_it oc label --overwrite node/ose3-node2.example.com region=primary zone=west
 test_exit $? "$test"
-test="Making master schedulable..."
-printf "  $test\r"
-exec_it oadm manage-node ose3-master.example.com --schedulable=true
-test_exit $? "$test"
 }
 
 function configure_routing_domain(){
 test="Configure default routing domain..."
 printf "  $test\r"
-exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/openshift/master/master-config.yaml
+exec_it sed -i \''s/^  subdomain.*/\  subdomain: "cloudapps.example.com"/'\' /etc/origin/master/master-config.yaml
 test_exit $? "$test"
+test="Restart master..."
+printf "  $test\r"
+exec_it systemctl restart atomic-openshift-master
+test_exit $? "$test"
+# wait for things to settle
+sleep 15
 }
 
 function configure_default_nodeselector(){
 test="Configure default nodeselector for system..."
 printf "  $test\r"
-exec_it sed -i /etc/openshift/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
+exec_it sed -i /etc/origin/master/master-config.yaml -e \''s/defaultNodeSelector: ""/defaultNodeSelector: "region=primary"/'\'
 test_exit $? "$test"
 test="Restart master..."
 printf "  $test\r"
-exec_it systemctl restart openshift-master
+exec_it systemctl restart atomic-openshift-master
 test_exit $? "$test"
 # wait for things to settle
 sleep 15
@@ -305,16 +358,41 @@ then
 fi
 test="Creating passwd file..."
 printf "  $test\r"
-exec_it touch /etc/openshift/openshift-passwd
+exec_it touch /etc/origin/openshift-passwd
 test_exit $? "$test"
 test="Setting joe password..."
 printf "  $test\r"
-exec_it htpasswd -b /etc/openshift/openshift-passwd joe redhat
+exec_it htpasswd -b /etc/origin/openshift-passwd joe redhat
 test_exit $? "$test"
 test="Setting alice password..."
 printf "  $test\r"
-exec_it htpasswd -b /etc/openshift/openshift-passwd alice redhat
+exec_it htpasswd -b /etc/origin/openshift-passwd alice redhat
 test_exit $? "$test"
+}
+
+function setup_default_project_template(){
+# check if the template is already there
+exec_it oc get template/default-project-request -n default
+if [ ! $? -eq 0 ]
+then
+  test="Creating default project template..."
+  printf "  $test\r"
+  exec_it oc create -f ~/training/content/default-project-template.yaml
+  test_exit $? "$test"
+fi
+# check if the setting for default template is set
+exec_it grep default-project-request /etc/origin/master/master-config.yaml
+if [ ! $? -eq 0 ]
+then
+  test="Configuring OpenShift to use the default project template..."
+  printf "  $test\r"
+  exec_it sed -i -e \''s/^  projectRequestTemplate:.*/\  projectRequestTemplate: "default\/default-project-request"/'\' /etc/origin/master/master-config.yaml
+  test_exit $? "$test"
+  test="Restarting master..."
+  printf "  $test\r"
+  exec_it systemctl restart atomic-openshift-master
+  test_exit $? "$test"
+fi
 }
 
 function create_joe_project(){
@@ -329,9 +407,7 @@ fi
 sleep 3
 test="Creating project for joe..."
 printf "  $test\r"
-exec_it oadm new-project demo --display-name=\""OpenShift 3 Demo"\" \
---description=\""This is the first demo project with OpenShift v3"\" \
---admin=joe
+exec_it su - joe -c \""oc new-project demo --display-name='OpenShift 3 Demo' --description='This is the first demo project with OpenShift v3'"\"
 test_exit $? "$test"
 }
 
@@ -360,7 +436,7 @@ function joe_login_pull(){
 test="Login as joe..."
 printf "  $test\r"
 exec_it su - joe -c \""oc login -u joe -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 # make sure to set the right project in case this is a re-run
@@ -369,17 +445,18 @@ if [ ! -d /home/joe/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""git clone https://github.com/openshift/training"\"
+  exec_it su - joe -c \""git clone https://github.com/$gituser/training -b $branch"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - joe -c \""cd ~/training && git pull origin master"\"
+  exec_it su - joe -c \""cd ~/training && git pull $gituser $branch"\"
   test_exit $? "$test"
 fi
 }
 
 function hello_pod(){
+exec_it su - joe -c \""oc project demo"\"
 test="Creating hello-openshift pod..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-pod.json"\"
@@ -388,7 +465,7 @@ wait_on_pod "hello-openshift" "demo" 30
 # if we came out of that successfully, proceed
 test="Verifying hello-pod..."
 printf "  $test\r"
-exec_it curl $(oc get pod hello-openshift -n demo -t '{{.status.podIP}}'):8080 "|" grep Hello
+exec_it curl $(oc get pod hello-openshift -n demo --template '{{.status.podIP}}'):8080 "|" grep Hello
 test_exit $? "$test"
 test="Deleting hello-pod..."
 printf "  $test\r"
@@ -399,6 +476,7 @@ sleep 15
 }
 
 function hello_quota() {
+exec_it su - joe -c \""oc project demo"\"
 # if there are any pods, nuke 'em and start over
 ans=$(oc get pods -n demo | wc -l)
 if [ $ans != 1 ]
@@ -423,18 +501,21 @@ sleep 15
 }
 
 function joe_project(){
+joe_login_pull
 create_joe_project
 set_project_quota_limits
-joe_login_pull
 hello_pod
 hello_quota
+setup_default_project_template
 }
 
 function create_populate_service(){
 # delete hello service
 exec_it oc delete service --all -n demo
 exec_it oc delete pod --all -n demo
+exec_it oc delete route --all -n demo
 sleep 15
+exec_it su - joe -c \""oc project demo"\"
 test="Creating hello-service..."
 printf "  $test\r"
 exec_it su - joe -c \""oc create -f ~/training/content/hello-service.json"\"
@@ -452,11 +533,11 @@ sleep 5
 test="Checking service endpoints..."
 # there should be three
 printf "  $test\r"
-exec_it oc get endpoints hello-service -n demo -t \''{{index .subsets 0 "addresses" | len}}'\' "|" grep 3
+exec_it oc get endpoints hello-service -n demo --template \''{{index .subsets 0 "addresses" | len}}'\' "|" grep 3
 test_exit $? "$test"
 test="Validating service..."
 printf "  $test\r"
-exec_it curl $(oc get service hello-service -n demo -t \''{{.spec.clusterIP}}:8888'\')
+exec_it curl $(oc get service hello-service -n demo --template \''{{.spec.clusterIP}}:{{index .spec.ports 0 "port"}}'\')
 test_exit $? "$test"
 }
 
@@ -464,7 +545,7 @@ function install_router(){
 # just in case
 exec_it oc project default
 cd
-CA=/etc/openshift/master
+CA=/etc/origin/master
 if [ ! -e /root/cloudapps.router.pem ]
 then
   test="Creating server certificates..."
@@ -480,16 +561,6 @@ then
   test_exit $? "$test"
 fi
 
-# check for SA
-exec_it oc get sa router
-if [ $? -eq 1 ]
-then
-  test="Creating router service account..."
-  printf "  $test\r"
-  exec_it echo \''{"kind":"ServiceAccount","apiVersion":"v1","metadata":{"name":"router"}}'\' "|" oc create -f -
-  test_exit $? "$test"
-fi
-
 # check scc
 exec_it oc get scc privileged -o yaml | grep router
 if [ $? -eq 1 ]
@@ -501,14 +572,14 @@ then
 fi
 
 # check for router
-exec_it oadm router --dry-run --credentials='/etc/openshift/master/openshift-router.kubeconfig' --service-account=router
+exec_it oadm router --dry-run --credentials='/etc/origin/master/openshift-router.kubeconfig' --service-account=router
 
 # if no router
 if [ $? -eq 1 ]
 then
   test="Installing router..."
   printf "  $test\r"
-  exec_it oadm router router --replicas=1 --default-cert=cloudapps.router.pem --credentials='/etc/openshift/master/openshift-router.kubeconfig' --service-account=router
+  exec_it oadm router router --replicas=1 --default-cert=cloudapps.router.pem --credentials='/etc/origin/master/openshift-router.kubeconfig' --service-account=router
   test_exit $? "$test"
 fi
 
@@ -554,7 +625,8 @@ test_exit $? "$test"
 
 function complete_pod_service_route(){
 # delete everything in the project
-exec_it su - joe -c \""oc delete all -l name=hello-openshift"\"
+exec_it su - joe -c \""oc project demo"\"
+exec_it su - joe -c \""oc delete all -l name=hello-openshift -n demo"\"
 # wait for quota
 sleep 15
 # create complete def
@@ -565,6 +637,12 @@ test_exit $? "$test"
 wait_on_rc "hello-openshift-1" "demo" 60 1
 ans=$(oc get pod -n demo | awk '{print $1}'| grep -E "^hello-openshift-1-\w{5}$")
 wait_on_pod "$ans" "demo" 60
+wait_on_endpoints "hello-openshift-service" "demo" 60
+sleep 15
+test="Testing the new HTTPS route..."
+printf "  $test\r"
+exec_it curl -k https://hello-openshift.cloudapps.example.com "|" grep Hello
+test_exit $? "$test"
 }
 
 function project_administration(){
@@ -577,7 +655,7 @@ sleep 5
 test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 exec_it su - alice -c \""oc project demo"\"
@@ -713,6 +791,7 @@ test_exit $? "$test"
 }
 
 function setup_storage_volumes_claims(){
+exec_it oc project default
 # check for volume
 exec_it oc get pv registry-volume
 if [ $? -eq 1 ]
@@ -736,16 +815,16 @@ sleep 5
 function install_registry(){
 # check for registry
 exec_it oadm registry --dry-run \
---config=/etc/openshift/master/admin.kubeconfig \
---credentials=/etc/openshift/master/openshift-registry.kubeconfig
+--config=/etc/origin/master/admin.kubeconfig \
+--credentials=/etc/origin/master/openshift-registry.kubeconfig
 # if no registry
 if [ $? -eq 1 ]
 then
   test="Installing Docker registry..."
   printf "  $test\r"
   exec_it oadm registry \
-  --config=/etc/openshift/master/admin.kubeconfig \
-  --credentials=/etc/openshift/master/openshift-registry.kubeconfig
+  --config=/etc/origin/master/admin.kubeconfig \
+  --credentials=/etc/origin/master/openshift-registry.kubeconfig
   test_exit $? "$test"
   # if registry is already scaled to zero we can skip
   # check if rc 1 was ever successful
@@ -753,7 +832,7 @@ then
   if [ $? -eq 0 ]
   then
     # check if status = spec = 0
-    ans=$(oc get rc docker-registry-1 -t '{{.spec.replicas}}{{.status.replicas}}')
+    ans=$(oc get rc docker-registry-1 --template '{{.spec.replicas}}{{.status.replicas}}')
     if [ $ans -eq 00 ]
     then
       return
@@ -765,6 +844,7 @@ fi
 }
 
 function add_claimed_volume(){
+exec_it oc project default
 # check for claim
 exec_it oc get dc docker-registry -o yaml "|" grep registry-claim
 if [ $? -eq 1 ]
@@ -798,44 +878,36 @@ exec_it su - joe -c \""oc new-project sinatra --display-name=\""Sinatra Example"
 test_exit $? "$test"
 test="Using new-app to create content..."
 printf "  $test\r"
-exec_it su - joe -c \""oc new-app https://github.com/openshift/simple-openshift-sinatra-sti.git \
-  --name=ruby-example"\"
+exec_it su - joe -c \""oc new-app https://github.com/openshift/sinatra-example \
+  --name=example"\"
 test_exit $? "$test"
 test="Exposing the service..."
 printf "  $test\r"
-exec_it su - joe -c \""oc expose service ruby-example"\"
+exec_it su - joe -c \""oc expose service example"\"
 test_exit $? "$test"
 # may take up to 120 seconds for build to start
-wait_on_build "ruby-example-1" "sinatra" 120 "Running"
+wait_on_build "example-1" "sinatra" 120 "Running"
 # now wait up to 2 mins for build to complete
-wait_on_build "ruby-example-1" "sinatra" 280 "Complete"
-wait_on_rc "ruby-example-1" "sinatra" 60 1
+wait_on_build "example-1" "sinatra" 280 "Complete"
+wait_on_rc "example-1" "sinatra" 60 1
 ans=$(oc get pod -n sinatra | grep -v build | grep example | grep -v deploy | awk {'print $1'})
 wait_on_pod "$ans" "sinatra" 60
-# some extra sleep
-sleep 15
+wait_on_endpoints "example" "sinatra" 60
+exec_it sleep 60
 test="Testing the service..."
 printf "  $test\r"
-exec_it curl `oc get service -n sinatra ruby-example -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep Hello
+exec_it curl `oc get service -n sinatra example --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` "|" grep \""the time"\"
 test_exit $? "$test"
 sleep 15
 test="Testing the route..."
 printf "  $test\r"
-exec_it curl ruby-example-sinatra.cloudapps.example.com "|" grep Hello
-test_exit $? "$test"
-test="Adding quota to sinatra project..."
-printf "  $test\r"
-exec_it oc create -f ~/training/content/quota.json -n sinatra
-test_exit $? "$test"
-test="Adding limits to sinatra project..."
-printf "  $test\r"
-exec_it oc create -f ~/training/content/limits.json -n sinatra
+exec_it curl example-sinatra.cloudapps.example.com "|" grep \""the time"\"
 test_exit $? "$test"
 test="Scaling joe's app..."
 printf "  $test\r"
-exec_it su - joe -c \""oc scale --replicas=3 rc/ruby-example-1"\"
+exec_it su - joe -c \""oc scale --replicas=3 rc/example-1"\"
 test_exit $? "$test"
-wait_on_rc "ruby-example-1" "sinatra" 60 3
+wait_on_rc "example-1" "sinatra" 60 3
 # find the pods
 # 3 pods should run
 for pod in $(oc get pod -n sinatra | grep example | grep -v build | awk {'print $1'})
@@ -843,7 +915,7 @@ do
   wait_on_pod "$pod" "sinatra" 30
 done
 # start new build
-exec_it su - joe -c \""oc start-build ruby-example"\"
+exec_it su - joe -c \""oc start-build example"\"
 sleep 15
 # build will never schedule so we need to look at the events with describe
 # forbidden will immediately be show
@@ -855,6 +927,8 @@ test_exit $? "$test"
 }
 
 function templates_project() {
+update_project_template_quota
+test_exit $? "$test"
 # check for project
 exec_it oc get project quickstart
 if [ $? -eq 0 ]
@@ -889,7 +963,7 @@ wait_on_build "ruby-sample-build-1" "quickstart" 120 "Running"
 # wait for build to finish
 wait_on_build "ruby-sample-build-1" "quickstart" 280 "Complete"
 # wait for rc to deploy
-wait_on_rc "frontend-1" "quickstart" 60 2
+wait_on_rc "frontend-1" "quickstart" 240 2
 # find the deployed pods
 pods=$(oc get pod -n quickstart | grep frontend | grep -v deploy | awk {'print $1'})
 for pod in $pods
@@ -905,6 +979,7 @@ test_exit $? "$test"
 }
 
 function wiring_project() {
+update_project_template_quota
 # check for project
 exec_it oc get project wiring
 if [ $? -eq 0 ]
@@ -925,12 +1000,12 @@ if [ ! -d /home/alice/training ]
 then
   test="Pulling training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""git clone https://github.com/openshift/training"\"
+  exec_it su - alice -c \""git clone https://github.com/$gituser/training -b $branch"\"
   test_exit $? "$test"
 else
   test="Updating training content..."
   printf "  $test\r"
-  exec_it su - alice -c \""cd ~/training && git pull origin master"\"
+  exec_it su - alice -c \""cd ~/training && git pull $gituser $branch"\"
   test_exit $? "$test"
 fi
 test="Change alice's project..."
@@ -943,7 +1018,7 @@ exec_it su - alice -c \""oc new-app -i openshift/ruby https://github.com/thoraxe
 test_exit $? "$test"
 test="Setting environment variables..."
 printf "  $test\r"
-exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb"\"
+exec_it su - alice -c \""oc env dc/ruby-hello-world MYSQL_USER=redhat MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
 wait_on_build "ruby-hello-world-1" "wiring" 120 "Running"
 wait_on_build "ruby-hello-world-1" "wiring" 280 "Complete"
@@ -956,7 +1031,7 @@ wait_on_endpoints "ruby-hello-world" "wiring" 30
 sleep 3
 test="Check if frontend service is working..."
 printf "  $test\r"
-exec_it curl `oc get service -n wiring ruby-hello-world -t '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
+exec_it curl `oc get service -n wiring ruby-hello-world --template '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'`
 test_exit $? "$test"
 test="Expose the service..."
 printf "  $test\r"
@@ -966,7 +1041,7 @@ test_exit $? "$test"
 sleep 3
 test="Creating the database backend..."
 printf "  $test\r"
-exec_it su - alice -c \""oc new-app mysql-ephemeral -p DATABASE_SERVICE_NAME=database,MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb"\"
+exec_it su - alice -c \""oc new-app mysql-ephemeral -p DATABASE_SERVICE_NAME=database,MYSQL_USER=redhat,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb"\"
 test_exit $? "$test"
 wait_on_rc "database-1" "wiring" 60 1
 sleep 3
@@ -976,7 +1051,7 @@ wait_on_endpoints "database" "wiring" 30
 sleep 5
 test="Checking the MySQL service..."
 printf "  $test\r"
-exec_it curl $(oc get service database -n wiring -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}') "|" grep -i mysql
+exec_it curl $(oc get service database -n wiring --template '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}') "|" grep -i mysql
 test_exit $? "$test"
 # delete the existing frontend pod
 test="Deleting the existing frontend pod..."
@@ -990,22 +1065,18 @@ pod=$(oc get pod -n wiring | grep -e "hello-world-[0-9]" | grep -v build | awk '
 wait_on_pod "$pod" "wiring" 30
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
-exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep -i database
-if [ $? -eq 1 ]
-then
-  test_exit 0 "$test"
-else
-  test_exit 1 "$test"
-fi
+exec_it curl -s ruby-hello-world-wiring.cloudapps.example.com "|" grep Example
+test_exit $? "$test"
 }
 
 function activate_rollback() {
+update_project_template_quota
 # requires wiring project
 # get webhook url
-url=$(oc get bc ruby-hello-world -n wiring -t 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
+url=$(oc get bc ruby-hello-world -n wiring --template 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
 # curl the webhook url
 test="Initiating the webhook build..."
 printf "  $test\r"
@@ -1021,7 +1092,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1036,7 +1107,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1051,7 +1122,7 @@ pod=$(oc get pod -n wiring | grep -v -E "deploy|build|database" | grep world | a
 wait_on_pod "$pod" "wiring" 60
 wait_on_endpoints "ruby-hello-world" "wiring" 30
 # test the app
-sleep 10
+sleep 30
 test="Revalidating the app..."
 printf "  $test\r"
 exec_it curl ruby-hello-world-wiring.cloudapps.example.com "|" grep OpenShift
@@ -1059,6 +1130,7 @@ test_exit $? "$test"
 }
 
 function php_upload() {
+update_project_template_quota
 # check for project
 exec_it oc get project php-upload
 if [ $? -eq 0 ]
@@ -1072,7 +1144,7 @@ sleep 3
 test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
 test="Creating php-upload project..."
@@ -1128,7 +1200,7 @@ test="Trying to upload a file (should fail)..."
 printf "  $test\r"
 exec_it su - alice -c \""curl -i -F \"fto=@file\" http://demo-php-upload.cloudapps.example.com/upload.php"\" "|" grep fail
 test_exit $? "$test"
-exec_it oc get pvc registry-claim
+exec_it oc get pvc php-claim
 if [ $? -eq 0 ]
 then
   exec_it oc delete pvc php-claim
@@ -1172,6 +1244,7 @@ test_exit $? "$test"
 }
 
 function customized_build() {
+update_project_template_quota
 # switch alice back to wiring project
 exec_it su - alice -c \""oc project wiring"\"
 # check if the build is already modified
@@ -1190,7 +1263,7 @@ exec_it oc get build ruby-hello-world-3 -n wiring
 if [ $? -eq 1 ]
 then
   # get webhook url
-  url=$(oc get bc ruby-hello-world -n wiring -t 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
+  url=$(oc get bc ruby-hello-world -n wiring --template 'https://ose3-master.example.com:8443{{.metadata.selfLink}}/webhooks/{{(index .spec.triggers 1 "generic").secret}}/generic')
   # curl the webhook url
   test="Initiating the webhook build..."
   printf "  $test\r"
@@ -1216,6 +1289,7 @@ echo
 }
 
 function eap_example() {
+update_project_template_quota
 # check for project
 exec_it oc get project eap-example
 if [ $? -eq 0 ]
@@ -1229,9 +1303,12 @@ sleep 3
 test="Login as alice..."
 printf "  $test\r"
 exec_it su - alice -c \""oc login -u alice -p redhat \
---certificate-authority=/etc/openshift/ca.crt \
+--certificate-authority=/etc/origin/master/ca.crt \
 --server=https://ose3-master.example.com:8443"\"
 test_exit $? "$test"
+test="Deleting project quota and limits..."
+printf "  $test\r"
+exec_it oc delete quota/eap-example-quota limits/eap-example-limits -n eap-example
 test="Creating eap-example project..."
 printf "  $test\r"
 exec_it su - alice -c \""oc new-project eap-example --display-name='JBoss EAP Example' \
@@ -1259,28 +1336,19 @@ exec_it curl http://eap-app-http-route-eap-example.cloudapps.example.com/jboss-h
 test_exit $? "$test"
 }
 
-function just_setup() {
-prepare_things
-run_install
-post_install
-setup_dev_users
-install_router
-prepare_nfs
-setup_storage_volumes_claims
-install_registry
-add_claimed_volume
-}
-
 verbose='false'
 installoutput='false'
 func="false"
+branch="master"
+gituser="openshift"
 
-while getopts 'ivtf:' flag; do
+while getopts 'ivf:b:g:' flag; do
   case "${flag}" in
     i) installoutput=true; trace=false ;;
     v) verbose=true ;;
-    t) installoutput=true; trace=true ;; 
     f) func=$OPTARG ;;
+    b) branch=$OPTARG ;;
+    g) gituser=$OPTARG ;;
     *) exit 1 ;;
   esac
 done
@@ -1301,6 +1369,7 @@ post_install
 # Chapter 3
 echo "Dev users..."
 setup_dev_users
+configure_htpasswd_auth
 # Chapter 4
 echo "First joe project..."
 joe_project

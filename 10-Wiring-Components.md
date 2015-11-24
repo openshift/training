@@ -48,59 +48,69 @@ The frontend application comes from the following code repository:
 
     https://github.com/openshift/ruby-hello-world
 
-We want to use the beta branch. We can use the `new-app` command to help get
-this started for us. As `alice` go ahead and do the following:
+We can use the `new-app` command to help get this started for us. As `alice` go
+ahead and do the following:
 
     oc new-app -i openshift/ruby https://github.com/openshift/ruby-hello-world
 
 You should see something like the following:
 
-    I0728 14:27:23.047056    8906 newapp.go:301] Image "openshift/ruby" is a builder, so a repository will be expected unless you also specify --strategy=docker
-    I0728 14:27:23.047163    8906 newapp.go:337] Using "https://github.com/openshift/ruby-hello-world#beta4" as the source for build
-    imagestreams/ruby-hello-world
-    buildconfigs/ruby-hello-world
-    deploymentconfigs/ruby-hello-world
-    services/ruby-hello-world
-    A build was created - you can run `oc start-build ruby-hello-world` to start it.
-    Service "ruby-hello-world" created at 172.30.103.182 with port mappings 8080.
+    I1105 14:11:59.060593   83892 newapp.go:522] Using "https://github.com/openshift/ruby-hello-world" as the source for build
+    --> Found image ea16bfe (8 weeks old) in image stream "ruby in project openshift" under tag :latest for "openshift/ruby"
+        * The source repository appears to match: ruby
+        * A source build using source code from https://github.com/openshift/ruby-hello-world will be created
+          * The resulting image will be pushed to image stream "ruby-hello-world:latest"
+        * This image will be deployed in deployment config "ruby-hello-world"
+        * Port 8080/tcp will be load balanced by service "ruby-hello-world"
+    --> Creating resources with label app=ruby-hello-world ...
+        ImageStream "ruby-hello-world" created
+        BuildConfig "ruby-hello-world" created
+        DeploymentConfig "ruby-hello-world" created
+        Service "ruby-hello-world" created
+    --> Success
+        Build scheduled for "ruby-hello-world" - use the logs command to track its progress.
+        Run 'oc status' to view your app.
 
 The syntax of the command tells us:
 
 * I want to create a new application
-* using the *ruby* builder image in the *openshift* project
-* based off of the code in a git repository
+* using the *ruby* builder imagestream defined in the *openshift* project
+* based off of the code in a Git repository
 
 Since we know that we want to talk to a database eventually, let's take a moment
 to add the environment variables for it. Conveniently, there is an `env`
 subcommand to `oc`. As `alice`, we can use it like so:
 
-    oc env dc/ruby-hello-world MYSQL_USER=root MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb
+    oc env dc/ruby-hello-world MYSQL_USER=redhat MYSQL_PASSWORD=redhat MYSQL_DATABASE=mydb
 
 If you want to double-check, you can verify using the following:
 
     oc env dc/ruby-hello-world --list
     # deploymentconfigs ruby-hello-world, container ruby-hello-world
-    MYSQL_USER=root
+    MYSQL_USER=redhat
     MYSQL_PASSWORD=redhat
     MYSQL_DATABASE=mydb
 
-At this point, you probably have a build running and a second deployment. That
-second deployment is because we've changed the configuration of the deployment,
-which results in a new deployment.
+At this point, you probably have a build running and a second deployment. The
+`deploymentConfig` has a trigger defined on it called *ConfigChange*. Becuase we
+*changed* the environment variables, that constituted a *ConfigChange*, which
+*triggers* a new deployment. In this case, the 2nd deployment.
 
 For example, `oc get pod` might look like:
 
     NAME                       READY     REASON                                                   RESTARTS   AGE
     ruby-hello-world-1-build   1/1       Running                                                  0          1m
-    ruby-hello-world-2-3jby9   0/1       Error: image library/ruby-hello-world:latest not found   0          32s
 
 Wait for the build to complete, and you should end up with a running front-end
-in a few moments. You'll probably end up with something like this:
+in a few moments. You might end up with something like this:
 
     oc get pod
     NAME                       READY     REASON       RESTARTS   AGE
     ruby-hello-world-1-build   0/1       ExitCode:0   0          7m
-    ruby-hello-world-3-eq9w3   1/1       Running      0          5m
+    ruby-hello-world-1-eq9w3   1/1       Running      0          5m
+
+If you ran the `oc env` command soon enough after `new-app`, you may only have 1
+deployment. It all depends.
 
 ## Test the Frontend
 While it won't look great using `curl`, we can validate the frontend is running
@@ -112,7 +122,8 @@ with it. The previous steps should have resulted in a service being created:
 
 We can hit that with `curl`:
 
-    curl -s `oc get service | grep world | awk '{print $4":"$5}' | sed -e 's/\/.*//'` | grep database
+    curl -s `oc get service -n wiring ruby-hello-world --template \
+    '{{.spec.portalIP}}:{{index .spec.ports 0 "port"}}'` | grep database
         <h3>(It looks like the database isn't running.  This isn't going to be much fun.)</h3>
 
 This is good so far!
@@ -129,8 +140,8 @@ use `expose` against it:
 After a few moments:
 
     oc get route
-    NAME               HOST/PORT                                       PATH      SERVICE            LABELS
-    ruby-hello-world   ruby-hello-world.wiring.cloudapps.example.com             ruby-hello-world 
+    NAME               HOST/PORT                                       PATH      SERVICE            LABELS                 INSECURE POLICY   TLS TERMINATION
+    ruby-hello-world   ruby-hello-world-wiring.cloudapps.example.com             ruby-hello-world   app=ruby-hello-world  
 
 Remember, the `host` was automatically generated from the service name and the
 project name. `oc expose` also takes a `--hostname` argument if you need to use
@@ -144,9 +155,9 @@ database, but is not all that exciting. We'll fix that in a moment.
 During the installation, several templates were added for us, including some
 database templates. Go to the web console and make sure you are logged in as
 `alice` and using the `Exploring Parameters` project. You should see your
-front-end already there. Click the "Add to Project" button and then the "Browse all
-templates..." button. You should see the `mysql-ephemeral` template. Click it
-and then click "Select template".
+front-end already there. Click the "Add to Project" button. In the bottom
+right-hand corner is a *Databases* section. Click "See all", and you should see
+the `mysql-ephemeral` template. Click it.
 
 You will need to edit the parameters of this template, because the defaults will
 not work for us. Change the `DATABASE_SERVICE_NAME` to be "database", because
@@ -154,19 +165,21 @@ that is what service the frontend expects to connect to. Make sure that the
 MySQL user, password and database match whatever values you specified in the
 previous labs.
 
-Click the "Create" button when you are ready.
+Click the "Create" button when you are ready. Then click "Continue to overview".
+You can watch the database come to life in the Topology View if you're
+interested, or just watch it come up on the Overview page.
 
 It may take a little while for the MySQL container to download (if you didn't
 pre-fetch it). It's a good idea to verify that the database is running before
 continuing.  If you don't happen to have a MySQL client installed you can still
 verify MySQL is running with curl:
 
-    curl $(oc get service database -t '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}')
+    curl $(oc get service database --template '{{.spec.portalIP}}:{{index .spec.ports 0 "targetPort"}}')
 
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
 
-    A�jHost '10.1.0.1' is not allowed to connect to this MySQL server
+    5.5.45}(Iw>n2J��\rJZeloiBM:{mysql_native_password!��#08S01Got packets out of order
 
 ## Visit Your Application Again
 Visit your application again with your web browser. Why does it still say that
@@ -178,8 +191,14 @@ populated with any values. Our database does exist now, and there is a service
 for it, but OpenShift could not "inject" those values into the running frontend
 container.
 
+As a side note, this is a potential reason to use DNS names and not service
+environment variables when writing applications. If you're interested, feel free
+to check out the documentation on OpenShift's internal DNS:
+
+    https://docs.openshift.com/enterprise/latest/architecture/additional_concepts/networking.html#openshift-dns
+
 ## Replication Controllers
-The easiest way to get this going? Just nuke the existing pod. There is a
+The easiest way to get the updated frontend going? Just nuke the existing pod. There is a
 replication controller running for both the frontend and backend:
 
     oc get replicationcontroller
@@ -188,34 +207,34 @@ The replication controller is configured to ensure that we always have the
 desired number of replicas (instances) running. We can look at how many that
 should be:
 
-    oc describe rc ruby-hello-world-3
+    oc describe rc ruby-hello-world-2
 
-*Note:* Depending on how fast you went through previous examples, you may have
-only 2 replication controllers listed.
+*Note:* Depending on how fast you went through previous examples, you may need
+to change the -2 to -1, etc.
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
 which means it will be able to connect to the DB, which means that we should no
 longer see the database error!
 
-As `alice`, go ahead and find your frontend pod, and then kill it:
+As `alice`, the following command will find your frontend pod and then kill it:
 
     oc delete pod `oc get pod | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}'`
 
 You'll see something like:
 
-    pods/ruby-hello-world-3-wcxiw
+    pod "ruby-hello-world-1-y44vm" deleted
 
 That was the generated name of the pod when the replication controller stood it
 up the first time.
 
 After a few moments, we can look at the list of pods again:
 
-    oc get pod | grep world
+    oc get pod | grep -v build | grep -v database
 
 And we should see a different name for the pod this time:
 
-    ruby-hello-world-3-xbs3o
+    ruby-hello-world-1-xbs3o
 
 This shows that, underneath the covers, the RC started a new pod. Since it is a
 new pod, it should have a value for the `DATABASE_SERVICE_HOST` environment
@@ -225,24 +244,24 @@ As `root` on the master, the following hideous command will bash-fu its way to
 show you specific output from inspecting the Docker container running on the
 right node:
 
-    ssh $(oc get pod -n wiring $(oc get pod -n wiring | grep -v build \
-    | grep world | awk {'print $1'}) -o yaml | grep host: | awk '{print $2}') \
-    'docker inspect $(docker ps | grep hello-world | grep run | \
+    ssh $(oc get pod $(oc get pod -n wiring | grep -v build | grep world \
+    | awk {'print $1'}) -n wiring --template '{{.spec.host}}') \
+    'docker inspect $(docker ps | grep wiring/ruby-hello-world | \
     awk '"'"'{print $1}'"'"')' | grep -E "DATABASE|MYSQL"
 
 The output will look something like:
 
-      "MYSQL_USER=root",
-      "MYSQL_PASSWORD=redhat",
-      "MYSQL_DATABASE=mydb",
-      "DATABASE_PORT_3306_TCP_PROTO=tcp",
-      "DATABASE_SERVICE_HOST=172.30.145.105",
-      "DATABASE_PORT_3306_TCP_PORT=3306",
-      "DATABASE_PORT_3306_TCP_ADDR=172.30.145.105",
-      "DATABASE_SERVICE_PORT=3306",
-      "DATABASE_PORT=tcp://172.30.145.105:3306",
-      "DATABASE_SERVICE_PORT_MYSQL=3306",
-      "DATABASE_PORT_3306_TCP=tcp://172.30.145.105:3306",
+    "MYSQL_USER=redhat",
+    "MYSQL_PASSWORD=redhat",
+    "MYSQL_DATABASE=mydb",
+    "DATABASE_PORT_3306_TCP_ADDR=172.30.212.48",
+    "DATABASE_PORT=tcp://172.30.212.48:3306",
+    "DATABASE_PORT_3306_TCP_PROTO=tcp",
+    "DATABASE_SERVICE_PORT=3306",
+    "DATABASE_SERVICE_PORT_MYSQL=3306",
+    "DATABASE_PORT_3306_TCP=tcp://172.30.212.48:3306",
+    "DATABASE_SERVICE_HOST=172.30.212.48",
+    "DATABASE_PORT_3306_TCP_PORT=3306",
 
 ## Revisit the Webpage
 Go ahead and revisit

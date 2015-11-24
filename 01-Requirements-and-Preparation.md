@@ -38,25 +38,24 @@ You will learn much more about the inner workings of OpenShift throughout the
 rest of the document.
 
 ## Requirements
-Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
+Each of the virtual machines should have 4+ GB of memory, 30+ GB of disk space,
 and the following configuration:
 
 * RHEL >=7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
+* 15-20GB dedicated to /
+* A free/unused partition with the remaining space
 
 The majority of storage requirements are related to Docker and etcd (the data
-store). Both of their contents live in /var, so it is recommended that the
-majority of the storage be allocated to /var.
+store). 
 
-As part of signing up for the beta program, you should have received an
-evaluation subscription. This subscription gave you access to the beta software.
 You will need to use subscription manager to both register your VMs, and attach
-them to the *OpenShift Enterprise High Touch Beta* subscription.
+them to the *OpenShift Enterprise* subscription.
 
 All of your VMs should be on the same logical network and be able to access one
 another.
 
-In almost all cases, when referencing VMs you must use hostnames and the
+In almost all cases, when referencing VMs, you must use hostnames and the
 hostnames that you use must match the output of `hostname -f` on each of your
 nodes. Forward DNS resolution of hostnames is an **absolute requirement**. This
 training document assumes the following configuration:
@@ -69,17 +68,13 @@ We do our best to point out where you will need to change things if your
 hostnames do not match.
 
 If you cannot create real forward resolving DNS entries in your DNS system, you
-will need to set up your own DNS server in the beta testing environment.
-Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
-setup](#appendix---dnsmasq-setup)
+will need to set up your own DNS server on one of the OpenShift nodes. The
+Appendix chapter has a section on configuring DNSmasq in your environment.
 
 Remember that NetworkManager may make changes to your DNS
 configuration/resolver/etc. You will need to properly configure your interfaces'
-DNS settings and/or configure NetworkManager appropriately.
-
-More information on NetworkManager can be found in this comment:
-
-    https://github.com/openshift/training/issues/193#issuecomment-105693742
+DNS settings and/or configure NetworkManager appropriately. See the
+NetworkManager appendix for more information.
 
 # Preparing the Environment
 ## Use a Terminal Window Manager
@@ -97,9 +92,7 @@ For example:
 
     *.cloudapps.example.com. 300 IN  A 192.168.133.2
 
-It is possible to use dnsmasq inside of your beta environment to handle these
-duties. See the [appendix on dnsmasq](#appendix---dnsmasq-setup) if you can't
-easily manipulate your existing DNS environment.
+You can also use the sample DNSmasq configuration referenced above.
 
 ## Assumptions
 In most cases you will see references to "example.com" and other FQDNs related
@@ -107,9 +100,8 @@ to it. If you choose not to use "example.com" in your configuration, that is
 fine, but remember that you will have to adjust files and actions accordingly.
 
 ## Git
-You will either need internet access or read and write access to an internal
-http-based git server where you will duplicate the public code repositories used
-in the labs.
+You will either need internet access or read and write access to an internal Git
+server where you will duplicate the public code repositories used in the labs.
 
 ## Preparing Each VM
 Once your VMs are built and you have verified DNS and network connectivity you
@@ -122,7 +114,7 @@ can:
         --enable="rhel-7-server-rpms" \
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
-        --enable="rhel-7-server-ose-3.0-rpms"
+        --enable="rhel-7-server-ose-3.1-rpms"
 
 On **each** VM:
 
@@ -130,23 +122,20 @@ On **each** VM:
 
         yum -y install deltarpm
 
-1. Install useful missing packages:
+1. Install useful missing packages (sub `tmux` for `screen` if you wish):
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
 
-1. Install prerequisites for the installer:
+1. Install the installer:
 
-        yum -y install python-virtualenv gcc
-
-    The installer complies python dependencies on the fly, which is why we
-    require `gcc`.
+        yum -y install atomic-openshift-utils
 
 1. Update:
 
         yum -y update
 
 ## Docker Storage Setup (optional, recommended)
-**IMPORTANT:** The default docker storage configuration uses loopback devices
+**IMPORTANT:** The default Docker storage configuration uses loopback devices
 and is not appropriate for production. Red Hat considers the dm.thinpooldev
 storage option to be the only appropriate configuration for production use at
 this time.
@@ -157,50 +146,11 @@ for you.
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
+Make sure that you are running at least `docker-1.8.2-8.el7`.
 
-In order to use dm.thinpooldev you must have an LVM thinpool available, the
-`docker-storage-setup` package will assist you in configuring LVM. However you
-must provision your host to fit one of these three scenarios :
+Please see the OpenShift documentation on configuring Docker storage:
 
-*  Root filesystem on LVM with free space remaining on the volume group. Run
-`docker-storage-setup` with no additional configuration, it will allocate the
-remaining space for the thinpool.
-
-*  A dedicated LVM volume group where you'd like to reate your thinpool
-
-        echo <<EOF > /etc/sysconfig/docker-storage-setup
-        VG=docker-vg
-        SETUP_LVM_THIN_POOL=yes
-        EOF
-        docker-storage-setup
-
-*  A dedicated block device, which will be used to create a volume group and thinpool
-
-        cat <<EOF > /etc/sysconfig/docker-storage-setup
-        DEVS=/dev/vdc
-        VG=docker-vg
-        SETUP_LVM_THIN_POOL=yes
-        EOF
-        docker-storage-setup
-
-Once complete you should have a thinpool named `docker-pool` and docker should
-be configured to use it in `/etc/sysconfig/docker-storage`.
-
-    # lvs
-    LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
-    docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
-
-    # cat /etc/sysconfig/docker-storage
-    DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
-
-**Note:** If you had previously used docker with loopback storage you should
-clean out `/var/lib/docker` This is a destructive operation and will delete all
-images and containers on the host.
-
-    systemctl stop docker
-    rm -rf /var/lib/docker/*
-    systemctl start docker
+    https://docs.openshift.com/enterprise/latest/install_config/install/prerequisites.html#configuring-docker-storage
 
 ## Grab Docker Images (optional, recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
@@ -209,41 +159,28 @@ install it when (optionally) configuring the Docker storage previously.
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
-
-You'll need to add `--insecure-registry 0.0.0.0/0` to your
-`/etc/sysconfig/docker` `OPTIONS`. Then:
+Make sure that you are running at least `docker-1.8.2-8.el7`, then:
 
     systemctl start docker
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3/ose-deployer
-    docker pull registry.access.redhat.com/openshift3/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3/ose-pod
-    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
-    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-deployer:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-sti-builder:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-docker-builder:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-pod:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v3.1.0.4
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull registry.access.redhat.com/openshift3/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3/mysql-55-rhel7
-    docker pull registry.access.redhat.com/openshift3/php-55-rhel7
+    docker pull registry.access.redhat.com/rhscl/ruby-22-rhel7
+    docker pull registry.access.redhat.com/rhscl/mysql-56-rhel7
+    docker pull registry.access.redhat.com/rhscl/php-56-rhel7
     docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
-    docker pull openshift/hello-openshift
-
-**Note:** If you built your VM for a previous (beta) version and at some point
-used an older version of Docker, you need to *reinstall* or *remove+install*
-Docker after removing `/etc/sysconfig/docker`. The options in the config file
-changed and RPM will not overwrite your existing file if you just do a "yum
-update".
-
-    yum -y remove docker
-    rm /etc/sysconfig/docker*
-    yum -y install docker
+    docker pull openshift/hello-openshift:v1.0.6
 
 ## Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
@@ -278,8 +215,8 @@ are familiar with the Ruby Gem, `tmuxinator`, there is a config file in the
 training repository. Otherwise, you should run each of the following in its own
 window:
 
-    journalctl -f -u openshift-master
-    journalctl -f -u openshift-node
+    journalctl -f -u atomic-openshift-master
+    journalctl -f -u atomic-openshift-node
 
 **Note:** You will want to do this on the other nodes, but you won't need the
 "-master" service. You may also wish to watch the Docker logs, too.
