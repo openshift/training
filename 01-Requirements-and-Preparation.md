@@ -114,7 +114,7 @@ can:
         --enable="rhel-7-server-rpms" \
         --enable="rhel-7-server-extras-rpms" \
         --enable="rhel-7-server-optional-rpms" \
-        --enable="rhel-7-server-ose-3.0-rpms"
+        --enable="rhel-7-server-ose-3.1-rpms"
 
 On **each** VM:
 
@@ -165,20 +165,20 @@ Make sure that you are running at least `docker-1.8.2-8.el7`, then:
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3/ose-deployer
-    docker pull registry.access.redhat.com/openshift3/ose-sti-builder
-    docker pull registry.access.redhat.com/openshift3/ose-docker-builder
-    docker pull registry.access.redhat.com/openshift3/ose-pod
-    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
-    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-deployer:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-sti-builder:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-docker-builder:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-pod:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry:v3.1.0.4
+    docker pull registry.access.redhat.com/openshift3/ose-keepalived-ipfailover:v3.1.0.4
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull registry.access.redhat.com/openshift3/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3/mysql-55-rhel7
-    docker pull registry.access.redhat.com/openshift3/php-55-rhel7
+    docker pull registry.access.redhat.com/rhscl/ruby-22-rhel7
+    docker pull registry.access.redhat.com/rhscl/mysql-56-rhel7
+    docker pull registry.access.redhat.com/rhscl/php-56-rhel7
     docker pull registry.access.redhat.com/jboss-eap-6/eap-openshift
     docker pull openshift/hello-openshift:v1.0.6
 
