@@ -3,11 +3,13 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Templates, Instant Apps, and "Quickstarts"](#templates-instant-apps-and-quickstarts)
+  - [Increase Pod Quota](#increase-pod-quota)
   - [A Project for the Quickstart](#a-project-for-the-quickstart)
   - [A Quick Aside on Templates](#a-quick-aside-on-templates)
   - [Adding the Template](#adding-the-template)
   - [Create an Instance of the Template](#create-an-instance-of-the-template)
   - [Using Your App](#using-your-app)
+  - [Topology View](#topology-view)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

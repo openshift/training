@@ -13,7 +13,9 @@
   - [Examining the Created Pod](#examining-the-created-pod)
   - [Looking at the Pod in the Web Console](#looking-at-the-pod-in-the-web-console)
   - [Quota Usage](#quota-usage)
-  - [Delete the Pod](#delete-the-pod)
+  - [Review](#review)
+  - [Default Project Templates](#default-project-templates)
+  - [Create a Project Via the Template](#create-a-project-via-the-template)
   - [Quota Enforcement](#quota-enforcement)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->

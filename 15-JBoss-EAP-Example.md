@@ -1,3 +1,16 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [EAP Example](#eap-example)
+  - [Create a Project](#create-a-project)
+  - [Delete the Quotas and Limits](#delete-the-quotas-and-limits)
+  - [Instantiate the Template](#instantiate-the-template)
+  - [Watch the Build](#watch-the-build)
+  - [Visit Your Application](#visit-your-application)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # EAP Example
 This example requires internet access because the Maven configuration uses
 public repositories.
