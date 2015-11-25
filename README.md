@@ -1,3 +1,12 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [OpenShift "Training"](#openshift-training)
+- [Table of Contents](#table-of-contents)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # OpenShift "Training"
 This repository provides instructions for how to set up a basic OpenShift 3.X
 environment. It contains various examples of using OpenShift 3.X. The table of

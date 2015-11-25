@@ -4,13 +4,10 @@
 
 - [S2I - What Is It?](#s2i---what-is-it)
   - [Create a New Project](#create-a-new-project)
-  - [Switch Projects](#switch-projects)
   - [A Simple Code Example](#a-simple-code-example)
   - [CLI versus Console](#cli-versus-console)
   - [ImageStreams](#imagestreams)
   - [Adding Code Via the Web Console](#adding-code-via-the-web-console)
-  - [The Web Console Revisited](#the-web-console-revisited)
-  - [Examining the Build](#examining-the-build)
   - [Images and ImageStreams](#images-and-imagestreams)
   - [Testing the Application](#testing-the-application)
   - [The Application Route](#the-application-route)
