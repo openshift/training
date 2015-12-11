@@ -112,19 +112,16 @@ should enter the information as follows below:
     host the required services to be managed by the Master.
     
     http://docs.openshift.com/enterprise/latest/architecture/infrastructure_components/kubernetes_infrastructure.html#master
-    http://docs.openshift.com/enterprise/3.0/architecture/infrastructure_components/kubernetes_infrastructure.html#node
+    http://docs.openshift.com/enterprise/latest/architecture/infrastructure_components/kubernetes_infrastructure.html#node
         
     Enter hostname or IP address: []: ose3-master.example.com
     Will this host be an OpenShift Master? [y/N]: y
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
     Do you want to add additional hosts? [y/N]: y
     Enter hostname or IP address: []: ose3-node1.example.com
     Will this host be an OpenShift Master? [y/N]: n
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
     Do you want to add additional hosts? [y/N]: y
     Enter hostname or IP address: []: ose3-node2.example.com
     Will this host be an OpenShift Master? [y/N]: n
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
     Do you want to add additional hosts? [y/N]: n
 
 ## Variant Selection
