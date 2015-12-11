@@ -116,15 +116,12 @@ should enter the information as follows below:
         
     Enter hostname or IP address: []: ose3-master.example.com
     Will this host be an OpenShift Master? [y/N]: y
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
     Do you want to add additional hosts? [y/N]: y
     Enter hostname or IP address: []: ose3-node1.example.com
     Will this host be an OpenShift Master? [y/N]: n
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
     Do you want to add additional hosts? [y/N]: y
     Enter hostname or IP address: []: ose3-node2.example.com
     Will this host be an OpenShift Master? [y/N]: n
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
     Do you want to add additional hosts? [y/N]: n
 
 ## Variant Selection
