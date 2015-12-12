@@ -72,7 +72,7 @@ Now, let's look at a *service* definition:
     }
 
 The *service* has a `selector` element. In this case, it is a key:value pair of
-`app:hello-openshift`. If you looked at the output of `oc get pods` on your
+`name:hello-openshift`. If you looked at the output of `oc get pods` on your
 master, you saw that the `hello-openshift` pod has a label:
 
     name=hello-openshift
@@ -317,7 +317,7 @@ accounts in the "privileged" context. This will make more sense in a moment.
 You'll see that the "users" section contains our router service account.
 
 ## Creating the Router
-The router is the ingress point for all traffic destined for OpenShift
+The router is the entry point for all traffic destined for OpenShift
 v3 services. It currently supports only HTTP(S) traffic (and "any"
 TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
 proxy.
@@ -365,7 +365,7 @@ of the resources in the *default* project, and the *default* project has the
 `nodeSelector` for the *infra* region, the router pod will land there (in the
 *infra* region).
 
-    oadm router router --replicas=1 \
+    oadm router --replicas=1 \
     --default-cert=cloudapps.router.pem \
     --credentials='/etc/origin/master/openshift-router.kubeconfig' \
     --service-account=router

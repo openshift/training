@@ -92,7 +92,7 @@ If you want to double-check, you can verify using the following:
     MYSQL_DATABASE=mydb
 
 At this point, you probably have a build running and a second deployment. The
-`deploymentConfig` has a trigger defined on it called *ConfigChange*. Becuase we
+`deploymentConfig` has a trigger defined on it called *ConfigChange*. Because we
 *changed* the environment variables, that constituted a *ConfigChange*, which
 *triggers* a new deployment. In this case, the 2nd deployment.
 
