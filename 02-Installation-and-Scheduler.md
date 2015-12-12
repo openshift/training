@@ -52,7 +52,7 @@ accordingly.
 ## Run the Installer
 As `root` in `/root`, go ahead and run the installer:
 
-    atomic-openshift-installer -a openshift-ansible/
+    atomic-openshift-installer -a openshift-ansible/ install
 
 You will see:
 
