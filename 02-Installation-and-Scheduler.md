@@ -7,8 +7,8 @@
   - [Distribute SSH Keys](#distribute-ssh-keys)
   - [Run the Installer](#run-the-installer)
   - [Define installation user](#define-installation-user)
-  - [Host Configuration](#host-configuration)
   - [Variant Selection](#variant-selection)
+  - [Host Configuration](#host-configuration)
   - [Gathering host information:](#gathering-host-information)
   - [General Confirmation](#general-confirmation)
   - [Finish the Installation](#finish-the-installation)
@@ -25,9 +25,8 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Installation and Scheduler
-Much like with OpenShift Enterprise 2.x and prior, we provide a convenient
-web-sourced installer at `http://install.openshift.com`. First, we must prepare
-for using the installer.
+Much like with OpenShift Enterprise 2.x and prior, we provide an installation
+wizard.
 
 ## Generate SSH Keys
 The installer uses ssh underneath the covers to access the hosts in the
@@ -52,7 +51,7 @@ accordingly.
 ## Run the Installer
 As `root` in `/root`, go ahead and run the installer:
 
-    atomic-openshift-installer -a openshift-ansible/
+    atomic-openshift-installer install
 
 You will see:
 
@@ -90,53 +89,47 @@ prompt like:
     
     User for ssh access [root]: 
 
-Hit enter to conintue.
-
-## Host Configuration
-The next step will be to select which hosts to have the installer configure. You
-should enter the information as follows below:
-
-    ***Host Configuration***
-    
-    The OpenShift Master serves the API and web console.  It also coordinates the
-    jobs that have to run across the environment.  It can even run the datastore.
-    For wizard based installations the database will be embedded.  It's possible to
-    change this later using etcd from Red Hat Enterprise Linux 7.
-    
-    Any Masters configured as part of this installation process will also be
-    configured as Nodes.  This is so that the Master will be able to proxy to Pods
-    from the API.  By default this Node will be unscheduleable but this can be changed
-    after installation with 'oadm manage-node'.
-    
-    The OpenShift Node provides the runtime environments for containers.  It will
-    host the required services to be managed by the Master.
-    
-    http://docs.openshift.com/enterprise/latest/architecture/infrastructure_components/kubernetes_infrastructure.html#master
-    http://docs.openshift.com/enterprise/3.0/architecture/infrastructure_components/kubernetes_infrastructure.html#node
-        
-    Enter hostname or IP address: []: ose3-master.example.com
-    Will this host be an OpenShift Master? [y/N]: y
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
-    Do you want to add additional hosts? [y/N]: y
-    Enter hostname or IP address: []: ose3-node1.example.com
-    Will this host be an OpenShift Master? [y/N]: n
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
-    Do you want to add additional hosts? [y/N]: y
-    Enter hostname or IP address: []: ose3-node2.example.com
-    Will this host be an OpenShift Master? [y/N]: n
-    Will this host be RPM or Container based (rpm/container)? [rpm]: 
-    Do you want to add additional hosts? [y/N]: n
+Hit enter to continue.
 
 ## Variant Selection
-We will be installing OpenShift Enterprise 3.1, so be sure to select *2*:
+We will be installing the latest version of OpenShift Enterprise so be sure to select *1*:
 
     Which variant would you like to install?
 
-
-    (1) OpenShift Enterprise 3.0
-    (2) OpenShift Enterprise 3.1
+    (1) OpenShift Enterprise 3.1
+    (2) OpenShift Enterprise 3.0
     (3) Atomic OpenShift Enterprise 3.1
-    Choose a variant from above:  [1]: 2
+    Choose a variant from above:  [1]: 1
+
+## Host Configuration
+The next step will be to select which hosts to have the installer configure.
+If you are using the hostnames from the training this means you will install 1
+Master and 2 Nodes:
+
+* ose3-master.example.com
+* ose3-node1.example.com
+* ose3-node2.example.com
+
+Once you have entered the hosts correctly you should see should see the
+following summary:
+
+    *** Installation Summary ***
+    
+    Hosts:
+    - ose3-master.example.com
+      - OpenShift Master
+      - OpenShift Node (Unscheduled)
+      - Etcd (Embedded)
+    - ose3-node1.example.com
+      - OpenShift Node (Dedicated)
+    - ose3-node2.example.com
+      - OpenShift Node (Dedicated)
+    
+    Total OpenShift Masters: 1
+    Total OpenShift Nodes: 3
+    
+    NOTE: Add a total of 3 or more Masters to perform an HA installation.
+
 
 ## Gathering host information:
 At this point the installer will log-in to each of the hosts to get information:
