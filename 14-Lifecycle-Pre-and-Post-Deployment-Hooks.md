@@ -95,7 +95,7 @@ information can be found in the documentation:
 Since we are talking about **deployments**, let's look at our
 `DeploymentConfig`s. As the `alice` user in the `wiring` project:
 
-    osc get dc
+    oc get dc
 
 You should see something like:
 
@@ -109,7 +109,7 @@ you edit the frontend's `DeploymentConfig` as `alice`:
 
     oc edit dc ruby-hello-world -o json
 
-Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+Yes, the default for `oc edit` is to use YAML. For this exercise, JSON will be
 easier as it is indentation-insensitive. Find the section that looks like the
 following before continuing:
 
@@ -136,16 +136,16 @@ hook, it would make sense to:
 Otherwise we could end up with our new code deployed but our database schema
 would not match. This could be a *Real Bad Thing (TM)*.
 
-In the case of the `ruby-20` builder image, we are actually using RHEL7 and the
-Red Hat Software Collections (SCL) to get our Ruby 2.0 support. So, the command
+In the case of the `ruby-22` builder image, we are actually using RHEL7 and the
+Red Hat Software Collections (SCL) to get our Ruby 2.2 support. So, the command
 we want to run looks like:
 
-    /usr/bin/scl enable ruby200 ror40 'cd /opt/app-root/src ; bundle exec rake db:migrate'
+    /usr/bin/scl enable rh-ruby22 'cd /opt/app-root/src ; bundle exec rake db:migrate'
 
 This command:
 
 * executes inside an SCL "shell"
-* enables the Ruby 2.0.0 and Ruby On Rails 4.0 environments
+* enables the Ruby 2.2 environment
 * changes to the `/opt/openshift/src` directory (where our applications' code is
     located)
 * executes `bundle exec rake db:migrate`
@@ -161,8 +161,7 @@ looks like:
     "command": [
         "/usr/bin/scl",
         "enable",
-        "ruby200",
-        "ror40",
+        "rh-ruby22",
         "cd /opt/app-root/src ; bundle exec rake db:migrate"
     ]
 
@@ -183,8 +182,7 @@ reference above, in the end, you will have something that looks like:
                     "command": [
                         "/usr/bin/scl",
                         "enable",
-                        "ruby200",
-                        "ror40",
+                        "rh-ruby22",
                         "cd /opt/app-root/src ; bundle exec rake db:migrate"
                     ],
                     "containerName": "ruby-hello-world"
@@ -303,7 +301,7 @@ would need the `mysql` package installed on your master, for example).
 
 As `alice`, find your database:
 
-    [alice@ose3-master beta4]$ osc get service
+    [alice@ose3-master beta4]$ oc get service
     NAME               CLUSTER_IP       EXTERNAL_IP   PORT(S)    SELECTOR                                                 AGE
     database           172.30.223.253   <none>        3306/TCP   name=database                                            2h
     ruby-hello-world   172.30.234.149   <none>        8080/TCP   app=ruby-hello-world,deploymentconfig=ruby-hello-world   2h
