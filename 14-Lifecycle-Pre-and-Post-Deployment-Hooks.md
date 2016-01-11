@@ -95,7 +95,7 @@ information can be found in the documentation:
 Since we are talking about **deployments**, let's look at our
 `DeploymentConfig`s. As the `alice` user in the `wiring` project:
 
-    osc get dc
+    oc get dc
 
 You should see something like:
 
@@ -109,7 +109,7 @@ you edit the frontend's `DeploymentConfig` as `alice`:
 
     oc edit dc ruby-hello-world -o json
 
-Yes, the default for `osc edit` is to use YAML. For this exercise, JSON will be
+Yes, the default for `oc edit` is to use YAML. For this exercise, JSON will be
 easier as it is indentation-insensitive. Find the section that looks like the
 following before continuing:
 
@@ -303,7 +303,7 @@ would need the `mysql` package installed on your master, for example).
 
 As `alice`, find your database:
 
-    [alice@ose3-master beta4]$ osc get service
+    [alice@ose3-master beta4]$ oc get service
     NAME               CLUSTER_IP       EXTERNAL_IP   PORT(S)    SELECTOR                                                 AGE
     database           172.30.223.253   <none>        3306/TCP   name=database                                            2h
     ruby-hello-world   172.30.234.149   <none>        8080/TCP   app=ruby-hello-world,deploymentconfig=ruby-hello-world   2h
