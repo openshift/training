@@ -93,10 +93,10 @@ around in the YAML output above from `new-app` you will see some reference to
 
 The `ImageStream` resource is, somewhat unsurprisingly, a definition for a
 stream of Docker images that might need to be paid attention to. By defining an
-`ImageStream` on "ruby-20-rhel7", for example, and then building an application
+`ImageStream` on "ruby-22-rhel7", for example, and then building an application
 against it, we have the ability with OpenShift to "know" when that `ImageStream`
 changes and take action based on that change. In our example from the previous
-paragraph, if the "ruby-20-rhel7" image changed in the Docker repository defined
+paragraph, if the "ruby-22-rhel7" image changed in the Docker repository defined
 by the `ImageStream`, we might automatically trigger a new build of our
 application code.
 
@@ -121,7 +121,7 @@ The installer pre-populated several `ImageStream`s for you when it was run. As
     php                                  registry.access.redhat.com/openshift3/php-55-rhel7               v3.0.1.0,v3.0.2.0,v3.0.0.0 + 2 more...   3 hours ago
     postgresql                           registry.access.redhat.com/openshift3/postgresql-92-rhel7        v3.0.2.0,9.2,latest + 2 more...          3 hours ago
     python                               registry.access.redhat.com/openshift3/python-33-rhel7            v3.0.1.0,v3.0.2.0,3.3 + 2 more...        3 hours ago
-    ruby                                 registry.access.redhat.com/openshift3/ruby-20-rhel7              v3.0.0.0,2.0,latest + 2 more...          3 hours ago
+    ruby                                 registry.access.redhat.com/openshift3/ruby-22-rhel7              v3.0.0.0,2.2,latest + 2 more...          3 hours ago
 
 The *openshift* project is another special one. Certain things placed here are
 accessible to all users, but may only be modified/manipulated by cluster
@@ -202,7 +202,7 @@ You will see something like:
     02d394ee667a865baf5d99f4f5d6d7146ef5900a58f3aab70b095316058e05cb          registry.access.redhat.com/jboss-amq-6/amq-openshift:6.2-84
     0fb368c42851b39784c1ba2896b23049289136bba120e39fdb4210fc8b240cef          registry.access.redhat.com/openshift3/python-33-rhel7:latest
     114ca2aa4e7deae983e19702015546a6be564f79aaabd1997c65ee8564323039          registry.access.redhat.com/openshift3/mongodb-24-rhel7:v3.0.0.0
-    1426af0fc516b8ac50f6d1f127ca25b6275cb3ed86efff12ef1b2a9c912f56c7          registry.access.redhat.com/openshift3/ruby-20-rhel7:v3.0.0.0
+    1426af0fc516b8ac50f6d1f127ca25b6275cb3ed86efff12ef1b2a9c912f56c7          registry.access.redhat.com/openshift3/ruby-22-rhel7:v3.0.0.0
     18a614c1ed41987b8bd941d4b2f241df4340060bc755429d35b7dcbfaf753b41          registry.access.redhat.com/openshift3/python-33-rhel7:v3.0.1.0
     1a6b324077cdd0259a87adaae7a09edd3f3050b8472ea9cb913b7e60e476b483          registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift:3.0-190
     21f6d385fc0f16a1e4d05c16b2947eae8e576ae6d6c56ef3a151ec61e30f10d0          registry.access.redhat.com/openshift3/perl-516-rhel7:v3.0.0.0
@@ -232,10 +232,10 @@ You will see something like:
     cb8815d8f7156545b189c32276f8d638c87ba913c126c66d79aac9f744d5a979          registry.access.redhat.com/openshift3/perl-516-rhel7:v3.0.2.0
     d17602c1d6644dc614b57fb895f06b5b564679e40ee09fc374008799c984fe89          registry.access.redhat.com/openshift3/mongodb-24-rhel7:v3.0.2.0
     df03c0820b69bae34b414be401227fddba1a72189d4575b0be3bddc1b979e04a          registry.access.redhat.com/jboss-amq-6/amq-openshift:6.2-123
-    ea16bfe0829377fb1c0191d2953a1e104c9eb05d3691bfe9443bf6a12931fe25          registry.access.redhat.com/openshift3/ruby-20-rhel7:v3.0.2.0
+    ea16bfe0829377fb1c0191d2953a1e104c9eb05d3691bfe9443bf6a12931fe25          registry.access.redhat.com/openshift3/ruby-22-rhel7:v3.0.2.0
     fb24d497b1aeb499a07e5ac4996893ecf5dfc0a7369399e2f40120b58a077462          registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0-163
     fc44453d1eca9eb9d07407b612cf72f7362789ca08c982c1495903cc861c7dab          registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:latest
-    fcba2071846ce1f7ed8deb36e346e421d90873b083db3fa4933f4b9c0be72f0e          registry.access.redhat.com/openshift3/ruby-20-rhel7:v3.0.1.0
+    fcba2071846ce1f7ed8deb36e346e421d90873b083db3fa4933f4b9c0be72f0e          registry.access.redhat.com/openshift3/ruby-22-rhel7:v3.0.1.0
     sha256:d7ed55225476d23ca16182ee798e94214a9c55a6cdb6f5aa40e7f8330fd8caca   172.30.129.155:5000/sinatra/example@sha256:d7ed55225476d23ca16182ee798e94214a9c55a6cdb6f5aa40e7f8330fd8caca
 
 What you are seeing here is OpenShift's picture of the various images it is
