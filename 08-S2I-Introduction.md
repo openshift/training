@@ -108,20 +108,20 @@ The installer pre-populated several `ImageStream`s for you when it was run. As
 `root`:
 
     oc get is -n openshift
-    NAME                                 DOCKER REPO                                                      TAGS                                     UPDATED
-    jboss-amq-6                          registry.access.redhat.com/jboss-amq-6/amq-openshift             6.2-140,6.2-123,latest + 2 more...       3 hours ago
-    jboss-eap6-openshift                 registry.access.redhat.com/jboss-eap-6/eap-openshift             6.4-260,6.4-207,6.4-239 + 2 more...      3 hours ago
-    jboss-webserver3-tomcat7-openshift   registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift   3.0-135,3.0-190,latest + 2 more...       3 hours ago
-    jboss-webserver3-tomcat8-openshift   registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift   3.0-137,3.0-163,3.0-190 + 2 more...      3 hours ago
-    jenkins                              registry.access.redhat.com/openshift3/jenkins-1-rhel7            1,1.6-3,latest                           3 hours ago
-    mongodb                              registry.access.redhat.com/openshift3/mongodb-24-rhel7           v3.0.0.0,v3.0.1.0,2.4 + 2 more...        3 hours ago
-    mysql                                registry.access.redhat.com/openshift3/mysql-55-rhel7             5.5,latest,v3.0.2.0 + 2 more...          3 hours ago
-    nodejs                               registry.access.redhat.com/openshift3/nodejs-010-rhel7           v3.0.0.0,v3.0.2.0,0.10 + 2 more...       3 hours ago
-    perl                                 registry.access.redhat.com/openshift3/perl-516-rhel7             v3.0.1.0,5.16,latest + 2 more...         3 hours ago
-    php                                  registry.access.redhat.com/openshift3/php-55-rhel7               v3.0.1.0,v3.0.2.0,v3.0.0.0 + 2 more...   3 hours ago
-    postgresql                           registry.access.redhat.com/openshift3/postgresql-92-rhel7        v3.0.2.0,9.2,latest + 2 more...          3 hours ago
-    python                               registry.access.redhat.com/openshift3/python-33-rhel7            v3.0.1.0,v3.0.2.0,3.3 + 2 more...        3 hours ago
-    ruby                                 registry.access.redhat.com/openshift3/ruby-22-rhel7              v3.0.0.0,2.2,latest + 2 more...          3 hours ago
+    NAME                                  DOCKER REPO                                                                  TAGS                            UPDATED
+    jboss-amq-62                          registry.access.redhat.com/jboss-amq-6/amq62-openshift                       latest,1.1,1.2-12 + 3 more...   3 weeks ago
+    jboss-eap64-openshift                 registry.access.redhat.com/jboss-eap-6/eap64-openshift                       1.1-2,1.1,1.1-6 + 3 more...     3 weeks ago
+    jboss-webserver30-tomcat7-openshift   registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat7-openshift   1.2-10,latest,1.1 + 3 more...   3 weeks ago
+    jboss-webserver30-tomcat8-openshift   registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat8-openshift   1.1-3,1.1-7,1.2 + 3 more...     3 weeks ago
+    jenkins                               172.30.129.155:5000/openshift/jenkins                                        1,latest                        3 weeks ago
+    mongodb                               172.30.129.155:5000/openshift/mongodb                                        2.6,latest,2.4                  3 weeks ago
+    mysql                                 172.30.129.155:5000/openshift/mysql                                          5.6,latest,5.5                  3 weeks ago
+    nodejs                                172.30.129.155:5000/openshift/nodejs                                         0.10,latest                     3 weeks ago
+    perl                                  172.30.129.155:5000/openshift/perl                                           5.20,latest,5.16                3 weeks ago
+    php                                   172.30.129.155:5000/openshift/php                                            5.6,latest,5.5                  3 weeks ago
+    postgresql                            172.30.129.155:5000/openshift/postgresql                                     latest,9.4,9.2                  3 weeks ago
+    python                                172.30.129.155:5000/openshift/python                                         3.4,latest,2.7 + 1 more...      3 weeks ago
+    ruby                                  172.30.129.155:5000/openshift/ruby                                           2.0,2.2,latest                  10 days ago
 
 The *openshift* project is another special one. Certain things placed here are
 accessible to all users, but may only be modified/manipulated by cluster
@@ -199,43 +199,39 @@ IP. It will be a 172.b.c.d IP address.
 You will see something like:
 
     NAME                                                                      DOCKER REF
-    02d394ee667a865baf5d99f4f5d6d7146ef5900a58f3aab70b095316058e05cb          registry.access.redhat.com/jboss-amq-6/amq-openshift:6.2-84
-    0fb368c42851b39784c1ba2896b23049289136bba120e39fdb4210fc8b240cef          registry.access.redhat.com/openshift3/python-33-rhel7:latest
-    114ca2aa4e7deae983e19702015546a6be564f79aaabd1997c65ee8564323039          registry.access.redhat.com/openshift3/mongodb-24-rhel7:v3.0.0.0
-    1426af0fc516b8ac50f6d1f127ca25b6275cb3ed86efff12ef1b2a9c912f56c7          registry.access.redhat.com/openshift3/ruby-22-rhel7:v3.0.0.0
-    18a614c1ed41987b8bd941d4b2f241df4340060bc755429d35b7dcbfaf753b41          registry.access.redhat.com/openshift3/python-33-rhel7:v3.0.1.0
-    1a6b324077cdd0259a87adaae7a09edd3f3050b8472ea9cb913b7e60e476b483          registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift:3.0-190
-    21f6d385fc0f16a1e4d05c16b2947eae8e576ae6d6c56ef3a151ec61e30f10d0          registry.access.redhat.com/openshift3/perl-516-rhel7:v3.0.0.0
-    225d177d917d87ac71f252e7027d2388c70bed899023de047e7c1ea3008e3169          registry.access.redhat.com/openshift3/jenkins-1-rhel7:1.6-3
-    23f62abc77f1c7a5f42909363b097a756fa8e427fc19ffd1f11fe7adb63ecae8          registry.access.redhat.com/openshift3/python-33-rhel7:v3.0.0.0
-    2b8583f742ac6c759a342033dceedf360f5e4d7a1c3eef4d073f3ecbb9f492e2          registry.access.redhat.com/openshift3/php-55-rhel7:v3.0.0.0
-    2cf41faf81c11bbcf730a3e8a3609ec557b35dde97a3906900461497c34c30ea          registry.access.redhat.com/jboss-amq-6/amq-openshift:latest
-    38ce0de2eb32bedac80605a83ab5fd6ebc96dc3c040702549ef6ded9a445f6c3          registry.access.redhat.com/openshift3/nodejs-010-rhel7:v3.0.2.0
-    3c7c6d0b04516295ae6f699bfb8b3562eb3acd60b95a3bc4d013a9496de49a54          registry.access.redhat.com/openshift3/php-55-rhel7:v3.0.1.0
-    4cc25684d3228fd08ed00f9220db04301a3995d49641fb00488abc0da76da0e6          registry.access.redhat.com/openshift3/postgresql-92-rhel7:v3.0.1.0
-    57d5749e02a3d6d2a1af45305b573a30add5e4259d9c5cc0fba49bae43f105cc          registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift:3.0-135
-    583fb8a0657511291efe6da5c78c639ba2937c1bee60e403fd806379adb1d481          registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4-239
-    5c93a30f18d087bd04653342ebf712faa6eb0b3cc4fd5384a9d2fcd7cad73dd6          registry.access.redhat.com/jboss-eap-6/eap-openshift:latest
-    6504ce77e8bc29ac624df2d27481a9b0f058913c1b9ab18a8841f8c049e78982          registry.access.redhat.com/openshift3/perl-516-rhel7:v3.0.1.0
-    66d92cebc0e48e4e4be3a93d0f9bd54f21af7928ceaa384d20800f6e6fcf669f          registry.access.redhat.com/openshift3/nodejs-010-rhel7:v3.0.0.0
-    6b851f2a44a51713c877d486f5ec724f2aabd7b18e9b176e6cf8cf285fce8908          registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0-137
-    72039de9ffde99926f8056cefe90c9061d633c1b46e05599b9e42ee01c7fe6a6          registry.access.redhat.com/openshift3/postgresql-92-rhel7:v3.0.0.0
-    7c3547ea8e83faab8818e66b9a239e61ea04ba6e921801b59031e1a8849e58f4          registry.access.redhat.com/openshift3/mysql-55-rhel7:v3.0.1.0
-    82e9d56236e2c9803b4e456046a003c4c75d79fb2237b78210a07a57631fed2e          registry.access.redhat.com/openshift3/php-55-rhel7:latest
-    85765d60ad4647183e37a5c63449e754c931e1de84200413577fcb124ae5907c          registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4-207
-    b80076acb2e748879d770cc1b8ba40c7df8c690301d68b668dcc10935973ae03          registry.access.redhat.com/openshift3/mongodb-24-rhel7:v3.0.1.0
-    bb8bf2124de9cdb13e96087298d75538dddaacb93ccdd1c124c0a8889e670fdb          registry.access.redhat.com/openshift3/mysql-55-rhel7:v3.0.0.0
-    bdaffa30e8c12b53104b1c47a29c3292d1f5945ebf72c6c2cf53778cea2bbd72          registry.access.redhat.com/openshift3/nodejs-010-rhel7:v3.0.1.0
-    be57a13e50bb0bb348fa3af5852421660b24dc7a4620ec58644aff332ccf497b          registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift:3.0-160
-    c10e6b2e643e30eaa93d8c47e6d6c545ba28494cbb6e2e2862a4cb1895f07f6e          registry.access.redhat.com/openshift3/postgresql-92-rhel7:v3.0.2.0
-    c3d990247510bcd3e1dbc3093a97bad5cfad753ea7bba9d74457515aa5d62406          registry.access.redhat.com/openshift3/mysql-55-rhel7:v3.0.2.0
-    cb8815d8f7156545b189c32276f8d638c87ba913c126c66d79aac9f744d5a979          registry.access.redhat.com/openshift3/perl-516-rhel7:v3.0.2.0
-    d17602c1d6644dc614b57fb895f06b5b564679e40ee09fc374008799c984fe89          registry.access.redhat.com/openshift3/mongodb-24-rhel7:v3.0.2.0
-    df03c0820b69bae34b414be401227fddba1a72189d4575b0be3bddc1b979e04a          registry.access.redhat.com/jboss-amq-6/amq-openshift:6.2-123
-    ea16bfe0829377fb1c0191d2953a1e104c9eb05d3691bfe9443bf6a12931fe25          registry.access.redhat.com/openshift3/ruby-22-rhel7:v3.0.2.0
-    fb24d497b1aeb499a07e5ac4996893ecf5dfc0a7369399e2f40120b58a077462          registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0-163
-    fc44453d1eca9eb9d07407b612cf72f7362789ca08c982c1495903cc861c7dab          registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:latest
-    fcba2071846ce1f7ed8deb36e346e421d90873b083db3fa4933f4b9c0be72f0e          registry.access.redhat.com/openshift3/ruby-22-rhel7:v3.0.1.0
+    0d9ea62a74e95b2d3772c53ea257983f822945492f9d364e642b57187a7273f6          registry.access.redhat.com/rhscl/postgresql-94-rhel7:latest
+    1426af0fc516b8ac50f6d1f127ca25b6275cb3ed86efff12ef1b2a9c912f56c7          registry.access.redhat.com/openshift3/ruby-20-rhel7:v3.0.0.0
+    1637dfeeef5ed310ea903ee636fa7c4c0fde51514427010275f38b6a7d43ec4d          registry.access.redhat.com/openshift3/postgresql-92-rhel7:latest
+    1ac9fd48694766bf7f17a7f71f29033012769971bd0e95158d9ad8f1501f8d25          registry.access.redhat.com/jboss-amq-6/amq62-openshift:1.1-2
+    30bfe842e272328ea965553a7cae2d531abb4994b2830d487cf5536f31f785aa          registry.access.redhat.com/openshift3/perl-516-rhel7:latest
+    3634ee8eec8ac268a86133e1ee560bdaa7453dd566e86c08e2402c82145d8d8f          registry.access.redhat.com/openshift3/jenkins-1-rhel7:latest
+    39ff592357035637d589367f86bc70eabf09aa454d6db2906da9fc87d45b4d7d          registry.access.redhat.com/openshift3/ruby-20-rhel7:2.0-12
+    4052f61aa6b6ff895141eb7d639e33f820376b799bb4d7d9d8e0abfb7a6b2c45          registry.access.redhat.com/rhscl/mongodb-26-rhel7:latest
+    45961eb9dde2ce373d36e3ca8605e00cfc102b9f14aa7cd2132b7cadfd3f7f58          registry.access.redhat.com/rhscl/mysql-56-rhel7:latest
+    4db71ef8f168097007671047ad9239447217c9e863826623ba7b23018efa8c57          registry.access.redhat.com/rhscl/php-56-rhel7:latest
+    5dcbcf875ad6ce1fcb2dfdccef6dab0013be4b3c982597563f8760dfb5246d01          registry.access.redhat.com/jboss-amq-6/amq62-openshift:1.1-6
+    611c1ddbf4712ad2ec9d044431aece2ecf8d65724266614c2e29c5ef95245d6c          registry.access.redhat.com/rhscl/perl-520-rhel7:latest
+    611e9287c406e06a29eea03fe0c0806576b9b2adb1fc3dda00b45f32622abc1f          registry.access.redhat.com/openshift3/mysql-55-rhel7:latest
+    66bbba7cedad2b126e7a8e2ec78b4ddf1a33c3e55179b39895cf7482776dbe92          registry.access.redhat.com/openshift3/python-33-rhel7:latest
+    6da66388c3e62b9c956a587b149366b760861d5ed67870723914a2cbdd42a9ee          registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat7-openshift:1.1-2
+    6e0858fd4ffc7be3db350ef1adf54b121fab8915972c8ec76db63c83fa17b8e7          registry.access.redhat.com/openshift3/php-55-rhel7:latest
+    8b13741374b34b31ada65019c76c213edb20f4dd983f0b3682170150fee3a865          registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat8-openshift:1.1-3
+    901b89353cfe7a1c6f6c31d57f89a989b08cf9fd384fcadec6f35a03c95f5ea4          registry.access.redhat.com/openshift3/ruby-20-rhel7:latest
+    93d5039ac0fd9c1a9361b3459fdb005cddbdab694afe8d09abf18c064abebf20          registry.access.redhat.com/rhscl/python-27-rhel7:latest
+    9416bc460d0c5f962db64dd43ae4a364ff480d883fb50cb0df1bc4808b377217          registry.access.redhat.com/rhscl/ruby-22-rhel7:latest
+    bae1743ada780f4f14ba992fb5719ecd8cb2360480546280369050e597f98b3f          registry.access.redhat.com/rhscl/python-34-rhel7:latest
+    c12d6b01a2fbd3036df445aa03ae6e9210801bd3245daf4e4fc23af08eb20c21          registry.access.redhat.com/jboss-eap-6/eap64-openshift:1.1-2
+    c352faf0612819285212aade561bd0d54ba631df084387bbacb8c398f7ee4e09          registry.access.redhat.com/openshift3/mongodb-24-rhel7:latest
+    c887de63ad61eef11824f330c69c081c9afce1d4a263d4ba631630698fb58880          registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat8-openshift:1.1
+    c9084bf9a9f5213ceadc38f8cf5aa83b0338c2caa5ceae07efef4b613ef5b496          registry.access.redhat.com/jboss-amq-6/amq62-openshift:1.2
+    cd9c11961578733a25875fb51fc94d71135cc52eb270cd58213fe99000b2ce9e          registry.access.redhat.com/jboss-eap-6/eap64-openshift:1.2
+    cef5247a4af15d9a0a6458b960412ae4680a04af2967096b1d13f034bda09e8d          registry.access.redhat.com/openshift3/nodejs-010-rhel7:latest
+    dfdbff449ef7a289af499cc9e5bbd18f5173f46a674fda6fe6c8d712449c8c53          registry.access.redhat.com/jboss-eap-6/eap64-openshift:1.1-6
+    e0f97342ddf6a09972434f98837b5fd8b5bed9390f32f1d63e8a7e4893208af7          registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat7-openshift:1.1-6
+    e1df0d20c9b63511e6d5a3681b93e97591400f4918c7a73e0b50e11e1004b379          registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat7-openshift:1.2
+    ea16bfe0829377fb1c0191d2953a1e104c9eb05d3691bfe9443bf6a12931fe25          registry.access.redhat.com/openshift3/ruby-20-rhel7:v3.0.2.0
+    eea8b5469a20a0917df601856a54cadea77269fd4929c4d2954615b19c7ba8bc          registry.access.redhat.com/jboss-webserver-3/webserver30-tomcat8-openshift:1.2
+    fcba2071846ce1f7ed8deb36e346e421d90873b083db3fa4933f4b9c0be72f0e          registry.access.redhat.com/openshift3/ruby-20-rhel7:v3.0.1.0
     sha256:d7ed55225476d23ca16182ee798e94214a9c55a6cdb6f5aa40e7f8330fd8caca   172.30.129.155:5000/sinatra/example@sha256:d7ed55225476d23ca16182ee798e94214a9c55a6cdb6f5aa40e7f8330fd8caca
 
 What you are seeing here is OpenShift's picture of the various images it is
