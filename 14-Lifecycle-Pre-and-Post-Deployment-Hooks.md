@@ -137,15 +137,15 @@ Otherwise we could end up with our new code deployed but our database schema
 would not match. This could be a *Real Bad Thing (TM)*.
 
 In the case of the `ruby-20` builder image, we are actually using RHEL7 and the
-Red Hat Software Collections (SCL) to get our Ruby 2.0 support. So, the command
+Red Hat Software Collections (SCL) to get our Ruby 2.2 support. So, the command
 we want to run looks like:
 
-    /usr/bin/scl enable ruby200 ror40 'cd /opt/app-root/src ; bundle exec rake db:migrate'
+    /usr/bin/scl enable rh-ruby22 'cd /opt/app-root/src ; bundle exec rake db:migrate'
 
 This command:
 
 * executes inside an SCL "shell"
-* enables the Ruby 2.0.0 and Ruby On Rails 4.0 environments
+* enables the Ruby 2.2 environment
 * changes to the `/opt/openshift/src` directory (where our applications' code is
     located)
 * executes `bundle exec rake db:migrate`
@@ -161,8 +161,7 @@ looks like:
     "command": [
         "/usr/bin/scl",
         "enable",
-        "ruby200",
-        "ror40",
+        "rh-ruby22",
         "cd /opt/app-root/src ; bundle exec rake db:migrate"
     ]
 
@@ -183,8 +182,7 @@ reference above, in the end, you will have something that looks like:
                     "command": [
                         "/usr/bin/scl",
                         "enable",
-                        "ruby200",
-                        "ror40",
+                        "rh-ruby22",
                         "cd /opt/app-root/src ; bundle exec rake db:migrate"
                     ],
                     "containerName": "ruby-hello-world"
