@@ -130,7 +130,7 @@ is performing on first start.
 Once the build is complete and the application instance is ready, you should be
 able to visit the routed URL and actually use the application!
 
-    http://keyvalue-route.quickstart.cloudapps.example.com
+    http://keyvalue-route-quickstart.cloudapps.example.com
 
 If you get 503 errors, wait a minute and then try again -- this is a
 sign that the application is not "ready" yet. We will talk about checking
