@@ -150,7 +150,7 @@ Make sure that you are running at least `docker-1.8.2-8.el7`.
 
 Please see the OpenShift documentation on configuring Docker storage:
 
-    https://docs.openshift.com/enterprise/latest/install_config/install/prerequisites.html#configuring-docker-storage
+    https://docs.openshift.com/container-platform/latest/install_config/install/host_preparation.html#configuring-docker-storage
 
 ## Grab Docker Images (optional, recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
