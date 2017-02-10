@@ -192,6 +192,11 @@ On your master, it makes sense to clone the training git repository:
 Almost all of the files for this training are in the training folder you just
 cloned.
 
+Additionally, on your master, clone the openshift-ansible configuration scripts:
+
+    cd
+    git clone https://github.com/openshift/openshift-ansible.git
+
 ## Add Development Users
 In the "real world" your developers would likely be using the OpenShift tools on
 their own machines (`oc` and the web console). For these examples, we will
