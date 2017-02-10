@@ -112,6 +112,8 @@
         "source": {
           "type": "Git",
           "git": {
+            "httpProxy": "${PROXY}",
+            "httpsProxy": "${PROXY}",
             "uri": "git://github.com/openshift/ruby-hello-world.git",
             "ref": "beta4"
           }
@@ -119,6 +121,16 @@
         "strategy": {
           "type": "Source",
           "sourceStrategy": {
+            "env": [
+              {
+                "name": "http_proxy",
+                "value": "${PROXY}"
+              },
+              {
+                "name": "https_proxy",
+                "value": "${PROXY}"
+              }
+            ],
             "from": {
               "kind": "ImageStreamTag",
               "name": "ruby-20-rhel7:latest"
@@ -340,6 +352,10 @@
     }
   ],
   "parameters": [
+    { 
+      "name": "PROXY",
+      "description": "The proxy url used for github and system (e.g: http://10.205.0.4:8080 )"
+    },
     {
       "name": "MYSQL_USER",
       "description": "The username used to connect to the database",
