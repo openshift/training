@@ -31,6 +31,7 @@ Remember, you created these users previously.
 The OpenShift configuration is kept in a YAML file which currently lives at
 `/etc/origin/master/master-config.yaml`. Ansible was configured to edit
 the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
+(If not, you should manually change it to look like the following)
 
     identityProviders:
     - challenge: true

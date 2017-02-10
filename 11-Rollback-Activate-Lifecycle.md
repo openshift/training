@@ -94,7 +94,7 @@ repository. Assuming your github user is `alice`, you would point it
 to `git://github.com/alice/ruby-hello-world.git`. Save and exit
 the editor.
 
-If you again run `oc get buildconfig ruby-example -o yaml` you should see
+If you again run `oc get buildconfig ruby-hello-world -o yaml` you should see
 that the `uri` has been updated.
 
 ## Change the Code

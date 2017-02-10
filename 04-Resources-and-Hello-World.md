@@ -149,6 +149,10 @@ Since we have taken the time to create the *joe* user as well as a project for
 him, we can log into a terminal as *joe* and then set up the command line
 tooling.
 
+First, as root, run:
+
+    cp /etc/origin/master/ca.crt /home/joe/ca.crt
+
 Open a terminal as `joe`:
 
     # su - joe
@@ -156,7 +160,7 @@ Open a terminal as `joe`:
 Then, execute:
 
     oc login -u joe \
-    --certificate-authority=/etc/origin/master/ca.crt \
+    --certificate-authority=/home/joe/ca.crt \
     --server=https://ose3-master.example.com:8443
 
 OpenShift, by default, is using a self-signed SSL certificate, so we must point
