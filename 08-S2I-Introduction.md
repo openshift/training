@@ -165,7 +165,7 @@ You'll see something like:
 
 You can view the build logs from the command line with:
 
-    oc build-logs example-1
+    oc logs sinatra-example-1-build
 
 Why just `example-1`?
 
