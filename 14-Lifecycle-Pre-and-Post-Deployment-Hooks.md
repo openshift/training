@@ -168,7 +168,7 @@ looks like:
 This is great, but actually manipulating the database requires that we talk
 **to** the database. Talking to the database requires a user and a password.
 Smartly, our hook pods inherit the same environment variables as the main
-deployed pods, so we'll have access to the same datbase information.
+deployed pods, so we'll have access to the same database information.
 
 Looking at the original hook example in the previous section, and our command
 reference above, in the end, you will have something that looks like:
