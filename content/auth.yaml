@@ -1,8 +1,0 @@
-  identityProviders:
-  - challenge: true
-    login: true
-    name: apache_auth
-    provider:
-      apiVersion: v1
-      file: /etc/origin/openshift-passwd
-      kind: HTPasswdPasswordIdentityProvider
