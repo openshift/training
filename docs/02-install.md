@@ -79,10 +79,16 @@ cluster in the output of the installer. For example:
 
 https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
 
-Note that the username is always `kubeadmin` and the password is also in the
-output from the installer. At the time of this writing, `kubeadmin` is the
-only user and it is not possible to create additional users or integrate with
-an identity store.
+### Note
+The username is always `kubeadmin` and the password is also in the output
+from the installer. At the time of this writing, `kubeadmin` is the only user
+and it is not possible to create additional users or integrate with an
+identity store.
+
+### Note
+When visiting the web console you will receive a certificate error in your
+browser. This is because the installation uses a self-signed certificate. You
+will need to accept it in order to continue.
 
 # Problems?
 As of the time of this writing, if you encounter failures, you will need to
@@ -101,5 +107,16 @@ Do the following:
 1. Re-start the install process
 
         ./openshift-install create cluster
+
+# Deleting the Cluster and Cleaning up
+The following command will remove the OpenShift 4 cluster and all the underlying
+AWS resources that were created by the installer:
+
+    openshift-install destroy cluster
+
+On the off chance that you experience a failure during the `destroy`
+operation, you will need to very carefully delete the resources that were
+created, by hand, from your AWS account. Fortunately they are all tagged with
+a `key:value` pair of `clusterid:whatever_you_specified_during_install`.
 
 Next: [Exploring the Cluster](03-explore.md)
