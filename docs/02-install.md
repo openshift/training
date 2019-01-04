@@ -3,13 +3,20 @@
 The installer provides a guided experience for provisioning the cluster on a
 particular platform. As of this writing, only AWS is a supported target.
 
-
+## Start the Installation
 The following demonstrates an install using the wizard as an example. It is
 possible to run the installation in one terminal and then have another
-terminal on the host available to watch the log file, if desired:
+terminal on the host available to watch the log file, if desired.
+
+The installer is interactive and you will use the cursor/arrow keys to select
+various options when necessary. The installer will use the AWS credentials
+associated with the profile you exported earlier (eg:
+`AWS_PROFILE=openshift4-beta-admin`) and interrogate the account associated
+to populate certain items.
 
 ```
 $ ./openshift-install create cluster
+? SSH Public Key /path/to/.ssh/id_rsa.pub
 ? Platform aws
 ? Region us-east-1
 ? Base Domain openshift4-beta-abcorp.com
@@ -33,16 +40,55 @@ INFO Access the OpenShift web-console here: https://console-openshift-console.ap
 INFO Login to the console with user: kubeadmin, password: <provided>
 ```
 
+## Watch the Installation
 You can watch the installation progress by looking at the
 `.openshift_install.log` file which will be located in the working directory
 where `openshift-install` was executed:
 
     tail -f .openshift_install.log
 
-[NOTE]
-====
-It may take several minutes for the OpenShift web console to become available/reachable after the installation completes.
-====
+## Configure the CLI
+Make sure to run the `export KUBECONFIG=...` command in the installer output. Then, if you have the `oc` client in your `PATH` and executable, you should be able to execute:
+
+    oc get clusterversion
+
+And you will see some output like:
+
+```
+NAME  	VERSION   AVAILABLE   PROGRESSING   SINCE 	STATUS
+version   4.0.0-8   True    	False     	7m    	Cluster version is 4.0.0-8
+$oc describe clusterversion
+Name:     	version
+Namespace:    
+Labels:   	<none>
+...
+```
+
+### NOTE
+The installer also suggests `oc login`. The process of logging in with the
+CLI creates/updates/modifies a kube config file. The installer automatically
+generates a kube config file with the `kubeadmin` credentials. Logging in or
+exporting the `KUBECONFIG` path are essentially doing the same thing in this
+scenario.
+
+## Web Console
+It may take several minutes for the OpenShift web console to become
+available/reachable after the installation completes. But, be sure to visit
+it when it does. You can find the URL for the web console for your installed
+cluster in the output of the installer. For example:
+
+https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
+
+### Note
+The username is always `kubeadmin` and the password is also in the output
+from the installer. At the time of this writing, `kubeadmin` is the only user
+and it is not possible to create additional users or integrate with an
+identity store.
+
+### Note
+When visiting the web console you will receive a certificate error in your
+browser. This is because the installation uses a self-signed certificate. You
+will need to accept it in order to continue.
 
 # Problems?
 As of the time of this writing, if you encounter failures, you will need to
@@ -62,10 +108,15 @@ Do the following:
 
         ./openshift-install create cluster
 
-[NOTE]
-====
-The additionally documented instructions and examples have not been tested
-recently and may not work.
-====
+# Deleting the Cluster and Cleaning up
+The following command will remove the OpenShift 4 cluster and all the underlying
+AWS resources that were created by the installer:
+
+    openshift-install destroy cluster
+
+On the off chance that you experience a failure during the `destroy`
+operation, you will need to very carefully delete the resources that were
+created, by hand, from your AWS account. Fortunately they are all tagged with
+a `key:value` pair of `clusterid:whatever_you_specified_during_install`.
 
 Next: [Exploring the Cluster](03-explore.md)
