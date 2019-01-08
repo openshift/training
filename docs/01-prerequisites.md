@@ -120,8 +120,9 @@ keys to select the one you wish to use.
   and make sure you have its contents available to you
 
 ## OpenShift CLI
-There will be a download link on https://cloud.openshift.com/clusters/install
-for the OpenShift CLI. Download the appropriate CLI for your platform, make
-sure it is executable, and make sure that it is in your `PATH`.
+On https://cloud.openshift.com/clusters/install, scroll down to the section
+called “Access your new cluster!” and click the button "Download Command-line
+Tools". Download the appropriate CLI for your platform, extract it, make sure
+it is executable, and make sure that it is in your `PATH`.
 
 Next: [Installing the Cluster](02-install.md)
