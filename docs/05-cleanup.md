@@ -2,7 +2,7 @@
 The following command will remove the OpenShift 4 cluster and all the underlying
 AWS resources that were created by the installer:
 
-    openshift-install destroy cluster
+    ./openshift-install destroy cluster
 
 On the off chance that you experience a failure during the `destroy`
 operation, you will need to very carefully delete the resources that were
