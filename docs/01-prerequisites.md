@@ -20,7 +20,7 @@ limit increases through the AWS console.
 Currently the boostrap images that the installer uses are only available in
 the following AWS regions:
 
-* us-east-1 (N.Virgina)
+* us-east-1 (N.Virginia)
 * us-east-2 (Ohio)
 * us-west-1 (N.California)
 * us-west-2 (Oregon)
@@ -38,7 +38,7 @@ requirements:
   found here:
   https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html
 
-* An availble DNS domain (or subdomain) in a zone managed by Route53.
+* An available DNS domain (or subdomain) in a zone managed by Route53.
   **Note**: You do not need to purchase the domain through AWS. You simply need
   a Route53-managed zone that the installer can use to create the necessary DNS
   entries for EC2 instances and other items. This can be a base domain (eg: 

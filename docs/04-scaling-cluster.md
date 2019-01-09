@@ -53,7 +53,7 @@ You will see something like (differing depending on AWS region and `clusterid`):
 
 ### Define a `MachineAutoScaler`
 The following command will create a YAML file that defines a
-`MachineAutoScaler`. **You will need to modifiy the `name:` stanza for the
+`MachineAutoScaler`. **You will need to modify the `name:` stanza for the
 `MachineSet` to exactly match whatever set you choose from your own list. DO
 NOT copy the example exactly.** You can specify the minimum and maximum
 quantity of nodes that are allowed to be created by adjusting the
