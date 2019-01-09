@@ -1,6 +1,8 @@
 # Exploring the Cluster
 
-Now that your cluster is installed, you have access to the web console, and you can use the CLI, here are some command-line exercises to explore the cluster:
+Now that your cluster is installed, you have access to the web console, and
+you can use the CLI, here are some command-line exercises to explore the
+cluster:
 
 ## Cluster Nodes
 

@@ -55,13 +55,25 @@ Make sure to run the `export KUBECONFIG=...` command in the installer output. Th
 And you will see some output like:
 
 ```
-NAME  	VERSION   AVAILABLE   PROGRESSING   SINCE 	STATUS
-version   4.0.0-8   True    	False     	7m    	Cluster version is 4.0.0-8
-$oc describe clusterversion
-Name:     	version
+NAME      VERSION   AVAILABLE   PROGRESSING   SINCE     STATUS
+version   4.0.0-9   True        False         22s       Cluster version is 4.0.0-9
+```
+
+For more details, you can use `oc describe clusterversion`:
+
+```
+Name:         version
 Namespace:    
-Labels:   	<none>
+Labels:       <none>
+Annotations:  <none>
+API Version:  config.openshift.io/v1
+Kind:         ClusterVersion
+Metadata:
 ...
+    Version:     4.0.0-9
+  Generation:    1
+  Version Hash:  h5rmLF13-LA=
+Events:          <none>
 ```
 
 ### NOTE
