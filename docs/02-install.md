@@ -106,17 +106,13 @@ will need to accept it in order to continue.
 As of the time of this writing, if you encounter failures, you will need to
 do a fresh install.
 
-Do the following:
-1. Please capture the console output and the installer log. 
+Please capture the console output and the installer log. 
 
         mv .openshift_install.log openshift_install_fail_logs
 
-1. Clean up the install process and start fresh as following: 
+Then, [clean up your cluster](05-cleanup.md).
 
-        ./openshift-install destroy cluster
-        rm .openshift_install_state.json
-
-1. Re-start the install process
+Finally, re-start the install process
 
         ./openshift-install create cluster
 
