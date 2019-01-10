@@ -22,7 +22,9 @@ and see the allocated machines. The `Overview` tab will let you know when the
 machines become ready. If you click `Machine Sets` under `Administration`
 again, you will also see the status of the machines in the set.
 
-It will take several minutes for the new machines to become ready. In the background additional EC2 instances are being provisioned and then registered and configured to participate in the cluster.
+It will take several minutes for the new machines to become ready. In the
+background additional EC2 instances are being provisioned and then registered
+and configured to participate in the cluster.
 
 Before continuing, scale back down by editing the count to whatever it was
 previously for the `Machine Set`.
@@ -37,7 +39,8 @@ the `machineset` in the `openshift-cluster-api` project.
 
 ## Automatic Cluster Scale Up
 Automatic scale based on workload is possible provided there is a
-configuration specified to do so. From the command line, take a look at the `machinesets` (they will look the same as in the web UI):
+configuration specified to do so. From the command line, take a look at the
+`machinesets` (they will look the same as in the web UI):
 
     oc get machinesets -n openshift-cluster-api
 

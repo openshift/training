@@ -35,10 +35,22 @@ INFO Destroying the bootstrap resources...
 INFO Waiting up to 10m0s for the openshift-console route to be created...
 INFO Install complete!                       	 
 INFO Run 'export KUBECONFIG=<your working directory>/auth/kubeconfig' to manage the cluster with 'oc', the OpenShift CLI.
-INFO The cluster is ready when 'oc login -u kubeadmin -p <passwd>' succeeds (wait a few minutes).
+INFO The cluster is ready when 'oc login -u kubeadmin -p <provided>' succeeds (wait a few minutes).
 INFO Access the OpenShift web-console here: https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
 INFO Login to the console with user: kubeadmin, password: <provided>
 ```
+
+### NOTE
+The `oc login` command will ask for a server. The installer output did not
+tell you the API endpoint to use. You can find this by running:
+
+    grep server /root/auth/kubeconfig
+
+If you want to use some `bash` to make the login command easier, you can
+execute the following:
+
+    oc login -u kubeadmin -p `cat /root/auth/kubeadmin-password` \
+    `grep server /root/auth/kubeconfig | awk '{print $2}'`
 
 ## Watch the Installation
 You can watch the installation progress by looking at the
@@ -48,7 +60,9 @@ where `openshift-install` was executed:
     tail -f .openshift_install.log
 
 ## Configure the CLI
-Make sure to run the `export KUBECONFIG=...` command in the installer output. Then, if you have the `oc` client in your `PATH` and executable, you should be able to execute:
+Make sure to run the `export KUBECONFIG=...` command in the installer output.
+Then, if you have the `oc` client in your `PATH` and executable, you should
+be able to execute:
 
     oc get clusterversion
 
@@ -102,21 +116,26 @@ When visiting the web console you will receive a certificate error in your
 browser. This is because the installation uses a self-signed certificate. You
 will need to accept it in order to continue.
 
-# Problems?
-As of the time of this writing, if you encounter failures, you will need to
-do a fresh install.
+### Note
+If you lose either the password or the console URL, you can find them in the
+`output.txt` file which is likely in the same folder in which you executed
+`openshift-install`.
 
-Do the following:
-1. Please capture the console output and the installer log. 
+# Problems?
+There are a number of problems that commonly occur that we have documented in
+the
+[https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md](installer's
+GitHub repository). If you don't find your particular issue, as of the time
+of this writing, you will need to do a fresh
+install.
+
+Please capture the console output and the installer log. 
 
         mv .openshift_install.log openshift_install_fail_logs
 
-1. Clean up the install process and start fresh as following: 
+Then, [clean up your cluster](05-cleanup.md).
 
-        ./openshift-install destroy cluster
-        rm .openshift_install_state.json
-
-1. Re-start the install process
+Finally, re-start the install process
 
         ./openshift-install create cluster
 
