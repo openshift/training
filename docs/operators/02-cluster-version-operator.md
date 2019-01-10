@@ -1,6 +1,6 @@
 # Cluster Version Operator
 
-This tutorial describes the top level operator that manages cluser updates.
+This tutorial describes the top level operator that manages cluster updates.
 
 ## Cluster Version
 
@@ -204,7 +204,7 @@ cluster-version-operator   1         1         1            1           1h
 
 The manifests in the update payload are standard Kubernetes API resources and
 custom resource definitions that drive operator behavior.  Earlier, we could see
-there were 146 manifests in this release version.  These manfiests include
+there were 146 manifests in this release version.  These manifests include
 namespaces, custom resource definitions, rbac rules, service accounts, and
 deployments or daemonsets that drive individual operator behavior.
 
@@ -290,7 +290,7 @@ sh-4.2# ls release-manifests
 ```
 
 If you view the logs of the cluster version operator, you can see
-its continously applying the desired state to avoid configuration drift.
+its continuously applying the desired state to avoid configuration drift.
 
 To see the logs, execute the following:
 

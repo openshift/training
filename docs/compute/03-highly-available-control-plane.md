@@ -1,4 +1,4 @@
-# Highly Avaiable Control Plane
+# Highly Available Control Plane
 
 The install creates a highly available control plane by default for the target
 platform.
@@ -18,7 +18,7 @@ decarr-master-1 us-east-2
 decarr-master-2 us-east-2
 ```
 
-To see the availabilitye zone for each control plane machine, execute the
+To see the availability zone for each control plane machine, execute the
 following:
 
 ```sh
