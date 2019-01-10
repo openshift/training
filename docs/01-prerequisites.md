@@ -17,7 +17,7 @@ If your AWS account doesn't support these limits, please be sure to request
 limit increases through the AWS console.
 
 ### Supported Regions
-Currently the boostrap images that the installer uses are only available in
+Currently the bootstrap images that the installer uses are only available in
 the following AWS regions:
 
 * ap-northeast-1 (Tokyo) 

@@ -104,4 +104,4 @@ sudo podman ps
 In the next step, we will explore how OpenShift nodes are configured via an
 operator.
 
-Next: [Maching Config](03-machine-config.md)
+Next: [Machine Config](03-machine-config.md)

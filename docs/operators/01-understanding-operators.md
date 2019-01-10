@@ -18,7 +18,7 @@ up an OpenShift service.
 ## Managing applications on the platform
 
 Applications that run on the platform have the same install, update, and
-lifecycle managment problems as the control plane itself.  OpenShift provides
+lifecycle management problems as the control plane itself.  OpenShift provides
 the `Operator Lifecycle Manager` component to enable administrators to deploy
 optional parts of the OpenShift distribution.  In addition, users can package
 and add their own components to `Operator Lifecycle Manager` for their own

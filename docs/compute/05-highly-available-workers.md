@@ -1,5 +1,5 @@
 
-# Highly Avaiable Workers
+# Highly Available Workers
 
 The install creates a highly available pool of worker machines by default for
 the target platform.
