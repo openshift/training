@@ -20,13 +20,21 @@ limit increases through the AWS console.
 Currently the boostrap images that the installer uses are only available in
 the following AWS regions:
 
-* us-east-1 (N.Virginia)
-* us-east-2 (Ohio)
-* us-west-1 (N.California)
-* us-west-2 (Oregon)
-* sa-east-1 (Sao Paulo)
+* ap-northeast-1 (Tokyo) 
+* ap-northeast-2 (Seoul)
+* ap-south-1 (Mumbai)
+* ap-southeast-1 (Singapore)
+* ap-southeast-2 (Sydney)
+* ca-central-1 (Central)
+* eu-central-1 (Frankfurt)
+* eu-west-1 (Ireland)
 * eu-west-2 (London)
-* eu-west-3 (Paris) 
+* eu-west-3 (Paris)
+* sa-east-1 (São Paulo)
+* us-east-1 (N. Virginia)
+* us-east-2 (Ohio)
+* us-west-1 (N. California)
+* us-west-2 (Oregon)
 
 ### Additional AWS Requirements
 You will need an AWS account that additionally meets the following
@@ -90,7 +98,7 @@ Configure everything to use this new profile
 $ export AWS_PROFILE=openshift4-beta-admin
 ```
 
-## SSH keypair
+## SSH Keypair
 Your provisioning host will need an SSH keypair in order to access the
 OpenShift cluster instances on AWS. If you do not already have an existing
 default keypair (id_rsa/id_rsa.pub) then you can use `ssh-keygen` to
@@ -98,6 +106,12 @@ create one.
 
 The installer will interactively prompt for an SSH keypair. Use the arrow
 keys to select the one you wish to use.
+
+### NOTE
+If you do not have a pubkey with a `.pub` extension, the installer will not
+find it and, if you continue with the installation without selecting a key,
+you will not be able to select to use this SSH key with your instances, and
+you will not be able to SSH into them at all.
 
 ## OpenShift Installer
 
