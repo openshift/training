@@ -3,7 +3,6 @@
 The installer provides a guided experience for provisioning the cluster on a
 particular platform. As of this writing, only AWS is a supported target.
 
-## Start the Installation
 The following demonstrates an install using the wizard as an example. It is
 possible to run the installation in one terminal and then have another
 terminal on the host available to watch the log file, if desired.
@@ -13,6 +12,19 @@ various options when necessary. The installer will use the AWS credentials
 associated with the profile you exported earlier (eg:
 `AWS_PROFILE=openshift4-beta-admin`) and interrogate the account associated
 to populate certain items.
+
+## Start the Installation
+Previously you downloaded the `openshift-install` command and now you will
+run it and follow the interactive prompts.
+
+### NOTE
+You may wish to use the `--dir <something>` flag to place the installation artifacts into a specific directory. This makes cleanup easier, and makes it easier to handle multiple clusters at the same time.
+
+To do so, run the following to start your installation:
+
+    ./openshift-install --dir /some/path/to/artifacts create cluster
+
+Otherwise, run the following:
 
 ```
 $ ./openshift-install create cluster
@@ -24,7 +36,7 @@ $ ./openshift-install create cluster
 ? Pull Secret [? for help] *********************************************************
 ```
 
-The installer will then start:
+The installer will then start (you will see output similar to the following):
 
 ```
 INFO Creating cluster...                     	 
@@ -46,8 +58,10 @@ tell you the API endpoint to use. You can find this by running:
 
     grep server /root/auth/kubeconfig
 
-If you want to use some `bash` to make the login command easier, you can
-execute the following:
+If you `export KUBECONFIG` as instructed, the `oc login` will work.
+
+If you want to use some `bash` to make the login command easier without
+having to `export KUBECONFIG`, you can execute the following:
 
     oc login -u kubeadmin -p `cat /root/auth/kubeadmin-password` \
     `grep server /root/auth/kubeconfig | awk '{print $2}'`
