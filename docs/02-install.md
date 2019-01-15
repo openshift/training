@@ -132,8 +132,10 @@ will need to accept it in order to continue.
 
 ### Note
 If you lose either the password or the console URL, you can find them in the
-`output.txt` file which is likely in the same folder in which you executed
-`openshift-install`.
+`.openshift_install.log` file which is likely in the same folder in which you executed
+`openshift-install` (or the dir that you specified). For example:
+
+    tail -n5 /path/to/dir/.openshift_install.log
 
 ### Note
 If you open another terminal or log-out and log-in to the terminal again and
