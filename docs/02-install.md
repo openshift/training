@@ -135,6 +135,13 @@ If you lose either the password or the console URL, you can find them in the
 `output.txt` file which is likely in the same folder in which you executed
 `openshift-install`.
 
+### Note
+If you open another terminal or log-out and log-in to the terminal again and
+lose your `KUBECONFIG` environment variable, look for the `auth/kubeconfig`
+file in your installation artifacts directory and simply re-export it:
+
+    export KUBECONFIG=/path/to/something/auth/kubeconfig
+
 # Problems?
 If you had installation issues, see the [troubleshooting](06-troubleshooting.md) section.
 
