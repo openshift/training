@@ -41,7 +41,7 @@ The installer will then start (you will see output similar to the following):
 ```
 INFO Creating cluster...                     	 
 INFO Waiting up to 30m0s for the Kubernetes API...
-INFO API v1.11.0+85a0623 up                  	 
+INFO API v1.11.0+c69f926354 up
 INFO Waiting up to 30m0s for the bootstrap-complete event...
 INFO Destroying the bootstrap resources...   	 
 INFO Waiting up to 10m0s for the openshift-console route to be created...
@@ -132,8 +132,10 @@ will need to accept it in order to continue.
 
 ### Note
 If you lose either the password or the console URL, you can find them in the
-`output.txt` file which is likely in the same folder in which you executed
-`openshift-install`.
+`.openshift_install.log` file which is likely in the same folder in which you executed
+`openshift-install` (or the dir that you specified). For example:
+
+    tail -n5 /path/to/dir/.openshift_install.log
 
 ### Note
 If you open another terminal or log-out and log-in to the terminal again and
