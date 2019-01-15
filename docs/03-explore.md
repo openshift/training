@@ -60,8 +60,13 @@ command will give you the public DNS name of that master:
     aws ec2 describe-instances --filters "Name=private-dns-name,Values=HOSTNAME_HERE" \
     "Name=tag:clusterid,Values=CLUSTERID_HERE" --query "Reservations[*].Instances[*].[PublicDnsName]"
 
+**Note:** You will need to add the `--region` flag if you have provisioned a
+*cluster that is not in your default region (default as far as `aws`'s CLI is
+*concerned.)
+
 ## SSH to the Master
-You can then SSH into that master, making sure to specify the same SSH key you specified during the installation:
+You can then SSH into that master, making sure to specify the same SSH key
+you specified during the installation:
 
     ssh -i /path/to/sshkey core@MASTER_HOSTNAME_FROM_ABOVE
 
