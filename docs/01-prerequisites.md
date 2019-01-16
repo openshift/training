@@ -102,20 +102,17 @@ Configure everything to use this new profile
 $ export AWS_PROFILE=openshift4-beta-admin
 ```
 
-## SSH Keypair
-Your provisioning host will need an SSH keypair in order to access the
-OpenShift cluster instances on AWS. If you do not already have an existing
-default keypair (id_rsa/id_rsa.pub) then you can use `ssh-keygen` to
-create one.
+## SSH Keys
 
-The installer will interactively prompt for an SSH keypair. Use the arrow
-keys to select the one you wish to use.
+The installer will interactively prompt for an SSH public key if it
+finds one in `~/.ssh/` that ends with `.pub`, and you can use the
+arrow keys to select the one you wish to use.  If no `.pub` file is
+found, the installer will not prompt for public key and will install
+the cluster without SSH access.
 
-### NOTE
-If you do not have a pubkey with a `.pub` extension, the installer will not
-find it and, if you continue with the installation without selecting a key,
-you will not be able to select to use this SSH key with your instances, and
-you will not be able to SSH into them at all.
+If you install a cluster without initially selecting an SSH public
+key, you can [configure these later using the machine-config
+operator][machine-config-daemon-ssh-keys].
 
 ## OpenShift Installer
 
@@ -149,3 +146,5 @@ If at any point you run into issues while exploring OpenShift 4, see the
 
 
 Next: [Installing the Cluster](02-install.md)
+
+[machine-config-daemon-ssh-keys]: https://github.com/openshift/machine-config-operator/blob/master/docs/Update-SSHKeys.md
