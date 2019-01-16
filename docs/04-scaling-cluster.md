@@ -111,8 +111,8 @@ to modify the YAML file to look like the following:
         name: 19104-worker-us-east-1a
 
 **Make sure** that you properly modify both `generateName` and `name`. Note
-*which one has the `<clusterid>` and which one does not. Note that
-*`generateName` has a trailing hyphen. You can specify the minimum and maximum
+which one has the `<clusterid>` and which one does not. Note that
+`generateName` has a trailing hyphen. You can specify the minimum and maximum
 quantity of nodes that are allowed to be created by adjusting the
 `minReplicas` and `maxReplicas`.
 
@@ -130,7 +130,7 @@ EC2 instances.**
 Once the file has been modified appropriately, you can now create the
 autoscaler:
 
-    oc create -f machine-autoscale-example.yaml
+    oc create -f machine-autoscale-example.yaml -n openshift-cluster-api
 
 You will see a note that the objects were created.
 
@@ -152,7 +152,7 @@ If you don't wish to make any changes, you can simply `create` the
 You will see a note that the autoscaler has been created.
 
 **Note:** The `ClusterAutoscaler` is not a namespaced resource -- it exists at
-*the cluster scope.
+the cluster scope.
 
 ### Define a `Job`
 The following YAML file defines a `Job`:
