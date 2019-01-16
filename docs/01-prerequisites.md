@@ -88,13 +88,17 @@ After installing the AWS CLI, it must be configured for the AWS account and
 IAM role. This assumes we are using the `openshift4-beta-admin` IAM user
 mentioned earlier:
 
-```
+```console
 $ aws configure --profile=openshift4-beta-admin
 AWS Access Key ID [None]: <for the AWS role openshift4-beta-admin >
 AWS Secret Access Key [None]: <for the AWS role openshift4-beta-admin>
 Default region name [None]: <the AWS region to deploy the beta environment>
 Default output format [None]: text
+```
+
 Configure everything to use this new profile
+
+```console
 $ export AWS_PROFILE=openshift4-beta-admin
 ```
 
