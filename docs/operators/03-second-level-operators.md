@@ -20,8 +20,8 @@ that is read by the `ClusterVersionOperator` to ensure the desired state has con
 
 To view the list of cluster operators and their status, execute the following:
 
-```sh
-oc get clusteroperators
+```console
+$ oc get clusteroperators
 NAME                                                      VERSION                         AVAILABLE   PROGRESSING   SINCE
 machine-api-operator                                      v0.0.0-was-not-built-properly   True                      1m
 machine-config-operator                                   3.11.0-294-g77b0e7bc-dirty      True        False         16s
@@ -36,8 +36,8 @@ To view more detail about an operator, you can describe it.
 
 To view information about the operator that manages the , execute the following:
 
-```sh
-oc describe clusteroperator openshift-cluster-openshift-controller-manager-operator
+```console
+$ oc describe clusteroperator openshift-cluster-openshift-controller-manager-operator
 Name:         openshift-cluster-openshift-controller-manager-operator
 Namespace:    
 Labels:       <none>
