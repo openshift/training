@@ -86,7 +86,7 @@ Inspected and debugged via `crictl`
 To view running pods via `crictl`, execute the following:
 
 ```sh
- sudo crictl pods
+sudo crictl pods
 ```
 
 ## Podman
