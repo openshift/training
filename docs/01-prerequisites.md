@@ -90,7 +90,7 @@ mentioned earlier:
 
 ```
 $ aws configure --profile=openshift4-beta-admin
-AWS Access Key ID [None]: <for the AWS role openshift4-beta-admin >
+AWS Access Key ID [None]: <for the AWS role openshift4-beta-admin>
 AWS Secret Access Key [None]: <for the AWS role openshift4-beta-admin>
 Default region name [None]: <the AWS region to deploy the beta environment>
 Default output format [None]: text
