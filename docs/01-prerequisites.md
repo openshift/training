@@ -47,6 +47,7 @@ requirements:
   https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html
 
 * An available DNS domain (or subdomain) in a zone managed by Route53.
+  
   **Note**: You do not need to purchase the domain through AWS. You simply need
   a Route53-managed zone that the installer can use to create the necessary DNS
   entries for EC2 instances and other items. This can be a base domain (eg: 
@@ -54,6 +55,7 @@ requirements:
   is that the zone authority for the domain lies with the AWS nameservers for
   the DNS zone. If you do not have an available zone please reach out to your 
   Red Hat contact for assistance.
+ 
   **Note**: If you purchase a new domain it may take some time for the relevant
   DNS changes to propagate. Information on purchasing domains through AWS can
   be found here:
