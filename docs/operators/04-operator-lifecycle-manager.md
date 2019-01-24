@@ -24,4 +24,4 @@ apiVersion: operators.coreos.com/v1alpha1
 
 Subscriptions drive OLM to install components into namespaces.
 
-Next: [Configuration](04-configuration.md)
+Next: [Configuration](05-configuration.md)
