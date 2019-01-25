@@ -1,4 +1,4 @@
-# Install
+# Basic/Default Installations
 
 The installer provides a guided experience for provisioning the cluster on a
 particular platform. As of this writing, only AWS is a supported target.
@@ -18,7 +18,9 @@ Previously you downloaded the `openshift-install` command and now you will
 run it and follow the interactive prompts.
 
 ### NOTE
-You may wish to use the `--dir <something>` flag to place the installation artifacts into a specific directory. This makes cleanup easier, and makes it easier to handle multiple clusters at the same time.
+You may wish to use the `--dir <something>` flag to place the installation
+artifacts into a specific directory. This makes cleanup easier, and makes it
+easier to handle multiple clusters at the same time.
 
 To do so, run the following to start your installation:
 
@@ -143,6 +145,66 @@ lose your `KUBECONFIG` environment variable, look for the `auth/kubeconfig`
 file in your installation artifacts directory and simply re-export it:
 
     export KUBECONFIG=/path/to/something/auth/kubeconfig
+
+# Advnaced Installations
+While the OpenShift 4 installer's purpose in life is to streamline operations
+in order to guarantee success, there are a few options that you can adjust by
+using a configuration file. Namely, you can change the default number of
+instances, and you can change both the master and initial worker EC2 instance
+types.
+
+## Generate Installer Configuration File
+This example will use the `--dir` option. The first step is to ask the
+installer to pre-generate an installer configuration file,
+`install-config.yaml`:
+
+```bash
+openshift-install --dir /path/to/something create install-config
+```
+
+After following the same interactive prompts you saw earlier when performing
+a basic/default installation, this will generate a file called
+`install-config.yaml` in the folder `/path/to/something`. The important
+stanzas in the file to examine are the two `machines` stanzas:
+
+```yaml
+machines:
+- name: master
+  platform: {}
+  replicas: 3
+- name: worker
+  platform: {}
+  replicas: 3
+```
+
+You will notice that the `platform` sections are empty. That's because the
+`platform` is generally defined towards the end of the file along with the
+AWS region.
+
+Let's modify our config file to specify that we want 6 initial workers, all
+of size `c5.xlarge`. Again, the only section to modify is the `machines`
+section:
+
+```yaml
+machines:
+- name: master
+  platform: {}
+  replicas: 3
+- name: worker
+  platform: 
+    aws:
+      type: c5.xlarge
+  replicas: 6
+```
+
+Then, as before, run the installer with the `--dir` option:
+
+    openshift-install --dir /path/to/something create cluster
+
+The installer will notice the `install-config.yaml` and not prompt you for
+any input. It will simply begin to perform the installation. When you get to
+the exercises for scaling/exploring your cluster, note the starting machine
+types and quantities.
 
 # Problems?
 If you had installation issues, see the [troubleshooting](06-troubleshooting.md) section.
