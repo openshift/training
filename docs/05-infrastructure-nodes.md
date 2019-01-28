@@ -93,9 +93,14 @@ make sure that things match here when we make changes:
 ```
 
 ### Template Spec
-The `template` needs to `spec`ify how the `Machine`/node should be created. You will notice that the `spec` and, more specifically, the `providerSpec` contains all of the important AWS data to help get the `Machine` created correctly and bootstrapped.
+The `template` needs to `spec`ify how the `Machine`/node should be created.
+You will notice that the `spec` and, more specifically, the `providerSpec`
+contains all of the important AWS data to help get the `Machine` created
+correctly and bootstrapped.
 
-In our case, we want to ensure that the resulting node inherits one or more specific labels. As you've seen in the examples above, labels go in `metadata` sections:
+In our case, we want to ensure that the resulting node inherits one or more
+specific labels. As you've seen in the examples above, labels go in
+`metadata` sections:
 
 ```YAML
   spec:
@@ -129,7 +134,7 @@ favorite text editor. For example:
     oc get machineset 190125-3-worker-us-west-1b -o yaml -n openshift-cluster-api > infra-machineset.yaml
 
 ### Clean It
-Since we asked OpenShift to tell us about an existing `MachineSet`, there's a
+Since we asked OpenShift to tell us about an _existing_ `MachineSet`, there's a
 lot of extra data that we can immediately remove from the file. At the
 `.metadata` top level, delete:
 
@@ -159,20 +164,19 @@ name of `infrastructure-us-west-1b`. This appears in both
 `.spec.selector.matchLabels` as well as `.spec.template.metadata.labels`.
 
 ### Add Your Node Label
-Since we are adding nodes for infrastructure, a simple label that might make
-sense is `infra=true`. One caveat to this is that `true` is considered a
-boolean and not a string.
-
 Add a `labels` section to `.spec.template.spec.metadata` with the label
-`infra: "true"` (the quotes are because of the boolean). It should look like
-the following:
+`node-role.kubernetes.io/infra: ""`. Why this particular label?
+Because `oc get node` looks at the `node-role.kubernetes.io/xxx` label and
+shows that in the output. This will make it easy to identify which workers
+are also infrastructure nodes.(the quotes are because of the boolean). 
+
+Your resulting section should look like the following:
 
 ```YAML
     spec:
       metadata:
-        creationTimestamp: null
         labels:
-          infra: "true"
+          node-role.kubernetes.io/infra: ""
 ```
 
 ### Change the Replica Count
@@ -187,7 +191,9 @@ additional volumes on your instances.
 Save your file and exit.
 
 ### Double Check
-Your cluster will have a different ID and you are likely operating in a different version, however, your file should more or less look like the following:
+Your cluster will have a different ID and you are likely operating in a
+different version, however, your file should more or less look like the
+following:
 
 ```YAML
 apiVersion: cluster.k8s.io/v1alpha1
@@ -207,7 +213,6 @@ spec:
       sigs.k8s.io/cluster-api-machineset: infrastructure-us-west-1b
   template:
     metadata:
-      creationTimestamp: null
       labels:
         sigs.k8s.io/cluster-api-cluster: 190125-3
         sigs.k8s.io/cluster-api-machine-role: worker
@@ -215,9 +220,8 @@ spec:
         sigs.k8s.io/cluster-api-machineset: infrastructure-us-west-1b
     spec:
       metadata:
-        creationTimestamp: null
         labels:
-          infra: "true"
+          node-role.kubernetes.io/infra: ""
       providerSpec:
         value:
           ami:
@@ -234,7 +238,6 @@ spec:
           instanceType: m4.large
           kind: AWSMachineProviderConfig
           metadata:
-            creationTimestamp: null
           placement:
             availabilityZone: us-west-1b
             region: us-west-1
@@ -285,15 +288,19 @@ ready. If you're having trouble figuring out which node is the new one, take
 a look at the `AGE` column. It will be the youngest!
 
 ## Check the Labels
-In our case, the youngest node was named `ip-10-0-128-138.us-west-1.compute.internal`, so we can ask what its labels are:
+In our case, the youngest node was named
+`ip-10-0-128-138.us-west-1.compute.internal`, so we can ask what its labels
+are:
 
     oc get node ip-10-0-128-138.us-west-1.compute.internal --show-labels
 
 And, in the `LABELS` column we see:
 
-    beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.large,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-west-1,failure-domain.beta.kubernetes.io/zone=us-west-1b,infra=true,kubernetes.io/hostname=ip-10-0-128-138,node-role.kubernetes.io/worker=
+    beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.large,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-west-1,failure-domain.beta.kubernetes.io/zone=us-west-1b,kubernetes.io/hostname=ip-10-0-128-138,node-role.kubernetes.io/infra=,node-role.kubernetes.io/worker=
 
-It's hard to see, but our `infra=true` label is there. Success!
+It's hard to see, but our `node-role.kubernetes.io/infra` label is there. You
+will also see `infra,worker` in the output of `oc get node` in the `ROLES`
+column. Success!
 
 ## Add More Machinesets (or scale, or both)
 In a realistic production deployment, you would want at least 3 `MachineSets`
