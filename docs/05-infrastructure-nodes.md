@@ -19,11 +19,11 @@ Any node running a container/pod/component not described above is considered
 a worker and must be covered by a subscription.
 
 ## More MachineSet Details
-In the cluster scaling exercises you explored the use of `MachineSets` and
-adding replicas within them. In the case of an infrastructure node, we want
-to create additional `Machines` that have specific kubernetes labels. Then,
-we can tell the various components to run specifically on hosts with those
-labels.
+In [the cluster-scaling excercises](04-scaling-cluster.md) you explored the
+use of `MachineSets` and adding replicas within them. In the case of an
+infrastructure node, we want to create additional `Machines` that have
+specific kubernetes labels. Then, we can tell the various components to run
+specifically on hosts with those labels.
 
 To accomplish this, you will create additional `MachineSets`. The easiest way
 to do this is to `get` the existing `MachineSets` into a file, and then
@@ -73,7 +73,7 @@ spec:
       sigs.k8s.io/cluster-api-machineset: 190125-3-worker-us-west-1b
 ```
 
-In this case, the cluster name/ID is `190125-3` and there is an additional
+In this case, the cluster name is `190125-3` and there is an additional
 label for the whole set.
 
 ### Template Metadata
@@ -133,13 +133,14 @@ Since we asked OpenShift to tell us about an existing `MachineSet`, there's a
 lot of extra data that we can immediately remove from the file. At the
 `.metadata` top level, delete:
 
-1. `creationTimestamp`
 1. `generation`
 1. `resourceVersion`
 1. `selfLink`
 1. `uid`
 
 Then, delete the entire `.status` block.
+
+You can also delete all instances of `creationTimestamp`.
 
 ### Name It
 Go ahead and change the top-level `.metadata.name` to something indicative of
@@ -158,9 +159,13 @@ name of `infrastructure-us-west-1b`. This appears in both
 `.spec.selector.matchLabels` as well as `.spec.template.metadata.labels`.
 
 ### Add Your Node Label
-Since we are adding nodes for infrastructure, a simple label that might make sense is `infra=true`. One caveat to this is that `true` is considered a boolean and not a string.
+Since we are adding nodes for infrastructure, a simple label that might make
+sense is `infra=true`. One caveat to this is that `true` is considered a
+boolean and not a string.
 
-Add a `labels` section to `.spec.template.spec.metadata` with the label `infra: "true"` (the quotes are because of the boolean). It should look like the following:
+Add a `labels` section to `.spec.template.spec.metadata` with the label
+`infra: "true"` (the quotes are because of the boolean). It should look like
+the following:
 
 ```YAML
     spec:
@@ -174,7 +179,10 @@ Add a `labels` section to `.spec.template.spec.metadata` with the label `infra: 
 For now, make the replica count 1.
 
 ### Change the Instance Type
-If you want a different EC2 instance type, you can change that. It is one of the few things in the `providerSpec` block you can realistically change.
+If you want a different EC2 instance type, you can change that. It is one of
+the few things in the `providerSpec` block you can realistically change. You
+can also change volumes if you want a different storage size or need
+additional volumes on your instances.
 
 Save your file and exit.
 

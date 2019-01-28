@@ -1,9 +1,14 @@
-# Basic/Default Installations
+# Basic Installations
 
-The installer provides a guided experience for provisioning the cluster on a
-particular platform. As of this writing, only AWS is a supported target.
+The scope of the new OpenShift 4 installer is purposefully narrow. It is
+designed for simplicity and ensured success. Many of the items and
+configurations that were previously handled by the installer are now expected
+to be "Day 1" operations, performed just after the installation of the
+control plane and basic workers completes. The installer provides a guided
+experience for provisioning the cluster on a particular platform. As of this
+writing, only AWS is a supported target.
 
-The following demonstrates an install using the wizard as an example. It is
+This section demonstrates an install using the wizard as an example. It is
 possible to run the installation in one terminal and then have another
 terminal on the host available to watch the log file, if desired.
 
@@ -146,19 +151,19 @@ file in your installation artifacts directory and simply re-export it:
 
     export KUBECONFIG=/path/to/something/auth/kubeconfig
 
-# Advnaced Installations
+# Advanced Installations
 While the OpenShift 4 installer's purpose in life is to streamline operations
 in order to guarantee success, there are a few options that you can adjust by
 using a configuration file. Namely, you can change the default number of
-instances, and you can change both the master and initial worker EC2 instance
-types.
+instances of workers and masters, and you can change both the master and
+initial worker EC2 instance types.
 
 ## Generate Installer Configuration File
 This example will use the `--dir` option. The first step is to ask the
 installer to pre-generate an installer configuration file,
 `install-config.yaml`:
 
-```bash
+```sh
 openshift-install --dir /path/to/something create install-config
 ```
 
@@ -177,9 +182,10 @@ machines:
   replicas: 3
 ```
 
-You will notice that the `platform` sections are empty. That's because the
-`platform` is generally defined towards the end of the file along with the
-AWS region.
+The platform sections are empty, deferring per-platform implementation
+decisions for these machines to the installer. There is also a platform
+section at the bottom of the file. That section is for per-platform cluster
+config for non-machine properties.
 
 Let's modify our config file to specify that we want 6 initial workers, all
 of size `c5.xlarge`. Again, the only section to modify is the `machines`
@@ -205,6 +211,13 @@ The installer will notice the `install-config.yaml` and not prompt you for
 any input. It will simply begin to perform the installation. When you get to
 the exercises for scaling/exploring your cluster, note the starting machine
 types and quantities.
+
+### NOTE
+When providing an `install-config.yaml` to the installer, the YAML file is
+actually consumed (deleted) during the installation process. The installation
+options chosen ultimately end up represented in the state of the cluster in
+the JSON and Terraform state files. If you have any desire to retain the
+original `intsall-config.yaml` file, be sure to make a copy.
 
 # Problems?
 If you had installation issues, see the [troubleshooting](06-troubleshooting.md) section.
