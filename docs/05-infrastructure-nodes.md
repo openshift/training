@@ -22,8 +22,8 @@ a worker and must be covered by a subscription.
 In [the cluster-scaling excercises](04-scaling-cluster.md) you explored the
 use of `MachineSets` and adding replicas within them. In the case of an
 infrastructure node, we want to create additional `Machines` that have
-specific kubernetes labels. Then, we can tell the various components to run
-specifically on hosts with those labels.
+specific kubernetes labels. Then, we can configure the various components to
+run specifically on nodes with those labels.
 
 To accomplish this, you will create additional `MachineSets`. The easiest way
 to do this is to `get` the existing `MachineSets` into a file, and then

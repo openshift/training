@@ -154,7 +154,7 @@ file in your installation artifacts directory and simply re-export it:
 # Advanced Installations
 While the OpenShift 4 installer's purpose in life is to streamline operations
 in order to guarantee success, there are a few options that you can adjust by
-using a configuration file. Namely, you can change the default number of
+using a configuration file. For example, you can change the default number of
 instances of workers and masters, and you can change both the master and
 initial worker EC2 instance types.
 
