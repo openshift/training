@@ -213,6 +213,24 @@ the exercises for scaling/exploring your cluster, note the starting machine
 types and quantities.
 
 ### NOTE
+It's also possible to change the volume configuration for the EC2 instance.
+In the case of large or busy clusters, tuning the volume parameters to get
+more IOPS for etcd may improve performance and stability. The example below
+shows changing both the instance type and the root volume for the masters:
+
+```YAML
+machines:
+- name: master
+  platform:
+    aws:
+      type: m5.large
+      rootVolume:
+        iops: 700
+        size: 220
+        type: io1
+```
+
+### NOTE
 When providing an `install-config.yaml` to the installer, the YAML file is
 actually consumed (deleted) during the installation process. The installation
 options chosen ultimately end up represented in the state of the cluster in
