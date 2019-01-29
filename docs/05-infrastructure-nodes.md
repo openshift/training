@@ -428,3 +428,156 @@ oc get node ip-10-0-217-226.ec2.internal
 NAME                           STATUS    ROLES          AGE       VERSION
 ip-10-0-217-226.ec2.internal   Ready     infra,worker   17h       v1.11.0+406fc897d8
 ```
+
+## Scale your infra nodes
+At this point you can add additional infra nodes by editing the `MachineSet`:
+
+```sh
+oc edit machineset <your-infra-machineset> -n openshift-cluster-api
+```
+
+Change the replica count to 3, then save and exit your editor. Wait for the
+additional nodes to come up before continuing.
+
+## Monitoring
+OpenShift uses Prometheus, Grafana and Alertmanager for cluster monitoring
+and alerting. This solution is installed by default and resides in the
+`openshift-monitoring` project. Take a look at the pods in this project with
+`oc get pod -n openshift-monitoring`:
+
+```
+NAME                                           READY     STATUS    RESTARTS   AGE
+alertmanager-main-0                            3/3       Running   0          21h
+alertmanager-main-1                            3/3       Running   0          21h
+alertmanager-main-2                            3/3       Running   0          21h
+cluster-monitoring-operator-586b5d6b4d-d76s7   1/1       Running   0          21h
+grafana-5cc84fbccf-spm6x                       2/2       Running   0          21h
+kube-state-metrics-7f9bd79cd8-ltf8z            3/3       Running   0          21h
+node-exporter-4xnkh                            2/2       Running   0          17h
+node-exporter-8zxlk                            2/2       Running   0          8m
+node-exporter-jfjkg                            2/2       Running   0          21h
+node-exporter-qc6pb                            2/2       Running   0          21h
+node-exporter-qzmk6                            2/2       Running   0          8m
+node-exporter-rsrnm                            2/2       Running   0          21h
+node-exporter-s2m6r                            2/2       Running   0          21h
+node-exporter-wcjmw                            2/2       Running   0          21h
+node-exporter-xc8hr                            2/2       Running   0          21h
+prometheus-adapter-58c84984dd-lfb79            1/1       Running   0          21h
+prometheus-k8s-0                               6/6       Running   1          21h
+prometheus-k8s-1                               6/6       Running   1          21h
+prometheus-operator-645479fdfb-4lfzb           1/1       Running   0          21h
+telemeter-client-69478fc49f-l7lll              3/3       Running   0          21h
+```
+
+Going into detail on all of the components here is outside of the scope of
+these instructions. Just know that the `node-exporter` must run on every
+node. The rest of the components are the ones we want to move to our `infra`
+nodes. The pod called `cluster-monitoring-operator-<...>` is the operator
+that is responsible for deploying and managing the monitoring components. It
+knows to look for a `ConfigMap` for additional configuration details for the
+various components. You can look at its configmap with `oc get configmap -n
+openshift-monitoring cluster-monitoring-config`. It will look something like:
+
+```yaml
+apiVersion: v1
+data:
+  config.yaml: |
+    prometheusOperator:
+      baseImage: quay.io/coreos/prometheus-operator
+      prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
+      configReloaderBaseImage: quay.io/coreos/configmap-reload
+    prometheusK8s:
+      baseImage: openshift/prometheus
+    alertmanagerMain:
+      baseImage: openshift/prometheus-alertmanager
+    nodeExporter:
+      baseImage: openshift/prometheus-node-exporter
+    kubeRbacProxy:
+      baseImage: quay.io/coreos/kube-rbac-proxy
+    kubeStateMetrics:
+      baseImage: quay.io/coreos/kube-state-metrics
+    grafana:
+      baseImage: grafana/grafana
+    auth:
+      baseImage: openshift/oauth-proxy
+kind: ConfigMap
+metadata:
+  creationTimestamp: 2019-01-28T17:19:46Z
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+  resourceVersion: "6486"
+  selfLink: /api/v1/namespaces/openshift-monitoring/configmaps/cluster-monitoring-config
+  uid: e8ee2bdf-2320-11e9-a54b-026a37856868
+
+```
+
+You will notice that each component has its own section. In each of these
+sections (_except for the `nodeExporter`_) we will add a `nodeSelector` YAML
+snippet. As an example, for `prometheusK8s`:
+
+```YAML
+prometheusK8s:
+  baseImage: openshift/prometheus
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+```
+
+Go ahead and use `oc edit -n openshift-monitoring cluster-monitoring-config`
+to edit the `ConfigMap`. You should end up with something that looks like:
+
+```YAML
+...
+    prometheusOperator:
+      baseImage: quay.io/coreos/prometheus-operator
+      prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
+      configReloaderBaseImage: quay.io/coreos/configmap-reload
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    prometheusK8s:
+      baseImage: openshift/prometheus
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    alertmanagerMain:
+      baseImage: openshift/prometheus-alertmanager
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    nodeExporter:
+      baseImage: openshift/prometheus-node-exporter
+    kubeRbacProxy:
+      baseImage: quay.io/coreos/kube-rbac-proxy
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    kubeStateMetrics:
+      baseImage: quay.io/coreos/kube-state-metrics
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    grafana:
+      baseImage: grafana/grafana
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    auth:
+      baseImage: openshift/oauth-proxy
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+...
+```
+
+Once you have finished adding the `nodeSelector` blocks, save and exit the
+editor. You can immediately take a look at what's happening by executing:
+
+```sh
+oc get pod -w -n openshift-monitoring
+```
+
+This will `w`atch the pods and update the screen with any changes. Press
+Ctrl-C (`^C`) to break out of the watch. You will see the operator start to
+recreate and then terminate the various pods/components for the monitoring
+solution.
+
+To see what actually happened under the covers, take a look at the Grafana deployment with:
+
+```sh
+oc get deployment grafana -o yaml -n openshift-monitoring
+```
+
+Do you see the `nodeSelector` block?
