@@ -19,11 +19,11 @@ Any node running a container/pod/component not described above is considered
 a worker and must be covered by a subscription.
 
 ## More MachineSet Details
-In [the cluster-scaling excercises](04-scaling-cluster.md) you explored the
-use of `MachineSets` and adding replicas within them. In the case of an
-infrastructure node, we want to create additional `Machines` that have
-specific kubernetes labels. Then, we can configure the various components to
-run specifically on nodes with those labels.
+In [the cluster-scaling excercises](04-scaling-cluster.md) you explored using
+`MachineSets` and scaling the cluster by changing their replica count. In the
+case of an infrastructure node, we want to create additional `Machines` that
+have specific kubernetes labels. Then, we can configure the various
+components to run specifically on nodes with those labels.
 
 To accomplish this, you will create additional `MachineSets`. The easiest way
 to do this is to `get` the existing `MachineSets` into a file, and then
@@ -328,6 +328,103 @@ name of ` clusterapi-manager-controllers-....`. If you use `oc logs` on the
 various containers in that `Pod`, you will see the various operator bits that
 actually make the nodes come into existence.
 
-## Move Infrastructure Components
+# Moving Infrastructure Components
 Now that you have some special nodes, it's time to move various
 infrastructure components onto them.
+
+## Router
+The OpenShift router is managed by an `Operator` called
+`openshift-ingress-operator`. Its `Pod` lives in the
+`openshift-ingress-operator` project:
+
+```sh
+oc get pod -n openshift-ingress-operator
+```
+
+The actual default router instance lives in the `openshift-ingress` project:
+
+```sh
+oc get pod -n openshift-ingress -o wide
+```
+
+Take a look at the `Node` that is listed. You may see something like:
+
+```
+NAME                              READY     STATUS    RESTARTS   AGE       IP           NODE                           NOMINATED NODE
+router-default-86798b4b5d-bdlvd   1/1       Running   0          1h        10.130.2.4   ip-10-0-148-172.ec2.internal   <none>
+```
+
+If you execute `oc get node <your_displayed_node>` you will see that it has
+the role of `worker`. The default configuration of the router operator is to
+pick nodes with the role of `worker`. But, now that we have created dedicated
+infrastructure nodes, we want to tell the operator to put the router
+instances on nodes with the role of `infra`.
+
+The OpenShift router operator creates a custom resource definition (`CRD`)
+called `clusteringress`:
+
+```sh
+oc get clusteringress default -n openshift-ingress-operator -o yaml
+```
+
+The `clusteringress` objects are observed by the router operator and tell the
+operator how to create and configure routers. Yours likely looks something
+like:
+
+```YAML
+apiVersion: ingress.openshift.io/v1alpha1
+kind: ClusterIngress
+metadata:
+  creationTimestamp: 2019-01-28T17:23:39Z
+  finalizers:
+  - ingress.openshift.io/default-cluster-ingress
+  generation: 2
+  name: default
+  namespace: openshift-ingress-operator
+  resourceVersion: "1294295"
+  selfLink: /apis/ingress.openshift.io/v1alpha1/namespaces/openshift-ingress-operator/clusteringresses/default
+  uid: 73ff7bfd-2321-11e9-8ff2-026a37856868
+spec:
+  defaultCertificateSecret: null
+  highAvailability:
+    type: Cloud
+  ingressDomain: apps.beta-190128-2.ocp4testing.openshiftdemos.com
+  namespaceSelector: null
+  nodePlacement:
+    nodeSelector:
+      matchLabels:
+        node-role.kubernetes.io/worker: ""
+  replicas: 1
+  routeSelector: null
+  unsupportedExtensions: null
+status:
+  labelSelector: app=router,router=router-default
+  replicas: 1
+```
+
+As you can see, the `nodeSelector` is configured for the `worker` role. Go
+ahead and use `oc edit` to change `node-role.kubernetes.io/worker` to be
+`node-role.kubernetes.io/infra`:
+
+```sh
+oc edit clusteringress default -n openshift-ingress-operator -o yaml
+```
+
+After saving and exiting the editor, if you're quick enough, you might catch
+the router pod being moved to its new home. Run `oc get pod -n
+openshift-ingress` and you may see something like:
+
+```
+NAME                              READY     STATUS        RESTARTS   AGE       IP           NODE                           NOMINATED NODE
+router-default-86798b4b5d-bdlvd   1/1       Running       0          28s       10.130.2.4   ip-10-0-217-226.ec2.internal   <none>
+router-default-955d875f4-255g8    0/1       Terminating   0          19h       10.129.2.4   ip-10-0-148-172.ec2.internal   <none>
+```
+
+The `Terminating` pod was running on one of the worker nodes. The `Running`
+pod is now on one of our nodes with the `infra` role. In our case:
+
+```
+oc get node ip-10-0-217-226.ec2.internal
+NAME                           STATUS    ROLES          AGE       VERSION
+ip-10-0-217-226.ec2.internal   Ready     infra,worker   17h       v1.11.0+406fc897d8
+```

@@ -159,9 +159,8 @@ instances of workers and masters, and you can change both the master and
 initial worker EC2 instance types.
 
 ## Generate Installer Configuration File
-This example will use the `--dir` option. The first step is to ask the
-installer to pre-generate an installer configuration file,
-`install-config.yaml`:
+The first step is to ask the installer to pre-generate an installer
+configuration file, `install-config.yaml`:
 
 ```sh
 openshift-install --dir /path/to/something create install-config
@@ -209,8 +208,8 @@ Then, as before, run the installer with the `--dir` option:
 
 The installer will notice the `install-config.yaml` and not prompt you for
 any input. It will simply begin to perform the installation. When you get to
-the exercises for scaling/exploring your cluster, note the starting machine
-types and quantities.
+the exercises for [scaling/exploring your cluster](04-scaling-cluster.md),
+note the starting machine types and quantities.
 
 ### NOTE
 It's also possible to change the volume configuration for the EC2 instance.
