@@ -1,9 +1,14 @@
-# Install
+# Basic Installations
 
-The installer provides a guided experience for provisioning the cluster on a
-particular platform. As of this writing, only AWS is a supported target.
+The scope of the new OpenShift 4 installer is purposefully narrow. It is
+designed for simplicity and ensured success. Many of the items and
+configurations that were previously handled by the installer are now expected
+to be "Day 1" operations, performed just after the installation of the
+control plane and basic workers completes. The installer provides a guided
+experience for provisioning the cluster on a particular platform. As of this
+writing, only AWS is a supported target.
 
-The following demonstrates an install using the wizard as an example. It is
+This section demonstrates an install using the wizard as an example. It is
 possible to run the installation in one terminal and then have another
 terminal on the host available to watch the log file, if desired.
 
@@ -18,7 +23,9 @@ Previously you downloaded the `openshift-install` command and now you will
 run it and follow the interactive prompts.
 
 ### NOTE
-You may wish to use the `--dir <something>` flag to place the installation artifacts into a specific directory. This makes cleanup easier, and makes it easier to handle multiple clusters at the same time.
+You may wish to use the `--dir <something>` flag to place the installation
+artifacts into a specific directory. This makes cleanup easier, and makes it
+easier to handle multiple clusters at the same time.
 
 To do so, run the following to start your installation:
 
@@ -143,6 +150,91 @@ lose your `KUBECONFIG` environment variable, look for the `auth/kubeconfig`
 file in your installation artifacts directory and simply re-export it:
 
     export KUBECONFIG=/path/to/something/auth/kubeconfig
+
+# Advanced Installations
+While the OpenShift 4 installer's purpose in life is to streamline operations
+in order to guarantee success, there are a few options that you can adjust by
+using a configuration file. For example, you can change the default number of
+instances of workers and masters, and you can change both the master and
+initial worker EC2 instance types.
+
+## Generate Installer Configuration File
+The first step is to ask the installer to pre-generate an installer
+configuration file, `install-config.yaml`:
+
+```sh
+openshift-install --dir /path/to/something create install-config
+```
+
+After following the same interactive prompts you saw earlier when performing
+a basic/default installation, this will generate a file called
+`install-config.yaml` in the folder `/path/to/something`. The important
+stanzas in the file to examine are the two `machines` stanzas:
+
+```yaml
+machines:
+- name: master
+  platform: {}
+  replicas: 3
+- name: worker
+  platform: {}
+  replicas: 3
+```
+
+The platform sections are empty, deferring per-platform implementation
+decisions for these machines to the installer. There is also a platform
+section at the bottom of the file. That section is for per-platform cluster
+config for non-machine properties.
+
+Let's modify our config file to specify that we want 6 initial workers, all
+of size `c5.xlarge`. Again, the only section to modify is the `machines`
+section:
+
+```yaml
+machines:
+- name: master
+  platform: {}
+  replicas: 3
+- name: worker
+  platform: 
+    aws:
+      type: c5.xlarge
+  replicas: 6
+```
+
+Then, as before, run the installer with the `--dir` option:
+
+    openshift-install --dir /path/to/something create cluster
+
+The installer will notice the `install-config.yaml` and not prompt you for
+any input. It will simply begin to perform the installation. When you get to
+the exercises for [scaling/exploring your cluster](04-scaling-cluster.md),
+note the starting machine types and quantities.
+
+### NOTE
+It's also possible to change the volume configuration for the EC2 instance.
+In the case of large or busy clusters, tuning the volume parameters to get
+more IOPS for etcd may improve performance and stability. The example below
+shows changing both the instance type and the root volume for the masters:
+
+```YAML
+machines:
+- name: master
+  platform:
+    aws:
+      type: m5.large
+      rootVolume:
+        iops: 700
+        size: 220
+        type: io1
+```
+
+### NOTE
+When providing an `install-config.yaml` to the installer, the YAML file is
+actually consumed (deleted) during the installation process. The installation
+options chosen ultimately end up represented in the state of the cluster in
+the JSON and Terraform state files. If you have any desire to retain the
+original `intsall-config.yaml` file, be sure to make a copy.
 
 # Problems?
 If you had installation issues, see the [troubleshooting](06-troubleshooting.md) section.
