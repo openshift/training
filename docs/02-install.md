@@ -129,8 +129,8 @@ https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
 ### Note
 The username is always `kubeadmin` and the password is also in the output
 from the installer. At the time of this writing, `kubeadmin` is the only user
-and it is not possible to create additional users or integrate with an
-identity store.
+and it is not possible to create additional users during installation
+or integrate with an identity store.
 
 ### Note
 When visiting the web console you will receive a certificate error in your
