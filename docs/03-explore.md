@@ -43,7 +43,7 @@ The operator's log is **extremely** long, so it is recommended that you redirect
 
 # Exploring RHEL CoreOS
 The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS
-(`RHCOS`). CoreOS is a container optimized, hardened, minimal footprint
+(`RHELCOS`). CoreOS is a container optimized, hardened, minimal footprint
 operating system designed specifically to work with OpenShift and to run
 containers.
 
