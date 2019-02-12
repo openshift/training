@@ -1,7 +1,7 @@
 # Exploring the Cluster
 
-Now that your cluster is installed, you have access to the web console, and
-you can use the CLI, here are some command-line exercises to explore the
+Now that your cluster is installed, you have access to the web console and
+can use the CLI. Below are some command-line exercises to explore the
 cluster:
 
 ## Cluster Nodes
@@ -140,18 +140,3 @@ used. You can explore `podman` a little:
     podman version
 
 Next: [Scaling the Cluster](04-scaling-cluster.md)
-
-# WARNING
-The below exercises/steps have not been validated.
-
-## Understanding OpenShift
-
-Depending on your interest, explore the following:
-
-- [Using the CLI](cli/01-accessing.md)
-- [Accessing the console](console/01-accessing.md)
-- [Understanding operators](operators/01-understanding-operators.md)
-- [Managing Compute](compute/01-managing-compute.md)
-- [Managing Nodes](nodes/01-managing-nodes.md)
-- [Monitoring](monitoring/01-understanding-monitoring.md)
-- [Developer Experience](developer-experience/01-developer-experience.md)
