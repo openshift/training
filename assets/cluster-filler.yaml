@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-filler-deployment
+  labels:
+    app: cluster-filler-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-filler-deployment
+  template:
+    metadata:
+      labels:
+        app: cluster-filler-deployment
+    spec:
+      containers:
+      - name: sleep-test-container
+        image: rhel7
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+      nodeSelector:
+        cluster: filler

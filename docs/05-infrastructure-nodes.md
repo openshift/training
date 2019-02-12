@@ -495,11 +495,15 @@ operator. Both the operator and the operand are housed in the
 `openshift-image-registry` project.
 
 ## Monitoring
-The monitoring solution on `4.0.0-0.1` used the Cluster Version Operator
+The monitoring solution on `4.0.0-0.2` used the Cluster Version Operator
 (`CVO`) to create the `ConfigMap` that the monitoring operator used to
 determine how to deploy the monitoring resources. It is not possible to tell
 the operator to deploy differently.
 
+### NOTE
+At this time the monitoring solution is not using a separate project for its
+operator.
+
 ## Logging
 OpenShift's log aggregation solution is not installed by default with
-`4.0.0-0.1` and is not deployable in its current state of development.
+`4.0.0-0.2` and is not deployable in its current state of development.
