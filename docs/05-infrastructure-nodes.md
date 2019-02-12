@@ -332,6 +332,10 @@ actually make the nodes come into existence.
 Now that you have some special nodes, it's time to move various
 infrastructure components onto them.
 
+### NOTE
+The following assumes you used version `0.11.0` of the installer. This would
+give you a `clusterversion` of `4.0.0-0.2`.
+
 ## Router
 The OpenShift router is managed by an `Operator` called
 `openshift-ingress-operator`. Its `Pod` lives in the
@@ -410,6 +414,10 @@ ahead and use `oc edit` to change `node-role.kubernetes.io/worker` to be
 oc edit clusteringress default -n openshift-ingress-operator -o yaml
 ```
 
+### NOTE
+The actual moving of the pod is currently not working. You can track the
+progress here: https://jira.coreos.com/browse/NE-72
+
 After saving and exiting the editor, if you're quick enough, you might catch
 the router pod being moved to its new home. Run `oc get pod -n
 openshift-ingress` and you may see something like:
@@ -430,15 +438,72 @@ ip-10-0-217-226.ec2.internal   Ready     infra,worker   17h       v1.11.0+406fc8
 ```
 
 ## Registry
-The registry as of OpenShift `4.0.0-0.1` does not support changing the
-`nodeSelector` via the Operator.
+The registry uses a similar `CRD` mechanism to configure how the operator
+deploys the actual registry pods. You can edit the `config/instance` object
+in order to add the `nodeSelector`. First, take a look at it:
+
+```sh
+oc get config/instance -o yaml
+```
+
+You will see something like:
+
+```YAML
+apiVersion: imageregistry.operator.openshift.io/v1
+kind: Config
+metadata:
+  creationTimestamp: 2019-02-05T13:52:05Z
+  finalizers:
+  - imageregistry.operator.openshift.io/finalizer
+  generation: 1
+  name: instance
+  resourceVersion: "56174"
+  selfLink: /apis/imageregistry.operator.openshift.io/v1/configs/instance
+  uid: 38fe3936-294d-11e9-a534-12ffeee2531a
+spec:
+  httpSecret: d9a013ccd117b1e6616ceccb2c3aa66a5fed1b5e4816231eeb4108c437de86fbd7106807fdab7ebf205dc76d03636ca74503abfa713936f200eb87557a0d10c5
+  logging: 2
+  managementState: Managed
+  proxy: {}
+  replicas: 1
+  requests:
+    read: {}
+    write: {}
+  storage:
+    s3:
+      bucket: image-registry-us-east-1-c92e88cad85b47ec8b313244dee0fc82-392c
+      region: us-east-1
+status:
+...
+```
+
+If you `oc edit config/instance` and then modify the `.spec` section to add
+the following:
+
+```YAML
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+```  
+
+When you save and exit you should see the registry pod being moved to the
+infra node. The `nodeSelector` stanza may be added anywhere inside the
+`.spec` block.
+
+### NOTE
+At this time the image registry is not using a separate project for its
+operator. Both the operator and the operand are housed in the
+`openshift-image-registry` project.
 
 ## Monitoring
-The monitoring solution on `4.0.0-0.1` used the Cluster Version Operator
+The monitoring solution on `4.0.0-0.2` used the Cluster Version Operator
 (`CVO`) to create the `ConfigMap` that the monitoring operator used to
 determine how to deploy the monitoring resources. It is not possible to tell
 the operator to deploy differently.
 
+### NOTE
+At this time the monitoring solution is not using a separate project for its
+operator.
+
 ## Logging
 OpenShift's log aggregation solution is not installed by default with
-`4.0.0-0.1` and is not deployable in its current state of development.
+`4.0.0-0.2` and is not deployable in its current state of development.

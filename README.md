@@ -24,5 +24,6 @@ This tutorial assumes you have familiarity with Amazon AWS.
 * [Installing the Cluster](docs/02-install.md)
 * [Exploring the Cluster](docs/03-explore.md)
 * [Scaling the Cluster](docs/04-scaling-cluster.md)
-* [Cleaning Up](docs/05-cleanup.md)
-* [Troubleshooting](docs/06-troubleshooting.md)
+* [Infrastructure Nodes](docs/05-infrastructure-nodes.md)
+* [Cleaning Up](docs/06-cleanup.md)
+* [Troubleshooting](docs/07-troubleshooting.md)
