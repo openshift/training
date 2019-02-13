@@ -42,8 +42,8 @@ launched, you can execute the following:
 The operator's log is **extremely** long, so it is recommended that you redirect it to a file instead of trying to look at it directly with the `logs` command.
 
 # Exploring RHEL CoreOS
-The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS
-(`RHEL CoreOS`). CoreOS is a container optimized, hardened, minimal footprint
+The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS.
+CoreOS is a container optimized, hardened, minimal footprint
 operating system designed specifically to work with OpenShift and to run
 containers.
 
