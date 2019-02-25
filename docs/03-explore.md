@@ -18,14 +18,14 @@ If you want to see the various applied labels, you can also do:
 ## The Cluster Operator
 The Cluster Operator is heavily responsible for
 installation/management/maintenance/automated operations on the OpenShift
-cluster. 
+cluster.
 
-    oc get deployments -n openshift-cluster-version 
+    oc get deployments -n openshift-cluster-version
 
 You can `rsh` into the running Operator and see the various manifests
 associated with the installed release of OpenShift:
 
-    oc rsh -n openshift-cluster-version deployments/cluster-version-operator 
+    oc rsh -n openshift-cluster-version deployments/cluster-version-operator
 
 Then:
 
@@ -41,9 +41,9 @@ launched, you can execute the following:
 
 The operator's log is **extremely** long, so it is recommended that you redirect it to a file instead of trying to look at it directly with the `logs` command.
 
-# Exploring Red Hat CoreOS
-The OpenShift 4 cluster is made of hosts that are running Red Hat CoreOS
-(`RHCOS`). CoreOS is a container optimized, hardened, minimal footprint
+# Exploring RHEL CoreOS
+The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS.
+CoreOS is a container optimized, hardened, minimal footprint
 operating system designed specifically to work with OpenShift and to run
 containers.
 
@@ -74,13 +74,13 @@ you specified during the installation:
 
 If it works, you'll see the CoreOS MOTD/prompt:
 
-    Red Hat CoreOS 4.0
+    RHEL CoreOS 4.0
      Information: https://url.corp.redhat.com/redhat-coreos
      Bugs: https://github.com/openshift/os
-    
+
     ---
 
-## Explore Red Hat CoreOS
+## Explore RHEL CoreOS
 You can check the kernel information with the following:
 
     uname -rs
@@ -88,13 +88,13 @@ You can check the kernel information with the following:
 You will see something like:
 
     Linux 3.10.0-957.1.3.el7.x86_64
-    
+
 The following command will show you a little bit about how `Ignition`
 contacts remote servers for information and etc:
 
     journalctl --no-pager|grep "Ignition finished successfully" -B 100
 
-Red Hat CoreOS is an immutable operating system. It is predominantly a
+RHEL CoreOS is an immutable operating system. It is predominantly a
 read-only image-based OS. Try to create a file:
 
     touch /usr/test
