@@ -2,12 +2,13 @@
 OpenShift 4 adds the ability to easily scale cluster size.
 
 ## Manual Cluster Scale Up/Down
+**MAY NOT BE WORKING**
 
 To manually add worker nodes to the cluster: 
 
 1. Go to the OpenShift web console and login with `kubeadmin`. 
 1. Browse to `Administration` in the side-bar, and click `Machine Sets`. 
-1. On the `Machine Sets` page, select `openshift-cluster-api` from the
+1. On the `Machine Sets` page, select `openshift-machine-api` from the
   `Project` dropdown.
 1. Select a worker set to scale by clicking it.
 
@@ -46,27 +47,24 @@ a little longer.
 ### Note
 You can alter the `Machine Set` count in several ways in the web UI. You can
 also perform the same operation via the CLI by using the `oc edit` command on
-the `machineset` in the `openshift-cluster-api` project.
-
-# WARNING
-**WARNING** the autoscaling example is not complete.
+the `machineset` in the `openshift-machine-api` project.
 
 ## Automatic Cluster Scale Up
 Automatic scale based on workload is possible provided there is a
 configuration specified to do so. From the command line, take a look at the
 `machinesets` (they will look the same as in the web UI):
 
-    oc get machinesets -n openshift-cluster-api
+    oc get machinesets -n openshift-machine-api
 
 You will see something like (differing depending on AWS region and `clusterid`):
 
-    NAME                       DESIRED   CURRENT   READY     AGE
-    190104-worker-us-east-1a   1         1         1         4h
-    190104-worker-us-east-1b   1         1         1         4h
-    190104-worker-us-east-1c   1         1         1         4h
-    190104-worker-us-east-1d   0         0                   4h
-    190104-worker-us-east-1e   0         0                   4h
-    190104-worker-us-east-1f   0         0                   4h
+    NAME                                    DESIRED   CURRENT   READY   AVAILABLE   AGE
+    beta-190227-1-7fj4t-worker-us-east-1a   1         1         1       1           64m
+    beta-190227-1-7fj4t-worker-us-east-1b   1         1         1       1           64m
+    beta-190227-1-7fj4t-worker-us-east-1c   1         1         1       1           64m
+    beta-190227-1-7fj4t-worker-us-east-1d   0         0                             64m
+    beta-190227-1-7fj4t-worker-us-east-1e   0         0                             64m
+    beta-190227-1-7fj4t-worker-us-east-1f   0         0                             64m
 
 ### Define a `MachineAutoScaler`
 Fetch the following YAML file to the computer with the `oc` client installed:
@@ -75,18 +73,48 @@ https://raw.githubusercontent.com/openshift/training/master/assets/machine-autos
 
 The file has the following contents:
 
-    apiVersion: "autoscaling.openshift.io/v1alpha1"
-    kind: "MachineAutoscaler"
-    metadata:
-      generateName: autoscale-<aws-region-az>-
-      namespace: "openshift-cluster-api"
-    spec:
-      minReplicas: 1
-      maxReplicas: 4
-      scaleTargetRef:
-        apiVersion: cluster.k8s.io/v1alpha1
-        kind: MachineSet
-        name: <clusterid>-worker-<aws-region-az>
+```YAML
+kind: List
+metadata: {}
+apiVersion: v1
+items:
+- apiVersion: "autoscaling.openshift.io/v1alpha1"
+  kind: "MachineAutoscaler"
+  metadata:
+    generateName: autoscale-<aws-region-az>-
+    namespace: "openshift-cluster-api"
+  spec:
+    minReplicas: 1
+    maxReplicas: 4
+    scaleTargetRef:
+      apiVersion: cluster.k8s.io/v1alpha1
+      kind: MachineSet
+      name: <clusterid>-worker-<aws-region-az>
+- apiVersion: "autoscaling.openshift.io/v1alpha1"
+  kind: "MachineAutoscaler"
+  metadata:
+    generateName: autoscale-<aws-region-az>-
+    namespace: "openshift-cluster-api"
+  spec:
+    minReplicas: 1
+    maxReplicas: 4
+    scaleTargetRef:
+      apiVersion: cluster.k8s.io/v1alpha1
+      kind: MachineSet
+      name: <clusterid>-worker-<aws-region-az>
+- apiVersion: "autoscaling.openshift.io/v1alpha1"
+  kind: "MachineAutoscaler"
+  metadata:
+    generateName: autoscale-<aws-region-az>-
+    namespace: "openshift-cluster-api"
+  spec:
+    minReplicas: 1
+    maxReplicas: 4
+    scaleTargetRef:
+      apiVersion: cluster.k8s.io/v1alpha1
+      kind: MachineSet
+      name: <clusterid>-worker-<aws-region-az>
+```
 
 When you looked at the `MachineSets` with the CLI, you noticed that they all
 had the format of:
@@ -97,18 +125,22 @@ had the format of:
 autoscale. Using the example output and `MachineSets` above, you would need
 to modify the YAML file to look like the following:
 
-    apiVersion: "autoscaling.openshift.io/v1alpha1"
-    kind: "MachineAutoscaler"
-    metadata:
-      generateName: autoscale-us-east-1a-
-      namespace: "openshift-cluster-api"
-    spec:
-      minReplicas: 1
-      maxReplicas: 4
-      scaleTargetRef:
-        apiVersion: cluster.k8s.io/v1alpha1
-        kind: MachineSet
-        name: 19104-worker-us-east-1a
+```YAML
+...
+apiVersion: "autoscaling.openshift.io/v1alpha1"
+kind: "MachineAutoscaler"
+metadata:
+  generateName: autoscale-us-east-1a-
+  namespace: "openshift-machine-api"
+spec:
+  minReplicas: 1
+  maxReplicas: 4
+  scaleTargetRef:
+    apiVersion: machine.openshift.io/v1beta1
+    kind: MachineSet
+    name: 19104-worker-us-east-1a
+...
+```
 
 **Make sure** that you properly modify both `generateName` and `name`. Note
 which one has the `<clusterid>` and which one does not. Note that
@@ -130,7 +162,7 @@ EC2 instances.**
 Once the file has been modified appropriately, you can now create the
 autoscaler:
 
-    oc create -f machine-autoscale-example.yaml -n openshift-cluster-api
+    oc create -f machine-autoscale-example.yaml -n openshift-machine-api
 
 You will see a note that the objects were created.
 
@@ -171,14 +203,12 @@ Create a project to hold the resources for the `Job`:
     oc adm new-project autoscale-example && oc project autoscale-example
 
 ### Open Grafana
-In the OpenShift web console, click `Networking` and then click `Routes`. In
-the project selector/dropdown, choose `All Projects`. Find the route for
-Grafana and click it. This will open a new browser tab for Grafana. You will
-also get a certificate error similar to the first time you logged in. This is
-because Grafana has its own SSL certificate. You will then see a login
-screen. Use the same `kubeadmin` user and password. Grafana is configured to
-use an OpenShift user and inherits permissions of that user for accessing
-cluster information.
+In the OpenShift web console, click `Monitoring` and then click `Dashboards`.
+This will open a new browser tab for Grafana. You will also get a certificate
+error similar to the first time you logged in. This is because Grafana has
+its own SSL certificate. You will then see a login screen. Use the same
+`kubeadmin` user and password. Grafana is configured to use an OpenShift user
+and inherits permissions of that user for accessing cluster information.
 
 Finally, allow the permissions, and then you will see the Grafana homepage.
 
@@ -197,7 +227,7 @@ You will see a note that the `Job` was created. It will create a *lot* of `Pods`
 
 After a few moments, look at the list of `Machines`:
 
-    oc get machines -n openshift-cluster-api
+    oc get machines -n openshift-machine-api
 
 You should see a scaled-up cluster that looks similar to the following:
 
@@ -222,9 +252,9 @@ ten or more (depending on your `ClusterAutoscaler` size and your
 `MachineAutoScaler` sizes), the cluster should scale down to the original
 count of worker nodes.
 
-# End of Materials
-Congratulations. You have reached the end of the materials. Feel free to
-explore this repository as there are some other examples that have not been
-tested. And, of course, explore your cluster.
+In Grafana, be sure to click the `autoscale-example` project in the graphs,
+otherwise the interesting things happening might get drowned out by the rest
+of the baseline.
 
-If you are done, you can proceed to [cleanup your cluster](05-cleanup.md)
+# Infrastructure Nodes
+Continue on to the section that details [infrastructure nodes](05-infrastructure-nodes.md).

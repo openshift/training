@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    prometheusOperator:
+      baseImage: quay.io/coreos/prometheus-operator
+      prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
+      configReloaderBaseImage: quay.io/coreos/configmap-reload
+    prometheusK8s:
+      retention: 24h
+      baseImage: quay.io/prometheus/prometheus
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+      resources:
+        requests:
+          cpu: 200m
+          memory: 2Gi
+    alertmanagerMain:
+      baseImage: quay.io/prometheus/alertmanager
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+      resources:
+        requests:
+          cpu: 20m
+          memory: 50Mi
+    grafana:
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    kubeStateMetrics:
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    k8sPrometheusAdapter:
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+    telemeterClient:
+      nodeSelector:
+        node-role.kubernetes.io/infra: ""
+
