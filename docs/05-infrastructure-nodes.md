@@ -567,9 +567,6 @@ various pods to be redeployed.
 OpenShift's log aggregation solution is not installed by default with
 `4.0.0-0.2` and is not deployable in its current state of development.
 
-# End of Materials
-Congratulations. You have reached the end of the materials. Feel free to
-explore this repository as there are some other examples that have not been
-tested. And, of course, explore your cluster.
-
-If you are done, you can proceed to [cleanup your cluster](06-cleanup.md)
+## Configuring Authentication
+The [configuring authentication](06-authentication.md) section describes how
+to configure htpasswd-based auth for your cluster.
