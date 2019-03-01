@@ -39,9 +39,14 @@ launched, you can execute the following:
 
     oc logs deployments/cluster-version-operator -n openshift-cluster-version > operatorlog.txt
 
-The operator's log is **extremely** long, so it is recommended that you redirect it to a file instead of trying to look at it directly with the `logs` command.
+The operator's log is **extremely** long, so it is recommended that you
+redirect it to a file instead of trying to look at it directly with the
+`logs` command.
 
 # Exploring Red Hat CoreOS
+** MASTERS ARE NO LONGER PUBLICLY ACCESSIBLE BY DEFAULT **
+** NEED TO ADD ADDITIONAL DOCS FOR ACCESS **
+
 The OpenShift 4 cluster is made of hosts that are running Red Hat CoreOS
 (`RHCOS`). CoreOS is a container optimized, hardened, minimal footprint
 operating system designed specifically to work with OpenShift and to run

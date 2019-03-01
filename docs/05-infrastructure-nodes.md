@@ -30,7 +30,7 @@ to do this is to `get` the existing `MachineSets` into a file, and then
 modify them. This is because the `MachineSet` has some details that are
 specific to the AWS region that the cluster is deployed in, like the AWS EC2
 AMI ID. For example, given the following output of `oc get machineset -n
-openshift-cluster-api`:
+openshift-machine-api`:
 
     NAME                         DESIRED   CURRENT   READY     AVAILABLE   AGE
     190125-3-worker-us-west-1b   2         2         2         2           3h
@@ -38,7 +38,7 @@ openshift-cluster-api`:
 
 There are two available EC2 AZs into which we can deposit infrastructure
 components (`1b` and `1c`). Take a look at one specifically with `oc get
-machineset 190125-3-worker-us-west-1b -n openshift-cluster-api -o yaml`.
+machineset 190125-3-worker-us-west-1b -n openshift-machine-api -o yaml`.
 There are a few very important sections.
 
 ### Metadata
@@ -54,11 +54,14 @@ metadata:
     sigs.k8s.io/cluster-api-machine-role: worker
     sigs.k8s.io/cluster-api-machine-type: worker
   name: 190125-3-worker-us-west-1b
-  namespace: openshift-cluster-api
+  namespace: openshift-machine-api
   resourceVersion: "9027"
-  selfLink: /apis/cluster.k8s.io/v1alpha1/namespaces/openshift-cluster-api/machinesets/190125-3-worker-us-west-1b
+  selfLink: /apis/cluster.k8s.io/v1alpha1/namespaces/openshift-machine-api/machinesets/190125-3-worker-us-west-1b
   uid: 591b4d06-20ba-11e9-a880-068acb199400
 ```
+
+**NOTE:** You might see some `annotations` on your `MachineSet` if you dumped
+*one that had a `MachineAutoScaler` defined.
 
 ### Selector
 The `MachineSet` defines how to create `Machines`, and the `Selector` tells
@@ -131,7 +134,7 @@ This sounds complicated, so let's go through an example. Go ahead and dump
 one of your existing `MachineSets` to a file, and then open it with your
 favorite text editor. For example:
 
-    oc get machineset 190125-3-worker-us-west-1b -o yaml -n openshift-cluster-api > infra-machineset.yaml
+    oc get machineset 190125-3-worker-us-west-1b -o yaml -n openshift-machine-api > infra-machineset.yaml
 
 ### Clean It
 Since we asked OpenShift to tell us about an _existing_ `MachineSet`, there's a
@@ -196,7 +199,7 @@ different version, however, your file should more or less look like the
 following:
 
 ```YAML
-apiVersion: cluster.k8s.io/v1alpha1
+apiVersion: machine.openshift.io/v1beta1
 kind: MachineSet
 metadata:
   labels:
@@ -204,7 +207,7 @@ metadata:
     sigs.k8s.io/cluster-api-machine-role: worker
     sigs.k8s.io/cluster-api-machine-type: worker
   name: infrastructure-us-west-1b
-  namespace: openshift-cluster-api
+  namespace: openshift-machine-api
 spec:
   replicas: 1
   selector:
@@ -266,11 +269,11 @@ spec:
 ## Create Your Machineset
 Now you can create your `MachineSet`:
 
-```bash
-oc create -f infra-machineset.yaml
+```sh
+oc create -f infra-machineset.yaml -n openshift-machine-api
 ```
 
-Then go ahead and `oc get machineset -n openshift-cluster-api` and you should
+Then go ahead and `oc get machineset -n openshift-machine-api` and you should
 see it listed:
 
 ```
@@ -282,7 +285,7 @@ infrastructure-us-west-1b    1         1                               4s
 
 We don't yet have any ready or available machines in the set because the
 instance is still coming up and bootstrapping. You can check `oc get machine
--n openshift-cluster-api` to see when the instance finally starts running.
+-n openshift-machine-api` to see when the instance finally starts running.
 Then, you can use `oc get node` to see when the actual node is joined and
 ready. If you're having trouble figuring out which node is the new one, take
 a look at the `AGE` column. It will be the youngest!
@@ -313,17 +316,20 @@ completely dark if AWS loses an AZ.
 For the purposes of this exercise, though, we'll just scale up our single
 set:
 
-    oc edit machineset infrastructure-us-west-1b -n openshift-cluster-api
+    oc edit machineset infrastructure-us-west-1b -n openshift-machine-api
 
 Change the `.spec.replicas` from 1 to 3, and then save/exit the editor.
 
 You can issue `oc get machineset` to see the change in the desired number of
 instances, and then `oc get machine` and `oc get node` as before. Just don't
-forget the `-n openshift-cluster-api` or be sure to switch to that namespace
-with `oc project openshift-cluster-api`.
+forget the `-n openshift-machine-api` or be sure to switch to that namespace
+with `oc project openshift-machine-api`.
 
 ## Extra Credit
-In the `openshift-cluster-api` project are several `Pods`. One of them has a
+You can use the `oc scale` command to scale a `MachineSet`.
+
+## Extra Credit
+In the `openshift-machine-api` project are several `Pods`. One of them has a
 name of ` clusterapi-manager-controllers-....`. If you use `oc logs` on the
 various containers in that `Pod`, you will see the various operator bits that
 actually make the nodes come into existence.
@@ -333,8 +339,8 @@ Now that you have some special nodes, it's time to move various
 infrastructure components onto them.
 
 ### NOTE
-The following assumes you used version `0.11.0` of the installer. This would
-give you a `clusterversion` of `4.0.0-0.2`.
+The following assumes you used version `0.13.1` of the installer. This would
+give you a `clusterversion` of `4.0.0-0.6`.
 
 ## Router
 The OpenShift router is managed by an `Operator` called
@@ -354,8 +360,9 @@ oc get pod -n openshift-ingress -o wide
 Take a look at the `Node` that is listed. You may see something like:
 
 ```
-NAME                              READY     STATUS    RESTARTS   AGE       IP           NODE                           NOMINATED NODE
-router-default-86798b4b5d-bdlvd   1/1       Running   0          1h        10.130.2.4   ip-10-0-148-172.ec2.internal   <none>
+NAME                              READY   STATUS    RESTARTS   AGE    IP           NODE                           NOMINATED NODE
+router-default-7f9c6678c5-rg8j5   1/1     Running   0          7h1m   10.129.2.3   ip-10-0-128-196.ec2.internal   <none>
+router-default-7f9c6678c5-xbmw6   1/1     Running   0          7h1m   10.131.0.3   ip-10-0-149-156.ec2.internal   <none>
 ```
 
 If you execute `oc get node <your_displayed_node>` you will see that it has
@@ -379,31 +386,33 @@ like:
 apiVersion: ingress.openshift.io/v1alpha1
 kind: ClusterIngress
 metadata:
-  creationTimestamp: 2019-01-28T17:23:39Z
+  creationTimestamp: 2019-02-27T14:07:54Z
   finalizers:
   - ingress.openshift.io/default-cluster-ingress
-  generation: 2
+  generation: 1
   name: default
   namespace: openshift-ingress-operator
-  resourceVersion: "1294295"
+  resourceVersion: "11336"
   selfLink: /apis/ingress.openshift.io/v1alpha1/namespaces/openshift-ingress-operator/clusteringresses/default
-  uid: 73ff7bfd-2321-11e9-8ff2-026a37856868
+  uid: 1360a074-3a99-11e9-94cf-0ae9eb6afea2
 spec:
   defaultCertificateSecret: null
-  highAvailability:
-    type: Cloud
-  ingressDomain: apps.beta-190128-2.ocp4testing.openshiftdemos.com
+  highAvailability: null
+  ingressDomain: null
   namespaceSelector: null
   nodePlacement:
     nodeSelector:
       matchLabels:
         node-role.kubernetes.io/worker: ""
-  replicas: 1
+  replicas: 2
   routeSelector: null
   unsupportedExtensions: null
 status:
+  highAvailability:
+    type: Cloud
+  ingressDomain: apps.beta-190227-1.ocp4testing.openshiftdemos.com
   labelSelector: app=router,router=router-default
-  replicas: 1
+  replicas: 2
 ```
 
 As you can see, the `nodeSelector` is configured for the `worker` role. Go
@@ -439,11 +448,12 @@ ip-10-0-217-226.ec2.internal   Ready     infra,worker   17h       v1.11.0+406fc8
 
 ## Registry
 The registry uses a similar `CRD` mechanism to configure how the operator
-deploys the actual registry pods. You can edit the `config/instance` object
-in order to add the `nodeSelector`. First, take a look at it:
+deploys the actual registry pods. That CRD is
+`configs.imageregistry.operator.openshift.io`. You will edit the `cluster` CR
+object in order to add the `nodeSelector`. First, take a look at it:
 
 ```sh
-oc get config/instance -o yaml
+oc get configs.imageregistry.operator.openshift.io/cluster -o yaml
 ```
 
 You will see something like:
@@ -452,16 +462,16 @@ You will see something like:
 apiVersion: imageregistry.operator.openshift.io/v1
 kind: Config
 metadata:
-  creationTimestamp: 2019-02-05T13:52:05Z
+  creationTimestamp: 2019-02-27T14:08:32Z
   finalizers:
   - imageregistry.operator.openshift.io/finalizer
   generation: 1
-  name: instance
-  resourceVersion: "56174"
-  selfLink: /apis/imageregistry.operator.openshift.io/v1/configs/instance
-  uid: 38fe3936-294d-11e9-a534-12ffeee2531a
+  name: cluster
+  resourceVersion: "106372"
+  selfLink: /apis/imageregistry.operator.openshift.io/v1/configs/cluster
+  uid: 2a5609e5-3a99-11e9-bf3b-02319b2b6c5a
 spec:
-  httpSecret: d9a013ccd117b1e6616ceccb2c3aa66a5fed1b5e4816231eeb4108c437de86fbd7106807fdab7ebf205dc76d03636ca74503abfa713936f200eb87557a0d10c5
+  httpSecret: ec7df887545c5e6a5dadf049a6c7a3e9102ecb92b57876fde1f658303038e192479a251a9f2f80d968c3a59a749526e724c632e2f0b85a83de9d2c3bbe04339a
   logging: 2
   managementState: Managed
   proxy: {}
@@ -471,39 +481,95 @@ spec:
     write: {}
   storage:
     s3:
-      bucket: image-registry-us-east-1-c92e88cad85b47ec8b313244dee0fc82-392c
+      bucket: image-registry-us-east-1-dac0065618f84094b8e8faf4de2fd3f9-2a66
+      encrypt: true
       region: us-east-1
 status:
 ...
 ```
 
-If you `oc edit config/instance` and then modify the `.spec` section to add
-the following:
+If you `oc edit configs.imageregistry.operator.openshift.io/cluster` and then
+modify the `.spec` section to add the following:
 
 ```YAML
   nodeSelector:
     node-role.kubernetes.io/infra: ""
 ```  
-
-When you save and exit you should see the registry pod being moved to the
-infra node. The `nodeSelector` stanza may be added anywhere inside the
-`.spec` block.
+The `nodeSelector` stanza may be added anywhere inside the `.spec` block.
 
 ### NOTE
 At this time the image registry is not using a separate project for its
 operator. Both the operator and the operand are housed in the
 `openshift-image-registry` project.
 
-## Monitoring
-The monitoring solution on `4.0.0-0.2` used the Cluster Version Operator
-(`CVO`) to create the `ConfigMap` that the monitoring operator used to
-determine how to deploy the monitoring resources. It is not possible to tell
-the operator to deploy differently.
+When you save and exit you should see the registry pod being moved to the
+infra node. The registry is in the `openshift-image-registry` project. If you
+execute the following quickly enough:
 
-### NOTE
-At this time the monitoring solution is not using a separate project for its
-operator.
+```sh
+oc get pod -n openshift-image-registry
+```
+
+You might see the old registry pod terminating and the new one starting.
+Since the registry is being backed by an S3 bucket, it doesn't matter what
+node the new registry pod instance lands on. It's talking to an object store
+via an API, so any existing images stored there will remain accessible.
+
+Also note that the default replica count is 1. In a real-world environment
+you might wish to scale that up for better availability, network throughput,
+or other reasons.
+
+If you look at the node on which the registry landed (see the section on the
+router), you'll note that it is now running on an infra worker.
+
+Lastly, notice that the CRD for the image registry's configuration is not
+namespaced -- it is cluster scoped. There is only one internal/integrated
+registry per OpenShift cluster.
+
+## Monitoring
+The Cluster Monitoring operator is responsible for deploying and managing the
+state of the Prometheus+Grafana cluster monitoring stack. It is installed by
+default during the initial cluster installation. Its operator uses a
+`ConfigMap` in the `openshift-monitoring` project to set various tunables and
+settings for the behavior of the monitoring stack.
+
+Take a look at the following file:
+
+https://github.com/openshift/training/blob/master/assets/cluster-monitoring-configmap.yaml
+
+It contains the definition for a `ConfigMap` that will cause the monitoring
+solution to be redeployed onto infrastructure nodes. There is no `ConfigMap`
+created as part of the installation. Without one, the operator will assume
+default settings:
+
+```sh
+oc get configmap cluster-monitoring-config -n openshift-monitoring
+```
+
+The operator will, in turn, create several `ConfigMap` objects for the
+various monitoring stack components, and you can see them, too:
+
+```sh
+oc get configmap -n openshift-monitoring
+```
+
+You can create the new monitoring config with the following command:
+
+```sh
+oc create -f https://raw.githubusercontent.com/openshift/training/master/assets/cluster-monitoring-configmap.yaml
+```
+
+Then, you can do something like `watch 'oc get pod -n openshift-monitoring`
+or `oc get pod -w -n openshift-monitoring` to watch the operator cause the
+various pods to be redeployed.
 
 ## Logging
 OpenShift's log aggregation solution is not installed by default with
 `4.0.0-0.2` and is not deployable in its current state of development.
+
+# End of Materials
+Congratulations. You have reached the end of the materials. Feel free to
+explore this repository as there are some other examples that have not been
+tested. And, of course, explore your cluster.
+
+If you are done, you can proceed to [cleanup your cluster](06-cleanup.md)
