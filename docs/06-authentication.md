@@ -86,8 +86,7 @@ You don't have any projects. You can try to create a new project, by running
     oc new-project <projectname>
 ```
 
-# End of Materials
-Congratulations. You have reached the end of the materials. Feel free to
-explore your cluster further.
-
-If you are done, you can proceed to [cleanup your cluster](08-cleanup.md)
+# Extensions with Operators
+You can extend your cluster to do many more exciting things using Operators.
+Take a look at the [extensions](07-extensions.md) section for an example of
+using Couchbase.
