@@ -82,36 +82,36 @@ items:
   kind: "MachineAutoscaler"
   metadata:
     generateName: autoscale-<aws-region-az>-
-    namespace: "openshift-cluster-api"
+    namespace: "openshift-machine-api"
   spec:
     minReplicas: 1
     maxReplicas: 4
     scaleTargetRef:
-      apiVersion: cluster.k8s.io/v1alpha1
+      apiVersion: machine.openshift.io/v1beta1
       kind: MachineSet
       name: <clusterid>-worker-<aws-region-az>
 - apiVersion: "autoscaling.openshift.io/v1alpha1"
   kind: "MachineAutoscaler"
   metadata:
     generateName: autoscale-<aws-region-az>-
-    namespace: "openshift-cluster-api"
+    namespace: "openshift-machine-api"
   spec:
     minReplicas: 1
     maxReplicas: 4
     scaleTargetRef:
-      apiVersion: cluster.k8s.io/v1alpha1
+      apiVersion: machine.openshift.io/v1beta1
       kind: MachineSet
       name: <clusterid>-worker-<aws-region-az>
 - apiVersion: "autoscaling.openshift.io/v1alpha1"
   kind: "MachineAutoscaler"
   metadata:
     generateName: autoscale-<aws-region-az>-
-    namespace: "openshift-cluster-api"
+    namespace: "openshift-machine-api"
   spec:
     minReplicas: 1
     maxReplicas: 4
     scaleTargetRef:
-      apiVersion: cluster.k8s.io/v1alpha1
+      apiVersion: machine.openshift.io/v1beta1
       kind: MachineSet
       name: <clusterid>-worker-<aws-region-az>
 ```
