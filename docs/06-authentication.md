@@ -9,13 +9,13 @@ You can create an `htpasswd` file in whatever way suits you. You can use the
 `htpasswd` utility, you can do something like:
 
 ```sh
-printf "USER:$(openssl passwd -crypt PASSWORD)\n"
+printf "USER:$(openssl passwd -apr1 PASSWORD)\n >> /path/to/htpasswd"
 ```
 
 or any number of other mechanisms. If you don't want to create a file, you
 can use the following sample file:
 
-hhhhh
+https://github.com/openshift/training/blob/master/assets/htpasswd
 
 Note that all users have the password `openshift4`.
 
@@ -30,6 +30,7 @@ following command:
 ```sh
 oc create secret generic htpass-secret --from-file=htpasswd=</path/to/htpasswd> -n openshift-config
 ```
+
 ## Create the identity provider Custom Resource
 The operator that configures authentication is looking for a `CustomResource`
 object. In our case, we want one that tells it to configure htpasswd
@@ -58,7 +59,7 @@ If you are interested, the CRD that defines `OAuth` is
 create the CR for auth with the following command:
 
 ```sh
-oc apply -f lkajdsf
+oc apply -f https://raw.githubusercontent.com/openshift/training/master/assets/htpasswd-cr.yaml
 ```
 
 You might be wondering why `apply` was used here. It is because there is an
@@ -87,7 +88,6 @@ You don't have any projects. You can try to create a new project, by running
 
 # End of Materials
 Congratulations. You have reached the end of the materials. Feel free to
-explore this repository as there are some other examples that have not been
-tested. And, of course, explore your cluster.
+explore your cluster further.
 
 If you are done, you can proceed to [cleanup your cluster](08-cleanup.md)
