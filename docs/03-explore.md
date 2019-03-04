@@ -44,9 +44,26 @@ redirect it to a file instead of trying to look at it directly with the
 `logs` command.
 
 # Exploring RHEL CoreOS
-** MASTERS ARE NO LONGER PUBLICLY ACCESSIBLE BY DEFAULT **
-** NEED TO ADD ADDITIONAL DOCS FOR ACCESS **
+The latest installer does not create any public IP addresses for any of the
+EC2 instances that it provisions for your OpenShift cluster. In order to be
+able to SSH to your OpenShift 4 hosts, you will first need to create a
+security group that allows SSH access into the VPC. Then, you will need to
+create an EC2 instance yourself inside the VPC that the installer created
+during the provisioning process. Lastly, you will need to associate a public
+IP address with the EC2 instance that you created.
 
+Unlike with the OpenShift installation, you must associate the EC2 instance
+you create with an SSH keypair that you already have access to.
+
+It does not matter what OS you choose for this instance, as it will simply
+serve as an SSH bastion to bridge the internet into your OCP VPC.
+
+Once you have provisioned your EC2 instance and can SSH into it, you will
+then need to add the SSH key that you associated with your OCP installation
+(**not the key for the bastion instance**). At that point you can follow the
+rest of the instructions.
+
+## Cluster Makeup
 The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS .
 CoreOS is a container optimized, hardened, minimal footprint operating system
 designed specifically to work with OpenShift and to run containers.
@@ -55,21 +72,11 @@ Only the masters are publicly accessible via SSH (only they have public IPs).
 You can SSH into one of the masters and could also proxy/SSH tunnel to nodes
 through a master. For this exercise, we will only explore one of the masters.
 
-## Find the Master Public Hostname
+## Find a Hostname
 First, look at the output of `oc get nodes` and pick one of the nodes that is
-a master. Its name is something like `ip-10-0-1-163.ec2.internal`. Also, take
-note of the `clusterid` you used during the installation. The following
-command will give you the public DNS name of that master:
+a master. Its name is something like `ip-10-0-1-163.ec2.internal`. 
 
-    aws ec2 describe-instances --filters "Name=private-dns-name,Values=HOSTNAME_HERE" \
-    "Name=tag:clusterid,Values=CLUSTERID_HERE" --query "Reservations[*].Instances[*].[PublicDnsName]"
-
-**Note:** You will need to add the `--region` flag if you have provisioned a
-*cluster that is not in your default region (default as far as `aws`'s CLI is
-*concerned.)
-
-## SSH to the Master
-You can then SSH into that master, making sure to specify the same SSH key
+You can then SSH into that host, making sure to specify the same SSH key
 you specified during the installation:
 
     ssh -i /path/to/sshkey core@MASTER_HOSTNAME_FROM_ABOVE
@@ -78,11 +85,12 @@ you specified during the installation:
 
 If it works, you'll see the CoreOS MOTD/prompt:
 
-    RHEL CoreOS 4.0
-     Information: https://url.corp.redhat.com/redhat-coreos
-     Bugs: https://github.com/openshift/os
-
+    Red Hat CoreOS 400.7.20190301.0 Beta
+    WARNING: Direct SSH access to machines is not recommended.
+    This node has been annotated with machineconfiguration.openshift.io/ssh=accessed
+    
     ---
+    [core@ip-10-0-135-32 ~]$ 
 
 ## Explore RHEL CoreOS
 You can check the kernel information with the following:
@@ -91,7 +99,7 @@ You can check the kernel information with the following:
 
 You will see something like:
 
-    Linux 3.10.0-957.1.3.el7.x86_64
+    Linux 3.10.0-957.5.1.el7.x86_64
 
 The following command will show you a little bit about how `Ignition`
 contacts remote servers for information and etc:
