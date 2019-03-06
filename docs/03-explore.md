@@ -44,13 +44,18 @@ redirect it to a file instead of trying to look at it directly with the
 `logs` command.
 
 # Exploring RHEL CoreOS
+*WARNING* this requires advanced knowledge of EC2 and is not a thourough set
+*of instructions.
+
 The latest installer does not create any public IP addresses for any of the
 EC2 instances that it provisions for your OpenShift cluster. In order to be
-able to SSH to your OpenShift 4 hosts, you will first need to create a
-security group that allows SSH access into the VPC. Then, you will need to
-create an EC2 instance yourself inside the VPC that the installer created
-during the provisioning process. Lastly, you will need to associate a public
-IP address with the EC2 instance that you created.
+able to SSH to your OpenShift 4 hosts:
+
+1. Create a security group that allows SSH access into the VPC created by the installer
+1. Create an EC2 instance yourself:
+    * inside the VPC that the installer created
+    * on one of the public subnets the installer created
+1. Associate a public IP address with the EC2 instance that you created.
 
 Unlike with the OpenShift installation, you must associate the EC2 instance
 you create with an SSH keypair that you already have access to.
