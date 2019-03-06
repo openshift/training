@@ -1,6 +1,15 @@
 # Configuring Authentication
-OpenShift 4 installs with only a single cluster superuser, `kubeadmin`. If
-you want additional users to be able to authenticate to and use the cluster,
+OpenShift 4 installs with two effective superusers:
+
+* `kubeadmin` (technically an alias for `kube:admin`)
+* `system:admin`
+
+Why two? Because `system:admin` is a user that uses a certificate to login
+and has no password. Therefore this superuser cannot log-in to the web
+console (which requires a password).
+
+If you want additional users to be able to authenticate to and use the
+cluster,
 you must configure an authentication provider. We will configure `htpasswd`
 authentication as an example.
 
