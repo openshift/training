@@ -1,6 +1,12 @@
 # Exploring the Cluster
 
-The following instructions assume that you have deployed the cluster using the *openshift-install* tooling, and that the necessary configuration files required for cluster interaction have been automatically generated for you in your home directory. If you have been provided with access to an environment (e.g. it has been deployed for you) or you do **not** have the necessary configuration files generated, follow these steps; it requires that you have the credentials and API URI information to hand:
+The following instructions assume that you have deployed the cluster using the 
+*openshift-install* tooling, and that the necessary configuration files required
+for cluster interaction have been automatically generated for you in your home
+directory. If you have been provided with access to an environment (e.g. it has
+been deployed for you) or you do **not** have the necessary configuration files
+generated, follow these steps; it requires that you have the credentials and API
+URI information to hand:
 
 ~~~bash
 $ oc login --server <your API URI>
@@ -29,7 +35,8 @@ clusters:
 
 > **NOTE**: Your output will vary slightly from the above, you'll just need to make sure to use the API endpoint and credentials that you were provided with. We output the .kube/config file just to verify that it has successfully created our configuration.
 
-Now that your cluster is installed, you will have access to the web console and can use the CLI. Below are some command-line exercises to explore the cluster.
+Now that your cluster is installed, you will have access to the web console and
+can use the CLI. Below are some command-line exercises to explore the cluster.
 
 ## Cluster Nodes
 
@@ -60,11 +67,23 @@ ip-10-0-168-43.ec2.internal    Ready     master    23h       v1.12.4+5dc94f3fda 
 ip-10-0-171-135.ec2.internal   Ready     worker    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.large,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1c,kubernetes.io/hostname=ip-10-0-171-135,node-role.kubernetes.io/worker=
 ~~~
 
-For reference, **labels** are used as a mechanism to tag certain information onto a node, or a set of nodes, that can help you identify your systems, e.g. by operating system, system architecture, specification, location of the system (e.g. region), it's hostname, etc. They can also help with application scheduling, e.g. make sure that my application (or pod) resides on a specific system type. The labels shown above are utilising the default labels, but it's possible to set some custom labels in the form of a key-value pair.
+For reference, **labels** are used as a mechanism to tag certain information
+onto a node, or a set of nodes, that can help you identify your systems, e.g.
+by operating system, system architecture, specification, location of the system
+(e.g. region), it's hostname, etc. They can also help with application
+scheduling, e.g. make sure that my application (or pod) resides on a specific
+system type. The labels shown above are utilising the default labels, but it's
+possible to set some custom labels in the form of a key-value pair.
 
 ## The Cluster Operator
 
-The Cluster Operator is the most important implementation within OpenShift, it's a self-hosted operator that is heavily responsible for installation, management, maintenance, and automated operations on the OpenShift cluster; it's essentially what turns Kubernetes into OpenShift - it enables all of the additional operators that we rely on (including the web console, the marketplace, image registry, and router service, etc) and configures the cluster as we have specified. We can view it's status by using the following command-
+The Cluster Operator is the most important implementation within OpenShift, it's
+a self-hosted operator that is heavily responsible for installation, management,
+maintenance, and automated operations on the OpenShift cluster; it's essentially
+what turns Kubernetes into OpenShift - it enables all of the additional
+operators that we rely on (including the web console, the marketplace, image
+registry, and router service, etc) and configures the cluster as we have
+specified. We can view it's status by using the following command-
 
 ~~~bash
 $ oc get deployments -n openshift-cluster-version
@@ -72,7 +91,8 @@ NAME                       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 cluster-version-operator   1         1         1            1           2h
 ~~~
 
-You can also `rsh` (remote shell access) into the running Operator and see the various manifests associated with the installed release of OpenShift:
+You can also `rsh` (remote shell access) into the running Operator and see the
+various manifests associated with the installed release of OpenShift:
 
 ~~~bash
 $ oc rsh -n openshift-cluster-version deployments/cluster-version-operator
@@ -93,7 +113,9 @@ total 836
 (...)
 ~~~
 
-You will see a number of `.yaml` files in this directory; these are manifests that describe each of the operators and how they're applied. Feel free to take a look at some of these to give you an idea of what it's doing.
+You will see a number of `.yaml` files in this directory; these are manifests
+that describe each of the operators and how they're applied. Feel free to take a
+look at some of these to give you an idea of what it's doing.
 
 ~~~bash
 sh4.2# cat /release-manifests/0000_70_console-operator_00-crd.yaml
@@ -117,7 +139,8 @@ exit
 
 > **NOTE**: Don't forget to `exit` from your`rsh` session before continuing...
 
-If you want to look at what the Cluster Operator has done since it was launched, you can execute the following:
+If you want to look at what the Cluster Operator has done since it was launched,
+you can execute the following:
 
 ~~~bash
 $ oc logs deployments/cluster-version-operator -n openshift-cluster-version > operatorlog.txt
@@ -128,7 +151,8 @@ I0306 10:28:10.667401       1 leaderelection.go:185] attempting to acquire leade
 (...)
 ~~~
 
-The operator's log is **extremely** long, so it is recommended that you redirect it to a file instead of trying to look at it directly with the `logs` command.
+The operator's log is **extremely** long, so it is recommended that you redirect
+it to a file instead of trying to look at it directly with the `logs` command.
 
 # Exploring RHEL CoreOS
 *WARNING* this requires advanced knowledge of EC2 and is not a thourough set
@@ -138,7 +162,8 @@ The latest installer does not create any public IP addresses for any of the
 EC2 instances that it provisions for your OpenShift cluster. In order to be
 able to SSH to your OpenShift 4 hosts:
 
-1. Create a security group that allows SSH access into the VPC created by the installer
+1. Create a security group that allows SSH access into the VPC created by the 
+installer
 1. Create an EC2 instance yourself:
     * inside the VPC that the installer created
     * on one of the public subnets the installer created
