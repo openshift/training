@@ -441,7 +441,7 @@ pod is now on one of our nodes with the `infra` role. In our case:
 ```
 oc get node ip-10-0-217-226.ec2.internal
 NAME                           STATUS    ROLES          AGE       VERSION
-ip-10-0-217-226.ec2.internal   Ready     infra,worker   17h       v1.11.0+406fc897d8
+ip-10-0-217-226.ec2.internal   Ready     infra,worker   17h       v1.12.4+4dd65df23d
 ```
 
 ## Registry
