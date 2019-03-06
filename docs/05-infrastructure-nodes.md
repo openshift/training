@@ -253,8 +253,6 @@ spec:
               values:
               - 190125-3-worker-us-west-1b
           tags:
-          - name: openshiftClusterID
-            value: 45d08e94-6bf6-4fd3-988f-54a616d04252
           - name: kubernetes.io/cluster/190125-3
             value: owned
           userDataSecret:
