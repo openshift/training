@@ -2,7 +2,6 @@
 OpenShift 4 adds the ability to easily scale cluster size.
 
 ## Manual Cluster Scale Up/Down
-**MAY NOT BE WORKING**
 
 To manually add worker nodes to the cluster: 
 
@@ -31,6 +30,7 @@ Before continuing, scale back down by editing the count to whatever it was
 previously for the `Machine Set`.
 
 ### Note
+*TODO: check this*
 The default installation only creates one router. It is possible that when
 you scale down your cluster that you may inadvertently end up removing the
 node where the router was running, which will temporarily make the console

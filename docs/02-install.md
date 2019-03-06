@@ -111,7 +111,7 @@ API Version:  config.openshift.io/v1
 Kind:         ClusterVersion
 Metadata:
 ...
-   Version:            4.0.0-0.5
+  Version:            4.0.0-0.5
   Observed Generation:  1
   Version Hash:         XBkY3OJe-TY=
 Events:                 <none>

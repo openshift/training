@@ -68,10 +68,6 @@ The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS .
 CoreOS is a container optimized, hardened, minimal footprint operating system
 designed specifically to work with OpenShift and to run containers.
 
-Only the masters are publicly accessible via SSH (only they have public IPs).
-You can SSH into one of the masters and could also proxy/SSH tunnel to nodes
-through a master. For this exercise, we will only explore one of the masters.
-
 ## Find a Hostname
 First, look at the output of `oc get nodes` and pick one of the nodes that is
 a master. Its name is something like `ip-10-0-1-163.ec2.internal`. 
