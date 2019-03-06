@@ -526,10 +526,10 @@ registry per OpenShift cluster.
 
 ## Monitoring
 The Cluster Monitoring operator is responsible for deploying and managing the
-state of the Prometheus+Grafana cluster monitoring stack. It is installed by
-default during the initial cluster installation. Its operator uses a
-`ConfigMap` in the `openshift-monitoring` project to set various tunables and
-settings for the behavior of the monitoring stack.
+state of the Prometheus+Grafana+AlertManager cluster monitoring stack. It is
+installed by default during the initial cluster installation. Its operator
+uses a `ConfigMap` in the `openshift-monitoring` project to set various
+tunables and settings for the behavior of the monitoring stack.
 
 Take a look at the following file:
 
