@@ -562,8 +562,9 @@ or `oc get pod -w -n openshift-monitoring` to watch the operator cause the
 various pods to be redeployed.
 
 ## Logging
-OpenShift's log aggregation solution is not installed by default with
-`4.0.0-0.2` and is not deployable in its current state of development.
+OpenShift's log aggregation solution is not installed by default. There are
+also a few minor bugs that prevent Logging from being easily installed via
+the Operator UI in the web console. It is skipped for now.
 
 ## Configuring Authentication
 The [configuring authentication](06-authentication.md) section describes how
