@@ -1,47 +1,134 @@
 # Exploring the Cluster
 
-Now that your cluster is installed, you have access to the web console and
-can use the CLI. Below are some command-line exercises to explore the
-cluster:
+The following instructions assume that you have deployed the cluster using the *openshift-install* tooling, and that the necessary configuration files required for cluster interaction have been automatically generated for you in your home directory. If you have been provided with access to an environment (e.g. it has been deployed for you) or you do **not** have the necessary configuration files generated, follow these steps; it requires that you have the credentials and API URI information to hand:
+
+~~~bash
+$ oc login --server <your API URI>
+
+The server uses a certificate signed by an unknown authority.
+You can bypass the certificate check, but any data you send to the server could be intercepted by others.
+Use insecure connections? (y/n): y
+
+Authentication required for https://api.beta-190305-1.ocp4testing.openshiftdemos.com:6443 (openshift)
+Username: <your username>
+Password: <your password>
+Login successful.
+(...)
+
+Using project "default".
+Welcome! See 'oc help' to get started.
+
+$ cat ~/.kube/config
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://api.beta-190305-1.ocp4testing.openshiftdemos.com:6443
+(...)
+~~~
+
+> **NOTE**: Your output will vary slightly from the above, you'll just need to make sure to use the API endpoint and credentials that you were provided with. We output the .kube/config file just to verify that it has successfully created our configuration.
+
+Now that your cluster is installed, you will have access to the web console and can use the CLI. Below are some command-line exercises to explore the cluster.
 
 ## Cluster Nodes
 
 The default installation behavior creates 6 nodes: 3 masters and 3 "worker"
 application/compute nodes. You can view them with:
 
-    oc get nodes
+~~~bash
+$ oc get nodes -o wide
+NAME                           STATUS    ROLES     AGE       VERSION              INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                          KERNEL-VERSION              CONTAINER-RUNTIME
+ip-10-0-137-104.ec2.internal   Ready     worker    24h       v1.12.4+5dc94f3fda   10.0.137.104   <none>        Red Hat CoreOS 400.7.20190301.0   3.10.0-957.5.1.el7.x86_64   cri-o://1.12.6-1.rhaos4.0.git2f0cb0d.el7
+ip-10-0-140-138.ec2.internal   Ready     master    24h       v1.12.4+5dc94f3fda   10.0.140.138   <none>        Red Hat CoreOS 400.7.20190301.0   3.10.0-957.5.1.el7.x86_64   cri-o://1.12.6-1.rhaos4.0.git2f0cb0d.el7
+ip-10-0-158-222.ec2.internal   Ready     master    24h       v1.12.4+5dc94f3fda   10.0.158.222   <none>        Red Hat CoreOS 400.7.20190301.0   3.10.0-957.5.1.el7.x86_64   cri-o://1.12.6-1.rhaos4.0.git2f0cb0d.el7
+ip-10-0-159-179.ec2.internal   Ready     worker    24h       v1.12.4+5dc94f3fda   10.0.159.179   <none>        Red Hat CoreOS 400.7.20190301.0   3.10.0-957.5.1.el7.x86_64   cri-o://1.12.6-1.rhaos4.0.git2f0cb0d.el7
+ip-10-0-168-43.ec2.internal    Ready     master    24h       v1.12.4+5dc94f3fda   10.0.168.43    <none>        Red Hat CoreOS 400.7.20190301.0   3.10.0-957.5.1.el7.x86_64   cri-o://1.12.6-1.rhaos4.0.git2f0cb0d.el7
+ip-10-0-171-135.ec2.internal   Ready     worker    24h       v1.12.4+5dc94f3fda   10.0.171.135   <none>        Red Hat CoreOS 400.7.20190301.0   3.10.0-957.5.1.el7.x86_64   cri-o://1.12.6-1.rhaos4.0.git2f0cb0d.el7
+~~~
 
-If you want to see the various applied labels, you can also do:
+If you want to see the various applied **labels**, you can also do:
 
-    oc get nodes --show-labels
+~~~bash
+$ oc get nodes --show-labels
+NAME                           STATUS    ROLES     AGE       VERSION              LABELS
+ip-10-0-137-104.ec2.internal   Ready     worker    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.large,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1a,kubernetes.io/hostname=ip-10-0-137-104,node-role.kubernetes.io/worker=
+ip-10-0-140-138.ec2.internal   Ready     master    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.xlarge,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1a,kubernetes.io/hostname=ip-10-0-140-138,node-role.kubernetes.io/master=
+ip-10-0-158-222.ec2.internal   Ready     master    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.xlarge,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1b,kubernetes.io/hostname=ip-10-0-158-222,node-role.kubernetes.io/master=
+ip-10-0-159-179.ec2.internal   Ready     worker    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.large,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1b,kubernetes.io/hostname=ip-10-0-159-179,node-role.kubernetes.io/worker=
+ip-10-0-168-43.ec2.internal    Ready     master    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.xlarge,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1c,kubernetes.io/hostname=ip-10-0-168-43,node-role.kubernetes.io/master=
+ip-10-0-171-135.ec2.internal   Ready     worker    23h       v1.12.4+5dc94f3fda   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=m4.large,beta.kubernetes.io/os=linux,failure-domain.beta.kubernetes.io/region=us-east-1,failure-domain.beta.kubernetes.io/zone=us-east-1c,kubernetes.io/hostname=ip-10-0-171-135,node-role.kubernetes.io/worker=
+~~~
+
+For reference, **labels** are used as a mechanism to tag certain information onto a node, or a set of nodes, that can help you identify your systems, e.g. by operating system, system architecture, specification, location of the system (e.g. region), it's hostname, etc. They can also help with application scheduling, e.g. make sure that my application (or pod) resides on a specific system type. The labels shown above are utilising the default labels, but it's possible to set some custom labels in the form of a key-value pair.
 
 ## The Cluster Operator
-The Cluster Operator is heavily responsible for
-installation/management/maintenance/automated operations on the OpenShift
-cluster.
 
-    oc get deployments -n openshift-cluster-version
+The Cluster Operator is the most important implementation within OpenShift, it's a self-hosted operator that is heavily responsible for installation, management, maintenance, and automated operations on the OpenShift cluster; it's essentially what turns Kubernetes into OpenShift - it enables all of the additional operators that we rely on (including the web console, the marketplace, image registry, and router service, etc) and configures the cluster as we have specified. We can view it's status by using the following command-
 
-You can `rsh` into the running Operator and see the various manifests
-associated with the installed release of OpenShift:
+~~~bash
+$ oc get deployments -n openshift-cluster-version
+NAME                       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+cluster-version-operator   1         1         1            1           2h
+~~~
 
-    oc rsh -n openshift-cluster-version deployments/cluster-version-operator
+You can also `rsh` (remote shell access) into the running Operator and see the various manifests associated with the installed release of OpenShift:
 
-Then:
+~~~bash
+$ oc rsh -n openshift-cluster-version deployments/cluster-version-operator
+~~~
 
-    ls /release-manifests
+Then to list the available manifests:
 
-You will see a number of `.yaml` files. Don't forget to `exit` from your
-`rsh` session before continuing
+~~~bash
+sh-4.2# ls -l /release-manifests/
+total 836
+-r--r--r--. 1 root root   171 Jan 15 04:04 0000_07_cluster-network-operator_00_namespace.yaml
+-r--r--r--. 1 root root   381 Jan 15 04:04 0000_07_cluster-network-operator_01_crd.yaml
+-r--r--r--. 1 root root   316 Jan 15 04:04 0000_07_cluster-network-operator_02_rbac.yaml
+-r--r--r--. 1 root root  1904 Jan 15 04:04 0000_07_cluster-network-operator_03_daemonset.yaml
+-r--r--r--. 1 root root   960 Jan 15 04:04 0000_08_cluster-dns-operator_00-cluster-role.yaml
+-r--r--r--. 1 root root   298 Jan 15 04:04 0000_08_cluster-dns-operator_00-custom-resource-definition.yaml
+-r--r--r--. 1 root root   198 Jan 15 04:04 0000_08_cluster-dns-operator_00-namespace.yaml
+(...)
+~~~
 
-If you want to look at what the Cluster Operator has done since it was
-launched, you can execute the following:
+You will see a number of `.yaml` files in this directory; these are manifests that describe each of the operators and how they're applied. Feel free to take a look at some of these to give you an idea of what it's doing.
 
-    oc logs deployments/cluster-version-operator -n openshift-cluster-version > operatorlog.txt
+~~~bash
+sh4.2# cat /release-manifests/0000_70_console-operator_00-crd.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: consoles.console.openshift.io
+spec:
+  group: console.openshift.io
+  names:
+    kind: Console
+    listKind: ConsoleList
+    plural: consoles
+    singular: console
+  scope: Namespaced
+  version: v1alpha1
 
-The operator's log is **extremely** long, so it is recommended that you
-redirect it to a file instead of trying to look at it directly with the
-`logs` command.
+sh4.2# exit
+exit
+~~~
+
+> **NOTE**: Don't forget to `exit` from your`rsh` session before continuing...
+
+If you want to look at what the Cluster Operator has done since it was launched, you can execute the following:
+
+~~~bash
+$ oc logs deployments/cluster-version-operator -n openshift-cluster-version > operatorlog.txt
+$ ls operatorlog.txt
+I0306 10:28:10.548869       1 start.go:71] ClusterVersionOperator v4.0.0-0.139.0.0-dirty
+I0306 10:28:10.601159       1 start.go:197] Using in-cluster kube client config
+I0306 10:28:10.667401       1 leaderelection.go:185] attempting to acquire leader lease  openshift-cluster-version/version...
+(...)
+~~~
+
+The operator's log is **extremely** long, so it is recommended that you redirect it to a file instead of trying to look at it directly with the `logs` command.
 
 # Exploring RHEL CoreOS
 *WARNING* this requires advanced knowledge of EC2 and is not a thourough set
