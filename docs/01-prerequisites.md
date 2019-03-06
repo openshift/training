@@ -146,7 +146,10 @@ For example, for Linux or MacOS:
 
 ~~~bash
 $ wget <path to oc tarball>
+(...)
 $ tar -zxvf oc.tar.gz
+oc
+
 $ export PATH=$PATH:<path to your oc location>
 $ oc version
 oc v4.0.0-0.148.0

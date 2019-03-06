@@ -104,7 +104,7 @@ items:
     selfLink: /apis/machine.openshift.io/v1beta1/namespaces/openshift-machine-api/machinesets/beta-190305-1-79tf5-worker-us-east-1a
     uid: 21236e24-3f65-11e9-b848-12efc11fb292
   spec:
-    replicas: 1                                                                                 <---------------
+    replicas: 1                                                                <---------------
     selector:
       matchLabels:
         machine.openshift.io/cluster-api-cluster: beta-190305-1-79tf5
@@ -146,8 +146,8 @@ Again, before you move forward, return this count back to how it was before, usi
 OpenShift can automatically scale the infrastructure based on workload provided there is a configuration specified to do so.  Before we begin, ensure that your cluster is back to having three nodes running:
 
 ~~~bash
- $ oc get machinesets -n openshift-machine-api
- NAME                                    DESIRED   CURRENT   READY     AVAILABLE   AGE
+$ oc get machinesets -n openshift-machine-api
+NAME                                    DESIRED   CURRENT   READY     AVAILABLE   AGE
 beta-190305-1-79tf5-worker-us-east-1a   1         1         1         1           24h
 beta-190305-1-79tf5-worker-us-east-1b   1         1         1         1           24h
 beta-190305-1-79tf5-worker-us-east-1c   1         1         1         1           24h
