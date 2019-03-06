@@ -144,7 +144,7 @@ it is executable, and make sure that it is in your `PATH`.
 
 # Problems?
 If at any point you run into issues while exploring OpenShift 4, see the
-[troubleshooting](06-troubleshooting.md) section.
+[troubleshooting](99-troubleshooting.md) section.
 
 
 Next: [Installing the Cluster](02-install.md)

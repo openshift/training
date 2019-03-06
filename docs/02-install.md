@@ -43,20 +43,33 @@ $ ./openshift-install create cluster
 ? Pull Secret [? for help] *********************************************************
 ```
 
-The installer will then start (you will see output similar to the following):
+The installer will then start.
+
+## Watch the Installation
+In another terminal, you can watch the installation progress by looking at
+the `.openshift_install.log` file which will be located in the working
+directory where `openshift-install` was executed:
+
+tail -f .openshift_install.log
+
+## Installation Progress
+While the installation is running, in the terminal you ran
+`openshift-install` from, you will see output like the following:
 
 ```
-INFO Creating cluster...                     	 
-INFO Waiting up to 30m0s for the Kubernetes API...
-INFO API v1.11.0+c69f926354 up
-INFO Waiting up to 30m0s for the bootstrap-complete event...
-INFO Destroying the bootstrap resources...   	 
-INFO Waiting up to 10m0s for the openshift-console route to be created...
-INFO Install complete!                       	 
-INFO Run 'export KUBECONFIG=<your working directory>/auth/kubeconfig' to manage the cluster with 'oc', the OpenShift CLI.
-INFO The cluster is ready when 'oc login -u kubeadmin -p <provided>' succeeds (wait a few minutes).
-INFO Access the OpenShift web-console here: https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
-INFO Login to the console with user: kubeadmin, password: <provided>
+INFO Creating cluster...                          
+INFO Waiting up to 30m0s for the Kubernetes API... 
+INFO API v1.12.4+c547bc3e86 up                    
+INFO Waiting up to 30m0s for the bootstrap-complete event... 
+WARNING RetryWatcher - getting event failed! Re-creating the watcher. Last RV: 4699 
+INFO Destroying the bootstrap resources...        
+INFO Waiting up to 30m0s for the cluster to initialize... 
+INFO Waiting up to 10m0s for the openshift-console route to be created... 
+INFO Install complete!                            
+INFO Run 'export KUBECONFIG=/installer/190227/auth/kubeconfig' to manage the cluster with 'oc', the OpenShift CLI. 
+INFO The cluster is ready when 'oc login -u kubeadmin -p Eyp7Z-GtWoy-VuKta-rvQCw' succeeds (wait a few minutes). 
+INFO Access the OpenShift web-console here: https://console-openshift-console.apps.beta-190227-1.ocp4testing.openshiftdemos.com 
+INFO Login to the console with user: kubeadmin, password: Eyp7Z-GtWoy-VuKta-rvQCw 
 ```
 
 ### NOTE
@@ -73,13 +86,6 @@ having to `export KUBECONFIG`, you can execute the following:
     oc login -u kubeadmin -p `cat /root/auth/kubeadmin-password` \
     `grep server /root/auth/kubeconfig | awk '{print $2}'`
 
-## Watch the Installation
-You can watch the installation progress by looking at the
-`.openshift_install.log` file which will be located in the working directory
-where `openshift-install` was executed:
-
-    tail -f .openshift_install.log
-
 ## Configure the CLI
 Make sure to run the `export KUBECONFIG=...` command in the installer output.
 Then, if you have the `oc` client in your `PATH` and executable, you should
@@ -90,8 +96,8 @@ be able to execute:
 And you will see some output like:
 
 ```
-NAME      VERSION   AVAILABLE   PROGRESSING   SINCE     STATUS
-version   4.0.0-9   True        False         22s       Cluster version is 4.0.0-9
+NAME      VERSION     AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.0.0-0.7   True        False         12h     Cluster version is 4.0.0-0.7
 ```
 
 For more details, you can use `oc describe clusterversion`:
@@ -105,10 +111,10 @@ API Version:  config.openshift.io/v1
 Kind:         ClusterVersion
 Metadata:
 ...
-    Version:     4.0.0-9
-  Generation:    1
-  Version Hash:  h5rmLF13-LA=
-Events:          <none>
+    Version:            4.0.0-0.7
+  Observed Generation:  1
+  Version Hash:         npWEYKRP5C0=
+Events:                 <none>
 ```
 
 ### NOTE
@@ -128,9 +134,7 @@ https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
 
 ### Note
 The username is always `kubeadmin` and the password is also in the output
-from the installer. At the time of this writing, `kubeadmin` is the only user
-and it is not possible to create additional users or integrate with an
-identity store.
+from the installer. You can configure additional authentication sources later.
 
 ### Note
 When visiting the web console you will receive a certificate error in your
@@ -237,6 +241,6 @@ the JSON and Terraform state files. If you have any desire to retain the
 original `intsall-config.yaml` file, be sure to make a copy.
 
 # Problems?
-If you had installation issues, see the [troubleshooting](06-troubleshooting.md) section.
+If you had installation issues, see the [troubleshooting](99-troubleshooting.md) section.
 
 Next: [Exploring the Cluster](03-explore.md)
