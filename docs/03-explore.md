@@ -64,7 +64,7 @@ then need to add the SSH key that you associated with your OCP installation
 rest of the instructions.
 
 ## Cluster Makeup
-The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS .
+The OpenShift 4 cluster is made of hosts that are running RHEL CoreOS.
 CoreOS is a container optimized, hardened, minimal footprint operating system
 designed specifically to work with OpenShift and to run containers.
 
@@ -72,8 +72,9 @@ designed specifically to work with OpenShift and to run containers.
 First, look at the output of `oc get nodes` and pick one of the nodes that is
 a master. Its name is something like `ip-10-0-1-163.ec2.internal`. 
 
-You can then SSH into that host, making sure to specify the same SSH key
-you specified during the installation:
+From the bastion SSH host you manually deployed into EC2, you can then SSH
+into that master host, making sure to use the same SSH key you specified
+during the installation:
 
     ssh -i /path/to/sshkey core@MASTER_HOSTNAME_FROM_ABOVE
 
