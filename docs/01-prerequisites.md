@@ -142,6 +142,18 @@ called “Access your new cluster!” and click the button "Download Command-lin
 Tools". Download the appropriate CLI for your platform, extract it, make sure
 it is executable, and make sure that it is in your `PATH`.
 
+For example, for Linux or MacOS:
+
+~~~bash
+$ wget <path to oc tarball>
+$ tar -zxvf oc.tar.gz
+$ export PATH=$PATH:<path to your oc location>
+$ oc version
+oc v4.0.0-0.148.0
+kubernetes v1.11.0+8868a98a7b
+features: Basic-Auth GSSAPI Kerberos SPNEGO
+~~~
+
 # Problems?
 If at any point you run into issues while exploring OpenShift 4, see the
 [troubleshooting](99-troubleshooting.md) section.
