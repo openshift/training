@@ -241,6 +241,6 @@ the JSON and Terraform state files. If you have any desire to retain the
 original `intsall-config.yaml` file, be sure to make a copy.
 
 # Problems?
-If you had installation issues, see the [troubleshooting](07-troubleshooting.md) section.
+If you had installation issues, see the [troubleshooting](99-troubleshooting.md) section.
 
 Next: [Exploring the Cluster](03-explore.md)

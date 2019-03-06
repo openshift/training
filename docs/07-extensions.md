@@ -282,4 +282,4 @@ Hat, certified partners and the Kubernetes community.
 Congratulations. You have reached the end of the materials. Feel free to
 explore your cluster further.
 
-If you are done, you can proceed to [cleanup your cluster](08-cleanup.md)
+If you are done, you can proceed to [cleanup your cluster](98-cleanup.md)

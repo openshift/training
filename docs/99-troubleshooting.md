@@ -19,7 +19,7 @@ retain installer log.
 In either case, please try to capture any console output from the installer
 to a separate file.
 
-Then, [clean up your cluster](08-cleanup.md).
+Then, [clean up your cluster](98-cleanup.md).
 
 Finally, re-start the install process
 

@@ -26,5 +26,6 @@ This tutorial assumes you have familiarity with Amazon AWS.
 * [Scaling the Cluster](docs/04-scaling-cluster.md)
 * [Infrastructure Nodes](docs/05-infrastructure-nodes.md)
 * [Authentication](docs/06-authentication.md)
-* [Cleaning Up](docs/08-cleanup.md)
-* [Troubleshooting](docs/09-troubleshooting.md)
+* [Operator Extensions](docs/07-extensions.md)
+* [Cleaning Up](docs/98-cleanup.md)
+* [Troubleshooting](docs/99-troubleshooting.md)
