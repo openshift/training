@@ -30,19 +30,17 @@ Before continuing, scale back down by editing the count to whatever it was
 previously for the `Machine Set`.
 
 ### Note
-*TODO: check this*
-The default installation only creates one router. It is possible that when
-you scale down your cluster that you may inadvertently end up removing the
-node where the router was running, which will temporarily make the console
-and other resources unavailable. If you suddenly lose access to the web
-console, wait a few moments, and then check to see the status of the router
-pod with:
+The default installation currently creates two routers, but they are on the
+same host. This is a known bug. It is possible that when you scale down your
+cluster that you may inadvertently end up removing the node where the router
+was running, which will temporarily make the console and other resources
+unavailable. If you suddenly lose access to the web console, wait a few
+moments, and then check to see the status of the router pod with:
 
     oc get pod -n openshift-ingress
 
 If there is no router pod, or if it is in the `ContainerCreating` state, wait
 a little longer.
-    
 
 ### Note
 You can alter the `Machine Set` count in several ways in the web UI. You can
