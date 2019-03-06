@@ -337,8 +337,8 @@ Now that you have some special nodes, it's time to move various
 infrastructure components onto them.
 
 ### NOTE
-The following assumes you used version `0.13.1` of the installer. This would
-give you a `clusterversion` of `4.0.0-0.6`.
+The following assumes you used version `0.14.1` of the installer. This would
+give you a `clusterversion` of `4.0.0-0.7`.
 
 ## Router
 The OpenShift router is managed by an `Operator` called

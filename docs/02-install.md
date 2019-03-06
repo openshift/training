@@ -97,7 +97,7 @@ And you will see some output like:
 
 ```
 NAME      VERSION     AVAILABLE   PROGRESSING   SINCE   STATUS
-version   4.0.0-0.5   True        False         27m     Cluster version is 4.0.0-0.5
+version   4.0.0-0.7   True        False         12h     Cluster version is 4.0.0-0.7
 ```
 
 For more details, you can use `oc describe clusterversion`:
@@ -111,9 +111,9 @@ API Version:  config.openshift.io/v1
 Kind:         ClusterVersion
 Metadata:
 ...
-  Version:            4.0.0-0.5
+    Version:            4.0.0-0.7
   Observed Generation:  1
-  Version Hash:         XBkY3OJe-TY=
+  Version Hash:         npWEYKRP5C0=
 Events:                 <none>
 ```
 
