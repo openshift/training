@@ -204,15 +204,16 @@ Create a project to hold the resources for the `Job`:
 In the OpenShift web console, click `Monitoring` and then click `Dashboards`.
 This will open a new browser tab for Grafana. You will also get a certificate
 error similar to the first time you logged in. This is because Grafana has
-its own SSL certificate. You will then see a login screen. Use the same
-`kubeadmin` user and password. Grafana is configured to use an OpenShift user
-and inherits permissions of that user for accessing cluster information.
+its own SSL certificate. You will then see a login button. Grafana is
+configured to use an OpenShift user and inherits permissions of that user for
+accessing cluster information. This happens to be the user you're already
+logged into the web console with.
 
 Finally, allow the permissions, and then you will see the Grafana homepage.
 
-Click the dropdown on `Home` and choose `K8s / Compute Resources / Cluster`.
-Leave this browser window open while you start the `Job` so that you can
-observe the CPU utilization of the cluster rise.
+Click the dropdown on `Home` and choose `Kubernetes / Compute Resources /
+Cluster`. Leave this browser window open while you start the `Job` so that
+you can observe the CPU utilization of the cluster rise.
 
 ### Force an Autoscaling Event
 Create the `Job`:
