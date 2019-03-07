@@ -557,7 +557,7 @@ You can create the new monitoring config with the following command:
 oc create -f https://raw.githubusercontent.com/openshift/training/master/assets/cluster-monitoring-configmap.yaml
 ```
 
-Then, you can do something like `watch 'oc get pod -n openshift-monitoring`
+Then, you can do something like `watch 'oc get pod -n openshift-monitoring'`
 or `oc get pod -w -n openshift-monitoring` to watch the operator cause the
 various pods to be redeployed.
 
