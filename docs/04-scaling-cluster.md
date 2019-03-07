@@ -6,7 +6,7 @@ OpenShift 4 adds the ability to easily scale cluster size.
 To manually add worker nodes to the cluster: 
 
 1. Go to the OpenShift web console and login with `kubeadmin`. 
-1. Browse to `Administration` in the side-bar, and click `Machine Sets`. 
+1. Browse to `Machines` in the side-bar, and click `Machine Sets`. 
 1. On the `Machine Sets` page, select `openshift-machine-api` from the
   `Project` dropdown.
 1. Select a worker set to scale by clicking it.
@@ -19,7 +19,7 @@ To manually add worker nodes to the cluster:
 
 At this point you can click the `Machines` tab in this `Machine Set` display
 and see the allocated machines. The `Overview` tab will let you know when the
-machines become ready. If you click `Machine Sets` under `Administration`
+machines become ready. If you click `Machine Sets` under `Machines`
 again, you will also see the status of the machines in the set.
 
 It will take several minutes for the new machines to become ready. In the
