@@ -331,7 +331,7 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
   1. MachineHealthCheck checks the MachineSets for matching labels defined in [label selector](https://github.com/openshift/training/blob/master/docs/05-infrastructure-nodes.md#selector). <br>
   1. Existing MachineSets labels can be found by describing the MachineSet `oc describe machineset cluster-worker-eu-west-2a --all-namespaces`:
 
-    ```
+     ```
      <...>
      machine.openshift.io/cluster-api-cluster: cluster
      machine.openshift.io/cluster-api-machine-role: worker
@@ -339,9 +339,9 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
      machine.openshift.io/cluster-api-machineset: cluster-worker-eu-west-2a
      <...>
      ```
-
-  Navigate to Administration -> CRDs -> MachineHealthCheck and create new manifest. For our example we will create MachineHealthCheck under openshift-machines-apie project/namespace. 
-  1. Under spac.selector.matchLabels add the match labels from above example: 
+    
+  Navigate to Administration -> CRDs -> MachineHealthCheck and create new manifest. For our example we will create MachineHealthCheck under `openshift-machines-api` project. 
+  1. Under spec.selector.matchLabels add the match labels from above example: 
 
      ```
      apiVersion: healthchecking.openshift.io/v1alpha1
@@ -360,7 +360,7 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
 
 ### Testing:
 
-  1. Since nodes are not publicly exposed, ssh from the internet is not possible [Unable to SSH into Master Nodes](https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md#unable-to-ssh-into-master-nodes) aditional bastion instance must be created with exposed [Public IP](https://docs.aws.amazon.com/efs/latest/ug/gs-step-one-create-ec2-resources.html).
+  1. Since nodes are not publicly exposed, [SSH from the Internet is not possible](https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md#unable-to-ssh-into-master-nodes) aditional bastion instance must be created with exposed [Public IP](https://docs.aws.amazon.com/efs/latest/ug/gs-step-one-create-ec2-resources.html).
   Once the SSH connection to instances is available, we can SSH to one of our nodes and stop the kubelet process for HealthCheck test.
   
   1. SSH into the node, disable and stop the kubelet services:
@@ -370,7 +370,7 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
      systemctl stop kubelet
      ```
 
-  1. This will cause the node to become in `NotReady` state `oc get nodes`.
+  1. This will cause the node to become `NotReady`.
 
   ```
   NAME                                         STATUS     ROLES     AGE       VERSION
@@ -382,7 +382,8 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
   ip-10-0-171-49.eu-west-2.compute.internal    Ready      master    66m       v1.12.4+4dd65df23d
   ```
 
-  1. Watch the `machine-healthcheck` container logs to see how it notices the node is in `NotReady` state and starts the reconcilation. Machine healthcheck container is in openshift-machine-api project inside clusterapi-manager-controllers-***** pod and can be checked by running `oc logs $(oc get pods -n openshift-machine-api -o wide | grep clusterapi-manager-controllers | awk '{print $1}') -c machine-healthcheck -n openshift-machine-api` command:
+  1. Watch the `machine-healthcheck` container logs to see how it notices the node is in `NotReady` state and starts the reconcilation. Machine healthcheck container is in openshift-machine-api project inside clusterapi-manager-controllers-***** pod and can be checked by running <br>
+  `oc logs $(oc get pods -n openshift-machine-api -o wide | grep clusterapi-manager-controllers | awk '{print $1}') -c machine-healthcheck -n openshift-machine-api`:
 
   ```
   <...>
@@ -393,9 +394,8 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
   ```
 
   1. After some time the current node instance is terminated and new instance is created. Followed by new node joining the cluster and turning in `Ready` state:
-  
+
   ```
-  oc get nodes
   NAME                                         STATUS    ROLES     AGE       VERSION
   **ip-10-0-133-96.eu-west-2.compute.internal    Ready     worker    7m9s      v1.12.4+4dd65df23d**
   ip-10-0-138-253.eu-west-2.compute.internal   Ready     master    77m       v1.12.4+4dd65df23d
