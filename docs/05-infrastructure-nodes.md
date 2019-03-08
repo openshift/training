@@ -392,6 +392,10 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
   W0308 18:40:27.552119       1 machinehealthcheck_controller.go:186] machine cluster-mljbk-worker-eu-west-2a-ht99r have had node ip-10-0-130-254.eu-west-2.compute.internal unhealthy for 552.110898ms. Requeuing...
   I0308 18:45:27.544983       1 machinehealthcheck_controller.go:73] Reconciling MachineHealthCheck triggered by /ip-10-0-130-254.eu-west-2.compute.internal
   <...>
+  I0308 18:55:43.445489       1 machinehealthcheck_controller.go:96] Node ip-10-0-130-254.eu-west-2.compute.internal is annotated with machine openshift-machine-api/cluster-mljbk-worker-eu-west-2a-ht99r 
+  I0308 19:33:43.445573       1 machinehealthcheck_controller.go:153] Initialising remediation logic for machine cluster-mljbk-worker-eu-west-2a-ht99r 
+  I0308 19:03:43.445621       1 machinehealthcheck_controller.go:176] machine cluster-mljbk-worker-eu-west-2a-ht99r has been unhealthy for too long, deleting
+  <...>
   ```
 
   1. After some time the current node instance is terminated and new instance is created. Followed by new node joining the cluster and turning in `Ready` state:
