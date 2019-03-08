@@ -382,8 +382,9 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
   ip-10-0-171-49.eu-west-2.compute.internal    Ready      master    66m       v1.12.4+4dd65df23d
   ```
 
-  1. Watch the `machine-healthcheck` container logs to see how it notices the node is in `NotReady` state and starts the reconcilation. Machine healthcheck container is in openshift-machine-api project inside clusterapi-manager-controllers-***** pod and can be checked by running <br>
-  `oc logs $(oc get pods -n openshift-machine-api -o wide | grep clusterapi-manager-controllers | awk '{print $1}') -c machine-healthcheck -n openshift-machine-api`:
+  1. Watch the `machine-healthcheck` container logs to see how it notices the node is in `NotReady` state and starts the reconcilation. Machine healthcheck container is in openshift-machine-api project inside clusterapi-manager-controllers-***** pod and can be checked by running: <br>
+  `oc logs $(oc get pods -n openshift-machine-api -o wide | grep clusterapi-manager-controllers | awk '{print $1}') -c machine-healthcheck -n openshift-machine-api` <br>
+  Sample output:
 
   ```
   <...>
