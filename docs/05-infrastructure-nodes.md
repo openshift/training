@@ -360,6 +360,8 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
 
 ### Testing:
 
+*Testing example is taken from [machine-api-operator](https://github.com/openshift/machine-api-operator)*
+
   1. Since nodes are not publicly exposed, [SSH from the Internet is not possible](https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md#unable-to-ssh-into-master-nodes) aditional bastion instance must be created with exposed [Public IP](https://docs.aws.amazon.com/efs/latest/ug/gs-step-one-create-ec2-resources.html).
   Once the SSH connection to instances is available, we can SSH to one of our nodes and stop the kubelet process for HealthCheck test.
   
