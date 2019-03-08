@@ -400,11 +400,11 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
   <...>
   ```
 
-  1. After some time the current node instance is terminated and new instance is created. Followed by new node joining the cluster and turning in `Ready` state:
+  1. After some time the current node instance is terminated and new instance is created. Followed by new node joining the cluster and turning in `Ready` state (First worker):
 
   ```
   NAME                                         STATUS    ROLES     AGE       VERSION
-  **ip-10-0-133-96.eu-west-2.compute.internal    Ready     worker    7m9s      v1.12.4+4dd65df23d**
+  ip-10-0-133-96.eu-west-2.compute.internal    Ready     worker    7m9s      v1.12.4+4dd65df23d
   ip-10-0-138-253.eu-west-2.compute.internal   Ready     master    77m       v1.12.4+4dd65df23d
   ip-10-0-151-31.eu-west-2.compute.internal    Ready     worker    62m       v1.12.4+4dd65df23d
   ip-10-0-152-110.eu-west-2.compute.internal   Ready     master    77m       v1.12.4+4dd65df23d
