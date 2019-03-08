@@ -23,7 +23,11 @@ Login successful.
 
 Using project "default".
 Welcome! See 'oc help' to get started.
+~~~
 
+You can now check that your config has been written successfully:
+
+~~~bash
 $ cat ~/.kube/config
 apiVersion: v1
 clusters:
@@ -33,7 +37,8 @@ clusters:
 (...)
 ~~~
 
-> **NOTE**: Your output will vary slightly from the above, you'll just need to make sure to use the API endpoint and credentials that you were provided with. We output the .kube/config file just to verify that it has successfully created our configuration.
+> **NOTE**: Your output will vary slightly from the above, you'll just need to
+make sure to use the API endpoint and credentials that you were provided with.
 
 Now that your cluster is installed, you will have access to the web console and
 can use the CLI. Below are some command-line exercises to explore the cluster.
@@ -77,18 +82,56 @@ possible to set some custom labels in the form of a key-value pair.
 
 ## The Cluster Operator
 
-The Cluster Operator is the most important implementation within OpenShift, it's
-a self-hosted operator that is heavily responsible for installation, management,
-maintenance, and automated operations on the OpenShift cluster; it's essentially
-what turns Kubernetes into OpenShift - it enables all of the additional
-operators that we rely on (including the web console, the marketplace, image
-registry, and router service, etc) and configures the cluster as we have
-specified. We can view it's status by using the following command-
+The cluster version operator is the core of what defines an OpenShift deployment
+. The cluster version operator pod(s) contains the set of manifests which are
+used to deploy, updated, and/or manage the OpenShift services in the cluster.
+This operator ensures that the other services, also deployed as operators, are
+at the version which matches the release definition and takes action to remedy
+discrepancies when necessary.
 
 ~~~bash
 $ oc get deployments -n openshift-cluster-version
 NAME                       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 cluster-version-operator   1         1         1            1           2h
+~~~
+
+You can also view the current version of the OpenShift cluster and give you
+a high-level indication of the status:
+
+~~~bash
+$ oc get clusterversion
+NAME      VERSION     AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.0.0-0.7   True        False         28h     Cluster version is 4.0.0-0.7
+~~~
+
+If you want to review a list of operators that the cluster version operator is
+controlling, along with their status, you can ask for a list of the cluster
+operators:
+
+~~~bash
+$ oc get clusteroperator
+NAME                                  VERSION   AVAILABLE   PROGRESSING   FAILING   SINCE
+cluster-autoscaler                              True        False         False     29h
+cluster-storage-operator                        True        False         False     29h
+console                                         True        False         False     28h
+dns                                             True        False         False     29h
+image-registry                                  True        False         False     29h
+ingress                                         True        False         False     28h
+kube-apiserver                                  True        False         False     29h
+kube-controller-manager                         True        False         False     29h
+kube-scheduler                                  True        False         False     29h
+machine-api                                     True        False         False     29h
+machine-config                                  True        False         False     17h
+marketplace-operator                            True        False         False     29h
+monitoring                                      True        False         False     80m
+network                                         True        False         False     81m
+node-tuning                                     True        False         False     28h
+openshift-apiserver                             True        False         False     81m
+openshift-authentication                        True        False         False     29h
+openshift-cloud-credential-operator             True        False         False     29h
+openshift-controller-manager                    True        False         False     29h
+openshift-samples                               True        False         False     29h
+operator-lifecycle-manager                      True        False         False     29h
 ~~~
 
 You can also `rsh` (remote shell access) into the running Operator and see the
