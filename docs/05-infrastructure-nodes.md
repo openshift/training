@@ -323,7 +323,7 @@ instances, and then `oc get machine` and `oc get node` as before. Just don't
 forget the `-n openshift-machine-api` or be sure to switch to that namespace
 with `oc project openshift-machine-api`.
 
-### Setting up Machines Healthcheck
+## Setting up Machines Healthcheck
 
 In previous excercise we learned how to work with MachineSets[More MachineSet details](https://github.com/openshift/training/blob/master/docs/05-infrastructure-nodes.md#more-machineset-details). This excercise will show how Machine Health Checker can be setup on Openshift cluster. <br>
 Since MachineHealthCheck is part of [machine-api-operator](https://github.com/openshift/machine-api-operator) it's main purpose is to check the machines state, ensure that machines watched by MachineHealthChecker are healthy and remediate them if necessary.
@@ -356,7 +356,7 @@ Since MachineHealthCheck is part of [machine-api-operator](https://github.com/op
            machine.openshift.io/cluster-api-machineset: cluster-worker-eu-west-2a
      ```
 
-## Testing:
+### Testing:
 
   1. Since nodes are not publicly exposed, ssh from the internet is not possible [Unable to SSH into Master Nodes](https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md#unable-to-ssh-into-master-nodes) aditional bastion instance must be created with exposed [Public IP](https://docs.aws.amazon.com/efs/latest/ug/gs-step-one-create-ec2-resources.html).
   Once the SSH connection to instances is available, we can SSH to one of our nodes and stop the kubelet process for HealthCheck test.
