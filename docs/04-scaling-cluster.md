@@ -16,6 +16,11 @@ dropdown and you should see the machine sets:
 
 1. Select one of the machine sets in the list by clicking on the name, e.g.
 "**beta-190305-1-79tf5-worker-us-east-1a**" (yours will be slightly different)
+1. Go to the OpenShift web console and login with `kubeadmin`. 
+1. Browse to `Machines` in the side-bar, and click `Machine Sets`. 
+1. On the `Machine Sets` page, select `openshift-machine-api` from the
+  `Project` dropdown.
+1. Select a worker set to scale by clicking it.
 
    Depending on the AWS region you chose, you may have several worker machine
    sets that can be scaled, some of which are at a scale of 0. It does not
@@ -32,6 +37,9 @@ machines become ready. If you click `Machine Sets` under `Machines` on the
 left-hand side again, you will also see the status of the machines in the set:
 
   <center><img src="../img/all-systems.png"/></center>
+
+machines become ready. If you click `Machine Sets` under `Machines`
+again, you will also see the status of the machines in the set.
 
 It will take several minutes for the new machines to become ready. In the
 background additional EC2 instances are being provisioned and then registered
