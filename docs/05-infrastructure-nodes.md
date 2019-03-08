@@ -337,7 +337,7 @@ Now that you have some special nodes, it's time to move various
 infrastructure components onto them.
 
 ### NOTE
-The following assumes you used version `0.14.1` of the installer. This would
+The following assumes you used version `0.14.0` of the installer. This would
 give you a `clusterversion` of `4.0.0-0.7`.
 
 ## Router
