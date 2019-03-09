@@ -382,7 +382,7 @@ job.batch/work-queue-qncs2 created
 You will see a note that the `Job` was created. It will create a *lot* of `Pods`:
 
 ~~~bash
- $ oc get pod -n autoscale-example
+$ oc get pod -n autoscale-example
 NAME                     READY     STATUS    RESTARTS   AGE
 work-queue-qncs2-26x9c   0/1       Pending   0          33s
 work-queue-qncs2-28h6r   0/1       Pending   0          33s
