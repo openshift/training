@@ -326,7 +326,7 @@ designed specifically to work with OpenShift and to run containers.
 
 ## Find a Hostname
 First, look at the output of `oc get nodes` and pick one of the nodes that is
-a master. Its name is something like `ip-10-0-1-163.ec2.internal`. 
+a master. Its name is something like `ip-10-0-1-163.ec2.internal`.
 
 From the bastion SSH host you manually deployed into EC2, you can then SSH
 into that master host, making sure to use the same SSH key you specified
@@ -341,9 +341,9 @@ If it works, you'll see the CoreOS MOTD/prompt:
     Red Hat CoreOS 400.7.20190301.0 Beta
     WARNING: Direct SSH access to machines is not recommended.
     This node has been annotated with machineconfiguration.openshift.io/ssh=accessed
-    
+
     ---
-    [core@ip-10-0-135-32 ~]$ 
+    [core@ip-10-0-135-32 ~]$
 
 ## Explore RHEL CoreOS
 You can check the kernel information with the following:
