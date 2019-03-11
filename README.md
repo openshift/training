@@ -27,5 +27,6 @@ This tutorial assumes you have familiarity with Amazon AWS.
 * [Infrastructure Nodes](docs/05-infrastructure-nodes.md)
 * [Authentication](docs/06-authentication.md)
 * [Operator Extensions](docs/07-extensions.md)
+* [Tips and tricks](docs/08-tips-and-tricks.md)
 * [Cleaning Up](docs/98-cleanup.md)
 * [Troubleshooting](docs/99-troubleshooting.md)
