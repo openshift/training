@@ -200,7 +200,7 @@ machines:
   platform: {}
   replicas: 3
 - name: worker
-  platform: 
+  platform:
     aws:
       type: c5.xlarge
   replicas: 6
@@ -238,7 +238,7 @@ When providing an `install-config.yaml` to the installer, the YAML file is
 actually consumed (deleted) during the installation process. The installation
 options chosen ultimately end up represented in the state of the cluster in
 the JSON and Terraform state files. If you have any desire to retain the
-original `intsall-config.yaml` file, be sure to make a copy.
+original `install-config.yaml` file, be sure to make a copy.
 
 # Problems?
 If you had installation issues, see the [troubleshooting](99-troubleshooting.md) section.

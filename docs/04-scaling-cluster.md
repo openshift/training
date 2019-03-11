@@ -1,4 +1,4 @@
-# Scaling an OpenShift 4 Cluster 
+# Scaling an OpenShift 4 Cluster
 With OpenShift 4.0+, we now have the ability to dynamically scale the cluster
 size through OpenShift itself.
 
@@ -16,8 +16,8 @@ dropdown and you should see the machine sets:
 
 1. Select one of the machine sets in the list by clicking on the name, e.g.
 "**beta-190305-1-79tf5-worker-us-east-1a**" (yours will be slightly different)
-1. Go to the OpenShift web console and login with `kubeadmin`. 
-1. Browse to `Machines` in the side-bar, and click `Machine Sets`. 
+1. Go to the OpenShift web console and login with `kubeadmin`.
+1. Browse to `Machines` in the side-bar, and click `Machine Sets`.
 1. On the `Machine Sets` page, select `openshift-machine-api` from the
   `Project` dropdown.
 1. Select a worker set to scale by clicking it.
@@ -171,6 +171,14 @@ beta-190305-1-79tf5-worker-us-east-1f   0         0                             
 
 Again, before you move forward, return this count back to how it was before,
 using the same method as above.
+
+### Note
+You can alter the `Machine Set` as well by scaling the `machineset` object as:
+
+~~~bash
+$ oc get machineset
+$ oc scale machineset/<cluster-name>-worker-<aws-region>-<az> -n openshift-cluster-api --replicas=3
+~~~
 
 ## Automatic Cluster Scale Up
 
