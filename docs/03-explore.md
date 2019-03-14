@@ -1,5 +1,4 @@
-# Exploring the Cluster
-
+# Exploring OpenShift 4
 The following instructions assume that you have deployed the cluster using the 
 *openshift-install* tooling, and that the necessary configuration files required
 for cluster interaction have been automatically generated for you in your home
@@ -82,12 +81,12 @@ possible to set some custom labels in the form of a key-value pair.
 
 ## The Cluster Operator
 
-The cluster version operator is the core of what defines an OpenShift deployment
-. The cluster version operator pod(s) contains the set of manifests which are
-used to deploy, updated, and/or manage the OpenShift services in the cluster.
-This operator ensures that the other services, also deployed as operators, are
-at the version which matches the release definition and takes action to remedy
-discrepancies when necessary.
+The cluster version operator is the core of what defines an OpenShift
+deployment. The cluster version operator pod(s) contains the set of manifests
+which are used to deploy, updated, and/or manage the OpenShift services in
+the cluster. This operator ensures that the other services, also deployed as
+operators, are at the version which matches the release definition and takes
+action to remedy discrepancies when necessary.
 
 ~~~bash
 $ oc get deployments -n openshift-cluster-version
@@ -295,7 +294,7 @@ it to a file instead of trying to look at it directly with the `logs` command.
 
 # Exploring RHEL CoreOS
 *WARNING* this requires advanced knowledge of EC2 and is not a thourough set
-*of instructions.
+of instructions.
 
 The latest installer does not create any public IP addresses for any of the
 EC2 instances that it provisions for your OpenShift cluster. In order to be
@@ -403,5 +402,32 @@ core (eg: kubelet) is still not there yet. To accomplish that, `podman` is
 used. You can explore `podman` a little:
 
     podman version
+
+## Web Console
+It may take several minutes for the OpenShift web console to become
+available/reachable after the installation completes. But, be sure to visit
+it when it does. You can find the URL for the web console for your installed
+cluster in the output of the installer. For example:
+
+https://console-openshift-console.apps.demo1.openshift4-beta-abcorp.com
+
+### Note
+When visiting the web console you will receive a certificate error in your
+browser. This is because the installation uses a self-signed certificate. You
+will need to accept it in order to continue.
+
+### Note
+If you lose either the password or the console URL, you can find them in the
+`.openshift_install.log` file which is likely in the same folder in which you executed
+`openshift-install` (or the dir that you specified). For example:
+
+    tail -n5 /path/to/dir/.openshift_install.log
+
+### Note
+If you open another terminal or log-out and log-in to the terminal again and
+lose your `KUBECONFIG` environment variable, look for the `auth/kubeconfig`
+file in your installation artifacts directory and simply re-export it:
+
+    export KUBECONFIG=/path/to/something/auth/kubeconfig
 
 Next: [Scaling the Cluster](04-scaling-cluster.md)
