@@ -17,7 +17,9 @@ This document guides you through creating a highly available OpenShift
 cluster on AWS.
 
 ## Documentation
-With the third beta drop of OpenShift 4, this repository will link you to the work-in-progress official documentation. Currently that documentation is behind a user/password (for anti-search-engine-indexing purposes.
+With the third beta drop of OpenShift 4, this repository will link you to the
+work-in-progress official documentation. Currently that documentation is
+behind a user/password (for anti-search-engine-indexing purposes.
 
 ```
 Username: stage-user
