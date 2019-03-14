@@ -19,7 +19,11 @@ Any node running a container/pod/component not described above is considered
 a worker and must be covered by a subscription.
 
 ## Infrastructure MachineSets
-The documentation covers [creating infrastructure machinesets](https://docs.openshift.com/container-platform/4.0/machine_management/creating-infrastructure-machinesets.html). It also goes into detail on moving various OpenShift infrastructure components.
+The documentation covers [creating infrastructure
+machinesets](https://docs.openshift.com/container-platform/4.0/machine_management/creating-infrastructure-machinesets.html).
+It also goes into detail on moving various OpenShift infrastructure
+components. Take a look at all of the documentation and then come back here
+to look at the various notes and suggestions before you try anything.
 
 ## Docs Notes and Omissions
 
@@ -51,6 +55,9 @@ completely dark if AWS loses an AZ.
 
 For testing purposes, you could just scale a single infra `MachineSet` to 3
 replicas.
+
+If you do want to create multiple `MachineSets` you can simply modify the
+scriptlet above for whichever regions you want.
 
 ### Extra Credit
 In the `openshift-machine-api` project are several `Pods`. One of them has a
