@@ -31,15 +31,14 @@ dropdown and you should see the machine sets:
 
   <center><img src="../img/scale-nodes.png"/></center>
 
-At this point you can click the `Machines` tab in this `Machine Set` display
+1. At this point you can click the `Machines` tab in this `Machine Set` display
 and see the allocated machines. The `Overview` tab will let you know when the
 machines become ready. If you click `Machine Sets` under `Machines` on the
 left-hand side again, you will also see the status of the machines in the set:
 
   <center><img src="../img/all-systems.png"/></center>
 
-machines become ready. If you click `Machine Sets` under `Machines`
-again, you will also see the status of the machines in the set.
+1. You may need to wait a few minutes before the machines become ready. If you click `Machine Sets` under `Machines` again, you will also see the status of the machines in the set.
 
 It will take several minutes for the new machines to become ready. In the
 background additional EC2 instances are being provisioned and then registered
