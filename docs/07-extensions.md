@@ -78,7 +78,7 @@ created earlier.
 ### Update Channel
 
 Each Operator publisher can create channels for their software, to give
-adminsitrators more control over the versions that are installed. In this
+administrators more control over the versions that are installed. In this
 case, Couchbase only has a "preview" channel.
 
 ### Update Approval Strategy
@@ -218,10 +218,38 @@ look like the following:
 	      name: default
 	      replicas: 3
 	      type: couchbase
-	  ...
-	```
+	cluster:
+    analyticsServiceMemoryQuota: 1024
+    autoFailoverMaxCount: 3
+    autoFailoverOnDataDiskIssues: true
+    autoFailoverOnDataDiskIssuesTimePeriod: 120
+    autoFailoverServerGroup: false
+    autoFailoverTimeout: 120
+    clusterName: cb-example
+    dataServiceMemoryQuota: 256
+    eventingServiceMemoryQuota: 256
+    indexServiceMemoryQuota: 256
+    indexStorageSetting: memory_optimized
+    searchServiceMemoryQuota: 256
+  servers:
+    - name: all_services
+      services:
+        - data
+        - index
+        - query
+        - search
+        - eventing
+        - analytics
+      size: 3
+  version: 5.5.3-3
+  ```
 
-8. Click "**Create**". Afterwards, you will be taken to a list of all Couchbase
+The operator provides many sensible defaults. Take note of the `servers`
+stanza and its `size` element. This represents the number of distinct
+Couchbase Pods that will be created and managed by the operator. We'll
+explore changing that in a moment.
+
+8. Click "Create". Afterwards, you will be taken to a list of all Couchbase
 instances running with this Project and should see the one you just created
 has a status of "**Creating**":
 
@@ -387,4 +415,5 @@ certified partners and the Kubernetes community.
 Congratulations. You have reached the end of the materials. Feel free to
 explore your cluster further.
 
-If you are done, you can proceed to [cleanup your cluster](98-cleanup.md)
+If you are done, you can proceed to [cleanup your cluster](98-cleanup.md) You
+can also take a look at the [tips and tricks](97-tips-and-tricks.md) section.
