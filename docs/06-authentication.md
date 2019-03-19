@@ -1,5 +1,5 @@
 # Configuring Authentication
-OpenShift 4 installs with two effective superusers:
+OpenShift 4 installs with two effective superusers out of the box:
 
 * `kubeadmin` (technically an alias for `kube:admin`)
 * `system:admin`
@@ -9,19 +9,20 @@ and has no password. Therefore this superuser cannot log-in to the web
 console (which requires a password).
 
 If you want additional users to be able to authenticate to and use the
-cluster,
-you must configure an authentication provider. We will configure `htpasswd`
-authentication as an example.
+cluster, you must configure an authentication provider. In this example we will
+configure a basic `htpasswd` implementation that relies on a specific
+authentication file that's hashed for security. Production environments would
+rely on something much more comprehensive and scalable.
 
 ## Create the htpasswd file
 You can create an `htpasswd` file in whatever way suits you. You can use the
 `htpasswd` utility, you can do something like:
 
-```sh
-printf "USER:$(openssl passwd -apr1 PASSWORD)\n >> /path/to/htpasswd"
-```
+~~~bash
+$ printf "USER:$(openssl passwd -apr1 openshift4)\n" >> /path/to/htpasswd"
+~~~
 
-or any number of other mechanisms. If you don't want to create a file, you
+...or any number of other mechanisms. If you don't want to create a file, you
 can use the following sample file:
 
 https://github.com/openshift/training/blob/master/assets/htpasswd
@@ -36,9 +37,9 @@ The authentication operator will read the `htpasswd` file from a secret in
 the `openshift-config` project. Go ahead and create that secret using the
 following command:
 
-```sh
-oc create secret generic htpass-secret --from-file=htpasswd=</path/to/htpasswd> -n openshift-config
-```
+~~~bash
+$ oc create secret generic htpass-secret --from-file=htpasswd=</path/to/htpasswd> -n openshift-config
+~~~
 
 ## Create the identity provider Custom Resource
 The operator that configures authentication is looking for a `CustomResource`
@@ -67,9 +68,9 @@ If you are interested, the CRD that defines `OAuth` is
 `oauths.config.openshift.io`. It is a cluster-scoped object. Go ahead and
 create the CR for auth with the following command:
 
-```sh
-oc apply -f https://raw.githubusercontent.com/openshift/training/master/assets/htpasswd-cr.yaml
-```
+~~~bash
+$ oc apply -f https://raw.githubusercontent.com/openshift/training/master/assets/htpasswd-cr.yaml
+~~~
 
 You might be wondering why `apply` was used here. It is because there is an
 existing `OAuth` called `cluster`. The `apply` command will overwrite
@@ -81,9 +82,9 @@ to use htpasswd authentication. After a few moments, you should be able to
 `oc login` as one of the users you created. If you used our example file, we
 have a user called `susan`:
 
-```sh
+~~~bash
 oc login -u susan -p openshift4
-```
+~~~
 
 You should see something like the following:
 
@@ -94,6 +95,22 @@ You don't have any projects. You can try to create a new project, by running
 
     oc new-project <projectname>
 ```
+
+## Return to the Admin User
+
+Before proceeding with the rest of the instructions, log back in as the
+administrator using the administrator credentials you were provided with
+when you installed OpenShift.
+
+~~~bash
+$ oc login
+Authentication required for https://... (openshift)
+Username: <your username>
+Password: <your password>
+
+Login successful.
+(...)
+~~~
 
 # Extensions with Operators
 You can extend your cluster to do many more exciting things using Operators.
