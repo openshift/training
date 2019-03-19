@@ -244,7 +244,7 @@ look like the following:
   version: 5.5.3-3
   ```
 
-The operator provides many sensible defaults. Take note of the `servers`
+	The operator provides many sensible defaults. Take note of the `servers`
 stanza and its `size` element. This represents the number of distinct
 Couchbase Pods that will be created and managed by the operator. We'll
 explore changing that in a moment.
