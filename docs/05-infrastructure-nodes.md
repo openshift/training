@@ -30,18 +30,20 @@ to look at the various notes and suggestions before you try anything.
 ### Automagic
 
 The following scriptlet assumes you have an AWS region called `us-east-1e`
-and will build and create a `MachineSet` for you. It requires the `jq`
-program be installed.
+and will build and create an infra `MachineSet` for you with 3 replicas. It
+requires the `jq` program be installed.
 
 ```bash
 export REGION=us-east-1e
 export NAME="infra-$REGION"
-oc get machineset -o json\
+oc get machineset -n openshift-machine-api -o json\
 | jq '.items[0]'\
 | jq '.metadata.name=env["NAME"]'\
 | jq '.spec.selector.matchLabels."machine.openshift.io/cluster-api-machineset"=env["NAME"]'\
 | jq '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machineset"=env["NAME"]'\
 | jq '.spec.template.spec.metadata.labels."node-role.kubernetes.io/infra"=""'\
+| jq 'del (.metadata.annotations)'\
+| jq '.spec.replicas=3'\
 | oc create -f -
 ```
 
