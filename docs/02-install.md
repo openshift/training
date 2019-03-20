@@ -8,13 +8,6 @@ It is possible to customize some of the options for the installation on AWS.
 The extent of that customization is covered in the [customized installation
 documentation](https://docs.openshift.com/container-platform/4.0/installing/installing_aws/installing-aws-customizations.html).
 
-## NOTE
-When providing an `install-config.yaml` to the installer, the YAML file is
-actually consumed (deleted) during the installation process. The installation
-options chosen ultimately end up represented in the state of the cluster in
-the JSON and Terraform state files. If you have any desire to retain the
-original `install-config.yaml` file, be sure to make a copy.
-
 # Problems?
 If at any point you run into issues while exploring OpenShift 4, see the
 [troubleshooting](99-troubleshooting.md) section.
