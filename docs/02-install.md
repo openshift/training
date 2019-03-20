@@ -1,6 +1,7 @@
 # Installing on AWS Quickly
-Refer to the [AWS
-installation](https://docs.openshift.com/container-platform/4.0/installing/installing_aws/installing-aws-default.html#installing-aws-default).
+Refer to the [Installing a cluster quickly on
+AWS](https://docs.openshift.com/container-platform/4.0/installing/installing_aws/installing-aws-default.html#installing-aws-default)
+documentation.
 
 # Customized Installation
 It is possible to customize some of the options for the installation on AWS.

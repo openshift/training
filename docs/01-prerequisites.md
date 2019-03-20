@@ -5,7 +5,8 @@ sure to visit https://developers.redhat.com and log-in with your customer
 portal account and accept the Developer program Ts&Cs.
 
 # Configuring an AWS Account
-Refer to the [AWS
-documentation](https://docs.openshift.com/container-platform/4.0/installing/installing_aws/installing-aws-account.html).
+Refer to the [Configuring an AWS
+account](https://docs.openshift.com/container-platform/4.0/installing/installing_aws/installing-aws-account.html)
+documentation.
 
 Next: [Installing the Cluster](02-install.md)
