@@ -31,3 +31,13 @@ infrastructure nodes, we have an existing CR that you can use.
 https://raw.githubusercontent.com/openshift/training/master/assets/logging-cr.yaml
 
 You can paste the contents of the CR into the web console.
+
+## Set Default Index Pattern
+When the Logging solution is finished installing, find the route for Kibana,
+click through to it, accept all certificates and login as `kubeadmin`. You
+will find that Kibana wants you to set a default index pattern.
+
+Click `.all` on the left and then click the star icon on the right to set
+this as the default index. You will notice that a star icon appears on the
+left next to `.all`. At this point you can click "Discover" to perform your
+searches.
