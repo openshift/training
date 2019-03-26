@@ -69,7 +69,11 @@ actually make the nodes come into existence.
 
 ### Router moving not working
 The actual moving of the pod is currently not working. You can track the
-progress here: https://jira.coreos.com/browse/NE-72
+progress here: 
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1683761
+https://bugzilla.redhat.com/show_bug.cgi?id=1683762
+https://bugzilla.redhat.com/show_bug.cgi?id=1683763
 
 ### Monitoring
 The docs incorrectly say that the Monitoring solution cannot be modified.
