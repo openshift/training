@@ -9,13 +9,17 @@ and has no password. Therefore this superuser cannot log-in to the web
 console (which requires a password).
 
 If you want additional users to be able to authenticate to and use the
-cluster,
-you must configure an authentication provider. We will configure `htpasswd`
-authentication as an example.
+cluster, you must configure an authentication provider. The documentation
+provides some [background on authentication in
+OpenShift](https://docs.openshift.com/container-platform/4.0/authentication/understanding-authentication.html).
 
-## Create the htpasswd file
+# htpasswd Authentication
+The documentation covers [configuring htpasswd as an identity
+provider](https://docs.openshift.com/container-platform/4.0/authentication/identity_providers/configuring-htpasswd-identity-provider.html).
+
+## The htpasswd File
 You can create an `htpasswd` file in whatever way suits you. You can use the
-`htpasswd` utility, you can do something like:
+`htpasswd` utility provided by `httpd-tools`, or you can do something like:
 
 ```sh
 printf "USER:$(openssl passwd -apr1 PASSWORD)\n >> /path/to/htpasswd"
@@ -31,49 +35,11 @@ Note that all users have the password `openshift4`.
 Make sure you know what your file is called. We use a file called `htpasswd`
 in the rest of the examples.
 
-## Create the htpasswd secret
-The authentication operator will read the `htpasswd` file from a secret in
-the `openshift-config` project. Go ahead and create that secret using the
-following command:
-
-```sh
-oc create secret generic htpass-secret --from-file=htpasswd=</path/to/htpasswd> -n openshift-config
-```
-
-## Create the identity provider Custom Resource
-The operator that configures authentication is looking for a `CustomResource`
-object. In our case, we want one that tells it to configure htpasswd
-authentication using the provided secret. Here's what that definition looks
-like:
-
-```YAML
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  identityProviders:
-  - name: my_htpasswd_provider 
-    challenge: true 
-    login: true 
-    mappingMethod: claim 
-    type: HTPasswd
-    htpasswd:
-      fileData:
-        name: htpass-secret 
-```
-
-If you are interested, the CRD that defines `OAuth` is
-`oauths.config.openshift.io`. It is a cluster-scoped object. Go ahead and
-create the CR for auth with the following command:
-
-```sh
-oc apply -f https://raw.githubusercontent.com/openshift/training/master/assets/htpasswd-cr.yaml
-```
-
+## The CustomResource
 You might be wondering why `apply` was used here. It is because there is an
-existing `OAuth` called `cluster`. The `apply` command will overwrite
-existing objects.
+existing `OAuth` called `cluster`. The CRD that defines `OAuth` is
+`oauths.config.openshift.io`. It is a cluster-scoped object. The `apply`
+command will overwrite existing objects.
 
 ## Test Authentication
 When you created the CR, the authentication operator reconfigured the cluster

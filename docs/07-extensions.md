@@ -1,24 +1,16 @@
 # Extensions to OpenShift using OperatorHub
 
-OpenShift 4 has a slimmer base, with the ability to easily extend it with
-Operators for both cluster services (networking, storage, logging) and
-applications (databases, message queues, source control) for your developers
-to build applications with.
+The documentation provides a lot of information on [what operators
+are](https://docs.openshift.com/container-platform/4.0/applications/operators/olm-what-operators-are.html)
+as well as details on the OperatorHub and [how to add operators to the
+cluster](https://docs.openshift.com/container-platform/4.0/applications/operators/olm-what-operators-are.html).
 
-OperatorHub is a feature built into your cluster to discover and install
-Operators on your cluster. OperatorHub is only available for cluster
-administrators. Once installed, these services are made available to users of
-the cluster through the Developer Catalog.
+The documentation provides an example of how to both install the `etcd`
+Operator as well as how to [create an application from an installed
+operator](https://docs.openshift.com/container-platform/4.0/applications/operators/olm-creating-apps-from-installed-operators.html).
 
-Within OperatorHub, you will find three sets of Operators available to you:
-
-* Red Hat Products - licensed software that is tested extensively on OpenShift 4.
-* Certified Partners - partners that have certified their applications for 
-  OpenShift and have established a mutual support SLA with Red Hat, in order to 
-  provide you with the best experience.
-* Community - a set of curated Operators built by the Kubernetes community and 
-  work well with the Operator Lifecycle Management software already installed
-  on your cluster.
+The example below describes how to do the same with Couchbase. Couchbase is a
+powerful NoSQL database.
 
 ## Create a Project
 Before you get started, create a project for what you're about to do with
@@ -28,27 +20,17 @@ Couchbase. You can either do it from the command line:
 oc new-project mycouchbase
 ```
 
-or from the web console.
+or create it from the web console.
 
 ## Installing an Extension
 
-Installing your first Operator is best done through the user interface, but
-can also be driven by the command line. Open the OpenShift web console, click
-to "Catalog", then "OperatorHub". Only users with cluster admin privileges
-can see the Operator Hub interface. At the top of the page, in the Project
-selector, choose `mycouchbase`.
+Open the OpenShift web console, click to "Catalog", then "OperatorHub". At
+the top of the page, in the Project selector, choose `mycouchbase`.
 
-Couchbase is a powerful NoSQL database. Search or browse to the Couchbase
-Operator and click it. The description lays out the notable features of the
-Operator. Go ahead and click "Install" to deploy the Operator on to the
-cluster. It may take several moments after clicking "Install" before the
-Subscription page shows up.
-
-The installation process involves "subscribing" to an Operator from the hub.
-This subscription mechanism is how OpenShift learns about updates to the
-operator. Operator creators may roll updates for their operators to handle
-things like updates, enhancements, bug fixes, and other changes to the
-solution that the operator deploys.
+Search or browse to the Couchbase Operator and click it. The description lays
+out the notable features of the Operator. Go ahead and click "Install" to
+deploy the Operator on to the cluster. It may take several moments after
+clicking "Install" before the Subscription page shows up.
 
 ### Installation Mode
 
@@ -78,8 +60,8 @@ After clicking "Subscribe", the Couchbase entry will now show that it is
 "Installed".
 
 **Note:** While the Operator Hub page indicates that the operator is
-"installed", really it is indicating that the operator is configured to be
-installed. It may take several minutes for OpenShift to pull in the operator
+"installed", really it is indicating that the Operator is configured to be
+installed. It may take several minutes for OpenShift to pull in the Operator
 to the cluster. You can check on the status of this operator with the
 following command:
 
