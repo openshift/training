@@ -20,10 +20,6 @@ dropdown and you should see the machine sets:
 
 1. Select one of the machine sets in the list by clicking on the name, e.g.
 "**beta-190305-1-79tf5-worker-us-east-1a**" (yours will be slightly different)
-1. Go to the OpenShift web console and login with `kubeadmin`.
-1. Browse to `Machines` in the side-bar, and click `Machine Sets`.
-1. On the `Machine Sets` page, select `openshift-machine-api` from the
-  `Project` dropdown.
 1. Select a worker set to scale by clicking it.
 
    Depending on the AWS region you chose, you may have several worker machine
