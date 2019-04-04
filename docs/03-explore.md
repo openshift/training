@@ -187,7 +187,7 @@ total 1224
 -r--r--r--. 1 root root  6941 Mar 22 10:21 0000_05_config-operator_01_build.crd.yaml
 -r--r--r--. 1 root root  2647 Mar 22 10:21 0000_05_config-operator_01_console.crd.yaml
 ...
-~~~
+```
 
 You will see a number of `.yaml` files in this directory; these are manifests
 that describe each of the operators and how they're applied. Feel free to take a
