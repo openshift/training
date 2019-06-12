@@ -374,5 +374,6 @@ lose your `KUBECONFIG` environment variable, look for the `auth/kubeconfig`
 file in your installation artifacts directory and simply re-export it:
 
     export KUBECONFIG=/path/to/something/auth/kubeconfig
+```
 
 Next: [Scaling the Cluster](04-scaling-cluster.md)
