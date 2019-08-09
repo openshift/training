@@ -2,7 +2,7 @@ kind: List
 metadata: {}
 apiVersion: v1
 items:
-- apiVersion: "autoscaling.openshift.io/v1alpha1"
+- apiVersion: "autoscaling.openshift.io/v1beta1"
   kind: "MachineAutoscaler"
   metadata:
     generateName: autoscale-<aws-region-az>-
@@ -14,7 +14,7 @@ items:
       apiVersion: machine.openshift.io/v1beta1
       kind: MachineSet
       name: <clusterid>-worker-<aws-region-az>
-- apiVersion: "autoscaling.openshift.io/v1alpha1"
+- apiVersion: "autoscaling.openshift.io/v1beta1"
   kind: "MachineAutoscaler"
   metadata:
     generateName: autoscale-<aws-region-az>-
@@ -26,7 +26,7 @@ items:
       apiVersion: machine.openshift.io/v1beta1
       kind: MachineSet
       name: <clusterid>-worker-<aws-region-az>
-- apiVersion: "autoscaling.openshift.io/v1alpha1"
+- apiVersion: "autoscaling.openshift.io/v1beta1"
   kind: "MachineAutoscaler"
   metadata:
     generateName: autoscale-<aws-region-az>-
