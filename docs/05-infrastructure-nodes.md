@@ -67,17 +67,7 @@ name of ` clusterapi-manager-controllers-....`. If you use `oc logs` on the
 various containers in that `Pod`, you will see the various operator bits that
 actually make the nodes come into existence.
 
-### Router moving not working
-The actual moving of the pod is currently not working. You can track the
-progress here: 
-
-https://bugzilla.redhat.com/show_bug.cgi?id=1683761
-https://bugzilla.redhat.com/show_bug.cgi?id=1683762
-https://bugzilla.redhat.com/show_bug.cgi?id=1683763
-
 ### Monitoring
-The docs incorrectly say that the Monitoring solution cannot be modified.
-This is tracked in https://bugzilla.redhat.com/show_bug.cgi?id=1688487
 
 The Cluster Monitoring operator is responsible for deploying and managing the
 state of the Prometheus+Grafana+AlertManager cluster monitoring stack. It is
